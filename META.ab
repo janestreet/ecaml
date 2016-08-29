@@ -1,0 +1,8 @@
+version = "$(pkg_version)"
+description = "Library for writing Emacs plugin in OCaml"
+requires = "async bin_prot core fieldslib ppx_assert.runtime-lib ppx_bench.runtime-lib ppx_expect.collector ppx_hash.runtime-lib ppx_inline_test.runtime-lib sexplib typerep variantslib"
+archive(byte  ) = "ecaml.cma"
+archive(native) = "ecaml.cmxa"
+plugin(byte  ) = "ecaml.cma"
+plugin(native) = "ecaml.cmxs"
+exists_if = "ecaml.cma"

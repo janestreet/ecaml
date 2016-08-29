@@ -1,0 +1,9 @@
+(library
+ ((name ecaml)
+  (public_name ecaml)
+  (libraries (core
+              async))
+  (preprocess (((pps (JANE -annotated-ignores)) All)))
+  ;; We need -std=c99 to enable (stack-allocated) variable-length arrays in ecaml_funcall.
+  (c_flags (:standard -std=c99))
+  (c_names (ecaml_stubs))))
