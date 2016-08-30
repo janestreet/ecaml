@@ -47,3 +47,13 @@ Here's a tutorial:
 Here's an example plugin:
 
   http://git.savannah.gnu.org/cgit/emacs.git/tree/modules/mod-test/mod-test.c?id=e18ee60b02d08b2f075903005798d3d6064dc013
+
+Licensing
+---------
+
+Note that Emacs modules must be GPL compatible, so you must make sure
+that your work based on Ecaml is released under a GPL compatible
+license.
+
+Ecaml itself is released under the Apache 2.0 license which is GPL
+compatible.
