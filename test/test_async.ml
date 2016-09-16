@@ -3,7 +3,9 @@ open! Async.Std
 open! Import
 
 let%expect_test "basic upon" =
-  upon Deferred.unit (fun () -> print_s [%sexp "Hello, world!"]);
+  let%bind () =
+    print_s [%sexp "Hello, world!"];
+    return () in
   [%expect {| "Hello, world!" |}]
 ;;
 

@@ -6,6 +6,7 @@ let%expect_test "finalization of [Value.t]" =
   Gc.add_finalizer_exn (Value.of_int 13)
     (fun _ -> print_s [%message "finalized"]);
   Gc.full_major ();
+  let%bind () = return () in (* to run Async finalizer *)
   [%expect {|
     finalized |}];
 ;;

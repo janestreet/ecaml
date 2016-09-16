@@ -2,6 +2,6 @@
  ((name ecaml_test)
   (libraries (core
               ecaml
-              expect_test_helpers_kernel))
+              expect_test_helpers))
   (inline_tests ((only_shared_object true)))))
 

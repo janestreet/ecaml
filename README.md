@@ -9,8 +9,8 @@ Building a plugin
 
 ### Using Jane Street jenga rules
 
-Simple add `(only_shared_object true)` to the `executables` stanza in
-you jbuild. For instance:
+Simply add `(only_shared_object true)` to the `executables` stanza in
+your jbuild. For instance:
 
 ```scheme
 (executables
