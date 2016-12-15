@@ -5,3 +5,5 @@
               expect_test_helpers))
   (inline_tests ((only_shared_object true)))))
 
+
+(enforce_style ())

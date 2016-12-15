@@ -2,3 +2,5 @@
  ((names (example_plugin))
   (libraries (ecaml))
   (only_shared_object true)))
+
+(enforce_style ())
