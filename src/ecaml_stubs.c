@@ -51,7 +51,7 @@ static emacs_env *active_env = NULL;
 // value so it's not an issue if it gets moved/collected.
 #define CAML_NAMED_CALLBACK_I(name, argc, ...)            \
   do {                                                    \
-    value bogus;                                          \
+    __attribute__((unused)) value bogus;                  \
     CAML_NAMED_CALLBACK(bogus, name, argc, __VA_ARGS__);  \
   } while(0)
 
