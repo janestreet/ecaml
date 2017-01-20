@@ -52,10 +52,9 @@ let%expect_test "raising from Emacs to OCaml" =
   show_raise emacs_raise;
   [%expect {|
     (raised (
-      exn (
-        signal
-        (symbol error-symbol)
-        (data   13)))) |}];
+      signal
+      (symbol error-symbol)
+      (data   13))) |}];
 ;;
 
 let%expect_test "raising from OCaml to Emacs" =
@@ -83,7 +82,7 @@ let%expect_test "raising from OCaml to OCaml with Emacs in between" =
       ("(lambda (f) (funcall f))" |> eval_string)
       [ ocaml_raise ]);
   [%expect {|
-    (raised (exn (signal (symbol error) (data (raising))))) |}];
+    (raised (signal (symbol error) (data (raising)))) |}];
 ;;
 
 let%expect_test "function descriptions" =
