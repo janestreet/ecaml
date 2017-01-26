@@ -1,6 +1,6 @@
 (** An Emacs symbol, i.e., an Emacs value that satisfies [Value.is_symbol]. *)
 
-open! Core.Std
+open! Core
 open! Async.Std
 open! Import
 

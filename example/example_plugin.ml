@@ -18,7 +18,7 @@ let () =
   don't_wait_for (
     let%bind contents = Reader.file_contents "jbuild" in
     String.length contents
-    |> Core.Std.printf "length is %d\n%!";
+    |> Core.printf "length is %d\n%!";
     Deferred.unit
   );
   defun ("watch-cpu" |> Symbol.intern) ~args:[] (fun _ ->

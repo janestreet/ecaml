@@ -1,6 +1,6 @@
 (** An Emacs expression. *)
 
-open! Core.Std
+open! Core
 open! Async.Std
 open! Import
 

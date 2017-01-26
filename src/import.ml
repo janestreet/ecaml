@@ -1,4 +1,4 @@
-open! Core.Std
+open! Core
 open! Async.Std
 
 let initialize_module =
@@ -8,4 +8,4 @@ let initialize_module =
 
 let debug = false
 
-let eprint_s = Core.Std.Debug.eprint_s
+let eprint_s = Core.Debug.eprint_s

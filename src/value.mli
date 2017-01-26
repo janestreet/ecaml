@@ -6,7 +6,7 @@
     functions specified in [emacs-module.h].  All other calls from OCaml to Emacs are
     built on top of this module. *)
 
-open! Core.Std
+open! Core
 open! Async.Std
 open! Import
 

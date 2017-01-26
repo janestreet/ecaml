@@ -1,4 +1,4 @@
-open! Core.Std
+open! Core
 open! Async.Std
 open! Import
 
@@ -17,7 +17,7 @@ let _garbage_collect =
 ;;
 
 let () =
-  Core.Std.Unix.RLimit.(set core_file_size { (get core_file_size) with cur = Limit 0L })
+  Core.Unix.RLimit.(set core_file_size { (get core_file_size) with cur = Limit 0L })
 ;;
 
 (* let%expect_test "finalization of an Emacs function" =

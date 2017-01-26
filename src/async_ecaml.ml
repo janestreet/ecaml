@@ -1,9 +1,9 @@
-open! Core.Std
+open! Core
 open! Async.Std
 open! Import
 
-module Condition = Core.Std.Condition
-module Unix      = Core.Std.Unix
+module Condition = Core.Condition
+module Unix      = Core.Unix
 
 module File_descr = Unix.File_descr
 

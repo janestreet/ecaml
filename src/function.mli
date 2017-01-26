@@ -1,6 +1,6 @@
 (** Functions that call from Emacs to OCaml. *)
 
-open! Core.Std
+open! Core
 open! Async.Std
 open! Import
 
