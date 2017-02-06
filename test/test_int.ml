@@ -1,5 +1,5 @@
 open! Core
-open! Async.Std
+open! Async
 open! Import
 
 let eval_int_var string = Expression.eval (string |> Symbol.intern |> Expression.symbol)

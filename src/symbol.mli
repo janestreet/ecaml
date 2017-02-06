@@ -1,7 +1,7 @@
 (** An Emacs symbol, i.e., an Emacs value that satisfies [Value.is_symbol]. *)
 
 open! Core
-open! Async.Std
+open! Async
 open! Import
 
 type t [@@deriving sexp_of]

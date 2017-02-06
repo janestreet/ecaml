@@ -7,7 +7,7 @@
     built on top of this module. *)
 
 open! Core
-open! Async.Std
+open! Async
 open! Import
 
 type t = Value0.t [@@deriving sexp_of]

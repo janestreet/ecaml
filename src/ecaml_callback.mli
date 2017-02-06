@@ -1,7 +1,7 @@
 (** This module is used to enforce the expected types of registered callbacks. *)
 
 open! Core
-open! Async.Std
+open! Async
 open! Import
 
 module Value = Value0

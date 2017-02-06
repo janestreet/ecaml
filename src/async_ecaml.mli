@@ -1,5 +1,5 @@
 open! Core
-open! Async.Std
+open! Async
 open! Import
 
 val initialize_module : unit

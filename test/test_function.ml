@@ -1,5 +1,5 @@
 open! Core
-open! Async.Std
+open! Async
 open! Import
 
 let%expect_test "mutual recursion between Emacs and OCaml" =

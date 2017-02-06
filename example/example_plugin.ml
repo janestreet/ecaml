@@ -1,5 +1,5 @@
 open Core_kernel
-open Async.Std
+open Async
 open Ecaml.Std.Emacs
 
 let cons a b = Symbol.funcall Symbol.cons [ a; b ]

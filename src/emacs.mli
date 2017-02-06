@@ -4,7 +4,7 @@
     Typically, functions in this module call the eponymous Elisp functions. *)
 
 open! Core
-open! Async.Std
+open! Async
 open! Import
 
 val message_t : Value.t -> unit

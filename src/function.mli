@@ -1,7 +1,7 @@
 (** Functions that call from Emacs to OCaml. *)
 
 open! Core
-open! Async.Std
+open! Async
 open! Import
 
 module Fn : sig
