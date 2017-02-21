@@ -21,7 +21,7 @@ type t =
 let run_async_cycle t =
   if debug
   then (Debug.eprint_s [%message "running a cycle" ~time:(Time.now () : Time.t)]);
-  Async_kernel.Scheduler.(run_cycle (t ()));
+  Async_kernel_private.Scheduler.(run_cycle (t ()));
   t.have_requested_cycle <- false;
   Mutex.critical_section t.ran_cycle_mutex ~f:(fun () ->
     Condition.broadcast t.ran_cycle)

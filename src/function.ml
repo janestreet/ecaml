@@ -64,7 +64,7 @@ let create =
       try
         let { Function_table_entry. callback; execution_context } =
           Hashtbl.find_exn function_table function_id in
-        Async_kernel.Scheduler.set_execution_context scheduler.kernel_scheduler
+        Async_kernel_private.Scheduler.set_execution_context scheduler.kernel_scheduler
           execution_context;
         callback args
       with exn ->
