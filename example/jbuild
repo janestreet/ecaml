@@ -4,3 +4,5 @@
   (only_shared_object true)))
 
 (enforce_style ())
+
+(jbuild_version jane_street)
