@@ -1,8 +1,8 @@
 (executables
  ((names (example_plugin))
   (libraries (ecaml))
-  (only_shared_object true)))
+  (preprocess (pps (ppx_jane)))
+))
 
-(enforce_style ())
 
 (jbuild_version jane_street)
