@@ -3,7 +3,7 @@
   (libraries (core
               ecaml
               expect_test_helpers))
-  (preprocess (pps (ppx_jane)))
+  (preprocess (pps (ppx_jane ppx_driver.runner)))
 ))
 
 
