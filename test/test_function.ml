@@ -43,7 +43,7 @@ let emacs_try_with =
 ;;
 
 let ocaml_raise =
-  (fun _ -> raise_s [%message "raising"]; Value.nil)
+  (fun _ -> raise_s [%message "raising"])
   |> Function.create ~args:[]
   |> Function.to_value
 ;;
