@@ -1,5 +1,4 @@
-open! Core
-open! Async
+open! Core_kernel
 open! Import
 
 type t = Value.t [@@deriving sexp_of]
@@ -12,9 +11,7 @@ end
 
 module Function_table_entry = struct
   type t =
-    { callback          : Fn.t
-    ; execution_context : Execution_context.t
-    }
+    { callback : Fn.t }
   [@@deriving fields, sexp_of]
 end
 
@@ -23,14 +20,18 @@ type 'a with_spec
   -> ?interactive   : string
   -> ?optional_args : Symbol.t list
   -> ?rest_arg      : Symbol.t
+  -> Source_code_position.t
   -> args           : Symbol.t list
   -> 'a
+
+module Expert = struct
+  let raise_in_dispatch = ref false
+end
 
 let create =
   let function_table : (Function_id.t, Function_table_entry.t) Hashtbl.t =
     Function_id.Table.create ()
   in
-  let error = Symbol.intern "error" in
   let module M = struct
     (** [make_function_internal docstring function_id] returns two values:
 
@@ -47,10 +48,7 @@ let create =
       "ecaml_non_local_exit_signal"
   end in
   let open M in
-  let module Scheduler = Async_unix.Raw_scheduler in
-  let scheduler = Scheduler.t () in
   Ecaml_callback.(register free_function)
-    ~should_run_holding_async_lock:true
     ~f:(fun function_id ->
       if debug
       then eprint_s [%message "Function.free_function" (function_id : Function_id.t)];
@@ -59,26 +57,26 @@ let create =
      OCaml.  We ensure this because [ecaml_make_function] is the only C code that can
      cause [dispatch_function] to be called. *)
   Ecaml_callback.(register dispatch_function)
-    ~should_run_holding_async_lock:true
     ~f:(fun function_id args ->
+      if !Expert.raise_in_dispatch then raise_s [%message "dispatch"];
       try
-        let { Function_table_entry. callback; execution_context } =
+        let { Function_table_entry. callback } =
           Hashtbl.find_exn function_table function_id in
-        Async_kernel_private.Scheduler.set_execution_context scheduler.kernel_scheduler
-          execution_context;
         callback args
       with exn ->
-        non_local_exit_signal error
-          (Value.list [ exn |> Exn.to_string |> Value.of_string ]);
+        non_local_exit_signal Q.error
+          (Value.list [ exn |> Exn.to_string |> Value.of_utf8_bytes ]);
         Value.nil);
-  fun ?docstring ?interactive ?optional_args ?rest_arg ~args callback ->
+  fun ?docstring ?interactive ?optional_args ?rest_arg here ~args callback ->
     let function_id = Function_id.create () in
-    Hashtbl.set function_table ~key:function_id
-      ~data:{ callback
-            ; execution_context = Scheduler.current_execution_context scheduler };
+    Hashtbl.set function_table ~key:function_id ~data:{ callback };
     let emacs_function, sentinel =
       make_function_internal
-        ([%message "call OCaml function" (function_id : Function_id.t)] |> Sexp.to_string)
+        ([%message
+          "call-OCaml-function"
+            (function_id : Function_id.t)
+            ~implemented_at:(here : Source_code_position.t)]
+         |> Sexp.to_string)
         function_id
     in
     (* We wrap [emacs_function] with a lambda expression that, when called, calls
@@ -90,25 +88,36 @@ let create =
        OCaml finalizer for the lambda-expression OCaml value runs, that will decrement the
        Emacs refcount, but will still leave it to Emacs to run [sentinel]'s finalizer
        whenever the lambda expression is collected. *)
-    let module E = Expression in
-    E.lambda ()
+    let module F = Form in
+    F.lambda
       ?docstring
       ?interactive
       ?optional_args
       ?rest_arg
+      here
       ~args
-      ~body:(E.progn
-               [ sentinel |> E.of_value
-               ; E.combination
-                   ([ Symbol.apply |> E.symbol
-                    ; emacs_function |> E.of_value ]
-                    @ (List.map ~f:E.symbol
+      ~body:(F.progn
+               [ sentinel |> F.of_value
+               ; F.list
+                   ([ Q.apply |> F.symbol
+                    ; emacs_function |> F.of_value ]
+                    @ (List.map ~f:F.symbol
                          (args
                           @ ( optional_args |> Option.value ~default:[])
-                          @ [ rest_arg      |> Option.value ~default:Symbol.nil ])))])
-    |> E.to_value
+                          @ [ rest_arg      |> Option.value ~default:Q.nil ])))])
+    |> F.to_value
 ;;
 
-let defun ?docstring ?interactive ?optional_args ?rest_arg ~args symbol f =
-  Symbol.fset symbol (create ?docstring ?interactive ?optional_args ?rest_arg ~args f)
+let defuns = ref []
+
+let get_and_clear_defuns () =
+  let result = !defuns in
+  defuns := [];
+  result
+;;
+
+let defun ?docstring ?interactive ?optional_args ?rest_arg here ~args symbol f =
+  defuns := (here, symbol) :: !defuns;
+  Symbol.set_function symbol
+    (create ?docstring ?interactive ?optional_args ?rest_arg here ~args f)
 ;;

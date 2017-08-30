@@ -2,7 +2,8 @@
  ((name ecaml_test)
   (libraries (core
               ecaml
-              expect_test_helpers))
+              expect_test_helpers_kernel
+              sexp_pretty))
   (preprocess (pps (ppx_jane ppx_driver.runner)))
 ))
 

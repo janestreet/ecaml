@@ -1,0 +1,7 @@
+(executables
+ ((names (gen_c gen_ml))
+  (libraries (core_kernel))
+  (preprocess (pps (ppx_jane ppx_driver.runner)))))
+
+
+(jbuild_version 1)

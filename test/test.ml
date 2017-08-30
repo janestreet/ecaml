@@ -1,5 +1,4 @@
-open! Core
-open! Async
+open! Core_kernel
 open! Import
 
 let%test "list reverse inline test" =
@@ -16,8 +15,8 @@ let%expect_test "list reverse expect test" =
 ;;
 
 let%expect_test "Emacs math" =
-  Expression.eval ("(+ 1 2)" |> Expression.of_string)
-  |> Value.to_int
+  Form.eval ("(+ 1 2)" |> Form.read)
+  |> Value.to_int_exn
   |> printf "%d\n";
   [%expect {|
     3 |}];

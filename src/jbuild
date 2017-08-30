@@ -1,12 +1,30 @@
+
 (library
  ((name ecaml)
   (public_name ecaml)
-  (libraries (core
-              async))
+  (libraries (core_kernel
+              expect_test_helpers_kernel))
   (preprocess (pps (ppx_jane -annotated-ignores ppx_driver.runner)))
   ;; We need -std=c99 to enable (stack-allocated) variable-length arrays in ecaml_funcall.
   (c_flags (:standard -std=c99))
-  (c_names (ecaml_stubs))))
+  (c_names (ecaml_stubs empty))))
+
+(rule
+ ((targets (generated_stubs.c))
+  (deps (../gen/gen_c.exe))
+  (action (bash "../gen/gen_c.exe > ${@}"))
+  (fallback)))
+
+(rule
+ ((targets (generated_bindings.ml))
+  (deps (../gen/gen_ml.exe))
+  (action (bash "../gen/gen_ml.exe > ${@}"))
+  (fallback)))
+
+(rule
+ ((targets (empty.c))
+  (deps (./generated_stubs.c))
+  (action (bash "echo 'void not_empty() { return; }' > ${@}"))))
 
 
 (jbuild_version 1)

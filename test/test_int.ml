@@ -1,29 +1,27 @@
-open! Core
-open! Async
+open! Core_kernel
 open! Import
 
-let eval_int_var string = Expression.eval (string |> Symbol.intern |> Expression.symbol)
+let eval_int_var string = Form.eval (string |> Symbol.intern |> Form.symbol)
 
 let most_negative_fixnum_value = eval_int_var "most-negative-fixnum"
 let most_positive_fixnum_value = eval_int_var "most-positive-fixnum"
 
-let most_negative_fixnum = most_negative_fixnum_value |> Value.to_int
-let most_positive_fixnum = most_positive_fixnum_value |> Value.to_int
+let most_negative_fixnum = most_negative_fixnum_value |> Value.to_int_exn
+let most_positive_fixnum = most_positive_fixnum_value |> Value.to_int_exn
 
 let%expect_test "most-{neg,pos}itive-fixnum" =
   print_s [%sexp (most_negative_fixnum_value : Value.t)];
-  let%bind () = [%expect {|
-    -2305843009213693952 |}] in
+  [%expect {|
+    -2305843009213693952 |}];
   print_s [%sexp (most_negative_fixnum : int)];
-  let%bind () = [%expect {|
-    -2_305_843_009_213_693_952 |}] in
+  [%expect {|
+    -2_305_843_009_213_693_952 |}];
   print_s [%sexp (most_positive_fixnum_value : Value.t)];
-  let%bind () = [%expect {|
-    2305843009213693951 |}] in
+  [%expect {|
+    2305843009213693951 |}];
   print_s [%sexp (most_positive_fixnum : int)];
-  let%bind () = [%expect {|
-    2_305_843_009_213_693_951 |}] in
-  return ();
+  [%expect {|
+    2_305_843_009_213_693_951 |}];
 ;;
 
 let%expect_test "[Value.of_int]" =
@@ -43,10 +41,10 @@ let%expect_test "[Value.of_int]" =
     ; Int.max_value
     ]
     ~f:(fun i ->
-      let v = Or_error.try_with (fun () -> Value.of_int i) in
+      let v = Or_error.try_with (fun () -> Value.of_int_exn i) in
       let i' =
         match v with
-        | Ok v -> Or_error.try_with (fun () -> Value.to_int v)
+        | Ok v -> Or_error.try_with (fun () -> Value.to_int_exn v)
         | Error _ as x -> x
       in
       print_s [%message

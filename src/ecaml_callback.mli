@@ -1,24 +1,13 @@
 (** This module is used to enforce the expected types of registered callbacks. *)
 
-open! Core
-open! Async
+open! Core_kernel
 open! Import
 
 module Value = Value0
 
 type 'a t
 
-val register
-  :  'a t
-  -> f : 'a
-  -> should_run_holding_async_lock : bool
-  -> unit
-
-(** [attach_async_finalizer] is called whenever a [Value.t] is created, to attach an Async
-    finalizer to the value that will, when the OCaml value is freed, free the Emacs value.
-    The finalizer is an Async finalizer, not an ordinary finalizer, to ensure that it runs
-    in an Async from an Emacs callback. *)
-val attach_async_finalizer : (Value.t -> unit) t
+val register : 'a t -> f : 'a -> unit
 
 (** [dispatch_function] is how Emacs calls from C to OCaml. *)
 val dispatch_function : (Function_id.t -> Value.t array -> Value.t) t
