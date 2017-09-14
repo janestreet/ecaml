@@ -8,5 +8,5 @@ type t
   -> Type.t       (** return type *)
   -> unit
 
-val c     : t
+val c     : unit -> t
 val ocaml : t
