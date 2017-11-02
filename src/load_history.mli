@@ -11,18 +11,6 @@ open! Import
 (** [(describe-function 'symbol-file)] *)
 val defining_file : Symbol.t -> string option
 
-(** [add_defuns] updates [load-history] with the information in
-    [Function.get_and_clear_defuns], which thus makes it possible to jump from a symbol
-    defined by Ecaml to the Ecaml source.  Each source-file name is adjusted by:
-
-    {[
-      Filename.concat in_dir (String.chop_prefix_exn file ~prefix:chop_prefix)
-    ]} *)
-val add_defuns
-  :  chop_prefix : string
-  -> in_dir      : string
-  -> unit
-
 (** [Entry] defines the various kinds of entries stored in [load-history]. *)
 module Entry : sig
   type t =
@@ -37,3 +25,28 @@ module Entry : sig
 
   val to_value : t -> Value.t
 end
+
+(** [add_entry] is called by ([defcustom], [defun], [defvar]) and adds the entry to a
+    [list ref], for later use by [update_emacs_with_entries]. *)
+val add_entry : Source_code_position.t -> Entry.t -> unit
+
+(** [update_emacs_with_entries] updates [load-history] with the information supplied to
+    [add_entry], which make it possible to, within Emacs, jump from a symbol defined by
+    Ecaml to the Ecaml source.  Each source-file name is adjusted by:
+
+    {[
+      Filename.concat in_dir (String.chop_prefix_exn file ~prefix:chop_prefix)
+    ]} *)
+val update_emacs_with_entries
+  :  chop_prefix : string
+  -> in_dir      : string
+  -> unit
+
+module Type : sig
+  type t =
+    | Fun
+    | Var
+  [@@deriving sexp_of]
+end
+
+val location_exn : Symbol.t -> Type.t -> Source_code_position.t

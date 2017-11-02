@@ -60,11 +60,3 @@ let set t buffer position =
     (position |> Position.to_value)
     (buffer |> Buffer.to_value)
 ;;
-
-let transient_mark_mode_is_enabled () =
-  Symbol.value_exn Q.transient_mark_mode |> Value.to_bool
-;;
-
-let set_transient_mark_mode bool =
-  Symbol.set_value Q.transient_mark_mode (bool |> Value.of_bool)
-;;

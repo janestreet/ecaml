@@ -12,15 +12,11 @@ let equal t1 t2 = eq t1 t2
 let intern string = string |> Value.intern |> of_value_exn
 
 module Q = struct
-  let boundp          = "boundp"          |> intern
   let fboundp         = "fboundp"         |> intern
   let fset            = "fset"            |> intern
   let make_symbol     = "make-symbol"     |> intern
-  let makunbound      = "makunbound"      |> intern
-  let set             = "set"             |> intern
   let symbol_function = "symbol-function" |> intern
   let symbol_name     = "symbol-name"     |> intern
-  let symbol_value    = "symbol-value"    |> intern
 end
 
 let funcallN   t args = Value.funcallN   (t |> to_value) args
@@ -53,8 +49,9 @@ let funcall_int_int_value_unit t t0 t1 t2 =
 
 let name t = funcall1 Q.symbol_name (t |> to_value) |> Value.to_utf8_bytes_exn
 
+let compare_name t1 t2 = String.compare (name t1) (name t2)
+
 let function_is_defined t = funcall1 Q.fboundp (t |> to_value) |> Value.to_bool
-let value_is_defined    t = funcall1 Q.boundp  (t |> to_value) |> Value.to_bool
 
 let function_exn t =
   if not (function_is_defined t)
@@ -64,40 +61,9 @@ let function_exn t =
   funcall1 Q.symbol_function (t |> to_value);
 ;;
 
-let value t =
-  if not (value_is_defined t)
-  then None
-  else Some (funcall1 Q.symbol_value (t |> to_value))
-;;
-
-let value_exn t =
-  if not (value_is_defined t)
-  then raise_s [%message
-         "[Symbol.value_exn] of symbol with no value field"
-           ~symbol:(t : t)];
-  funcall1 Q.symbol_value (t |> to_value)
-;;
-
-let clear_value t = funcall1_i Q.makunbound (t |> to_value)
-
 let create ~name = funcall1 Q.make_symbol (name |> Value.of_utf8_bytes) |> of_value_exn
 
 let set_function t value = funcall2_i Q.fset (t |> to_value) value
-let set_value    t value = funcall2_i Q.set  (t |> to_value) value
-
-let set_values_temporarily ts_and_values ~f =
-  let olds = List.map ts_and_values ~f:(fun (t, _) -> (t, value t)) in
-  List.iter ts_and_values ~f:(fun (t, v) -> set_value t v);
-  protect ~f ~finally:(fun () ->
-    List.iter olds ~f:(fun (t, v) ->
-      match v with
-      | None -> clear_value t
-      | Some v -> set_value t v));
-;;
-
-let set_value_temporarily t value ~f = set_values_temporarily [ t, value ] ~f
-
-let has_non_null_value t = value_is_defined t && value_exn t |> Value.to_bool
 
 type symbol = t
 

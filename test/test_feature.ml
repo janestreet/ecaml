@@ -7,10 +7,7 @@ let foo = "foo" |> Symbol.intern
 let%expect_test "[require] raise" =
   show_raise (fun () -> require foo);
   [%expect {|
-    (raised (
-      signal
-      (symbol file-error)
-      (data ("Cannot open load file" "No such file or directory" foo)))) |}];
+    (raised (file-error ("Cannot open load file" "No such file or directory" foo))) |}];
 ;;
 
 let%expect_test "[provide], [require]" =
@@ -21,10 +18,7 @@ let%expect_test "[provide], [require]" =
 let%expect_test "[require] uses [Symbol.equal]" =
   show_raise (fun () -> require (Symbol.create ~name:"foo"));
   [%expect {|
-    (raised (
-      signal
-      (symbol file-error)
-      (data ("Cannot open load file" "No such file or directory" foo)))) |}];
+    (raised (file-error ("Cannot open load file" "No such file or directory" foo))) |}];
 ;;
 
 let%expect_test "[all_provided]" =
@@ -34,6 +28,7 @@ let%expect_test "[all_provided]" =
                   : Symbol.t list)];
   [%expect {|
     (abbrev
+     advice
      backquote
      base64
      button
@@ -64,6 +59,7 @@ let%expect_test "[all_provided]" =
      facemenu
      faces
      files
+     find-func
      font-core
      font-lock
      font-render-setting

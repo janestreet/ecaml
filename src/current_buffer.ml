@@ -1,9 +1,9 @@
 open! Core_kernel
 open! Import
 
-let get () = Buffer.Private.current ()
-
-let set t = Symbol.funcall1_i Q.set_buffer (t |> Buffer.to_value)
+include (Current_buffer0
+         : (module type of Current_buffer0
+             with module Buffer := Buffer0))
 
 let set_temporarily t ~f =
   let old = get () in
@@ -17,23 +17,46 @@ let set_temporarily_to_temp_buffer f =
     ~finally:(fun () -> Buffer.kill t)
 ;;
 
-let directory () =
-  Symbol.value_exn Q.default_directory |> Filename.of_value_exn
+let major_mode () =
+  Major_mode.create
+    ~change_command:(value_exn (Var.create Q.major_mode Symbol.type_))
 ;;
 
-let set_directory dir =
-  Symbol.set_value Q.default_directory (dir |> Filename.to_value)
+let change_major_mode major_mode =
+  Symbol.funcall0_i (Major_mode.change_command major_mode)
 ;;
+
+let bury () = Symbol.funcall0_i Q.bury_buffer
+
+let directory = Var.create Q.default_directory Value.Type.string
 
 let is_modified () = Symbol.funcall0 Q.buffer_modified_p |> Value.to_bool
 
 let set_modified bool = Symbol.funcall1_i Q.set_buffer_modified_p (bool |> Value.of_bool)
 
-let is_read_only () = Symbol.value_exn Q.buffer_read_only |> Value.to_bool
+let fill_column = Var.create Q.fill_column Value.Type.int
 
-let set_read_only bool = Symbol.set_value Q.buffer_read_only (bool |> Value.of_bool)
+let paragraph_start = Var.create Q.paragraph_start Regexp.type_
 
-let is_undo_enabled () = not (Value.eq (Symbol.value_exn Q.buffer_undo_list) Value.t)
+let paragraph_separate = Var.create Q.paragraph_separate Regexp.type_
+
+let read_only = Var.create Q.buffer_read_only Value.Type.bool
+
+let file_name () = Buffer.file_name (get ())
+
+let file_name_exn () =
+  match file_name () with
+  | Some x -> x
+  | None -> raise_s [%message "buffer does not have a file name" ~_:(get () : Buffer.t)]
+;;
+
+let file_name_var = Var.create Q.buffer_file_name Value.Type.string
+
+let transient_mark_mode = Var.create Q.transient_mark_mode Value.Type.bool
+
+let buffer_undo_list = Var.create Q.buffer_undo_list Value.Type.value
+
+let is_undo_enabled () = not (Value.eq (value_exn buffer_undo_list) Value.t)
 
 let set_undo_enabled bool =
   Symbol.funcall0_i (if bool
@@ -41,7 +64,7 @@ let set_undo_enabled bool =
                      else Q.buffer_disable_undo);
 ;;
 
-let undo_list () = Symbol.value_exn Q.buffer_undo_list
+let undo_list () = value_exn buffer_undo_list
 
 let undo n = Symbol.funcall1_i Q.undo (n |> Value.of_int_exn)
 
@@ -77,6 +100,12 @@ let save () = Symbol.funcall0_i Q.save_buffer
 
 let erase () = Symbol.funcall0_i Q.erase_buffer
 
+let delete_region ~start ~end_ =
+  Symbol.funcall2_i Q.delete_region
+    (start |> Position.to_value)
+    (end_  |> Position.to_value)
+;;
+
 let kill_region ~start ~end_ =
   Symbol.funcall2_i Q.kill_region
     (start |> Position.to_value)
@@ -91,12 +120,13 @@ let save_excursion f =
         | [| |] -> r := Some (f ()); Value.nil
         | _ -> assert false)
   in
-  ignore
-    (Form.eval (
-       Form.list
-         [ Q.save_excursion |> Form.symbol
-         ; Form.list [ f |> Function.to_value |> Form.of_value ]])
-     : Value.t);
+  ignore (
+    Form.eval (
+      Form.list
+        [ Q.save_excursion |> Form.symbol
+        ; Form.list [ Q.funcall |> Form.symbol
+                    ; f |> Function.to_value |> Form.quote ]])
+    : Value.t);
   match !r with
   | None -> assert false
   | Some a -> a
@@ -104,7 +134,11 @@ let save_excursion f =
 
 let set_multibyte bool = Symbol.funcall1_i Q.set_buffer_multibyte (bool |> Value.of_bool)
 
-let is_multibyte () = Symbol.value_exn Q.enable_multibyte_characters |> Value.to_bool
+let enable_multibyte_characters =
+  Var.create Q.enable_multibyte_characters Value.Type.bool
+;;
+
+let is_multibyte () = value_exn enable_multibyte_characters
 
 let rename_exn ?(unique = false) () ~name =
   Symbol.funcall2_i Q.rename_buffer
@@ -178,32 +212,111 @@ let set_marker_position marker position =
     (position |> Position.to_value)
 ;;
 
-let get_mark () = Symbol.funcall0 Q.mark_marker |> Marker.of_value_exn
+let mark () = Symbol.funcall0 Q.mark_marker |> Marker.of_value_exn
 
 let set_mark position = Symbol.funcall1_i Q.set_mark (position |> Position.to_value)
 
-let mark_is_active () = Symbol.value_exn Q.mark_active |> Value.to_bool
+let mark_active = Var.create Q.mark_active Value.Type.bool
+
+let mark_is_active () = value_exn mark_active
 
 let deactivate_mark () = Symbol.funcall0_i Q.deactivate_mark
 
-module Minor_mode = struct
-  type t =
-    { function_name : Symbol.t
-    ; variable_name : Symbol.t }
-  [@@deriving sexp_of]
+let make_buffer_local var =
+  Symbol.funcall1_i Q.make_local_variable (var |> Var.symbol_as_value)
+;;
 
-  let read_only =
-    { function_name = Q.read_only_mode
-    ; variable_name = Q.buffer_read_only }
-  ;;
+let is_buffer_local var =
+  Symbol.funcall1 Q.local_variable_p (var |> Var.symbol_as_value)
+  |> Value.to_bool
+;;
 
-  let view =
-    { function_name = Q.view_mode
-    ; variable_name = Q.view_mode }
-  ;;
+let is_buffer_local_if_set var =
+  Symbol.funcall1 Q.local_variable_if_set_p (var |> Var.symbol_as_value)
+  |> Value.to_bool
+;;
 
-  let is_enabled t = Symbol.value_exn t.variable_name |> Value.to_bool
+let buffer_local_variables () =
+  Symbol.funcall0 Q.buffer_local_variables
+  |> Value.to_list_exn ~f:(fun value ->
+    if Value.is_symbol value
+    then (value |> Symbol.of_value_exn, None)
+    else (Value.car_exn value |> Symbol.of_value_exn, Some (Value.cdr_exn value)))
+;;
 
-  let disable t = Symbol.funcall1_i t.function_name (0 |> Value.of_int_exn)
-  let enable  t = Symbol.funcall1_i t.function_name (1 |> Value.of_int_exn)
-end
+let kill_buffer_local var =
+  Symbol.funcall1_i Q.kill_local_variable (var |> Var.symbol_as_value)
+;;
+
+let syntax_class char_code =
+  Symbol.funcall1 Q.char_syntax (char_code |> Char_code.to_value)
+  |> Char_code.of_value_exn
+  |> Syntax_table.Class.of_char_code_exn
+;;
+
+let syntax_table () = Symbol.funcall0 Q.syntax_table |> Syntax_table.of_value_exn
+
+let set_syntax_table syntax_table =
+  Symbol.funcall1_i Q.set_syntax_table (syntax_table |> Syntax_table.to_value)
+;;
+
+let local_keymap () =
+  let result = Symbol.funcall0 Q.current_local_map in
+  if Value.is_nil result
+  then None
+  else Some (result |> Keymap.of_value_exn)
+;;
+
+let set_local_keymap keymap =
+  Symbol.funcall1_i Q.use_local_map (keymap |> Keymap.to_value)
+;;
+
+let minor_mode_keymaps () =
+  Symbol.funcall0 Q.current_minor_mode_maps
+  |> Value.to_list_exn ~f:Keymap.of_value_exn
+;;
+
+let delete_lines_matching ?start ?end_ regexp =
+  Symbol.funcall3_i Q.flush_lines
+    (regexp |> Regexp.to_value)
+    (start_value start)
+    (end_value end_)
+;;
+
+let sort_lines ?start ?end_ () =
+  Symbol.funcall3_i Q.sort_lines
+    Value.nil
+    (start_value start)
+    (end_value end_)
+;;
+
+let delete_duplicate_lines ?start ?end_ () =
+  Symbol.funcall2_i Q.delete_duplicate_lines
+    (start_value start)
+    (end_value end_)
+;;
+
+let indent_region ?start ?end_ () =
+  Echo_area.inhibit_messages (fun () ->
+    Symbol.funcall2_i Q.indent_region
+      (start_value start)
+      (end_value end_));
+;;
+
+let revert ?(confirm = false) () =
+  Symbol.funcall2_i
+    Q.revert_buffer
+    Value.nil
+    (confirm |> not |> Value.of_bool)
+;;
+
+let set_revert_buffer_function f =
+  set_value (Var.create Q.revert_buffer_function Function.type_)
+    (Function.create [%here]
+       ~args:[ Q.ignore_auto; Q.noconfirm ]
+       (function
+         | [| _; noconfirm |] ->
+           f ~confirm:(noconfirm |> Value.to_bool |> not);
+           Value.nil
+         | _ -> assert false))
+;;

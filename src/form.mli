@@ -4,28 +4,31 @@
 open! Core_kernel
 open! Import
 
-type t [@@deriving sexp_of]
-
-(** Emacs forms are values, and vice versa, so [of_value] and [to_value] are implemented
-    as the identity function. *)
-val of_value : Value.t -> t
-val to_value : t -> Value.t
+include Value.Subtype
 
 (** [(describe-function 'eval)] *)
-val eval : t -> Value.t
+val eval   : t -> Value.t
+val eval_i : t -> unit
 
 (** [(describe-function 'read)] *)
 val read : string -> t
+
+(** [eval_string string] = [eval (read string)] *)
+val eval_string : string -> Value.t
+
+val nil : t
 
 val string : string -> t
 
 val symbol : Symbol.t -> t
 
-val apply : t -> t -> t
+val int : int -> t
 
-val quote : t -> t
+val quote : Value.t -> t
 
 val progn : t list -> t
+
+val let_ : (Symbol.t * t) list -> t -> t
 
 val lambda
   :  ?docstring     : string
@@ -37,6 +40,15 @@ val lambda
   -> body : t
   -> t
 
-(** A function call, macro application, or special form.  [(Info-goto-node
-    "(elisp)Classifying Lists")]. *)
+(** [(describe-function 'defvar)]
+    [(Info-goto-node "(elisp)Defining Variables")] *)
+val defvar
+  :  Source_code_position.t
+  -> Symbol.t
+  -> Value.t
+  -> docstring : string
+  -> unit
+
+(** A function call, macro application, or special form.
+    [(Info-goto-node "(elisp)Classifying Lists")]. *)
 val list : t list -> t

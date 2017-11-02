@@ -7,9 +7,7 @@
 open! Core_kernel
 open! Import
 
-type t [@@deriving sexp_of]
-
-include Value.Subtype with type t := t
+include Value.Subtype
 
 (** Accessors *)
 val num_cols     : t -> int (** [(describe-function 'frame-width)       ] *)
@@ -21,7 +19,7 @@ val pixel_width  : t -> int (** [(describe-function 'frame-pixel-width) ] *)
 val parameters : t -> (Symbol.t * Value.t) list
 
 (** [(describe-function 'selected-frame)] *)
-val get_selected : unit -> t
+val selected : unit -> t
 
 (** [(describe-function 'select-frame)] *)
 val set_selected : t -> unit

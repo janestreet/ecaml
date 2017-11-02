@@ -7,7 +7,7 @@ let show t = print_s [%sexp (t : t)]
 let%expect_test "[create] raise" =
   show_raise (fun () -> create ~len:(-1) Value.nil);
   [%expect {|
-    (raised (signal (symbol wrong-type-argument) (data (wholenump -1)))) |}];
+    (raised (wrong-type-argument (wholenump -1))) |}];
 ;;
 
 let%expect_test "[create]" =

@@ -6,16 +6,19 @@
 open! Core_kernel
 open! Import
 
-type t [@@deriving sexp_of]
+include Value.Subtype
 
-include Value.Subtype with type t := t
-
-val match_nothing : t
+val match_anything : t
+val match_nothing  : t
 
 (** [(Info-goto-node "(elisp)Syntax of Regexps")] *)
 val of_pattern : string -> t
 
 val to_pattern : t -> string
+
+val any : t list -> t
+
+val any_pattern : string list -> t
 
 (** [quote string] matches [string] and nothing else.
     [(describe-function 'regexp-quote)]
@@ -30,7 +33,7 @@ val any_quote : string list -> t
 (** Supplying [~update_last_match:true] to a searching function causes Emacs to keep track
     of the "last match", i.e. the start and end positions of the segments of text found
     during the search.  One can access parts of the last match via the [Last_match]
-    functions.
+    functions.  [subexp] is one based.
     [(Info-goto-node "(elisp)Match Data")] *)
 module Last_match : sig
   type t [@@deriving sexp_of]

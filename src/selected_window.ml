@@ -20,3 +20,4 @@ let split_horizontally_exn () = Symbol.funcall0_i Q.split_window_horizontally
 let split_vertically_exn   () = Symbol.funcall0_i Q.split_window_vertically
 
 let find_file path = Symbol.funcall1_i Q.find_file (path |> Value.of_utf8_bytes)
+let view_file path = Symbol.funcall1_i Q.view_file (path |> Value.of_utf8_bytes)

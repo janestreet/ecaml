@@ -6,9 +6,15 @@
 open! Core_kernel
 open! Import
 
-type t [@@deriving sexp_of]
+include Value.Subtype
 
-include Value.Subtype with type t := t
+(** [(describe-function 'aref)]
+    [(Info-goto-node "(elisp)String Basics")] *)
+val char_code : t -> int -> Char_code.t
+
+(** [(describe-function 'aset)]
+    [(Info-goto-node "(elisp)String Basics")] *)
+val set_char_code : t -> int -> Char_code.t -> unit
 
 val of_utf8_bytes : string -> t
 val to_utf8_bytes : t -> string
@@ -94,15 +100,15 @@ end
     [(Info-goto-node "(elisp)Changing Properties")] *)
 val propertize : t -> Property.t list -> t
 
-(** [get_property t ~at property_name] returns the value of [property_name] for the
-    character after [at].  [at] is a zero-based index into [t]; [get_property] raises
+(** [property_value t ~at property_name] returns the value of [property_name] for the
+    character after [at].  [at] is a zero-based index into [t]; [property_value] raises
     unless [0 <= at <= length t] (allowing [length] is different than OCaml).
     [(describe-function 'get-text-property)]
     [(Info-goto-node "(elisp)Examining Properties")] *)
-val get_property : t -> at:int -> 'a Property_name.t -> 'a option
+val property_value : t -> at:int -> 'a Property_name.t -> 'a option
 
 (** [(describe-function 'text-properties-at)] *)
-val get_properties : t -> at:int -> Property.t list
+val properties : t -> at:int -> Property.t list
 
 (** [(describe-function 'put-text-property)]
     [(Info-goto-node "(elisp)Changing Properties")]. *)

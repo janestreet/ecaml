@@ -7,13 +7,25 @@ include Value.Make_subtype (struct
     let is_in_subtype = Value.is_string
   end)
 
+let char_code t i =
+  Symbol.funcall2 Q.aref (t |> to_value) (i |> Value.of_int_exn)
+  |> Char_code.of_value_exn
+;;
+
+let set_char_code t i char_code =
+  Symbol.funcall3_i Q.aset
+    (t |> to_value)
+    (i |> Value.of_int_exn)
+    (char_code |> Char_code.to_value)
+;;
+
 let of_utf8_bytes string = string |> Value.of_utf8_bytes |> of_value_exn
 
 let to_utf8_bytes t = t |> to_value |> Value.to_utf8_bytes_exn
 
 let length t = Symbol.funcall1 Q.length (t |> to_value) |> Value.to_int_exn
 
-let concat ts = Symbol.funcallN Q.concat (List.map ts ~f:to_value) |> of_value_exn
+let concat ts = Symbol.funcallN Q.concat (ts : t list :> Value.t list) |> of_value_exn
 
 module Face_spec = struct
   module One = struct
@@ -267,7 +279,7 @@ let propertize t properties =
   |> of_value_exn
 ;;
 
-let get_property t ~at property_name =
+let property_value t ~at property_name =
   let value =
     Symbol.funcall3 Q.get_text_property
       (at |> Value.of_int_exn)
@@ -278,7 +290,7 @@ let get_property t ~at property_name =
   else Some (value |> Property_name.of_value_exn property_name)
 ;;
 
-let get_properties t ~at =
+let properties t ~at =
   Symbol.funcall2 Q.text_properties_at
     (at |> Value.of_int_exn)
     (t |> to_value)

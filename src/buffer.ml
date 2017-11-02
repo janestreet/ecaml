@@ -4,17 +4,9 @@ open! Import
 module Process = Process0
 module Window  = Window0
 
-include Value.Make_subtype (struct
-    let name = "buffer"
-    let here = [%here]
-    let is_in_subtype = Value.is_buffer
-  end)
+include Buffer0
 
-let equal = eq
-
-module Private = struct
-  let current () = Symbol.funcall0 Q.current_buffer |> of_value_exn
-end
+type buffer = t
 
 let is_live t = Generated_bindings.buffer_live_p (t |> to_value)
 
@@ -68,3 +60,42 @@ let displayed_in t =
 ;;
 
 let display t = Symbol.funcall1_i Q.display_buffer (t |> to_value)
+
+let buffer_local_value t (var : _ Var.t) =
+  Symbol.funcall2 Q.buffer_local_value (var |> Var.symbol_as_value) (t |> to_value)
+  |> var.type_.of_value_exn
+;;
+
+let buffer_local_variables t =
+  Symbol.funcall1 Q.buffer_local_variables (t |> to_value)
+  |> Value.to_list_exn ~f:(fun value ->
+    if Value.is_symbol value
+    then (value |> Symbol.of_value_exn, None)
+    else (Value.car_exn value |> Symbol.of_value_exn, Some (Value.cdr_exn value)))
+;;
+
+let find_file_noselect filename =
+  Symbol.funcall1 Q.find_file_noselect (filename |> Value.of_utf8_bytes)
+  |> of_value_exn
+;;
+
+module Which_buffers = struct
+  type t =
+    | File_visiting
+    | These of (buffer -> bool)
+  [@@deriving sexp_of]
+
+  let to_value = function
+    | File_visiting -> Value.nil
+    | These f ->
+      Function.create [%here] ~args:[]
+        (fun _ -> f (Current_buffer0.get ()) |> Value.of_bool)
+      |> Function.to_value
+  ;;
+end
+
+let save_some ?(query = true) ?(which_buffers = Which_buffers.File_visiting) () =
+  Symbol.funcall2_i Q.save_some_buffers
+    (not query |> Value.of_bool)
+    (which_buffers |> Which_buffers.to_value)
+;;

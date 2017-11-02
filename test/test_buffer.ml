@@ -147,3 +147,110 @@ let%expect_test "[display]" =
     [%expect {|
       ("#<window 4 on *temp-buffer*>") |}]);
 ;;
+
+let%expect_test "[buffer_local_value]" =
+  let t = create ~name:"b" in
+  let var = int_var "v" in
+  Var.make_buffer_local_always var;
+  Current_buffer.set_value var 13;
+  Current_buffer.set_temporarily t ~f:(fun () ->
+    Current_buffer.set_value var 14);
+  print_s [%sexp (buffer_local_value (Current_buffer.get ()) var : int)];
+  [%expect {|
+    13 |}];
+  print_s [%sexp (buffer_local_value t var : int)];
+  [%expect {|
+    14 |}];
+;;
+
+let%expect_test "[buffer_local_variables]" =
+  let var = int_var "s" in
+  Var.make_buffer_local_always var;
+  Current_buffer.set_temporarily_to_temp_buffer (fun () ->
+    show_current_buffer_local_variables ();
+    [%expect {|
+      ((buffer-auto-save-file-format (_))
+       (buffer-auto-save-file-name   (_))
+       (buffer-backed-up             (_))
+       (buffer-display-count         (_))
+       (buffer-display-time          (_))
+       (buffer-file-format           (_))
+       (buffer-file-name             (_))
+       (buffer-file-truename         (_))
+       (buffer-invisibility-spec     (_))
+       (buffer-read-only             (_))
+       (buffer-saved-size            (_))
+       (default-directory            (_))
+       (enable-multibyte-characters  (_))
+       (major-mode                   (_))
+       (mark-active                  (_))
+       (mode-name                    (_))
+       (point-before-scroll          (_))) |}];
+    Current_buffer.set_value var 14;
+    show_current_buffer_local_variables ();
+    [%expect {|
+      ((buffer-auto-save-file-format (_))
+       (buffer-auto-save-file-name   (_))
+       (buffer-backed-up             (_))
+       (buffer-display-count         (_))
+       (buffer-display-time          (_))
+       (buffer-file-format           (_))
+       (buffer-file-name             (_))
+       (buffer-file-truename         (_))
+       (buffer-invisibility-spec     (_))
+       (buffer-read-only             (_))
+       (buffer-saved-size            (_))
+       (default-directory            (_))
+       (enable-multibyte-characters  (_))
+       (major-mode                   (_))
+       (mark-active                  (_))
+       (mode-name                    (_))
+       (point-before-scroll          (_))
+       (s                            (_))) |}]);
+;;
+
+let%expect_test "[find_file_noselect] on a file that exists" =
+  let t = find_file_noselect "test_buffer.ml" in
+  show t;
+  [%expect {|
+    "#<buffer test_buffer.ml>" |}];
+  kill t;
+;;
+
+let%expect_test "[find_file_noselect] on a non-existent file" =
+  let t = find_file_noselect "zzz" in
+  show t;
+  [%expect {|
+    "#<buffer zzz>" |}];
+  kill t;
+;;
+
+let%expect_test "[save_some]" =
+  let restore = unstage (ignore_stderr ()) in
+  let save_some ?which_buffers () = save_some () ?which_buffers ~query:false in
+  save_some ();
+  let file = "z.tmp" in
+  let is_modified () = print_s [%sexp (Current_buffer.is_modified () : bool)] in
+  Selected_window.find_file file;
+  Point.insert "foo";
+  save_some ();
+  is_modified ();
+  [%expect {|
+    false |}];
+  Current_buffer.erase ();
+  save_some () ~which_buffers:(These (fun b -> print_s [%sexp (b : Buffer.t)]; false));
+  [%expect {|
+    "#<buffer z.tmp>" |}];
+  is_modified ();
+  [%expect {|
+    true |}];
+  save_some () ~which_buffers:(These (fun b -> print_s [%sexp (b : Buffer.t)]; true));
+  [%expect {|
+    "#<buffer z.tmp>" |}];
+  is_modified ();
+  [%expect {|
+    false |}];
+  Current_buffer.kill ();
+  File.delete file;
+  restore ();
+;;

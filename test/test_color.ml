@@ -101,3 +101,55 @@ let%expect_test "[rgb_exn] raise" =
   [%expect {|
     ("[Color.rgb_exn] got non-displayable color" (color zzz)) |}];
 ;;
+
+let%expect_test "[of_rgb]" =
+  let max = 1 lsl 16 - 1 in
+  List.iter
+    ~f:(fun (r, g, b) -> show (of_rgb { r; g; b }))
+    [ 0 ,   0   , 0
+    ; max , 0   , 0
+    ; 0 ,   max , 0
+    ; 0,    0   , max
+    ; max , max , max ];
+  [%expect {|
+    ((color        #000000000000)
+     (is_gray      true)
+     (is_defined   true)
+     (is_supported true)
+     (rgb (
+       (r 0)
+       (g 0)
+       (b 0))))
+    ((color        #FFFF00000000)
+     (is_gray      false)
+     (is_defined   true)
+     (is_supported true)
+     (rgb (
+       (r 65_535)
+       (g 0)
+       (b 0))))
+    ((color        #0000FFFF0000)
+     (is_gray      false)
+     (is_defined   true)
+     (is_supported true)
+     (rgb (
+       (r 0)
+       (g 65_535)
+       (b 0))))
+    ((color        #00000000FFFF)
+     (is_gray      false)
+     (is_defined   true)
+     (is_supported true)
+     (rgb (
+       (r 0)
+       (g 0)
+       (b 65_535))))
+    ((color        #FFFFFFFFFFFF)
+     (is_gray      true)
+     (is_defined   true)
+     (is_supported true)
+     (rgb (
+       (r 65_535)
+       (g 65_535)
+       (b 65_535)))) |}];
+;;

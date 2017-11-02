@@ -26,3 +26,6 @@ val split_vertically_exn : unit -> unit
 
 (** [(describe-function 'find-file)] *)
 val find_file : string -> unit
+
+(** [(describe-function 'view-file)] *)
+val view_file : string -> unit

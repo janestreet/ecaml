@@ -1,10 +1,19 @@
 open! Core_kernel
 open! Import
 
-type t = string [@@deriving sexp_of]
+type t = string [@@deriving compare, sexp_of]
+
+let equal = [%compare.equal: t]
 
 let of_value_exn = Value.to_utf8_bytes_exn
 let to_value     = Value.of_utf8_bytes
+
+let type_ =
+  { Value.Type.
+    of_value_exn
+  ; name = [%message "filename"]
+  ; to_value }
+;;
 
 let is_absolute t =
   Symbol.funcall1 Q.file_name_absolute_p (t |> to_value) |> Value.to_bool

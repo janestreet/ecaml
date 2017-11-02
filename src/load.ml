@@ -1,10 +1,9 @@
 open! Core_kernel
 open! Import
 
-let get_path () =
-  Symbol.value_exn Q.load_path
-  |> Value.to_list_exn ~f:Value.to_utf8_bytes_exn
-;;
+let load_path = Var.create Q.load_path Value.Type.(list string)
+
+let path () = Current_buffer.value_exn load_path
 
 let load ?(message = true) filename =
   Symbol.funcall3_i Q.load

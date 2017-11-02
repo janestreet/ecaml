@@ -5,9 +5,7 @@
 open! Core_kernel
 open! Import
 
-type t [@@deriving sexp_of]
-
-include Value.Subtype with type t := t
+include Value.Subtype
 
 val of_name : string -> t
 val to_name : t -> string
@@ -49,6 +47,11 @@ module RGB : sig
     ; g : int
     ; b : int }
   [@@deriving sexp_of]
+
+  val max_value : int
+  val min_value : int
+
+  val map : t -> f:(int -> int) -> t
 end
 
 (** [(describe-function 'color-values)] *)
@@ -56,3 +59,5 @@ val rgb_exn
   :  ?on:Frame.t  (** default is selected frame *)
   -> t
   -> RGB.t
+
+val of_rgb : RGB.t -> t

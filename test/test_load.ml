@@ -3,7 +3,7 @@ open! Import
 open! Load
 
 let%expect_test "[load_path]" =
-  print_s [%sexp (List.tl_exn (get_path ()) : string list)];
+  print_s [%sexp (List.tl_exn (path ()) : string list)];
   [%expect {|
     (/j/office/app/emacs/builds/25.2/share/emacs/25.2/lisp
      /j/office/app/emacs/builds/25.2/share/emacs/25.2/lisp/vc
@@ -37,7 +37,7 @@ let%expect_test "[load]" =
   Current_buffer.save ();
   Current_buffer.kill ();
   load file ~message:false;
-  print_s [%sexp ("zzz" |> Symbol.intern |> Symbol.value_exn : Value.t)];
+  print_s [%sexp (Current_buffer.value_exn (Var.create ("zzz" |> Symbol.intern) Value.Type.int) : int)];
   [%expect {|
     13 |}];
 ;;

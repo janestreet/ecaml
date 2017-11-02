@@ -19,8 +19,7 @@ val set : Buffer.t -> unit
 
 (** [(describe-variable 'default-directory)]
     [(Info-goto-node "(elisp)File Name Expansion")] *)
-val directory : unit -> Filename.t
-val set_directory : Filename.t -> unit
+val directory : Filename.t Var.t
 
 (** [(describe-variable 'buffer-undo-list)]
     [(Info-goto-node "(elisp)Undo")]
@@ -28,6 +27,15 @@ val set_directory : Filename.t -> unit
 val undo_list : unit -> Value.t
 val is_undo_enabled : unit -> bool
 val set_undo_enabled : bool -> unit
+
+(** [(describe-function 'buffer-file-name)]
+    [(Info-goto-node "(elisp)Buffer File Name")] *)
+val file_name     : unit -> string option
+val file_name_exn : unit -> string
+
+(** [(describe-variable 'buffer-file-name)]
+    [(Info-goto-node "(elisp)Buffer File Name")] *)
+val file_name_var : Filename.t Var.t
 
 (** [(describe-function 'undo-boundary)]
     [(Info-goto-node "(elisp)Undo")] *)
@@ -44,16 +52,90 @@ val set_temporarily : Buffer.t -> f:(unit -> 'a) -> 'a
     current buffer set to the temporary buffer.  [(describe-function 'with-temp-buffer)]. *)
 val set_temporarily_to_temp_buffer : (unit -> 'a) -> 'a
 
+(** [(describe-function 'bury-buffer)]
+    [(Info-goto-node "(elisp)Buffer List")] *)
+val bury : unit -> unit
+
 (** [(describe-function 'buffer-modified-p)] *)
 val is_modified : unit -> bool
 
 (** [(describe-function 'set-buffer-modified-p)] *)
 val set_modified : bool -> unit
 
+(** [(describe-variable 'fill-column)]
+    [(Info-goto-node "(elisp)Margins")] *)
+val fill_column : int Var.t
+
+(** [(describe-variable 'paragraph-start)]
+    [(Info-goto-node "(elisp)Standard Regexps ")] *)
+val paragraph_start : Regexp.t Var.t
+
+(** [(describe-variable 'paragraph-separate)]
+    [(Info-goto-node "(elisp)Standard Regexps ")] *)
+val paragraph_separate : Regexp.t Var.t
+
 (** [(describe-variable 'buffer-read-only)]
     [(Info-goto-node "(elisp)Read-Only Buffers")] *)
-val is_read_only : unit -> bool
-val set_read_only : bool -> unit
+val read_only : bool Var.t
+
+(** [(describe-variable 'transient-mark-mode)]
+    [(describe-function 'transient-mark-mode)]
+    [(Info-goto-node "(elisp)The Mark")] *)
+val transient_mark_mode : bool Var.t
+
+(** [(describe-variable 'major-mode)]
+    [(Info-goto-node "(elisp)Auto Major Mode")] *)
+val major_mode : unit -> Major_mode.t
+
+val change_major_mode : Major_mode.t -> unit
+
+val value        : 'a Var.t -> 'a option (** [(describe-function 'symbol-value)   ] *)
+val value_exn    : 'a Var.t -> 'a        (** [(describe-function 'symbol-value)   ] *)
+
+(** [(describe-function 'set)]. *)
+val set_value : 'a Var.t -> 'a -> unit
+
+(** [(describe-function 'makunbound)] *)
+val clear_value : 'a Var.t -> unit
+
+val set_value_temporarily : 'a Var.t -> 'a -> f:(unit -> 'b) -> 'b
+
+val set_values_temporarily : Var.And_value.t list -> f:(unit -> 'a) -> 'a
+
+(** [(describe-function 'bound-and-true-p]. *)
+val has_non_null_value : _ Var.t -> bool
+
+(** [(describe-function 'make-local-variable)]
+    [(Info-goto-node "(elisp)Creating Buffer-Local")] *)
+val make_buffer_local : _ Var.t -> unit
+
+(** [(describe-function 'local-variable-p)]
+    [(Info-goto-node "(elisp)Creating Buffer-Local")] *)
+val is_buffer_local : _ Var.t -> bool
+
+(** [(describe-function 'local-variable-if-set-p)]
+    [(Info-goto-node "(elisp)Creating Buffer-Local")] *)
+val is_buffer_local_if_set : _ Var.t -> bool
+
+(** [(describe-function 'buffer-local-variables)]
+    [(Info-goto-node "(elisp)Creating Buffer-Local")] *)
+val buffer_local_variables : unit -> (Symbol.t * Value.t option) list
+
+(** [(describe-function 'kill-local-variable)]
+    [(Info-goto-node "(elisp)Creating Buffer-Local")] *)
+val kill_buffer_local : _ Var.t -> unit
+
+(** [(describe-function 'current-local-map)]
+    [(Info-goto-node "(elisp)Controlling Active Maps")] *)
+val local_keymap : unit -> Keymap.t option
+
+(** [(describe-function 'use-local-map)]
+    [(Info-goto-node "(elisp)Controlling Active Maps")] *)
+val set_local_keymap : Keymap.t -> unit
+
+(** [(describe-function 'current-minor-mode-maps)]
+    [(Info-goto-node "(elisp)Controlling Active Maps")] *)
+val minor_mode_keymaps : unit -> Keymap.t list
 
 (** [(describe-function 'buffer-substring)]
     [(describe-function 'buffer-substring-no-properties)] *)
@@ -74,6 +156,13 @@ val save : unit -> unit
 
 (** [(describe-function 'erase-buffer)] *)
 val erase : unit -> unit
+
+(** [(describe-function 'delete-region)]
+    [(Info-goto-node "(elisp)Deletion")] *)
+val delete_region
+  :  start : Position.t
+  -> end_  : Position.t
+  -> unit
 
 (** [(describe-function 'kill-region)] *)
 val kill_region
@@ -168,7 +257,7 @@ val set_marker_position : Marker.t -> Position.t -> unit
 
 (** [(describe-function 'mark-marker)]
     [(Info-goto-node "(elisp)The Mark")] *)
-val get_mark : unit -> Marker.t
+val mark : unit -> Marker.t
 
 (** [(describe-function 'set-mark)]
     [(Info-goto-node "(elisp)The Mark")] *)
@@ -182,22 +271,54 @@ val mark_is_active : unit -> bool
     [(Info-goto-node "(elisp)The Mark")] *)
 val deactivate_mark : unit -> unit
 
-module Minor_mode : sig
-  type t =
-    { function_name : Symbol.t
-    ; variable_name : Symbol.t }
-  [@@deriving sexp_of]
+(** [(describe-function 'char-syntax)]
+    [(Info-goto-node "(elisp)Syntax Table Functions")] *)
+val syntax_class : Char_code.t -> Syntax_table.Class.t
 
-  val is_enabled : t -> bool
+(** [(describe-function 'syntax-table)]
+    [(Info-goto-node "(elisp)Syntax Table Functions")] *)
+val syntax_table : unit -> Syntax_table.t
 
-  val disable : t -> unit
-  val enable  : t -> unit
+(** [(describe-function 'set-syntax-table)]
+    [(Info-goto-node "(elisp)Syntax Table Functions")] *)
+val set_syntax_table : Syntax_table.t -> unit
 
-  (** [(describe-variable 'buffer-read-only)]
-      [(describe-function 'read-only-mode)] *)
-  val read_only : t
+(** [(describe-function 'flush-lines)] *)
+val delete_lines_matching
+  :  ?start : Position.t (** default is [Point.min ()] *)
+  -> ?end_  : Position.t (** default is [Point.max ()] *)
+  -> Regexp.t
+  -> unit
 
-  (** [(describe-variable 'view-mode)]
-      [(describe-function 'view-mode)] *)
-  val view : t
-end
+(** [(describe-function 'sort-lines)]
+    [(Info-goto-node "(elisp)Sorting")] *)
+val sort_lines
+  :  ?start : Position.t (** default is [Point.min ()] *)
+  -> ?end_  : Position.t (** default is [Point.max ()] *)
+  -> unit
+  -> unit
+
+(** [(describe-function 'delete-duplicate-lines)] *)
+val delete_duplicate_lines
+  :  ?start : Position.t (** default is [Point.min ()] *)
+  -> ?end_  : Position.t (** default is [Point.max ()] *)
+  -> unit
+  -> unit
+
+(** [(describe-function 'indent-region)]
+    [(Info-goto-node "(elisp)Region Indent")] *)
+val indent_region
+  :  ?start : Position.t (** default is [Point.min ()] *)
+  -> ?end_  : Position.t (** default is [Point.max ()] *)
+  -> unit
+  -> unit
+
+(** [(describe-function 'revert-buffer)]
+    [(Info-goto-node "(elisp)Reverting")] *)
+val revert
+  :  ?confirm : bool  (** default is [false] *)
+  -> unit
+  -> unit
+
+(** [(describe-variable 'revert-buffer-function)] *)
+val set_revert_buffer_function : (confirm : bool -> unit) -> unit

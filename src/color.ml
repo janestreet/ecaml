@@ -25,7 +25,7 @@ let yellow  = "yellow"  |> of_name
 let frame option =
   (match option with
    | Some x -> x
-   | None -> Frame.get_selected ())
+   | None -> Frame.selected ())
   |> Frame.to_value
 ;;
 
@@ -47,6 +47,18 @@ module RGB = struct
     ; g : int
     ; b : int }
   [@@deriving sexp_of]
+
+  let min_value = 0
+
+  let max_value = 1 lsl 16 - 1
+
+  let clamp i = Int.max min_value (Int.min max_value i)
+
+  let map { r; g; b } ~f =
+    { r = f r
+    ; g = f g
+    ; b = f b }
+  ;;
 end
 
 let elt = Generated_bindings.elt_returning_int
@@ -61,4 +73,9 @@ let rgb_exn ?on t : RGB.t =
   { r = elt 0
   ; g = elt 1
   ; b = elt 2 }
+;;
+
+let of_rgb { RGB. r; g; b } =
+  let p c = sprintf "%04X" (RGB.clamp c) in
+  of_name (concat [ "#"; p r; p g; p b ])
 ;;

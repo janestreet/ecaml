@@ -13,13 +13,13 @@
 open! Core_kernel
 open! Import
 
-type t [@@deriving sexp_of]
+include Value.Subtype
 
-include Equal.S       with type t := t
-include Value.Subtype with type t := t
+include Comparable.S_plain with type t := t
 
 val of_int_exn : int -> t
 val to_int : t -> int
 
 val add : t -> int -> t
 val sub : t -> int -> t
+val diff : t -> t -> int

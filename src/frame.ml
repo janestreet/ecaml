@@ -27,6 +27,6 @@ let all_visible () =
 
 let all_live () = Symbol.funcall0 Q.frame_list |> Value.to_list_exn ~f:of_value_exn
 
-let get_selected () = Symbol.funcall0 Q.selected_frame |> of_value_exn
+let selected () = Symbol.funcall0 Q.selected_frame |> of_value_exn
 
 let set_selected t = Symbol.funcall1_i Q.select_frame (t |> to_value)

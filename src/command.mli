@@ -3,9 +3,7 @@
 open! Core_kernel
 open! Import
 
-type t [@@deriving sexp_of]
-
-include Value.Subtype with type t := t
+include Value.Subtype
 
 (** [(Info-goto-node "(elisp)Prefix Command Arguments")] *)
 module Raw_prefix_argument : sig
@@ -21,7 +19,7 @@ module Raw_prefix_argument : sig
 
   (** [(describe-variable 'current-prefix-arg)]
       [(Info-goto-node "(elisp)Prefix Command Arguments")] *)
-  val for_current_command : unit -> t
+  val for_current_command : t Var.t
 
   (** [(describe-function 'prefix-numeric-value)]
       [(Info-goto-node "(elisp)Prefix Command Arguments")] *)

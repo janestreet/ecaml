@@ -6,11 +6,15 @@
 open! Core_kernel
 open! Import
 
-type t = string [@@deriving sexp_of]
+type t = string [@@deriving compare, sexp_of]
+
+include Equal.S with type t := t
 
 val of_value_exn : Value.t -> t
 
 val to_value : t -> Value.t
+
+val type_ : t Value.Type.t
 
 (** [(describe-function 'file-name-directory)]
     [(Info-goto-node "(elisp)File Name Components")] *)

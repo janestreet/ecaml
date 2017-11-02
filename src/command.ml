@@ -1,6 +1,8 @@
 open! Core_kernel
 open! Import
 
+module Current_buffer = Current_buffer0
+
 include Value.Make_subtype (struct
     let name = "command"
     let here = [%here]
@@ -37,7 +39,14 @@ module Raw_prefix_argument = struct
            "[Raw_prefix_argument.of_value] got unexpected value" (value : Value.t)]
   ;;
 
-  let for_current_command () = Symbol.value_exn Q.current_prefix_arg |> of_value_exn
+  let type_ =
+    { Value.Type.
+      name = [%message "raw_prefix_arg"]
+    ; of_value_exn
+    ; to_value }
+  ;;
+
+  let for_current_command = Var.create Q.current_prefix_arg type_
 
   let numeric_value t =
     Symbol.funcall1 Q.prefix_numeric_value (t |> to_value) |> Value.to_int_exn
@@ -45,7 +54,6 @@ module Raw_prefix_argument = struct
 end
 
 let call_interactively value raw_prefix_argument =
-  Symbol.set_value Q.current_prefix_arg
-    (raw_prefix_argument |> Raw_prefix_argument.to_value);
+  Current_buffer.set_value Raw_prefix_argument.for_current_command raw_prefix_argument;
   Symbol.funcall1_i Q.call_interactively value;
 ;;

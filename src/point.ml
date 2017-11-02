@@ -1,6 +1,8 @@
 open! Core_kernel
 open! Import
 
+module Current_buffer = Current_buffer0
+
 let get () = Symbol.funcall0 Q.point |> Position.of_value_exn
 
 let goto_char t = Symbol.funcall1_i Q.goto_char (Position.to_value t)
@@ -8,12 +10,17 @@ let goto_char t = Symbol.funcall1_i Q.goto_char (Position.to_value t)
 let min () = Generated_bindings.point_min () |> Position.of_int_exn
 let max () = Generated_bindings.point_max () |> Position.of_int_exn
 
+let goto_max () = goto_char (max ())
+let goto_min () = goto_char (min ())
+
 let beginning_of_line () = Symbol.funcall0_i Q.beginning_of_line
 let end_of_line       () = Symbol.funcall0_i Q.end_of_line
 
 let forward_line n = Symbol.funcall1_i Q.forward_line (n |> Value.of_int_exn)
 
 let backward_line n = forward_line (- n)
+
+let goto_line l = goto_min (); forward_line (l - 1)
 
 let forward_char_exn n = Symbol.funcall1_i Q.forward_char  (n |> Value.of_int_exn)
 
@@ -26,7 +33,7 @@ let forward_word  n = ignore (Generated_bindings.forward_word  n : bool)
 let backward_word n = ignore (Generated_bindings.backward_word n : bool)
 
 let line_number =
-  Feature.require Q.simple;
+  Feature0.require Q.simple;
   fun () ->
     Symbol.funcall0 Q.line_number_at_pos |> Value.to_int_exn
 ;;
@@ -66,7 +73,7 @@ let handle_last_match ?(update_last_match = update_last_match_default) f =
   else (
     let result = f () in
     Regexp.Last_match.Private.Location.last :=
-      if result then Buffer (Buffer.Private.current ()) else No_match;
+      if result then Buffer (Current_buffer.get ()) else No_match;
     result)
 ;;
 

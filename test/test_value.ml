@@ -168,7 +168,7 @@ let%expect_test "[car_exn]" =
 let%expect_test "[car_exn] raise" =
   show_raise (fun () -> car_exn (13 |> of_int_exn));
   [%expect {|
-    (raised (signal (symbol wrong-type-argument) (data (listp 13)))) |}];
+    (raised (wrong-type-argument (listp 13))) |}];
 ;;
 
 let%expect_test "[cdr_exn]" =
@@ -180,7 +180,7 @@ let%expect_test "[cdr_exn]" =
 let%expect_test "[cdr_exn] raise" =
   show_raise (fun () -> cdr_exn (13 |> of_int_exn));
   [%expect {|
-    (raised (signal (symbol wrong-type-argument) (data (listp 13)))) |}];
+    (raised (wrong-type-argument (listp 13))) |}];
 ;;
 
 let%expect_test "[equal]" =
@@ -246,19 +246,19 @@ let%expect_test "[to_list_exn] raise" =
 let%expect_test "[to_float_exn] raise" =
   require_does_raise [%here] (fun () -> nil |> to_float_exn);
   [%expect {|
-    (signal (symbol wrong-type-argument) (data (floatp nil))) |}];
+    (wrong-type-argument (floatp nil)) |}];
 ;;
 
 let%expect_test "[to_int_exn] raise" =
   require_does_raise [%here] (fun () -> nil |> to_int_exn);
   [%expect {|
-    (signal (symbol wrong-type-argument) (data (integerp nil))) |}];
+    (wrong-type-argument (integerp nil)) |}];
 ;;
 
 let%expect_test "[to_utf8_bytes_exn] raise" =
   require_does_raise [%here] (fun () -> nil |> to_utf8_bytes_exn);
   [%expect {|
-    (signal (symbol wrong-type-argument) (data (stringp nil))) |}];
+    (wrong-type-argument (stringp nil)) |}];
 ;;
 
 module Make_subtype = struct
@@ -412,3 +412,53 @@ let%expect_test "[funcallN_array{,_i}] with many arguments" =
   [%expect {|
     (num_args 3_500_000) |}];
 ;;
+
+module Type = struct
+  open Type
+
+  let%expect_test "[sexp_of_t]" =
+    print_s [%sexp (int : _ t)];
+    [%expect {|
+      int |}];
+    print_s [%sexp (list int : _ t)];
+    [%expect {|
+      (list int) |}];
+  ;;
+
+  let%expect_test "round trip" =
+    let test a t =
+      let v1 = a |> t.to_value in
+      let a2 = v1 |> t.of_value_exn in
+      let v2 = a2 |> t.to_value in
+      require [%here] (Value.equal v1 v2);
+      print_s [%message (v1 : Value.t) (v2 : Value.t)] in
+    test true bool;
+    [%expect {|
+      ((v1 t)
+       (v2 t)) |}];
+    test false bool;
+    [%expect {|
+      ((v1 nil)
+       (v2 nil)) |}];
+    test 13 int;
+    [%expect {|
+      ((v1 13)
+       (v2 13)) |}];
+    test "foo" string;
+    [%expect {|
+      ((v1 foo)
+       (v2 foo)) |}];
+    test [] (list int);
+    [%expect {|
+      ((v1 nil)
+       (v2 nil)) |}];
+    test [ 13; 14 ] (list int);
+    [%expect {|
+      ((v1 (13 14))
+       (v2 (13 14))) |}];
+    test [ [ "foo" ]] (list (list string));
+    [%expect {|
+      ((v1 ((foo)))
+       (v2 ((foo)))) |}];
+  ;;
+end

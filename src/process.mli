@@ -88,13 +88,39 @@ end
 
 (** [(Info-goto-node "(elisp)Synchronous Processes")]
     [(describe-function 'call-process)] *)
-val call_exn
-  :  ?input               : Call.Input.t   (** default is [Dev_null] *)
-  -> ?output              : Call.Output.t  (** default is [Dev_null] *)
-  -> ?redisplay_on_output : bool           (** default is [false] *)
+val call_result_exn
+  :  ?input               : Call.Input.t         (** default is [Dev_null] *)
+  -> ?output              : Call.Output.t        (** default is [Dev_null] *)
+  -> ?redisplay_on_output : bool                 (** default is [false] *)
+  -> ?working_directory   : Working_directory.t  (** default is [Root] *)
   -> string
   -> string list
   -> Call.Result.t
+
+(** [call_exn] runs [call_result_exn], strips whitespace from stdout+stderr, and returns
+    the resulting string, raising on nonzero exit. *)
+val call_exn
+  :  ?input             : Call.Input.t         (** default is [Dev_null] *)
+  -> ?working_directory : Working_directory.t  (** default is [Root] *)
+  -> string
+  -> string list
+  -> string
+
+val shell_command_result
+  :  ?input               : Call.Input.t         (** default is [Dev_null] *)
+  -> ?output              : Call.Output.t        (** default is [Dev_null] *)
+  -> ?redisplay_on_output : bool                 (** default is [false] *)
+  -> ?working_directory   : Working_directory.t  (** default is [Root] *)
+  -> string
+  -> Call.Result.t
+
+(** [shell_command_exn command] runs [command] in a subshell, strips whitespace from
+    stdout+stderr, and returns the resulting string, raising on nonzero exit. *)
+val shell_command_exn
+  :  ?input             : Call.Input.t         (** default is [Dev_null] *)
+  -> ?working_directory : Working_directory.t  (** default is [Root] *)
+  -> string
+  -> string
 
 (** [(Info-goto-node "(elisp)Network Servers")]
     [(describe-function 'make-network-process)] *)

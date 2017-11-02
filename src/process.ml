@@ -163,16 +163,53 @@ module Call = struct
   end
 end
 
-let call_exn
+let call_result_exn
       ?(input = Call.Input.Dev_null)
       ?(output = Call.Output.Dev_null)
       ?(redisplay_on_output = false)
+      ?(working_directory = Working_directory.Root)
       prog args =
-  Symbol.funcallN Q.call_process
-    ([ prog |> Value.of_utf8_bytes
-     ; input |> Call.Input.to_value
-     ; output |> Call.Output.to_value
-     ; redisplay_on_output |> Value.of_bool ]
-     @ (args |> List.map ~f:Value.of_utf8_bytes))
-  |> Call.Result.of_value_exn
+  Working_directory.within working_directory ~f:(fun () ->
+    Symbol.funcallN Q.call_process
+      ([ prog |> Value.of_utf8_bytes
+       ; input |> Call.Input.to_value
+       ; output |> Call.Output.to_value
+       ; redisplay_on_output |> Value.of_bool ]
+       @ (args |> List.map ~f:Value.of_utf8_bytes))
+    |> Call.Result.of_value_exn)
+;;
+
+let call_exn ?input ?working_directory prog args =
+  Current_buffer.set_temporarily_to_temp_buffer (fun () ->
+    match
+      call_result_exn prog args ?input ?working_directory
+        ~output:Before_point_in_current_buffer
+    with
+    | Exit_status 0 ->
+      Current_buffer.contents ()
+      |> Text.to_utf8_bytes
+      |> String.strip
+    | result ->
+      raise_s [%message
+        "[Process.call_exn] failed"
+          (prog : string)
+          (args : string list)
+          (result : Call.Result.t)
+          ~output:(Current_buffer.contents () : Text.t)])
+;;
+
+let bash = "/bin/bash"
+
+let shell_command_result
+      ?input
+      ?output
+      ?redisplay_on_output
+      ?working_directory
+      command =
+  call_result_exn bash [ "-c"; command ]
+    ?input ?output ?redisplay_on_output ?working_directory;
+;;
+
+let shell_command_exn ?input ?working_directory command =
+  call_exn bash [ "-c"; command ] ?input ?working_directory
 ;;

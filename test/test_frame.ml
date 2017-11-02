@@ -18,18 +18,18 @@ let%expect_test "[all_visible]" =
     "#<frame F1 0xbd9200>" |}];
 ;;
 
-let%expect_test "[get_selected]" =
-  show (get_selected ());
+let%expect_test "[selected]" =
+  show (selected ());
   [%expect {|
     "#<frame F1 0xbd9200>" |}];
 ;;
 
 let%expect_test "[set_selected]" =
-  set_selected (get_selected ());
+  set_selected (selected ());
 ;;
 
 let%expect_test "accessors" =
-  let t = get_selected () in
+  let t = selected () in
   print_s [%message
     ""
       ~num_cols:    (num_cols     t : int)
@@ -44,7 +44,7 @@ let%expect_test "accessors" =
 ;;
 
 let%expect_test "accessors" =
-  let t = get_selected () in
+  let t = selected () in
   print_s [%message
     ""
       ~parameters:(parameters t : (Symbol.t * Value.t) list)];

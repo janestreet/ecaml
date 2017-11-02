@@ -1,9 +1,11 @@
 open! Core_kernel
 open! Import
 
-type t = Value.t [@@deriving sexp_of]
-
-let to_value = Fn.id
+include Value.Make_subtype (struct
+    let name = "function"
+    let here = [%here]
+    let is_in_subtype = Value.is_function
+  end)
 
 module Fn = struct
   type t = Value.t array -> Value.t [@@deriving sexp_of]
@@ -39,13 +41,8 @@ let create =
         Emacs with arguments [args], calls [dispatch_function function_id args].
 
         - An Emacs user_ptr whose finalizer calls [free_function function_id]. *)
-    external make_function_internal : string -> Function_id.t -> t * t
+    external make_function_internal : string -> Function_id.t -> Value.t * Value.t
       = "ecaml_make_function"
-    (** [non_local_exit_signal] sets a [pending_error] flag in the Emacs environment that
-        causes it to, after our C code returns to it, signal instead of returning a
-        value. *)
-    external non_local_exit_signal : Symbol.t -> Value.t -> unit =
-      "ecaml_non_local_exit_signal"
   end in
   let open M in
   Ecaml_callback.(register free_function)
@@ -63,10 +60,7 @@ let create =
         let { Function_table_entry. callback } =
           Hashtbl.find_exn function_table function_id in
         callback args
-      with exn ->
-        non_local_exit_signal Q.error
-          (Value.list [ exn |> Exn.to_string |> Value.of_utf8_bytes ]);
-        Value.nil);
+      with exn -> Value.Expert.non_local_exit_signal exn; Value.nil);
   fun ?docstring ?interactive ?optional_args ?rest_arg here ~args callback ->
     let function_id = Function_id.create () in
     Hashtbl.set function_table ~key:function_id ~data:{ callback };
@@ -97,27 +91,21 @@ let create =
       here
       ~args
       ~body:(F.progn
-               [ sentinel |> F.of_value
+               [ sentinel |> F.quote
                ; F.list
                    ([ Q.apply |> F.symbol
-                    ; emacs_function |> F.of_value ]
+                    ; emacs_function |> F.quote ]
                     @ (List.map ~f:F.symbol
                          (args
                           @ ( optional_args |> Option.value ~default:[])
                           @ [ rest_arg      |> Option.value ~default:Q.nil ])))])
-    |> F.to_value
-;;
-
-let defuns = ref []
-
-let get_and_clear_defuns () =
-  let result = !defuns in
-  defuns := [];
-  result
+    |> F.eval
+    |> of_value_exn
 ;;
 
 let defun ?docstring ?interactive ?optional_args ?rest_arg here ~args symbol f =
-  defuns := (here, symbol) :: !defuns;
+  Load_history.add_entry here (Fun symbol);
   Symbol.set_function symbol
-    (create ?docstring ?interactive ?optional_args ?rest_arg here ~args f)
+    (create ?docstring ?interactive ?optional_args ?rest_arg here ~args f
+     |> to_value);
 ;;

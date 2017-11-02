@@ -5,9 +5,10 @@ open Value_intf
 
 include Value0
 
+type value = t
+
 module type Funcall          = Funcall          with type value := t
 module type Make_subtype_arg = Make_subtype_arg with type value := t
-module type Subtype          = Subtype          with type value := t
 
 module Emacs_value = struct
   type nonrec t = t
@@ -41,16 +42,14 @@ external non_local_exit_get_and_clear : unit -> Funcall_exit.t =
   "ecaml_non_local_exit_get_and_clear"
 ;;
 
-(* Exposed for use in generated bindings *)
-module Expert = struct
-  let raise_if_emacs_signaled () =
-    match non_local_exit_get_and_clear () with
-    | Return -> ()
-    | Signal (symbol, data)  -> raise_s [%message "signal" (symbol : t) (data  : t)]
-    | Throw  (tag,    value) -> raise_s [%message "throw"  (tag    : t) (value : t)]
-  ;;
-end
-include Expert
+exception Elisp_signal of { symbol : t; data : t }
+
+let raise_if_emacs_signaled () =
+  match non_local_exit_get_and_clear () with
+  | Return -> ()
+  | Signal (symbol, data)
+  | Throw  (symbol, data) -> raise (Elisp_signal { symbol; data })
+;;
 
 let wrap_raise1 f a =
   let r = f a in
@@ -82,9 +81,10 @@ module Q = struct
   let cons                   = "cons"                   |> intern
   let consp                  = "consp"                  |> intern
   let equal                  = "equal"                  |> intern
+  let error                  = "error"                  |> intern
+  let eventp                 = "eventp"                 |> intern
   let floatp                 = "floatp"                 |> intern
   let fontp                  = "fontp"                  |> intern
-  let format                 = "format"                 |> intern
   let framep                 = "framep"                 |> intern
   let functionp              = "functionp"              |> intern
   let hash_table_p           = "hash-table-p"           |> intern
@@ -93,11 +93,13 @@ module Q = struct
   let list                   = "list"                   |> intern
   let markerp                = "markerp"                |> intern
   let nil                    = "nil"                    |> intern
+  let prin1_to_string        = "prin1-to-string"        |> intern
   let processp               = "processp"               |> intern
   let stringp                = "stringp"                |> intern
   let symbolp                = "symbolp"                |> intern
   let syntax_table_p         = "syntax-table-p"         |> intern
   let t                      = "t"                      |> intern
+  let timerp                 = "timerp"                 |> intern
   let vectorp                = "vectorp"                |> intern
   let window_configuration_p = "window-configuration-p" |> intern
   let windowp                = "windowp"                |> intern
@@ -290,6 +292,7 @@ let is_array                t = funcall1 Q.arrayp                 t |> to_bool
 let is_buffer               t = funcall1 Q.bufferp                t |> to_bool
 let is_command              t = funcall1 Q.commandp               t |> to_bool
 let is_cons                 t = funcall1 Q.consp                  t |> to_bool
+let is_event                t = funcall1 Q.eventp                 t |> to_bool
 let is_float                t = funcall1 Q.floatp                 t |> to_bool
 let is_font                 t = funcall1 Q.fontp                  t |> to_bool
 let is_frame                t = funcall1 Q.framep                 t |> to_bool
@@ -302,6 +305,7 @@ let is_process              t = funcall1 Q.processp               t |> to_bool
 let is_string               t = funcall1 Q.stringp                t |> to_bool
 let is_symbol               t = funcall1 Q.symbolp                t |> to_bool
 let is_syntax_table         t = funcall1 Q.syntax_table_p         t |> to_bool
+let is_timer                t = funcall1 Q.timerp                 t |> to_bool
 let is_vector               t = funcall1 Q.vectorp                t |> to_bool
 let is_window               t = funcall1 Q.windowp                t |> to_bool
 let is_window_configuration t = funcall1 Q.window_configuration_p t |> to_bool
@@ -324,12 +328,52 @@ let to_list_exn (t : t) ~f =
   loop t []
 ;;
 
+let rec like_sexp : Sexp.t -> t = function
+  | Atom s -> s |> of_utf8_bytes
+  | List sexps -> list (List.map sexps ~f:like_sexp)
+;;
+
+let non_local_exit_signal exn =
+  let module M = struct
+    (** [non_local_exit_signal] sets a [pending_error] flag in the Emacs environment that
+        causes it to, after our C code returns to it, signal instead of returning a
+        value. *)
+    external non_local_exit_signal : t -> t -> unit =
+      "ecaml_non_local_exit_signal"
+  end in
+  let symbol, data =
+    match exn with
+    | Elisp_signal { symbol; data } ->
+      (* This case preserves an Elisp signal as it crosses an OCaml boundary. *)
+      symbol, data
+    | _ -> Q.error, list [ exn |> Exn.sexp_of_t |> like_sexp ] in
+  M.non_local_exit_signal symbol data
+;;
+
 let initialize_module =
   initialize_module;
+  Sexplib.Conv.Exn_converter.add [%extension_constructor Elisp_signal]
+    (function
+      | Elisp_signal { symbol; data } ->
+        if eq symbol Q.error
+        then [%sexp (data : t)]
+        else if is_nil data
+        then [%sexp (symbol : t)]
+        else [%message "" ~_:(symbol : t) ~_:(data : t)]
+      | _ ->
+        (* Reaching this branch indicates a bug in sexplib. *)
+        assert false);
   sexp_of_t_ref := (fun t ->
     let sexp_string =
-      funcall2 Q.format (of_utf8_bytes "%S" (* print as Sexp *)) t
+      funcall1 Q.prin1_to_string t
       |> to_utf8_bytes_exn
+    in
+    let sexp_string =
+      (* Emacs prefixes some values (like buffers, markers, etc) with [#], which then
+         makes the sexp unparseable. So in this case we strip the [#]. *)
+      if String.is_prefix sexp_string ~prefix:"#("
+      then String.chop_prefix_exn sexp_string ~prefix:"#"
+      else sexp_string
     in
     match Sexp.of_string sexp_string with
     | sexp -> sexp
@@ -343,6 +387,55 @@ let initialize_module =
       eprint_s [%message "Ecaml called with no active env"
                            ~backtrace:(Backtrace.get () : Backtrace.t)]);
 ;;
+
+module Type = struct
+  type 'a t =
+    { name         : Sexp.t
+    ; of_value_exn : value -> 'a
+    ; to_value     : 'a -> value }
+
+  let sexp_of_t _ { name; of_value_exn = _; to_value = _ } = name
+
+  let bool =
+    { name         = [%message "bool"]
+    ; of_value_exn = to_bool
+    ; to_value     = of_bool }
+  ;;
+
+  let int =
+    { name         = [%message "int"]
+    ; of_value_exn = to_int_exn
+    ; to_value     = of_int_exn }
+  ;;
+
+  let string =
+    { name         = [%message "string"]
+    ; of_value_exn = to_utf8_bytes_exn
+    ; to_value     = of_utf8_bytes }
+  ;;
+
+  let value =
+    { name         = [%message "value"]
+    ; of_value_exn = Fn.id
+    ; to_value     = Fn.id }
+  ;;
+
+  let list t =
+    { name         = [%message "list" ~_:(t.name : Sexp.t)]
+    ; of_value_exn = to_list_exn ~f:t.of_value_exn
+    ; to_value     = fun l -> list (List.map l ~f:t.to_value) }
+  ;;
+
+  let option t =
+    { name         = [%message "option" ~_:(t.name : Sexp.t)]
+    ; of_value_exn = (fun v -> if is_nil v then None else Some (v |> t.of_value_exn))
+    ; to_value     = (function None -> nil | Some v -> v |> t.to_value) }
+  ;;
+end
+
+module type Subtype = Subtype
+  with type value := t
+  with type 'a type_ := 'a Type.t
 
 module Make_subtype (M : Make_subtype_arg) = struct
   open M
@@ -358,6 +451,8 @@ module Make_subtype (M : Make_subtype_arg) = struct
              ~_:(t : t)];
     t
   ;;
+
+  let type_ : t Type.t = { of_value_exn; name = [%message name]; to_value }
 
   let eq (t1 : t) t2 = eq t1 t2
 end
@@ -380,4 +475,9 @@ module Stat = struct
     { emacs_free_performed = t2.emacs_free_performed - t1.emacs_free_performed
     ; emacs_free_scheduled = t2.emacs_free_scheduled - t1.emacs_free_scheduled }
   ;;
+end
+
+module Expert = struct
+  let non_local_exit_signal   = non_local_exit_signal
+  let raise_if_emacs_signaled = raise_if_emacs_signaled
 end

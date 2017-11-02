@@ -16,4 +16,4 @@ val load
 
 (** [(describe-variable 'load-path)]
     [(Info-goto-node "(elisp)Library Search")] *)
-val get_path : unit -> string list
+val path : unit -> string list

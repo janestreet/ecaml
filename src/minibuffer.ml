@@ -1,6 +1,33 @@
 open! Core_kernel
 open! Import
 
+let y_or_n ~prompt =
+  Symbol.funcall1 Q.y_or_n_p (prompt |> Value.of_utf8_bytes)
+  |> Value.to_bool
+;;
+
+module Y_or_n_with_timeout = struct
+  type 'a t = Y | N | Timeout of 'a [@@deriving sexp_of]
+end
+
+let y_or_n_with_timeout ~prompt ~timeout:(span, a) : _ Y_or_n_with_timeout.t =
+  let result =
+    Symbol.funcall3 Q.y_or_n_p_with_timeout
+      (prompt |> Value.of_utf8_bytes)
+      (span |> Time_ns.Span.to_sec |> Value.of_float)
+      (Q.default_value |> Symbol.to_value) in
+  if Value.is_nil result
+  then N
+  else if Value.equal result Value.t
+  then Y
+  else Timeout a
+;;
+
+let yes_or_no ~prompt =
+  Symbol.funcall1 Q.yes_or_no_p (prompt |> Value.of_utf8_bytes)
+  |> Value.to_bool
+;;
+
 let read_from
       ?default_value
       ?(history_list = Q.minibuffer_history)
@@ -24,3 +51,6 @@ let read_from
        | Some s -> s |> Value.of_utf8_bytes) ]
   |> Value.to_utf8_bytes_exn
 ;;
+
+let exit_hook  = Hook.create Normal Q.minibuffer_exit_hook
+let setup_hook = Hook.create Normal Q.minibuffer_setup_hook

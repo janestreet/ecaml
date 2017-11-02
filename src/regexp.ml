@@ -1,6 +1,8 @@
 open! Core_kernel
 open! Import
 
+module Current_buffer = Current_buffer0
+
 include Value.Make_subtype (struct
     let name = "regexp"
     let here = [%here]
@@ -11,7 +13,8 @@ let of_pattern string = string |> Value.of_utf8_bytes |> of_value_exn
 
 let to_pattern t = t |> to_value |> Value.to_utf8_bytes_exn
 
-let match_nothing = of_pattern "z^"
+let match_anything = of_pattern ""
+let match_nothing  = of_pattern "z^"
 
 let quote string =
   Symbol.funcall1 Q.regexp_quote (string |> Value.of_utf8_bytes)
@@ -29,6 +32,10 @@ let any_quote strings =
     Symbol.funcall1 Q.regexp_opt (Value.list (List.map strings ~f:Value.of_utf8_bytes))
     |> of_value_exn
 ;;
+
+let any_pattern patterns = of_pattern (concat ~sep:{|\||} patterns)
+
+let any ts = any_pattern (List.map ts ~f:to_pattern)
 
 module Last_match = struct
   module Private = struct
@@ -86,7 +93,7 @@ module Last_match = struct
         (subexp |> Value.of_int_exn)
         (match !Location.last with
          | Buffer expected ->
-           let current = Buffer.Private.current () in
+           let current = Current_buffer.get () in
            if not (Buffer.equal current expected)
            then raise_s [%message
                   "[Regexp.Last_match.text_exn] called in wrong buffer"

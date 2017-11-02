@@ -21,9 +21,9 @@ val color_text : Text.t -> Text.t
 
 val max_supported_code : int
 
-(** [(describe-variable 'ansi-color-map].  [Ansi_color] map uses the faces that
-    [ansi-color-map] defines to translate ANSI color codes to faces. *)
-module Ansi_color_map : sig
+(** [(describe-variable 'ansi-color-names-vector].  [Colors] uses the colors in
+    [ansi-colors-names-vector] when translating ANSI color codes to faces. *)
+module Colors : sig
   type t [@@deriving sexp_of]
 
   val get : unit -> t
@@ -32,3 +32,7 @@ end
 (** [print_state_machine = true] causes [color*] functions to [print_s] the
     state machine used for coloring.  This is used for testing. *)
 val print_state_machine : bool ref
+
+(** A customization variable governing whether invalid ANSI escape sequences are flagged
+    in output. *)
+val show_invalid_escapes : bool Var.t

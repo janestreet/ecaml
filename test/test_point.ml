@@ -39,20 +39,14 @@ let%expect_test "[backward_char_exn] raise" =
   show_raise (fun () ->
     Current_buffer.set_temporarily_to_temp_buffer (fun () -> backward_char_exn 1));
   [%expect {|
-    (raised (
-      signal
-      (symbol beginning-of-buffer)
-      (data   nil))) |}];
+    (raised beginning-of-buffer) |}];
 ;;
 
 let%expect_test "[forward_char_exn] raise" =
   show_raise (fun () ->
     Current_buffer.set_temporarily_to_temp_buffer (fun () -> forward_char_exn 1));
   [%expect {|
-    (raised (
-      signal
-      (symbol end-of-buffer)
-      (data   nil))) |}];
+    (raised end-of-buffer) |}];
 ;;
 
 let%expect_test "[forward_char_exn], [backward_char_exn]" =
@@ -142,17 +136,14 @@ let%expect_test "[forward_sexp_exn], [backward_sexp_exn] raise" =
       (point 8) |}];
     show_raise (fun () -> backward_sexp_exn 1);
     [%expect {|
-      (raised (signal (symbol scan-error) (data ("Unbalanced parentheses" 6 1)))) |}];
+      (raised (scan-error ("Unbalanced parentheses" 6 1))) |}];
     goto_char (Point.min ());
     forward_sexp_exn 3;
     [%expect {|
       (point 6) |}];
     show_raise (fun () -> forward_sexp_exn 1);
     [%expect {|
-      (raised (
-        signal
-        (symbol scan-error)
-        (data ("Containing expression ends prematurely" 6 7)))) |}]);
+      (raised (scan-error ("Containing expression ends prematurely" 6 7))) |}]);
 ;;
 
 let%expect_test "[forward_word], [backward_word]" =
@@ -193,7 +184,7 @@ let%expect_test "[column_number], [goto_column]" =
   Current_buffer.set_temporarily_to_temp_buffer (fun () ->
     insert "foo";
     show_raise (fun () -> goto_column (-1));
-    [%expect {| (raised (signal (symbol wrong-type-argument) (data (wholenump -1)))) |}];
+    [%expect {| (raised (wrong-type-argument (wholenump -1))) |}];
     for i = 0 to 4 do
       goto_column i;
       print_s [%sexp (column_number () : int)];
@@ -222,10 +213,7 @@ let%expect_test "[insert_file_contents_exn] raise" =
       print_s [%sexp (Current_buffer.contents () ~end_:(11 |> Position.of_int_exn)
                       : Text.t)]));
   [%expect {|
-    (raised (
-      signal
-      (symbol file-error)
-      (data ("Opening input file" "No such file or directory" /zzz)))) |}];
+    (raised (file-error ("Opening input file" "No such file or directory" /zzz))) |}];
 ;;
 
 let%expect_test "[marker_at*]" =
@@ -471,4 +459,31 @@ let%expect_test "[looking_at ~update_last_match:true]" =
       ((text  (Error "Prior [Regexp] match did not match"))
        (start (Error "Prior [Regexp] match did not match"))
        (end_  (Error "Prior [Regexp] match did not match"))) |}]);
+;;
+
+let%expect_test "[goto_line]" =
+  Current_buffer.set_temporarily_to_temp_buffer (fun () ->
+    insert {|
+a
+bc
+def
+|};
+    let test line =
+      goto_line line;
+      print_s [%sexp (get () : Position.t)] in
+    test 0;
+    [%expect {|
+      1 |}];
+    test 1;
+    [%expect {|
+      1 |}];
+    test 2;
+    [%expect {|
+      2 |}];
+    test 3;
+    [%expect {|
+      4 |}];
+    test 4;
+    [%expect {|
+      7 |}])
 ;;

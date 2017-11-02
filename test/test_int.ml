@@ -56,38 +56,14 @@ let%expect_test "[Value.of_int]" =
       then (require [%here] (match i' with  Ok i' -> i = i' | Error _ -> false)));
   [%expect {|
     ((i -4_611_686_018_427_387_904)
-     (v (
-       Error (
-         signal
-         (symbol overflow-error)
-         (data   nil))))
-     (i' (
-       Error (
-         signal
-         (symbol overflow-error)
-         (data   nil)))))
+     (v  (Error overflow-error))
+     (i' (Error overflow-error)))
     ((i -4_611_686_018_427_387_903)
-     (v (
-       Error (
-         signal
-         (symbol overflow-error)
-         (data   nil))))
-     (i' (
-       Error (
-         signal
-         (symbol overflow-error)
-         (data   nil)))))
+     (v  (Error overflow-error))
+     (i' (Error overflow-error)))
     ((i -2_305_843_009_213_693_953)
-     (v (
-       Error (
-         signal
-         (symbol overflow-error)
-         (data   nil))))
-     (i' (
-       Error (
-         signal
-         (symbol overflow-error)
-         (data   nil)))))
+     (v  (Error overflow-error))
+     (i' (Error overflow-error)))
     ((i -2_305_843_009_213_693_952)
      (v  (Ok -2305843009213693952))
      (i' (Ok -2_305_843_009_213_693_952)))
@@ -110,36 +86,12 @@ let%expect_test "[Value.of_int]" =
      (v  (Ok 2305843009213693951))
      (i' (Ok 2_305_843_009_213_693_951)))
     ((i 2_305_843_009_213_693_952)
-     (v (
-       Error (
-         signal
-         (symbol overflow-error)
-         (data   nil))))
-     (i' (
-       Error (
-         signal
-         (symbol overflow-error)
-         (data   nil)))))
+     (v  (Error overflow-error))
+     (i' (Error overflow-error)))
     ((i 4_611_686_018_427_387_902)
-     (v (
-       Error (
-         signal
-         (symbol overflow-error)
-         (data   nil))))
-     (i' (
-       Error (
-         signal
-         (symbol overflow-error)
-         (data   nil)))))
+     (v  (Error overflow-error))
+     (i' (Error overflow-error)))
     ((i 4_611_686_018_427_387_903)
-     (v (
-       Error (
-         signal
-         (symbol overflow-error)
-         (data   nil))))
-     (i' (
-       Error (
-         signal
-         (symbol overflow-error)
-         (data   nil))))) |}];
+     (v  (Error overflow-error))
+     (i' (Error overflow-error))) |}];
 ;;

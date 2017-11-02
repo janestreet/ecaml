@@ -27,6 +27,12 @@ val max : unit -> Position.t
 (** [(describe-function 'goto-char)]. *)
 val goto_char : Position.t -> unit
 
+(** [goto_max () = goto_char (max ())] *)
+val goto_max : unit -> unit
+
+(** [goto_min () = goto_char (min ())] *)
+val goto_min : unit -> unit
+
 (** [(describe-function 'beginning-of-line)]. *)
 val beginning_of_line : unit -> unit
 
@@ -82,6 +88,9 @@ val column_number : unit -> int
     [(describe-function 'move-to-column)].
     [(Info-goto-node "(elisp)Columns")] *)
 val goto_column : int -> unit
+
+(** [goto_line l = goto_min (); forward_line (l - 1)] *)
+val goto_line : int -> unit
 
 (** [(describe-function 'insert)] *)
 val insert      : string -> unit

@@ -23,10 +23,7 @@ let%expect_test "[split_horizontally_exn] raise" =
   show_raise (fun () ->
     Selected_window.split_horizontally_exn ());
   [%expect {|
-    (raised (
-      signal
-      (symbol error)
-      (data ("Window #<window 1 on *scratch*> too small for splitting")))) |}]
+    (raised ("Window #<window 1 on *scratch*> too small for splitting")) |}]
 ;;
 
 let%expect_test "[split_vertically_exn]" =

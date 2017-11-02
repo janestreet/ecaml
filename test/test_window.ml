@@ -47,10 +47,7 @@ let%expect_test "[set_point_exn]" =
 let%expect_test "[delete_exn] raise" =
   show_raise (fun () -> delete_exn t);
   [%expect {|
-    (raised (
-      signal
-      (symbol error)
-      (data ("Attempt to delete minibuffer or sole ordinary window")))) |}]
+    (raised ("Attempt to delete minibuffer or sole ordinary window")) |}]
 ;;
 
 let%expect_test "[delete_exn]" =
@@ -64,18 +61,10 @@ let%expect_test "[delete_exn]" =
     ("#<window 4 on *scratch*>") |}];
   show t;
   [%expect {|
-    ((body_height (
-       Error (
-         signal (symbol wrong-type-argument) (data (window-live-p #<window 1>)))))
+    ((body_height (Error (wrong-type-argument (window-live-p #<window 1>))))
      (buffer (Error ("[buffer]'s [of_value_exn] got value not in subtype" nil)))
-     (height (
-       Error (
-         signal (symbol wrong-type-argument) (data (window-valid-p #<window 1>)))))
+     (height (Error (wrong-type-argument (window-valid-p #<window 1>))))
      (is_live (Ok false))
-     (point (
-       Error (
-         signal (symbol wrong-type-argument) (data (window-live-p #<window 1>)))))
-     (width (
-       Error (
-         signal (symbol wrong-type-argument) (data (window-live-p #<window 1>)))))) |}]
+     (point (Error (wrong-type-argument (window-live-p #<window 1>))))
+     (width (Error (wrong-type-argument (window-live-p #<window 1>))))) |}]
 ;;

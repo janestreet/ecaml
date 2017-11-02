@@ -1,14 +1,12 @@
 open! Core_kernel
 open! Import
 
+module Current_buffer = Current_buffer0
+
 type t = Value.t
 [@@deriving sexp_of]
 
-let q = Q.load_history
-
-let get () = Symbol.value_exn q
-
-let set v = Symbol.set_value q v
+let load_history = Var.create Q.load_history Value.Type.value
 
 let defining_file symbol =
   let result = Symbol.funcall1 Q.symbol_file (symbol |> Symbol.to_value) in
@@ -41,19 +39,63 @@ module Entry = struct
   ;;
 end
 
-let add_defuns ~chop_prefix ~in_dir =
-  let entries =
-    Function.get_and_clear_defuns ()
-    |> List.map ~f:(fun ((source_code_position : Source_code_position.t), symbol) ->
+module Type = struct
+  type t =
+    | Fun
+    | Var
+  [@@deriving compare, hash, sexp_of]
+end
+
+module Key = struct
+  module T = struct
+    type t =
+      { symbol_name : string
+      ; type_       : Type.t }
+    [@@deriving compare, hash, sexp_of]
+  end
+
+  include T
+  include Hashable.Make_plain (T)
+
+  let create symbol type_ = { symbol_name = Symbol.name symbol; type_ }
+end
+
+let location_by_key : Source_code_position.t Key.Table.t = Key.Table.create ()
+
+let location_exn symbol type_ =
+  match Hashtbl.find location_by_key (Key.create symbol type_) with
+  | Some x -> x
+  | None ->
+    raise_s [%message
+      "don't know location of symbol" (symbol : Symbol.t) (type_ : Type.t)]
+;;
+
+let entries = ref []
+
+let add_entry here (entry : Entry.t) =
+  entries := (here, entry) :: !entries;
+  let add symbol type_ =
+    Hashtbl.set location_by_key ~key:(Key.create symbol type_) ~data:here in
+  match entry with
+  | Fun symbol -> add symbol Fun
+  | Var symbol -> add symbol Var
+  | _ -> ()
+;;
+
+let update_emacs_with_entries ~chop_prefix ~in_dir =
+  let addition =
+    !entries
+    |> List.map ~f:(fun ((source_code_position : Source_code_position.t), entry) ->
       (String.chop_prefix_exn source_code_position.pos_fname ~prefix:chop_prefix
-      , symbol))
+      , entry))
     |> String.Table.of_alist_multi
     |> Hashtbl.to_alist
-    |> List.map ~f:(fun (file, symbols) ->
+    |> List.map ~f:(fun (file, entries) ->
       Value.cons
         (Caml.Filename.concat in_dir file |> Value.of_utf8_bytes)
-        (Value.list (symbols
-                     |> List.map ~f:(fun symbol -> Entry.Fun symbol |> Entry.to_value))))
+        (Value.list (entries |> List.map ~f:Entry.to_value)))
     |> Value.list in
-  set (Symbol.funcall2 Q.append entries (get ()));
+  entries := [];
+  Current_buffer.set_value load_history
+    (Symbol.funcall2 Q.append addition (Current_buffer.value_exn load_history));
 ;;

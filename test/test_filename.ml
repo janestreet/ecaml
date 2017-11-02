@@ -44,7 +44,7 @@ let%expect_test "[extension], [sans_extension]" =
           ~sans_extension:(try_with (fun () -> sans_extension filename ) : string Or_error.t)]);
   [%expect {|
     ((filename foo)
-     (extension (Error (signal (symbol wrong-type-argument) (data (stringp nil)))))
+     (extension (Error (wrong-type-argument (stringp nil))))
      (sans_extension (Ok foo)))
     ((filename foo.ml)
      (extension      (Ok ml))

@@ -6,10 +6,11 @@
 open! Core_kernel
 open! Import
 
-type t [@@deriving sexp_of]
+include Value.Subtype with type t = Buffer0.t
 
-include Equal.S       with type t := t
-include Value.Subtype with type t := t
+type buffer = t
+
+include Equal.S with type t := t
 
 (** Accessors *)
 val file_name : t -> string option     (** - [(describe-function 'buffer-file-name)] *)
@@ -42,6 +43,29 @@ val displayed_in : t -> Window0.t list
     [(describe-function 'display-buffer)] *)
 val display : t -> unit
 
-module Private : sig
-  val current : unit -> t
+(** [(describe-function 'buffer-local-value)]
+    [(Info-goto-node "(elisp)Creating Buffer-Local")] *)
+val buffer_local_value : t -> 'a Var.t -> 'a
+
+(** [(describe-function 'buffer-local-variables)]
+    [(Info-goto-node "(elisp)Creating Buffer-Local")] *)
+val buffer_local_variables : t -> (Symbol.t * Value.t option) list
+
+(** [(describe-function 'find-file-noselect)]
+    [(Info-goto-node "(elisp)Visiting Functions")] *)
+val find_file_noselect : Filename.t -> t
+
+module Which_buffers : sig
+  type t =
+    | File_visiting
+    | These of (buffer -> bool)
+  [@@deriving sexp_of]
 end
+
+(** [(describe-function 'save-some-buffers)]
+    [(Info-goto-node "(elisp)Saving Buffers")] *)
+val save_some
+  :  ?query : bool  (** default is [true] *)
+  -> ?which_buffers : Which_buffers.t  (** default is [File_visiting] *)
+  -> unit
+  -> unit

@@ -33,7 +33,7 @@ let eval_string s = s |> Form.read |> Form.eval
 
 let emacs_raise () =
   Symbol.funcall2_i ("signal" |> Symbol.intern)
-    ("error-symbol" |> Symbol.intern |> Symbol.to_value)
+    ("error" |> Symbol.intern |> Symbol.to_value)
     (13 |> Value.of_int_exn)
 ;;
 
@@ -51,10 +51,7 @@ let ocaml_raise =
 let%expect_test "raising from Emacs to OCaml" =
   show_raise emacs_raise;
   [%expect {|
-    (raised (
-      signal
-      (symbol error-symbol)
-      (data   13))) |}];
+    (raised 13) |}];
 ;;
 
 let%expect_test "raising from OCaml to Emacs" =
@@ -73,7 +70,24 @@ let%expect_test "raising from Emacs to Emacs with OCaml in between" =
   in
   print_s [%sexp (value : Value.t)];
   [%expect {|
-    (emacs-caught-it (error "(signal (symbol error-symbol) (data 13))")) |}];
+    (emacs-caught-it (error . 13)) |}]
+;;
+
+let%expect_test "error-symbol preservation when Emacs signal crosses OCaml" =
+  let value =
+    Value.funcall1
+      ("\
+(lambda (f) (condition-case error (funcall f) (arith-error `(emacs-caught-it ,error))))"
+       |> eval_string)
+      (Function.create [%here] ~args:[] (fun _ ->
+         Symbol.funcall2
+           ("signal" |> Symbol.intern)
+           ("arith-error" |> Value.intern)
+           Value.nil)
+       |> Function.to_value) in
+  print_s [%sexp (value : Value.t)];
+  [%expect {|
+    (emacs-caught-it (arith-error)) |}];
 ;;
 
 let%expect_test "raising from OCaml to OCaml with Emacs in between" =
@@ -82,7 +96,22 @@ let%expect_test "raising from OCaml to OCaml with Emacs in between" =
       ("(lambda (f) (funcall f))" |> eval_string)
       ocaml_raise);
   [%expect {|
-    (raised (signal (symbol error) (data (raising)))) |}];
+    (raised (raising)) |}];
+;;
+
+let%expect_test "raising from OCaml to OCaml through many layers of Emacs" =
+  let rec loop n =
+    if n = 0
+    then raise_s [%sexp "zzz"]
+    else
+      Value.funcall0
+        (Function.create [%here] ~args:[]
+           (fun _ -> loop (n - 1))
+         |> Function.to_value)
+  in
+  show_raise (fun () -> loop 5);
+  [%expect {|
+    (raised (zzz)) |}];
 ;;
 
 let%expect_test "function descriptions" =
@@ -239,8 +268,5 @@ let%expect_test "raise in dispatch" =
     Ref.set_temporarily Expert.raise_in_dispatch true ~f:(fun () ->
       Value.funcall0_i (f |> Function.to_value)));
   [%expect {|
-    (raised (
-      signal
-      (symbol uncaught-ocaml-exception)
-      (data   Fdispatch))) |}]
+    (raised (uncaught-ocaml-exception Fdispatch)) |}]
 ;;

@@ -44,7 +44,12 @@ end
 
 module type Subtype = sig
   type value
-  type t [@@deriving sexp_of]
+  type 'a type_
+
+  (** We expose [private value] for free identity conversions when the value is nested in
+      some covariant type, e.g. [(symbols : Symbol.t list :> Value.t list)] rather than
+      [List.map symbols ~f:Symbol.to_value]. *)
+  type t = private value [@@deriving sexp_of]
 
   val of_value_exn : value -> t
   val to_value : t -> value
@@ -54,6 +59,8 @@ module type Subtype = sig
       [phys_equal t1 t2], because we don't always wrap [eq] Emacs values in [phys_equal]
       OCaml values.  I.e. [phys_equal t1 t2] implies [eq t1 t2], but not the converse. *)
   val eq : t -> t -> bool
+
+  val type_ : t type_
 end
 
 module type Value = sig
@@ -85,6 +92,7 @@ module type Value = sig
   val is_buffer               : t -> bool (** [(describe-function 'bufferp)] *)
   val is_command              : t -> bool (** [(describe-function 'commandp)] *)
   val is_cons                 : t -> bool (** [(describe-function 'consp)] *)
+  val is_event                : t -> bool (** [(describe-function 'eventp)] *)
   val is_float                : t -> bool (** [(describe-function 'floatp)] *)
   val is_font                 : t -> bool (** [(describe-function 'fontp)] *)
   val is_frame                : t -> bool (** [(describe-function 'framep)] *)
@@ -99,6 +107,7 @@ module type Value = sig
   val is_string               : t -> bool (** [(describe-function 'stringp)] *)
   val is_symbol               : t -> bool (** [(describe-function 'symbolp)] *)
   val is_syntax_table         : t -> bool (** [(describe-function 'syntax-table-p)] *)
+  val is_timer                : t -> bool (** [(describe-function 'timerp)] *)
   val is_vector               : t -> bool (** [(describe-function 'vectorp)] *)
   val is_window               : t -> bool (** [(describe-function 'windowp)] *)
   val is_window_configuration : t -> bool (** [(describe-function 'window-configuration-p)] *)
@@ -125,14 +134,36 @@ module type Value = sig
 
   val initialize_module : unit
 
+  (** An ['a Type.t] is an isomorphism between ['a] and a subset of [Value.t]. *)
+  module Type : sig
+    type value
+    type 'a t =
+      { name         : Sexp.t
+      ; of_value_exn : value -> 'a
+      ; to_value     : 'a -> value }
+    [@@deriving sexp_of]
+
+    val bool   : bool   t
+    val int    : int    t
+    val string : string t
+    val value  : value  t
+
+    val list   : 'a t -> 'a list   t
+    val option : 'a t -> 'a option t
+  end with type value := t
+
   module type Funcall          = Funcall          with type value := t
   module type Make_subtype_arg = Make_subtype_arg with type value := t
-  module type Subtype          = Subtype          with type value := t
+
+  module type Subtype = Subtype
+    with type value := t
+    with type 'a type_ := 'a Type.t
 
   module Make_subtype (Subtype : Make_subtype_arg) : Subtype
 
   module Expert : sig
     val raise_if_emacs_signaled : unit -> unit
+    val non_local_exit_signal : exn -> unit
   end
 
   module Stat : sig

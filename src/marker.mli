@@ -7,9 +7,7 @@
 open! Core_kernel
 open! Import
 
-type t [@@deriving sexp_of]
-
-include Value.Subtype with type t := t
+include Value.Subtype
 
 (** When you insert text directly at the place where a marker points, there are two
     possible ways to relocate that marker: it can point before the inserted text, or point
@@ -49,9 +47,3 @@ val set_insertion_type : t -> Insertion_type.t -> unit
 (** [(describe-function 'set-marker)]
     [(Info-goto-node "(elisp)Moving Markers")] *)
 val set : t -> Buffer.t -> Position.t -> unit
-
-(** [(describe-variable 'transient-mark-mode)]
-    [(describe-function 'transient-mark-mode)]
-    [(Info-goto-node "(elisp)The Mark")] *)
-val set_transient_mark_mode : bool -> unit
-val transient_mark_mode_is_enabled : unit -> bool

@@ -1,28 +1,50 @@
 open! Core_kernel
 open! Import
 
-type t = Value.t [@@deriving sexp_of]
+include Value.Make_subtype (struct
+    let name = "form"
+    let here = [%here]
+    let is_in_subtype = fun _ -> true
+  end)
 
-let of_value = Fn.id
-let to_value = Fn.id
+let string s = s |> Value.of_utf8_bytes |> of_value_exn
 
-let string = Value.of_utf8_bytes
+let symbol s = s |> Symbol.to_value |> of_value_exn
 
-let symbol = Symbol.to_value
+let int i = i |> Value.of_int_exn |> of_value_exn
 
-let eval t = Symbol.funcall1 Q.eval t
+let eval t = Symbol.funcall1 Q.eval (t |> to_value)
+
+let eval_i t = ignore (eval t : Value.t)
 
 let read =
-  Feature.require Q.thingatpt;
+  Feature0.require Q.thingatpt;
   fun string ->
     Symbol.funcall1 Q.read_from_whole_string (string |> Value.of_utf8_bytes)
+    |> of_value_exn
 ;;
 
-let quote t = Value.list [ symbol Q.quote; t ]
+let eval_string string = eval (read string)
 
-let progn ts = Value.list (symbol Q.progn :: ts)
+let list ts = Value.list (ts : t list :> Value.t list) |> of_value_exn
 
-let apply t1 t2 = Value.list [ symbol Q.apply; t1; t2 ]
+let nil = list []
+
+let q value = Value.list [ Symbol.to_value Q.quote; value ]
+
+let quote value = q value |> of_value_exn
+
+let progn ts = list (symbol Q.progn :: ts)
+
+let let_ bindings body =
+  Value.list
+    [ Q.let_ |> Symbol.to_value
+    ; bindings
+      |> List.map ~f:(fun (v, e) -> Value.list [ v |> Symbol.to_value; e |> to_value ])
+      |> Value.list
+    ; body |> to_value ]
+  |> of_value_exn
+;;
 
 let lambda =
   let some = Option.some in
@@ -39,7 +61,7 @@ let lambda =
       ; rest_arg      |> Option.value_map ~default:[]
                            ~f:(fun rest_arg -> [ Q.A.rest; rest_arg ])]
       |> List.concat
-      |> List.map ~f:symbol
+      |> (fun x -> (x : Symbol.t list :> Value.t list))
       |> Value.list
     in
     let here =
@@ -55,16 +77,28 @@ let lambda =
                            then "\n"
                            else "\n\n"
                          ; here ] in
-    [ Q.lambda    |> symbol  |> some
+    [ Q.lambda    |> Symbol.to_value  |> some
     ; args        |> some
-    ; docstring   |> string |> some
+    ; docstring   |> Value.of_utf8_bytes |> some
     ; interactive |> Option.map
                        ~f:(fun interactive ->
-                         Value.list [ Q.interactive |> symbol
-                                    ; interactive |> string ])
-    ; body                |> some ]
+                         Value.list [ Q.interactive |> Symbol.to_value
+                                    ; interactive |> Value.of_utf8_bytes ])
+    ; body |> to_value |> some ]
     |> List.filter_opt
     |> Value.list
+    |> of_value_exn
 ;;
 
-let list = Value.list
+let defvar here symbol initial_value ~docstring =
+  ignore (
+    eval (
+      [ Q.defvar      |> Symbol.to_value
+      ; symbol        |> Symbol.to_value
+      ; initial_value |> q
+      ; docstring     |> Value.of_utf8_bytes ]
+      |> Value.list
+      |> of_value_exn)
+    : Value.t);
+  Load_history.add_entry here (Var symbol);
+;;

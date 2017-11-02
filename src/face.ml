@@ -62,6 +62,10 @@ module Color_or_unspecified = struct
 
   let of_value_exn value =
     if Value.eq value Value.unspecified
+    (* Sometimes Emacs returns an unspecified color as the string "unspecified-fg" or
+       "unspecified-bg" rather than the symbol [unspecified]. *)
+    || (Value.is_string value
+        && String.is_prefix ~prefix:"unspecified" (Value.to_utf8_bytes_exn value))
     then Unspecified
     else Color (value |> Color.of_value_exn)
   ;;
@@ -494,7 +498,7 @@ end
 let frame option =
   (match option with
    | Some x -> x
-   | None -> Frame.get_selected ())
+   | None -> Frame.selected ())
   |> Frame.to_value
 ;;
 
@@ -509,7 +513,7 @@ let font_family_list ?on () =
   |> Value.to_list_exn ~f:Value.to_utf8_bytes_exn
 ;;
 
-let get_attribute ?on t attribute =
+let attribute_value ?on t attribute =
   Symbol.funcall3 Q.face_attribute
     (t |> to_value)
     (attribute |> Attribute.to_symbol |> Symbol.to_value)

@@ -5,9 +5,9 @@
 open! Core_kernel
 open! Import
 
-type t [@@deriving sexp_of]
+include Value.Subtype
 
-include Value.Subtype with type t := t
+val type_ : 'a Value.Type.t -> 'a array Value.Type.t
 
 (** [(describe-function 'make-vector)] *)
 val create : len : int -> Value.t -> t

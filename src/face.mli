@@ -13,10 +13,9 @@
 open! Core_kernel
 open! Import
 
-type t [@@deriving sexp_of]
+include Value.Subtype
 
-include Equal.S       with type t := t
-include Value.Subtype with type t := t
+include Equal.S with type t := t
 
 val default : t
 
@@ -239,7 +238,7 @@ val font_family_list
   -> string list
 
 (** [(describe-function 'face-attribute)] *)
-val get_attribute
+val attribute_value
   :  ?on : Frame.t  (** default is selected frame *)
   -> t
   -> 'a Attribute.t

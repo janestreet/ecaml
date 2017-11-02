@@ -59,31 +59,6 @@ let%expect_test "[set]" =
        (position (5))) |}]);
 ;;
 
-let%expect_test "[set_transient_mark_mode], [transient_mark_mode_is_enabled]" =
-  let show () = print_s [%sexp (transient_mark_mode_is_enabled () : bool)] in
-  show ();
-  [%expect {|
-    false |}];
-  Current_buffer.set_temporarily_to_temp_buffer (fun () ->
-    show ();
-    [%expect {|
-      false |}];
-    Current_buffer.set_temporarily_to_temp_buffer (fun () ->
-      show ();
-      [%expect {|
-        false |}];
-      set_transient_mark_mode true;
-      show ();
-      [%expect {|
-        true |}]);
-    show ();
-    [%expect {|
-      true |}]);
-  show ();
-  [%expect {|
-    true |}];
-;;
-
 let%expect_test "[copy]" =
   Current_buffer.set_temporarily_to_temp_buffer (fun () ->
     let t1 = create () in

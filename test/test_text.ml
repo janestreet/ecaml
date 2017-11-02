@@ -16,6 +16,23 @@ let%expect_test "[length]" =
     3 |}];
 ;;
 
+let%expect_test "[char_code]" =
+  let t = of_utf8_bytes "abc" in
+  let cs = List.init (length t) ~f:(fun i -> char_code t i) in
+  print_s [%sexp (cs : Char_code.t list)];
+  [%expect {|
+    (97 98 99) |}];
+;;
+
+let%expect_test "[set_char_code]" =
+  let t = of_utf8_bytes "abc" in
+  set_char_code t 1 ('d' |> Char_code.of_char_exn);
+  let cs = List.init (length t) ~f:(fun i -> char_code t i) in
+  print_s [%sexp (cs : Char_code.t list)];
+  [%expect {|
+    (97 100 99) |}];
+;;
+
 let utf8 = "├" |> of_utf8_bytes
 
 let%expect_test "[num_bytes]" =
@@ -163,13 +180,13 @@ let%expect_test "[get_property]" =
     print_s [%message
       ""
         (at : int)
-        ~property:(try_with (fun () -> get_property t ~at face)
+        ~property:(try_with (fun () -> property_value t ~at face)
                    : Face_spec.t option Or_error.t)];
   done;
   [%expect {|
     ((at 0) (property (Ok ())))
     ((at 1) (property (Ok ())))
-    ((at 2) (property (Error (signal (symbol args-out-of-range) (data (2 2)))))) |}];
+    ((at 2) (property (Error (args-out-of-range (2 2))))) |}];
 ;;
 
 let%expect_test "[set_property]" =
@@ -182,7 +199,7 @@ let%expect_test "[set_property]" =
         print_s [%message
           ""
             ~text:(t : t)
-            ~property:(try_with (fun () -> get_property t ~at:0 face)
+            ~property:(try_with (fun () -> property_value t ~at:0 face)
                        : Face_spec.t option Or_error.t)]
       | exception exn -> print_s [%message "failed" ~_:(exn : exn)]
     done;
@@ -193,27 +210,27 @@ let%expect_test "[set_property]" =
     ((text a) (property (Ok ())))
     ((start 0)
      (end_  1))
-    ((text "#(\"a\" 0 1 (face (:background \"red\")))")
+    ((text (a 0 1 (face (:background red))))
      (property (Ok (((Attributes ((Background (Color red)))))))))
     ((start 0)
      (end_  2))
-    (failed (signal (symbol args-out-of-range) (data (0 2))))
+    (failed (args-out-of-range (0 2)))
     ((start 1)
      (end_  0))
-    ((text "#(\"a\" 0 1 (face (:background \"red\")))")
+    ((text (a 0 1 (face (:background red))))
      (property (Ok (((Attributes ((Background (Color red)))))))))
     ((start 1)
      (end_  1))
     ((text a) (property (Ok ())))
     ((start 1)
      (end_  2))
-    (failed (signal (symbol args-out-of-range) (data (1 2))))
+    (failed (args-out-of-range (1 2)))
     ((start 2)
      (end_  0))
-    (failed (signal (symbol args-out-of-range) (data (0 2))))
+    (failed (args-out-of-range (0 2)))
     ((start 2)
      (end_  1))
-    (failed (signal (symbol args-out-of-range) (data (1 2))))
+    (failed (args-out-of-range (1 2)))
     ((start 2)
      (end_  2))
     ((text a) (property (Ok ()))) |}]
@@ -231,7 +248,7 @@ let%expect_test "various [Face_spec.t] values" =
   let check face_spec =
     print_s [%sexp (face_spec : Face_spec.t)];
     set_property t property_name face_spec;
-    let round_trip = get_property t property_name ~at:0 |> Option.value_exn in
+    let round_trip = property_value t property_name ~at:0 |> Option.value_exn in
     require [%here]
       (Value.equal
          (face_spec |> Face_spec.to_value)
@@ -296,16 +313,13 @@ let%expect_test "[add_properties]" =
   let t = of_utf8_bytes "a" in
   add_properties t [ T (face, background_red)];
   print_s [%sexp (t : t)];
-  [%expect {|
-    "#(\"a\" 0 1 (face (:background \"red\")))" |}];
+  [%expect {| (a 0 1 (face (:background red))) |}];
   add_properties t [ T (face, background_blue)];
   print_s [%sexp (t : t)];
-  [%expect {|
-    "#(\"a\" 0 1 (face (:background \"blue\")))" |}];
+  [%expect {| (a 0 1 (face (:background blue))) |}];
   add_properties t [ T (font_lock_face, background_red)];
   print_s [%sexp (t : t)];
-  [%expect {|
-    "#(\"a\" 0 1 (face (:background \"blue\") font-lock-face (:background \"red\")))" |}];
+  [%expect {| (a 0 1 (face (:background blue) font-lock-face (:background red))) |}];
 ;;
 
 let%expect_test "[set_properties]" =
@@ -313,20 +327,20 @@ let%expect_test "[set_properties]" =
   set_properties t [ T (face, background_red)];
   print_s [%sexp (t : t)];
   [%expect {|
-    "#(\"a\" 0 1 (face (:background \"red\")))" |}];
+    (a 0 1 (face (:background red))) |}];
   set_properties t [ T (face, background_blue)];
   print_s [%sexp (t : t)];
   [%expect {|
-    "#(\"a\" 0 1 (face (:background \"blue\")))" |}];
+    (a 0 1 (face (:background blue))) |}];
   set_properties t [ T (font_lock_face, background_red)];
   print_s [%sexp (t : t)];
   [%expect {|
-    "#(\"a\" 0 1 (font-lock-face (:background \"red\")))" |}];
+    (a 0 1 (font-lock-face (:background red))) |}];
 ;;
 
-let%expect_test "[get_properties]" =
+let%expect_test "[properties]" =
   let t = of_utf8_bytes "a" in
-  let show () = print_s [%sexp (get_properties t ~at:0 : Property.t list)] in
+  let show () = print_s [%sexp (properties t ~at:0 : Property.t list)] in
   show ();
   [%expect {|
     () |}];
@@ -348,11 +362,11 @@ let%expect_test "registering a new text property" =
   set_property t property_name ("bar" |> Symbol.intern);
   print_s [%sexp (t : t)];
   [%expect {|
-    "#(\"a\" 0 1 (foo bar))" |}];
-  print_s [%sexp (get_property t ~at:0 property_name : Symbol.t option)];
+    (a 0 1 (foo bar)) |}];
+  print_s [%sexp (property_value t ~at:0 property_name : Symbol.t option)];
   [%expect {|
     (bar) |}];
-  print_s [%sexp (get_properties t ~at:0 : Property.t list)];
+  print_s [%sexp (properties t ~at:0 : Property.t list)];
   [%expect {|
     ((foo bar)) |}];
 ;;
@@ -364,11 +378,11 @@ let%expect_test "[remove_properties]" =
                    ; T (font_lock_face, background_red)];
   print_s [%sexp (t : t)];
   [%expect {|
-    "#(\"a\" 0 1 (font-lock-face (:background \"red\") face (:background \"red\")))" |}];
+    (a 0 1 (font-lock-face (:background red) face (:background red))) |}];
   remove_properties t [ T font_lock_face ];
   print_s [%sexp (t : t)];
   [%expect {|
-    "#(\"a\" 0 1 (face (:background \"red\")))" |}];
+    (a 0 1 (face (:background red))) |}];
   remove_properties t [ T face ];
   print_s [%sexp (t : t)];
   [%expect {|
@@ -384,16 +398,16 @@ let%expect_test "[propertize]" =
     foo |}];
   test [ T (face, []) ];
   [%expect {|
-    "#(\"foo\" 0 3 (face nil))" |}];
+    (foo 0 3 (face nil)) |}];
   test [ T (face, background_red) ];
   [%expect {|
-    "#(\"foo\" 0 3 (face (:background \"red\")))" |}];
+    (foo 0 3 (face (:background red))) |}];
   test [ T (face, [ Attributes [ T (Background , Color Color.red)
                                ; T (Foreground , Color Color.green)
                                ; T (Slant      , Italic)
                                ; T (Weight     , Bold)]])];
   [%expect {|
-    "#(\"foo\" 0 3 (face (:background \"red\" :foreground \"green\" :slant italic :weight bold)))" |}];
+    (foo 0 3 (face (:background red :foreground green :slant italic :weight bold))) |}];
 ;;
 
 let%expect_test "[is_multibyte], [to_multibyte], [to_unibyte]" =
@@ -415,5 +429,5 @@ let%expect_test "[is_multibyte], [to_multibyte], [to_unibyte]" =
 let%expect_test "[to_unibyte_exn] raise" =
   require_does_raise [%here] (fun () -> to_unibyte_exn utf8);
   [%expect {|
-    (signal (symbol error) (data ("Can't convert the 0th character to unibyte"))) |}];
+    ("Can't convert the 0th character to unibyte") |}];
 ;;

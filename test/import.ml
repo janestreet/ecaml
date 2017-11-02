@@ -43,3 +43,60 @@ let show_last_match ?subexp () =
       ~start: (try_with (fun () -> Last_match.start_exn ?subexp ()) : int Or_error.t)
       ~end_:  (try_with (fun () -> Last_match.end_exn   ?subexp ()) : int Or_error.t)]
 ;;
+
+let print_s ?(templatize_current_directory = false) sexp =
+  if not templatize_current_directory
+  then print_s sexp
+  else (
+    print_endline (
+      sexp
+      |> Sexp_pretty.sexp_to_string
+      |> (fun string ->
+        String.Search_pattern.replace_all
+          (String.Search_pattern.create
+             (File.truename Current_buffer.(value_exn directory)))
+          ~in_:string
+          ~with_:"<current-directory>/")))
+;;
+
+let touch filename =
+  ignore (Process.call_exn "touch" [ filename ] ~working_directory:Of_current_buffer
+          : string);
+;;
+
+let int_var name = Var.create (Symbol.create ~name) Value.Type.int
+
+let show_current_buffer_local_variables () =
+  print_s [%sexp (Buffer.buffer_local_variables (Current_buffer.get ())
+                  |> List.sort ~cmp:(fun (s1, _) (s2, _) -> Symbol.compare_name s1 s2)
+                  : (Symbol.t * _ option) list)];
+;;
+
+let with_input string f =
+  let module Out_channel = Core.Out_channel in
+  let module Unix = Core.Unix in
+  let r, w = Unix.pipe () in
+  let () = Unix.set_nonblock w in
+  let out = Unix.out_channel_of_descr w in
+  let stdin_to_restore = Unix.dup Unix.stdin in
+  (try
+     Out_channel.output_string out string;
+     Out_channel.close out;
+   with Sys_blocked_io ->
+     raise_s [%message
+       "[with_input] doesn't support strings this long"
+         ~_:(String.length string : int)]);
+  Unix.dup2 ~src:r ~dst:Unix.stdin;
+  Unix.close r;
+  protect ~f ~finally:(fun () ->
+    Unix.dup2 ~src:stdin_to_restore ~dst:Unix.stdin)
+;;
+
+let%expect_test "[with_input] with too long string" =
+  show_raise (fun () ->
+    with_input (Bytes.create 100_000) (fun () -> assert false));
+  [%expect {|
+    (raised ("[with_input] doesn't support strings this long" 100_000)) |}];
+;;
+
+let () = Current_buffer.set_value Backup.make_backup_files false
