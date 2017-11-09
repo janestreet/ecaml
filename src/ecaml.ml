@@ -87,6 +87,11 @@ let inhibit_read_only = Var.create Q.inhibit_read_only Value.Type.bool
 let inhibit_read_only f = Current_buffer.set_value_temporarily inhibit_read_only true ~f
 
 let () =
+  defun [%here] ("ecaml-test-raise" |> Symbol.intern)
+    ~args:[]
+    ~interactive:""
+    (fun _ ->
+       raise_s [%message "foo" "bar"]);
   (* Replace [false] with [true] to define a function for testing
      [Minibuffer.read_from]. *)
   if false

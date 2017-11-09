@@ -8,7 +8,9 @@ open! Import
 
 type t = string [@@deriving compare, sexp_of]
 
-include Equal.S with type t := t
+include Comparable.S
+  with type t := t
+  with type comparator_witness = String.comparator_witness
 
 val of_value_exn : Value.t -> t
 

@@ -13,7 +13,7 @@ end
 (** [(Info-goto-node "(elisp)Customization Types")] *)
 module Type : sig
   type t =
-    | Alist
+    | Alist of t * t
     | Boolean
     | Character
     | Choice of t list
@@ -32,13 +32,16 @@ module Type : sig
     | Integer
     | List of t list
     | Number
+    | Option of string * t
     | Plist
     | Radio of t list
     | Regexp
+    | Repeat of t
     | Set of t list
     | Sexp
     | String
     | Symbol
+    | Tagged_string of string
     | Variable
     | Vector of t list
   [@@deriving sexp_of]

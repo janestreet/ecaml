@@ -150,6 +150,8 @@ module type Value = sig
 
     val list   : 'a t -> 'a list   t
     val option : 'a t -> 'a option t
+
+    val alist  : 'a t -> 'b t -> ('a * 'b) list t
   end with type value := t
 
   module type Funcall          = Funcall          with type value := t

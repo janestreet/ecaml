@@ -41,6 +41,11 @@ let set_query_on_exit t b =
 
 let status t = Symbol.funcall1 Q.process_status (t |> to_value) |> Symbol.of_value_exn
 
+let find_by_name name =
+  Symbol.funcall1 Q.get_process (name |> Value.of_utf8_bytes)
+  |> Value.Type.(option type_).of_value_exn
+;;
+
 let all_emacs_children () =
   Symbol.funcall0 Q.process_list
   |> Value.to_list_exn ~f:of_value_exn

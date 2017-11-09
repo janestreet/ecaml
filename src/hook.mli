@@ -2,6 +2,9 @@
     particular occasion by an existing program.  Emacs provides hooks for the sake of
     customization.
 
+    Hooks installed through Ecaml are wrapped in an exception handler that prints the
+    error to the [*Messages*] buffer and exits the function normally.
+
     [(Info-goto-node "(elisp)Hooks")] *)
 
 open! Core_kernel

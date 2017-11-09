@@ -7,7 +7,7 @@ open! Import
 type 'a t =
   { symbol : Symbol.t
   ; type_  : 'a Value.Type.t }
-[@@deriving sexp_of]
+[@@deriving fields, sexp_of]
 
 type 'a var = 'a t
 

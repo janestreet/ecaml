@@ -15,15 +15,25 @@ module Type = struct
     | Normal -> []
   ;;
 
-  let fn (type a) (t : a t) (f : a) : Function.Fn.t =
+  let fn (type a) (t : a t) (f : a) ~symbol : Function.Fn.t =
+    let wrap f =
+      match Or_error.try_with f with
+      | Ok () -> ()
+      | Error err ->
+        Echo_area.message_s
+          [%message "Error in hook"
+                      ~_:(symbol : Symbol.t)
+                      ~_:(err : Error.t)]
+    in
     match t with
     | Normal ->
       (function
-        | [| |] -> f (); Value.nil
+        | [| |] -> wrap f; Value.nil
         | _ -> assert false)
     | File   ->
       (function
-        | [| file |] -> f ~file:(file |> Value.to_utf8_bytes_exn); Value.nil
+        | [| file |] ->
+          wrap (fun () -> f ~file:(file |> Value.to_utf8_bytes_exn)); Value.nil
         | _ -> assert false)
   ;;
 end
@@ -59,7 +69,8 @@ module Function = struct
   [@@deriving sexp_of]
 
   let create ?docstring here type_ symbol f =
-    Function.defun ?docstring here symbol ~args:(Type.args type_) (Type.fn type_ f);
+    Function.defun ?docstring here symbol ~args:(Type.args type_)
+      (Type.fn ~symbol type_ f);
     { symbol; type_ }
   ;;
 

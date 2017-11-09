@@ -43,6 +43,10 @@ val create
   -> prog : string
   -> t
 
+(** [(describe-function 'get-process)]
+    [(Info-goto-node "(elisp)Process Information")] *)
+val find_by_name : string -> t option
+
 module Call : sig
   module Input : sig
     type t =

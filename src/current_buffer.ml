@@ -223,7 +223,9 @@ let mark_is_active () = value_exn mark_active
 let deactivate_mark () = Symbol.funcall0_i Q.deactivate_mark
 
 let make_buffer_local var =
-  Symbol.funcall1_i Q.make_local_variable (var |> Var.symbol_as_value)
+  let symbol = var |> Var.symbol_as_value in
+  add_gc_root symbol;
+  Symbol.funcall1_i Q.make_local_variable symbol
 ;;
 
 let is_buffer_local var =

@@ -1,9 +1,12 @@
 open! Core_kernel
 open! Import
 
-type t = string [@@deriving compare, sexp_of]
-
-let equal = [%compare.equal: t]
+include (String : sig
+           type t = string [@@deriving sexp_of]
+           include Comparable.S
+             with type t := t
+             with type comparator_witness = String.comparator_witness
+         end)
 
 let of_value_exn = Value.to_utf8_bytes_exn
 let to_value     = Value.of_utf8_bytes

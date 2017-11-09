@@ -4,6 +4,7 @@ open! Import
 type 'a t =
   { symbol : Symbol.t
   ; type_  : 'a Value.Type.t }
+[@@deriving fields]
 
 let sexp_of_t _ { symbol; type_ } =
   [%message "" ~_:(symbol : Symbol.t) ~_:(type_ : _ Value.Type.t)]
@@ -28,7 +29,9 @@ let set_default_value t a =
 ;;
 
 let make_buffer_local_always t =
-  Symbol.funcall1_i Q.make_variable_buffer_local (symbol_as_value t)
+  let symbol = symbol_as_value t in
+  add_gc_root symbol;
+  Symbol.funcall1_i Q.make_variable_buffer_local symbol
 ;;
 
 module And_value = struct

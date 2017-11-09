@@ -328,9 +328,22 @@ let to_list_exn (t : t) ~f =
   loop t []
 ;;
 
-let rec like_sexp : Sexp.t -> t = function
-  | Atom s -> s |> of_utf8_bytes
-  | List sexps -> list (List.map sexps ~f:like_sexp)
+let looks_nice_in_symbol = function
+  | 'a' .. 'z'
+  | 'A' .. 'Z'
+  | '0' .. '9'
+  | '_' | '-'
+  | '!' | '*' | '+' | '/' | ':' | '<' | '=' | '>' | '@' | '|'
+    -> true
+  | _ -> false
+;;
+
+let rec pretty_sexp : Sexp.t -> t = function
+  | Atom s ->
+    if String.for_all s ~f:looks_nice_in_symbol
+    then intern s
+    else s |> of_utf8_bytes
+  | List sexps -> list (List.map sexps ~f:pretty_sexp)
 ;;
 
 let non_local_exit_signal exn =
@@ -339,14 +352,24 @@ let non_local_exit_signal exn =
         causes it to, after our C code returns to it, signal instead of returning a
         value. *)
     external non_local_exit_signal : t -> t -> unit =
-      "ecaml_non_local_exit_signal"
-  end in
+      "ecaml_non_local_exit_signal" end in
   let symbol, data =
     match exn with
     | Elisp_signal { symbol; data } ->
       (* This case preserves an Elisp signal as it crosses an OCaml boundary. *)
       symbol, data
-    | _ -> Q.error, list [ exn |> Exn.sexp_of_t |> like_sexp ] in
+    | _ ->
+      let sexp = exn |> Exn.sexp_of_t in
+      let string, rest =
+        match sexp with
+        | Atom string                  -> string , []
+        | List [ Atom string ]         -> string , []
+        | List [ Atom string; rest ]   -> string , [ rest |> pretty_sexp ]
+        | List ( Atom string :: rest ) -> string , [ List rest |> pretty_sexp ]
+        | List rest                    -> "error", [ List rest |> pretty_sexp ] in
+      (* For the [error] symbol, the error data should be a list whose car is a string.
+         See [(Info-goto-node "(elisp)Signaling Errors")]. *)
+      Q.error, list ((string |> of_utf8_bytes) :: rest) in
   M.non_local_exit_signal symbol data
 ;;
 
@@ -418,6 +441,16 @@ module Type = struct
     { name         = [%message "value"]
     ; of_value_exn = Fn.id
     ; to_value     = Fn.id }
+  ;;
+
+  let alist t1 t2 =
+    { name         = [%message "alist" ~_:(t1.name : Sexp.t) ~_:(t2.name : Sexp.t)]
+    ; of_value_exn = to_list_exn ~f:(fun cons_cell ->
+        (t1.of_value_exn (car_exn cons_cell),
+         t2.of_value_exn (cdr_exn cons_cell)))
+    ; to_value     = fun l ->
+        list (List.map l ~f:(fun (a,b) ->
+          cons (t1.to_value a) (t2.to_value b))) }
   ;;
 
   let list t =

@@ -12,7 +12,7 @@ end
 
 module Type = struct
   type t =
-    | Alist
+    | Alist of t * t
     | Boolean
     | Character
     | Choice of t list
@@ -31,13 +31,16 @@ module Type = struct
     | Integer
     | List of t list
     | Number
+    | Option of string * t
     | Plist
     | Radio of t list
     | Regexp
+    | Repeat of t
     | Set of t list
     | Sexp
     | String
     | Symbol
+    | Tagged_string of string
     | Variable
     | Vector of t list
   [@@deriving sexp_of]
@@ -47,7 +50,9 @@ module Type = struct
   let rec vs ts = List.map ts ~f:v
   and composite s ts = Value.list (Symbol.to_value s :: vs ts)
   and v = function
-    | Alist         -> s Q.alist
+    | Alist (t1, t2) -> Value.list [ s Q.alist ;
+                                     s Q.K.key_type; v t1;
+                                     s Q.K.value_type; v t2;]
     | Boolean       -> s Q.boolean
     | Character     -> s Q.character
     | Choice ts     -> composite Q.choice ts
@@ -66,13 +71,19 @@ module Type = struct
     | Integer       -> s Q.integer
     | List ts       -> composite Q.list ts
     | Number        -> s Q.number
+    | Option (none, t) -> Value.list [ s Q.choice
+                                     ; (Value.list [ s Q.const ; s Q.K.tag ;
+                                                     Value.of_utf8_bytes none; s Q.nil ])
+                                     ; v t ]
     | Plist         -> s Q.plist
     | Radio ts      -> composite Q.radio ts
     | Regexp        -> s Q.regexp
+    | Repeat t      -> composite Q.repeat [ t ]
     | Set ts        -> composite Q.set ts
     | Sexp          -> s Q.sexp
     | String        -> s Q.string
     | Symbol        -> s Q.symbol
+    | Tagged_string tag -> Value.list [ v String; s Q.K.tag; Value.of_utf8_bytes tag ]
     | Variable      -> s Q.variable
     | Vector ts     -> composite Q.vector ts
   ;;

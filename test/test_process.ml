@@ -61,6 +61,22 @@ let%expect_test "[buffer]" =
     ("#<buffer *temp-buffer*>") |}]
 ;;
 
+let%expect_test "[find_by_name]" =
+  let find () = find_by_name "sleeper" in
+  let test () = print_s [%sexp (find () : t option)] in
+  test ();
+  [%expect {|
+    () |}];
+  ignore (sleep () : t);
+  test ();
+  [%expect {|
+    ("#<process sleeper>") |}];
+  Option.iter (find ()) ~f:kill;
+  test ();
+  [%expect {|
+    () |}];
+;;
+
 let%expect_test "[query_on_exit], [set_query_on_exit]" =
   let t = sleep () in
   let show () =
