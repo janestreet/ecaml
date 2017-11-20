@@ -78,18 +78,24 @@ let with_input string f =
   let r, w = Unix.pipe () in
   let () = Unix.set_nonblock w in
   let out = Unix.out_channel_of_descr w in
+
   let stdin_to_restore = Unix.dup Unix.stdin in
   (try
      Out_channel.output_string out string;
      Out_channel.close out;
    with Sys_blocked_io ->
+     (* The channel is in a state where it cannot be flushed.
+        Close the channel explicitly instead of waiting for the
+        finalizer as it would attempt to flush. *)
+     Out_channel.close_no_err out;
      raise_s [%message
        "[with_input] doesn't support strings this long"
          ~_:(String.length string : int)]);
   Unix.dup2 ~src:r ~dst:Unix.stdin;
   Unix.close r;
   protect ~f ~finally:(fun () ->
-    Unix.dup2 ~src:stdin_to_restore ~dst:Unix.stdin)
+    Unix.dup2 ~src:stdin_to_restore ~dst:Unix.stdin
+  )
 ;;
 
 let%expect_test "[with_input] with too long string" =
