@@ -120,7 +120,7 @@ module Descriptor = struct
     let s = Bytes.create (1 + List.length flags) in
     Bytes.set s 0 (class_ |> Class.to_char);
     List.iteri flags ~f:(fun i flag -> Bytes.set s (i + 1) (flag |> Flag.to_char));
-    s |> Value.of_utf8_bytes
+    s |> Bytes.to_string |> Value.of_utf8_bytes
   ;;
 end
 

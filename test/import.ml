@@ -100,7 +100,7 @@ let with_input string f =
 
 let%expect_test "[with_input] with too long string" =
   show_raise (fun () ->
-    with_input (Bytes.create 100_000) (fun () -> assert false));
+    with_input (String.make 100_000 '\000') (fun () -> assert false));
   [%expect {|
     (raised ("[with_input] doesn't support strings this long" 100_000)) |}];
 ;;

@@ -4,6 +4,7 @@
               ecaml
               expect_test_helpers_kernel
               sexp_pretty))
+  (flags (:standard -safe-string))
   (preprocess (pps (ppx_jane ppx_driver.runner)))
 ))
 

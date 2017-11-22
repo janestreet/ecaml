@@ -501,7 +501,7 @@ let append_to_output t ~input_offset =
   let len = (t.input_pos - input_offset) - t.append_start in
   if len > 0
   then (
-    Out_channel.output t.out_channel ~buf:t.input ~pos:t.append_start ~len;
+    Out_channel.output_substring t.out_channel ~buf:t.input ~pos:t.append_start ~len;
     State_machine.apply_current_state t.state_machine ~to_:{ pos = t.output_pos; len };
     t.output_pos <- t.output_pos + len);
 ;;
