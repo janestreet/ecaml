@@ -13,6 +13,7 @@ include Equal.S with type t := t
 (** Accessors *)
 val change_command : t -> Symbol.t
 val keymap         : t -> Keymap.t
+val keymap_var     : t -> Keymap.t Var.t
 val syntax_table   : t -> Syntax_table.t
 
 val create : change_command:Symbol.t -> t

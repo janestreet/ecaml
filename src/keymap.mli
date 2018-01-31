@@ -51,6 +51,9 @@ val global : unit -> t
     [(Info-goto-node "(elisp)Controlling Active Maps")] *)
 val set_global : t -> unit
 
+(** [(describe-function 'set-transient-map)] *)
+val set_transient : t -> unit
+
 module Entry : sig
   type t =
     | Absent
@@ -61,6 +64,8 @@ module Entry : sig
     | Undefined                          (** [(describe-function 'undefined)] *)
     | Value          of  Value.t
   [@@deriving sexp_of]
+
+  include Valueable.S with type t := t
 end
 
 (** [(describe-function 'lookup-key)]

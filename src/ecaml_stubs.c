@@ -104,8 +104,12 @@ static void free_emacs_values_assuming_in_emacs_thread(emacs_env *env) {
   }
 }
 
+// extract wrapped emacs_value. also lvalue.
+#define Emacs_val(val) *(emacs_value *)Data_custom_val(val)
+
 static void finalize_emacs_value(value val) {
-  emacs_value the_val = EMACS_OF_OCAML(val);
+  // val is not an int since it was finalized
+  emacs_value the_val = Emacs_val(val);
   push_to_free(the_val);
 }
 
@@ -143,9 +147,15 @@ static value ecaml_nil()
   if (Is_long(caml_nil)) {
     caml_register_generational_global_root(&caml_nil);
     caml_modify_generational_global_root(&caml_nil, caml_alloc_custom(&emacs_value_ops, sizeof(emacs_value), 0, 1));
-    EMACS_OF_OCAML(caml_nil) = emacs_nil;
+    Emacs_val(caml_nil) = emacs_nil;
   }
   return caml_nil;
+}
+
+static bool is_emacs_integer(emacs_env* env, emacs_value val) {
+  static emacs_value cache = NULL;
+  emacs_value integer_type = ecaml_cache_symbol_and_keep_alive(env, &cache, "integer");
+  return (env->type_of(env, val) == integer_type);
 }
 
 static value ocaml_of_emacs(emacs_env* env, emacs_value val) {
@@ -153,11 +163,28 @@ static value ocaml_of_emacs(emacs_env* env, emacs_value val) {
   CAMLlocal1(v);
   if (val == emacs_nil) {
     v = ecaml_nil();
+  } else if (is_emacs_integer(env, val)) {
+    /* This is ok because emacs integers range is subset of OCaml integer range and we
+       have tests for it. */
+    v = Val_long(env->extract_integer(env, val));
   } else {
     v = caml_alloc_custom(&emacs_value_ops, sizeof(emacs_value), 0, 1);
-    EMACS_OF_OCAML(v) = env->make_global_ref(env, val);
+    Emacs_val(v) = env->make_global_ref(env, val);
   }
   CAMLreturn(v);
+}
+
+emacs_value emacs_of_ocaml(emacs_env* env, value val) {
+  emacs_value ret;
+  if (Is_block(val)) {
+    ret = Emacs_val(val);
+  } else {
+    /* If [val] is an int, it either came from emacs or it was created by
+       [Value.of_int_exn] which checks bounds. In either case, it is within the range of
+       emacs integers so [env->make_integer] shouldn't fail. */
+    ret = env->make_integer(env, Long_val(val));
+  }
+  return ret;
 }
 
 CAMLprim value
@@ -213,8 +240,8 @@ ecaml_non_local_exit_signal(value symbol, value data)
 {
   CAMLparam2(symbol, data);
   emacs_env* env = ecaml_active_env_or_die();
-  emacs_value non_local_exit_symbol = EMACS_OF_OCAML(symbol);
-  emacs_value non_local_exit_data = EMACS_OF_OCAML(data);
+  emacs_value non_local_exit_symbol = emacs_of_ocaml(env, symbol);
+  emacs_value non_local_exit_data = emacs_of_ocaml(env, data);
   env->non_local_exit_signal(env, non_local_exit_symbol, non_local_exit_data);
   CAMLreturn(Val_unit);
 }
@@ -244,17 +271,30 @@ static void if_exception_signal_emacs_and_use_ecaml_nil(emacs_env* maybe_env, ch
   }
 }
 
-struct caml_cb {
-  long fun_id;
-};
-
 static emacs_value
-Fdispatch_assuming_lock_is_held(emacs_env* env, ptrdiff_t nargs, emacs_value args[], void *data)
+Fdispatch_assuming_lock_is_held(emacs_env* env, ptrdiff_t nargs, emacs_value args[],
+                                __attribute__((unused)) void *data)
 {
   CAMLparam0();
-  CAMLlocal3(arg_array, ret, tmp);
+  CAMLlocal4(callback_id, arg_array, ret, tmp);
 
-  struct caml_cb *cb = (struct caml_cb *)data;
+  /* shouldn't never really happen since Fdispatch is not bound to any symbol */
+  if (nargs <= 0) {
+    /* error wrong-number-of-arguments requires a list of two elements, function symbol
+       and the number of arguments */
+    emacs_value list_fun = env->intern(env, "list");
+    emacs_value list_elems[] = { env->intern(env, "Fdispatch"),
+                                 env->make_integer(env, nargs) };
+    emacs_value signal_data = env->funcall(env, list_fun, 2, list_elems);
+
+    env->non_local_exit_signal
+      (env, env->intern(env, "wrong-number-of-arguments"), signal_data);
+
+    CAMLreturnT(emacs_value, emacs_nil);
+  }
+
+  callback_id = *((value *)env->get_user_ptr(env, args[0]));
+  nargs--; args++;
 
   if (nargs == 0) {
     // A zero-length array.  The OCaml manual says not to use [caml_alloc] to allocate a
@@ -268,13 +308,16 @@ Fdispatch_assuming_lock_is_held(emacs_env* env, ptrdiff_t nargs, emacs_value arg
     }
   }
 
-  CAML_NAMED_CALLBACK(ret, dispatch_function, 2_exn, Val_long(cb->fun_id), arg_array);
+  CAML_NAMED_CALLBACK(ret, dispatch_function, 2_exn, callback_id, arg_array);
   if_exception_signal_emacs_and_use_ecaml_nil(env, "Fdispatch", &ret);
 
-  emacs_value ret_val = EMACS_OF_OCAML(ret);
+  emacs_value ret_val = emacs_of_ocaml(env, ret);
 
   CAMLreturnT(emacs_value, ret_val);
 }
+
+//forward
+static void free_embedded_caml_values(emacs_env*);
 
 typedef struct {
   bool need_to_lock_caml;
@@ -293,6 +336,7 @@ static acquire_lock acquire_ocaml_lock_from_emacs(emacs_env *env) {
     caml_acquire_runtime_system();
   }
   free_emacs_values_assuming_in_emacs_thread(env);
+  free_embedded_caml_values(env);
 
   acquire_lock acquire_lock = {
     .need_to_lock_caml = need_to_lock_caml,
@@ -367,56 +411,25 @@ int emacs_module_init(struct emacs_runtime *ert)
   return 0;
 }
 
-void free_caml_cb(void *ptr)
-{
-  /* This function is called in the middle of garbage collection, so we can't call emacs
-     from here. [acquire_ocaml_lock_from_emacs] will set [active_env] to NULL for the
-     duration of the finalizer, which should guarantee that it can't happen. */
-  emacs_env *no_env = NULL;
-  acquire_lock lock_state = acquire_ocaml_lock_from_emacs(no_env);
-
-  {
-    CAMLparam0();
-    CAMLlocal1(ret);
-    struct caml_cb *cb = (struct caml_cb *)ptr;
-    CAML_NAMED_CALLBACK(ret, free_function, 1_exn, Val_long(cb->fun_id));
-    if_exception_signal_emacs_and_use_ecaml_nil(no_env, "free_caml_db", &ret);
-
-    free(cb);
-    CAMLdrop;
-  }
-
-  release_ocaml_lock_from_emacs(lock_state, no_env);
-  return;
-}
-
 CAMLprim value
-ecaml_make_function(value doc, value fun_id)
+ecaml_make_dispatch_function(value doc)
 {
-  CAMLparam2(doc, fun_id);
-  CAMLlocal3(ret, ret_func, ret_uptr);
+  CAMLparam1(doc);
+  CAMLlocal1(ret);
   emacs_env* env = ecaml_active_env_or_die();
-  struct caml_cb *r = (struct caml_cb *)malloc(sizeof *r);
-  r->fun_id = Long_val(fun_id);
   /* [make_function] doesn't deal with NULs in OCaml strings. */
   emacs_value emacs_func =
     env->make_function(env, 0, emacs_variadic_function, Fdispatch,
-                       String_val(doc), (void *)r);
-  emacs_value uptr = env->make_user_ptr(env, free_caml_cb, r);
-  ret_func = ocaml_of_emacs(env, emacs_func);
-  ret_uptr = ocaml_of_emacs(env, uptr);
-  ret = caml_alloc_tuple(2);
-  Store_field(ret, 0, ret_func);
-  Store_field(ret, 1, ret_uptr);
+                       String_val(doc), NULL);
+  ret = ocaml_of_emacs(env, emacs_func);
   CAMLreturn(ret);
 }
 
-value ecaml_funcall(value fun, emacs_value *args, size_t nargs, value should_return_result)
+value ecaml_funcall(emacs_env* env, value fun, emacs_value *args, size_t nargs, value should_return_result)
 {
   CAMLparam2(fun, should_return_result);
   CAMLlocal1(ret);
-  emacs_env* env = ecaml_active_env_or_die();
-  emacs_value the_fun = EMACS_OF_OCAML(fun);
+  emacs_value the_fun = emacs_of_ocaml(env, fun);
   emacs_value ret_val = env->funcall(env, the_fun, nargs, args);
   if (Bool_val(should_return_result)) {
     ret = ocaml_of_emacs(env, ret_val);
@@ -431,6 +444,7 @@ ecaml_funcall_array(value fun, value args, value should_return_result)
 {
   CAMLparam3(fun, args, should_return_result);
   CAMLlocal1(ret);
+  emacs_env* env = ecaml_active_env_or_die();
   size_t nargs = Wosize_val(args);
 
   // If [nargs > cutoff], we use malloc/free to allocate [the_args], whereas if [nargs <=
@@ -446,9 +460,9 @@ ecaml_funcall_array(value fun, value args, value should_return_result)
   }
 
   for (size_t i = 0; i < nargs; i++) {
-    the_args[i] = EMACS_OF_OCAML(Field(args, i));
+    the_args[i] = emacs_of_ocaml(env, Field(args, i));
   }
-  ret = ecaml_funcall(fun, the_args, nargs, should_return_result);
+  ret = ecaml_funcall(env, fun, the_args, nargs, should_return_result);
   if (nargs > cutoff) {
     free(the_args);
   }
@@ -458,80 +472,86 @@ ecaml_funcall_array(value fun, value args, value should_return_result)
 CAMLprim value
 ecaml_funcall0(value fun, value should_return_result)
 {
-  return ecaml_funcall(fun, NULL, 0, should_return_result);
+  emacs_env* env = ecaml_active_env_or_die();
+  return ecaml_funcall(env, fun, NULL, 0, should_return_result);
 }
 
 CAMLprim value
 ecaml_funcall1(value fun, value arg0, value should_return_result)
 {
+  emacs_env* env = ecaml_active_env_or_die();
   emacs_value the_arg;
-  the_arg = EMACS_OF_OCAML(arg0);
-  return ecaml_funcall(fun, &the_arg, 1, should_return_result);
+  the_arg = emacs_of_ocaml(env, arg0);
+  return ecaml_funcall(env, fun, &the_arg, 1, should_return_result);
 }
 
 CAMLprim value
 ecaml_funcall2(value fun, value arg0, value arg1, value should_return_result)
 {
+  emacs_env* env = ecaml_active_env_or_die();
   emacs_value the_args[2];
-  the_args[0] = EMACS_OF_OCAML(arg0);
-  the_args[1] = EMACS_OF_OCAML(arg1);
-  return ecaml_funcall(fun, the_args, 2, should_return_result);
+  the_args[0] = emacs_of_ocaml(env, arg0);
+  the_args[1] = emacs_of_ocaml(env, arg1);
+  return ecaml_funcall(env, fun, the_args, 2, should_return_result);
 }
 
 CAMLprim value
 ecaml_funcall3(value fun, value arg0, value arg1, value arg2, value should_return_result)
 {
+  emacs_env* env = ecaml_active_env_or_die();
   emacs_value the_args[3];
-  the_args[0] = EMACS_OF_OCAML(arg0);
-  the_args[1] = EMACS_OF_OCAML(arg1);
-  the_args[2] = EMACS_OF_OCAML(arg2);
-  return ecaml_funcall(fun, the_args, 3, should_return_result);
+  the_args[0] = emacs_of_ocaml(env, arg0);
+  the_args[1] = emacs_of_ocaml(env, arg1);
+  the_args[2] = emacs_of_ocaml(env, arg2);
+  return ecaml_funcall(env, fun, the_args, 3, should_return_result);
 }
 
 CAMLprim value
 ecaml_funcall4(value fun, value arg0, value arg1, value arg2, value arg3, value should_return_result)
 {
+  emacs_env* env = ecaml_active_env_or_die();
   emacs_value the_args[4];
-  the_args[0] = EMACS_OF_OCAML(arg0);
-  the_args[1] = EMACS_OF_OCAML(arg1);
-  the_args[2] = EMACS_OF_OCAML(arg2);
-  the_args[3] = EMACS_OF_OCAML(arg3);
-  return ecaml_funcall(fun, the_args, 4, should_return_result);
+  the_args[0] = emacs_of_ocaml(env, arg0);
+  the_args[1] = emacs_of_ocaml(env, arg1);
+  the_args[2] = emacs_of_ocaml(env, arg2);
+  the_args[3] = emacs_of_ocaml(env, arg3);
+  return ecaml_funcall(env, fun, the_args, 4, should_return_result);
 }
 
 CAMLprim value
 ecaml_funcall_int_int_value_unit(value fun, value arg0, value arg1, value arg2)
 {
-  emacs_value the_args[3];
   emacs_env* env = ecaml_active_env_or_die();
+  emacs_value the_args[3];
   the_args[0] = env->make_integer(env, Long_val(arg0));
   the_args[1] = env->make_integer(env, Long_val(arg1));
-  the_args[2] = EMACS_OF_OCAML(arg2);
-  return ecaml_funcall(fun, the_args, 3, false);
+  the_args[2] = emacs_of_ocaml(env, arg2);
+  return ecaml_funcall(env, fun, the_args, 3, false);
 }
 
 CAMLprim value
 ecaml_funcall_int_int_value_value_unit(value fun, value arg0, value arg1, value arg2, value arg3)
 {
-  emacs_value the_args[4];
   emacs_env* env = ecaml_active_env_or_die();
+  emacs_value the_args[4];
   the_args[0] = env->make_integer(env, Long_val(arg0));
   the_args[1] = env->make_integer(env, Long_val(arg1));
-  the_args[2] = EMACS_OF_OCAML(arg2);
-  the_args[3] = EMACS_OF_OCAML(arg3);
-  return ecaml_funcall(fun, the_args, 4, false);
+  the_args[2] = emacs_of_ocaml(env, arg2);
+  the_args[3] = emacs_of_ocaml(env, arg3);
+  return ecaml_funcall(env, fun, the_args, 4, false);
 }
 
 CAMLprim value
 ecaml_funcall5(value fun, value arg0, value arg1, value arg2, value arg3, value arg4, value should_return_result)
 {
+  emacs_env* env = ecaml_active_env_or_die();
   emacs_value the_args[5];
-  the_args[0] = EMACS_OF_OCAML(arg0);
-  the_args[1] = EMACS_OF_OCAML(arg1);
-  the_args[2] = EMACS_OF_OCAML(arg2);
-  the_args[3] = EMACS_OF_OCAML(arg3);
-  the_args[4] = EMACS_OF_OCAML(arg4);
-  return ecaml_funcall(fun, the_args, 5, should_return_result);
+  the_args[0] = emacs_of_ocaml(env, arg0);
+  the_args[1] = emacs_of_ocaml(env, arg1);
+  the_args[2] = emacs_of_ocaml(env, arg2);
+  the_args[3] = emacs_of_ocaml(env, arg3);
+  the_args[4] = emacs_of_ocaml(env, arg4);
+  return ecaml_funcall(env, fun, the_args, 5, should_return_result);
 }
 
 CAMLprim value
@@ -567,7 +587,7 @@ ecaml_type_of(value val)
   CAMLparam1(val);
   CAMLlocal1(ret);
   emacs_env* env = ecaml_active_env_or_die();
-  emacs_value the_val = EMACS_OF_OCAML(val);
+  emacs_value the_val = emacs_of_ocaml(env, val);
   emacs_value ret_val = env->type_of(env, the_val);
   ret = ocaml_of_emacs(env, ret_val);
   CAMLreturn(ret);
@@ -579,7 +599,7 @@ ecaml_is_not_nil(value val)
   CAMLparam1(val);
   CAMLlocal1(ret);
   emacs_env* env = ecaml_active_env_or_die();
-  emacs_value the_val = EMACS_OF_OCAML(val);
+  emacs_value the_val = emacs_of_ocaml(env, val);
   ret = Val_bool(env->is_not_nil(env, the_val));
   CAMLreturn(ret);
 }
@@ -590,33 +610,9 @@ ecaml_eq(value a, value b)
   CAMLparam2(a, b);
   CAMLlocal1(ret);
   emacs_env* env = ecaml_active_env_or_die();
-  emacs_value the_a = EMACS_OF_OCAML(a);
-  emacs_value the_b = EMACS_OF_OCAML(b);
+  emacs_value the_a = emacs_of_ocaml(env, a);
+  emacs_value the_b = emacs_of_ocaml(env, b);
   ret = Val_bool(env->eq(env, the_a, the_b));
-  CAMLreturn(ret);
-}
-
-CAMLprim value
-ecaml_to_int(value val)
-{
-  CAMLparam1(val);
-  emacs_env* env = ecaml_active_env_or_die();
-  emacs_value the_val = EMACS_OF_OCAML(val);
-  intmax_t ret_val = env->extract_integer(env, the_val);
-  /* We don't check the range of [ret_val], since Emacs's [most-positive-fixnum] fits
-     within OCaml's 63-bit int, and we have an expect test for that. */
-  CAMLreturn(Val_long(ret_val));
-}
-
-CAMLprim value
-ecaml_of_int(value val)
-{
-  CAMLparam1(val);
-  CAMLlocal1(ret);
-  emacs_env* env = ecaml_active_env_or_die();
-  long the_val = Long_val(val);
-  emacs_value ret_val = env->make_integer(env, the_val);
-  ret = ocaml_of_emacs(env, ret_val);
   CAMLreturn(ret);
 }
 
@@ -625,7 +621,7 @@ ecaml_to_float(value val)
 {
   CAMLparam1(val);
   emacs_env* env = ecaml_active_env_or_die();
-  emacs_value the_val = EMACS_OF_OCAML(val);
+  emacs_value the_val = emacs_of_ocaml(env, val);
   double ret_val = env->extract_float(env, the_val);
   CAMLreturn(caml_copy_double(ret_val));
 }
@@ -648,7 +644,7 @@ ecaml_to_string(value val)
   CAMLparam1(val);
   CAMLlocal1(ret);
   emacs_env* env = ecaml_active_env_or_die();
-  emacs_value the_val = EMACS_OF_OCAML(val);
+  emacs_value the_val = emacs_of_ocaml(env, val);
   ptrdiff_t size = 0;
   env->copy_string_contents(env, the_val, NULL, &size);
   /* [copy_string_contents] writes [size] including space for a NUL byte at the end.
@@ -679,7 +675,7 @@ ecaml_vec_get(value vec, value index)
   CAMLparam2(vec, index);
   CAMLlocal1(ret);
   emacs_env* env = ecaml_active_env_or_die();
-  emacs_value the_vec = EMACS_OF_OCAML(vec);
+  emacs_value the_vec = emacs_of_ocaml(env, vec);
   long the_index = Long_val(index);
   emacs_value ret_val = env->vec_get(env, the_vec, the_index);
   ret = ocaml_of_emacs(env, ret_val);
@@ -692,9 +688,9 @@ ecaml_vec_set(value vec, value index, value val)
   CAMLparam3(vec, index, val);
   CAMLlocal1(ret);
   emacs_env* env = ecaml_active_env_or_die();
-  emacs_value the_vec = EMACS_OF_OCAML(vec);
+  emacs_value the_vec = emacs_of_ocaml(env, vec);
   long the_index = Long_val(index);
-  emacs_value the_val = EMACS_OF_OCAML(val);
+  emacs_value the_val = emacs_of_ocaml(env, val);
   env->vec_set(env, the_vec, the_index, the_val);
   CAMLreturn(Val_unit);
 }
@@ -705,7 +701,66 @@ ecaml_vec_size(value vec)
   CAMLparam1(vec);
   CAMLlocal1(ret);
   emacs_env* env = ecaml_active_env_or_die();
-  emacs_value the_vec = EMACS_OF_OCAML(vec);
+  emacs_value the_vec = emacs_of_ocaml(env, vec);
   ptrdiff_t ret_val = env->vec_size(env, the_vec);
   CAMLreturn(Val_long(ret_val));
+}
+
+static value* caml_embedded_ids_to_free = NULL;
+static long caml_embedded_ids_to_free_size = 0;
+static long caml_embedded_ids_to_free_index = 0;
+
+/* This function runs in the middle of emacs GC so we avoid calling into OCaml and simply
+   just store the [caml_embedded_id] to be processed later by
+   [free_embedded_caml_values].
+
+   Note that all [value]s below are [Caml_embedded_id.t] which is an immediate so we don't
+   have to worry about GC.
+*/
+static void finalize_caml_embedded(void* data)
+{
+  if (caml_embedded_ids_to_free_size == caml_embedded_ids_to_free_index) {
+    caml_embedded_ids_to_free_size = 2 * caml_embedded_ids_to_free_size + 1;
+    caml_embedded_ids_to_free =
+      realloc(caml_embedded_ids_to_free, sizeof(value) * caml_embedded_ids_to_free_size);
+  }
+  value caml_embedded_id = *((value *)data);
+  caml_embedded_ids_to_free[caml_embedded_ids_to_free_index++] = caml_embedded_id;
+  free(data);
+}
+
+void free_embedded_caml_values(emacs_env* env)
+{
+  CAMLparam0();
+  CAMLlocal2(ids,ret);
+  if (caml_embedded_ids_to_free_index > 0) {
+    ids = caml_alloc (caml_embedded_ids_to_free_index, 0);
+    memcpy(Op_val(ids), caml_embedded_ids_to_free,
+           caml_embedded_ids_to_free_index * sizeof(value));
+    caml_embedded_ids_to_free_index = 0;
+    CAML_NAMED_CALLBACK(ret, free_embedded_caml_values, 1_exn, ids);
+    if_exception_signal_emacs_and_use_ecaml_nil(env, "free_embedded_caml_values", &ret);
+  }
+  CAMLreturn0;
+}
+
+CAMLprim value ecaml_inject(value caml_embedded_id)
+{
+  CAMLparam1(caml_embedded_id);
+  CAMLlocal1(ret);
+  emacs_env* env = ecaml_active_env_or_die();
+  value* data = malloc(sizeof(value));
+  *data = caml_embedded_id;
+  emacs_value user_ptr = env->make_user_ptr(env, finalize_caml_embedded, (void *)data);
+  ret = ocaml_of_emacs(env, user_ptr);
+  CAMLreturn(ret);
+}
+
+CAMLprim value ecaml_project(value val)
+{
+  CAMLparam1(val);
+  emacs_env* env = ecaml_active_env_or_die();
+  emacs_value user_ptr = emacs_of_ocaml(env, val);
+  void* data = env->get_user_ptr(env, user_ptr);
+  CAMLreturn(*((value *)data));
 }

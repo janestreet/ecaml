@@ -1,6 +1,7 @@
 open! Core_kernel
 open! Import
 
+
 type t =
   { function_name : Symbol.t
   ; variable_name : Symbol.t }
@@ -11,6 +12,10 @@ let abbrev =
   ; variable_name = Q.abbrev_mode }
 ;;
 
+let goto_address =
+  { function_name = Q.goto_address_mode
+  ; variable_name = Q.goto_address_mode }
+
 let read_only =
   { function_name = Q.read_only_mode
   ; variable_name = Q.buffer_read_only }
@@ -20,6 +25,10 @@ let view =
   { function_name = Q.view_mode
   ; variable_name = Q.view_mode }
 ;;
+
+let visual_line =
+  { function_name = Q.visual_line_mode
+  ; variable_name = Q.visual_line_mode }
 
 let is_enabled t =
   Current_buffer.value_exn { symbol = t.variable_name; type_ = Value.Type.bool }

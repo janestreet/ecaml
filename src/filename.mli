@@ -11,12 +11,7 @@ type t = string [@@deriving compare, sexp_of]
 include Comparable.S
   with type t := t
   with type comparator_witness = String.comparator_witness
-
-val of_value_exn : Value.t -> t
-
-val to_value : t -> Value.t
-
-val type_ : t Value.Type.t
+include Valueable.S with type t := t
 
 (** [(describe-function 'file-name-directory)]
     [(Info-goto-node "(elisp)File Name Components")] *)

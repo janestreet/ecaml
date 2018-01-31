@@ -78,7 +78,10 @@ end
 
 (** [(Info-goto-node "(elisp)Face Attributes")] *)
 module Inherit : sig
-  type t [@@deriving sexp_of]
+  type nonrec t =
+    | Face of t
+    | Unspecified
+  [@@deriving sexp_of]
 end
 
 (** [(Info-goto-node "(elisp)Face Attributes")] *)
@@ -244,9 +247,19 @@ val attribute_value
   -> 'a Attribute.t
   -> 'a
 
+(** [(describe-function 'set-face-attribute)] *)
+val set_attribute
+  :  ?on : Frame.t
+  -> t
+  -> 'a Attribute.t
+  -> 'a
+  -> unit
 
 (** [(describe-function 'face-all-attributes)] *)
 val attributes
   :  ?on : Frame.t  (** default is selected frame *)
   -> t
   -> Attribute_and_value.t list
+
+(** [(describe-function 'face-spec-set)] *)
+val spec_set : t -> Attribute_and_value.t list -> unit

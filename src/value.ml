@@ -76,6 +76,7 @@ module Q = struct
   let arrayp                 = "arrayp"                 |> intern
   let bufferp                = "bufferp"                |> intern
   let car                    = "car"                    |> intern
+  let cadr                   = "cadr"                   |> intern
   let cdr                    = "cdr"                    |> intern
   let commandp               = "commandp"               |> intern
   let cons                   = "cons"                   |> intern
@@ -88,7 +89,6 @@ module Q = struct
   let framep                 = "framep"                 |> intern
   let functionp              = "functionp"              |> intern
   let hash_table_p           = "hash-table-p"           |> intern
-  let integerp               = "integerp"               |> intern
   let keymapp                = "keymapp"                |> intern
   let list                   = "list"                   |> intern
   let markerp                = "markerp"                |> intern
@@ -96,6 +96,7 @@ module Q = struct
   let prin1_to_string        = "prin1-to-string"        |> intern
   let processp               = "processp"               |> intern
   let stringp                = "stringp"                |> intern
+  let symbol_value           = "symbol-value"           |> intern
   let symbolp                = "symbolp"                |> intern
   let syntax_table_p         = "syntax-table-p"         |> intern
   let t                      = "t"                      |> intern
@@ -250,11 +251,31 @@ let is_not_nil = wrap_raise1 is_not_nil
 external eq : t -> t -> bool = "ecaml_eq"
 let eq = wrap_raise2 eq
 
-external of_int_exn : int -> t = "ecaml_of_int"
-let of_int_exn = wrap_raise1 of_int_exn
+let is_integer (t : t) = Obj.is_int (Obj.repr t)
 
-external to_int_exn : t -> int = "ecaml_to_int"
-let to_int_exn = wrap_raise1 to_int_exn
+let to_int_exn (t : t) =
+  if not (is_integer t) then
+    raise_s [%sexp ("wrong-type-argument", ("integerp", (t : t)))]
+  else
+    (Obj.magic t : int)
+;;
+
+let get_int_var string = funcall1 Q.symbol_value (string |> intern) |> to_int_exn
+
+let emacs_min_int = get_int_var "most-negative-fixnum"
+let emacs_max_int = get_int_var "most-positive-fixnum"
+
+let of_int_exn : int -> t =
+  let check_bounds =
+    Int.validate_bound
+      ~min:(Incl emacs_min_int)
+      ~max:(Incl emacs_max_int)
+  in
+  fun n ->
+    Validate.maybe_raise
+      (Validate.name "overflow-error" (check_bounds n));
+    (Obj.magic n : t);
+;;
 
 external of_float : float -> t = "ecaml_of_float"
 let of_float = wrap_raise1 of_float
@@ -280,6 +301,8 @@ let vec_size = wrap_raise1 vec_size
 let nil = Q.nil
 let t   = Q.t
 
+let option to_value = Option.value_map ~default:nil ~f:to_value
+
 let to_bool = is_not_nil
 
 let of_bool b = if b then t else nil
@@ -298,7 +321,6 @@ let is_font                 t = funcall1 Q.fontp                  t |> to_bool
 let is_frame                t = funcall1 Q.framep                 t |> to_bool
 let is_function             t = funcall1 Q.functionp              t |> to_bool
 let is_hash_table           t = funcall1 Q.hash_table_p           t |> to_bool
-let is_integer              t = funcall1 Q.integerp               t |> to_bool
 let is_keymap               t = funcall1 Q.keymapp                t |> to_bool
 let is_marker               t = funcall1 Q.markerp                t |> to_bool
 let is_process              t = funcall1 Q.processp               t |> to_bool
@@ -314,8 +336,9 @@ let equal t1 t2 = funcall2 Q.equal t1 t2 |> to_bool
 
 let cons t1 t2 = funcall2 Q.cons t1 t2
 
-let car_exn t = funcall1 Q.car t
-let cdr_exn t = funcall1 Q.cdr t
+let car_exn  t = funcall1 Q.car  t
+let cdr_exn  t = funcall1 Q.cdr  t
+let cadr_exn t = funcall1 Q.cadr t
 
 let to_list_exn (t : t) ~f =
   let rec loop t ac =
@@ -425,6 +448,12 @@ module Type = struct
     ; to_value     = of_bool }
   ;;
 
+  let ignored =
+    { name         = [%message "ignored"]
+    ; of_value_exn = ignore
+    ; to_value     = const nil }
+  ;;
+
   let int =
     { name         = [%message "int"]
     ; of_value_exn = to_int_exn
@@ -436,6 +465,13 @@ module Type = struct
     ; of_value_exn = to_utf8_bytes_exn
     ; to_value     = of_utf8_bytes }
   ;;
+
+  let unit =
+    { name         = [%message "unit"]
+    ; of_value_exn = (fun value -> assert (is_nil value))
+    ; to_value     = const nil }
+  ;;
+
 
   let value =
     { name         = [%message "value"]
@@ -459,11 +495,46 @@ module Type = struct
     ; to_value     = fun l -> list (List.map l ~f:t.to_value) }
   ;;
 
+  let tuple t1 t2 =
+    { name = Sexp.List [t1.name; t2.name]
+    ; of_value_exn = (fun v -> t1.of_value_exn (car_exn v), t2.of_value_exn (cdr_exn v))
+    ; to_value     = (fun (a1, a2) -> cons (t1.to_value a1) (t2.to_value a2))
+    }
+  ;;
+
+  let tuple2_as_list t1 t2 =
+    { name = Sexp.List [t1.name; t2.name]
+    ; of_value_exn = (fun v -> t1.of_value_exn (car_exn v), t2.of_value_exn (cadr_exn v))
+    ; to_value     = (fun (a1, a2) -> cons (t1.to_value a1) (cons (t2.to_value a2) nil))
+    }
+  ;;
+
   let option t =
     { name         = [%message "option" ~_:(t.name : Sexp.t)]
     ; of_value_exn = (fun v -> if is_nil v then None else Some (v |> t.of_value_exn))
-    ; to_value     = (function None -> nil | Some v -> v |> t.to_value) }
+    ; to_value     = option t.to_value }
   ;;
+
+  (* embed ocaml values as strings which are sexp representations *)
+  let sexpable (type a) (module A : Sexpable with type t = a) ~name =
+    { name = [%message "sexpable" ~_:(name : Sexp.t)]
+    ; of_value_exn = (fun v -> A.t_of_sexp (Sexp.of_string (string.of_value_exn v)))
+    ; to_value = (fun a -> A.sexp_of_t a |> Sexp.to_string_mach |> string.to_value)
+    }
+
+  let caml_embed (type_id : _ Type_equal.Id.t) =
+    { name = [%message "caml_embed" (type_id : _ Type_equal.Id.t)]
+    ; of_value_exn = (fun v -> let embed = Caml_embed.of_value_exn v in
+                       Caml_embed.extract_exn embed type_id)
+    ; to_value = (fun a -> Caml_embed.create type_id a |> Caml_embed.to_value)
+    }
+
+  let map t ~name ~of_ ~to_ =
+    { name
+    ; of_value_exn = Fn.compose of_        t.of_value_exn
+    ; to_value     = Fn.compose t.to_value to_ }
+  ;;
+
 end
 
 module type Subtype = Subtype
@@ -513,4 +584,17 @@ end
 module Expert = struct
   let non_local_exit_signal   = non_local_exit_signal
   let raise_if_emacs_signaled = raise_if_emacs_signaled
+end
+
+module For_testing = struct
+  let map_elisp_signal g ~f =
+    match g () with
+    | a -> a
+    | exception Elisp_signal { symbol; data } ->
+      Nothing.unreachable_code (f ~symbol ~data ~reraise:(fun ~symbol ~data ->
+        raise (Elisp_signal { symbol; data })))
+  ;;
+  let map_elisp_signal_omit_data f =
+    map_elisp_signal f ~f:(fun ~symbol ~data:_ ~reraise -> reraise ~symbol ~data:nil)
+  ;;
 end

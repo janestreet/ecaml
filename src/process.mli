@@ -101,14 +101,26 @@ val call_result_exn
   -> string list
   -> Call.Result.t
 
-(** [call_exn] runs [call_result_exn], strips whitespace from stdout+stderr, and returns
-    the resulting string, raising on nonzero exit. *)
+(** [call_exn] runs [call_result_exn], strips whitespace from stdout+stderr if
+    [strip_whitespace] is [true], and returns the resulting string, raising on
+    nonzero exit. *)
 val call_exn
   :  ?input             : Call.Input.t         (** default is [Dev_null] *)
   -> ?working_directory : Working_directory.t  (** default is [Root] *)
+  -> ?strip_whitespace  : bool                 (** default is [true] *)
   -> string
   -> string list
   -> string
+
+(** [call_expect_no_output_exn] runs [call_result_exn] and raises if the command output is
+    not the empty string or on nonzero exit. *)
+val call_expect_no_output_exn
+  :  ?input             : Call.Input.t         (** default is [Dev_null] *)
+  -> ?working_directory : Working_directory.t  (** default is [Root] *)
+  -> ?strip_whitespace  : bool                 (** default is [false] *)
+  -> string
+  -> string list
+  -> unit
 
 val shell_command_result
   :  ?input               : Call.Input.t         (** default is [Dev_null] *)

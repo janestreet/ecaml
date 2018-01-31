@@ -24,6 +24,7 @@ let create ~change_command =
 ;;
 
 let keymap       t = Current_buffer.value_exn t.keymap_var
+let keymap_var   t = t.keymap_var
 let syntax_table t = Current_buffer.value_exn t.syntax_table_var
 
 let fundamental = create ~change_command:Q.fundamental_mode

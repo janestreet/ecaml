@@ -1,4 +1,6 @@
-(** [Q] is short for Emacs [quote].  [Q] defines a constant symbols. *)
+(** [Q] is short for Emacs [quote].  [Q] defines constant symbols.
+
+    The naming convention is to use the emacs name but replace '-' with '_'. *)
 
 open! Core_kernel
 open! Import
@@ -73,6 +75,7 @@ let char_syntax                      = "char-syntax"                      |> Sym
 let character                        = "character"                        |> Symbol.intern
 let characterp                       = "characterp"                       |> Symbol.intern
 let choice                           = "choice"                           |> Symbol.intern
+let cl                               = "cl"                               |> Symbol.intern
 let click                            = "click"                            |> Symbol.intern
 let coding_system                    = "coding-system"                    |> Symbol.intern
 let color                            = "color"                            |> Symbol.intern
@@ -84,6 +87,8 @@ let comment_end                      = "comment-end"                      |> Sym
 let comment_multi_line               = "comment-multi-line"               |> Symbol.intern
 let comment_start                    = "comment-start"                    |> Symbol.intern
 let compilation_buffer_name_function = "compilation-buffer-name-function" |> Symbol.intern
+let completing_read                  = "completing-read"                  |> Symbol.intern
+let completing_read_multiple         = "completing-read-multiple"         |> Symbol.intern
 let concat                           = "concat"                           |> Symbol.intern
 let condensed                        = "condensed"                        |> Symbol.intern
 let cons                             = "cons"                             |> Symbol.intern
@@ -136,6 +141,7 @@ let error                            = "error"                            |> Sym
 let eval                             = "eval"                             |> Symbol.intern
 let event_basic_type                 = "event-basic-type"                 |> Symbol.intern
 let event_modifiers                  = "event-modifiers"                  |> Symbol.intern
+let exec_path                        = "exec-path"                        |> Symbol.intern
 let execute_kbd_macro                = "execute-kbd-macro"                |> Symbol.intern
 let expand_file_name                 = "expand-file-name"                 |> Symbol.intern
 let expanded                         = "expanded"                         |> Symbol.intern
@@ -148,6 +154,7 @@ let face_all_attributes              = "face-all-attributes"              |> Sym
 let face_attribute                   = "face-attribute"                   |> Symbol.intern
 let face_attribute_relative_p        = "face-attribute-relative-p"        |> Symbol.intern
 let face_list                        = "face-list"                        |> Symbol.intern
+let face_spec_set                    = "face-spec-set"                    |> Symbol.intern
 let facep                            = "facep"                            |> Symbol.intern
 let featurep                         = "featurep"                         |> Symbol.intern
 let features                         = "features"                         |> Symbol.intern
@@ -194,7 +201,6 @@ let funcall                          = "funcall"                          |> Sym
 let function_                        = "function"                         |> Symbol.intern
 let fundamental_mode                 = "fundamental-mode"                 |> Symbol.intern
 let generate_new_buffer              = "generate-new-buffer"              |> Symbol.intern
-let gensym                           = "gensym"                           |> Symbol.intern
 let get_buffer                       = "get-buffer"                       |> Symbol.intern
 let get_buffer_create                = "get-buffer-create"                |> Symbol.intern
 let get_buffer_process               = "get-buffer-process"               |> Symbol.intern
@@ -202,6 +208,7 @@ let get_buffer_window_list           = "get-buffer-window-list"           |> Sym
 let get_process                      = "get-process"                      |> Symbol.intern
 let get_text_property                = "get-text-property"                |> Symbol.intern
 let getenv                           = "getenv"                           |> Symbol.intern
+let goto_address_mode                = "goto-address-mode"                |> Symbol.intern
 let goto_char                        = "goto-char"                        |> Symbol.intern
 let grep                             = "grep"                             |> Symbol.intern
 let grep_use_null_device             = "grep-use-null-device"             |> Symbol.intern
@@ -243,6 +250,7 @@ let load_path                        = "load-path"                        |> Sym
 let local                            = "local"                            |> Symbol.intern
 let local_variable_if_set_p          = "local-variable-if-set-p"          |> Symbol.intern
 let local_variable_p                 = "local-variable-p"                 |> Symbol.intern
+let locate_file                      = "locate-file"                      |> Symbol.intern
 let locate_dominating_file           = "locate-dominating-file"           |> Symbol.intern
 let looking_at                       = "looking-at"                       |> Symbol.intern
 let looking_at_p                     = "looking-at-p"                     |> Symbol.intern
@@ -373,6 +381,7 @@ let set_match_data                   = "set-match-data"                   |> Sym
 let set_process_query_on_exit_flag   = "set-process-query-on-exit-flag"   |> Symbol.intern
 let set_syntax_table                 = "set-syntax-table"                 |> Symbol.intern
 let set_text_properties              = "set-text-properties"              |> Symbol.intern
+let set_transient_map                = "set-transient-map"                |> Symbol.intern
 let set_window_buffer                = "set-window-buffer"                |> Symbol.intern
 let set_window_point                 = "set-window-point"                 |> Symbol.intern
 let setenv                           = "setenv"                           |> Symbol.intern
@@ -435,6 +444,7 @@ let user_uid                         = "user-uid"                         |> Sym
 let variable                         = "variable"                         |> Symbol.intern
 let vconcat                          = "vconcat"                          |> Symbol.intern
 let vector                           = "vector"                           |> Symbol.intern
+let verbose                          = "verbose"                          |> Symbol.intern
 let view_file                        = "view-file"                        |> Symbol.intern
 let view_mode                        = "view-mode"                        |> Symbol.intern
 let visible_frame_list               = "visible-frame-list"               |> Symbol.intern

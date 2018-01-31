@@ -27,7 +27,7 @@ CAMLprim value ecaml__buffer_live_p(value a0)
   static emacs_value emacs_fun = NULL;
   ecaml_cache_symbol_and_keep_alive(env, &emacs_fun, "buffer-live-p");
   emacs_value emacs_args[1];
-  emacs_args[0] = EMACS_OF_OCAML(a0);
+  emacs_args[0] = emacs_of_ocaml(env, a0);
   emacs_value emacs_ret = env->funcall(env, emacs_fun, 1, emacs_args);
   ret = Val_bool(env->is_not_nil(env, emacs_ret));
   CAMLreturn(ret);
@@ -41,7 +41,7 @@ CAMLprim value ecaml__elt_returning_int(value a0, value a1)
   static emacs_value emacs_fun = NULL;
   ecaml_cache_symbol_and_keep_alive(env, &emacs_fun, "elt");
   emacs_value emacs_args[2];
-  emacs_args[0] = EMACS_OF_OCAML(a0);
+  emacs_args[0] = emacs_of_ocaml(env, a0);
   emacs_args[1] = env->make_integer(env, Long_val(a1));
   emacs_value emacs_ret = env->funcall(env, emacs_fun, 2, emacs_args);
   ret = Val_long(env->extract_integer(env, emacs_ret));

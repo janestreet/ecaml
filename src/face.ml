@@ -155,7 +155,26 @@ end
 
 module Inherit = struct
   let symbol = Q.K.inherit_
-  include Unimplemented
+
+  type nonrec t =
+    | Face of t
+    | Unspecified
+  [@@deriving sexp_of]
+
+  let unspecified = Unspecified
+
+  let to_value = function
+    | Face face   -> to_value face
+    | Unspecified -> Value.unspecified
+  ;;
+
+  let of_value_exn value =
+    (* It's possible to (defface nil) and then even to (describe-face nil), but applying
+       the nil face and inheriting from the nil face have no effect. *)
+    if Value.eq value Value.unspecified || Value.eq value Value.nil
+    then Unspecified
+    else Face (of_value_exn value)
+  ;;
 end
 
 module Inverse_video = struct
@@ -493,6 +512,11 @@ module Attribute_and_value = struct
     List.sort ts
       ~cmp:(fun (T (a1, _)) (T (a2, _)) -> Attribute.compare_name a1 a2)
   ;;
+
+  let to_value_list (T (attribute, value)) =
+    [ Attribute.to_symbol attribute |> Symbol.to_value
+    ; Attribute.to_value attribute value
+    ]
 end
 
 let frame option =
@@ -521,7 +545,22 @@ let attribute_value ?on t attribute =
   |> Attribute.of_value_exn attribute
 ;;
 
+let set_attribute ?on t attribute value =
+  Symbol.funcall4_i Q.set_face_attribute
+    (t |> to_value)
+    (frame on)
+    (attribute |> Attribute.to_symbol |> Symbol.to_value)
+    (Attribute.to_value attribute value)
+;;
+
 let attributes ?on t =
   Symbol.funcall2 Q.face_all_attributes (t |> to_value) (frame on)
   |> Value.to_list_exn ~f:Attribute_and_value.of_value_exn
+;;
+
+let spec_set face specs =
+  Symbol.funcall2_i Q.face_spec_set
+    (to_value face)
+    Value.(list [ cons t (list (List.concat_map specs
+                                  ~f:Attribute_and_value.to_value_list)) ])
 ;;

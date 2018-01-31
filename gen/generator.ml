@@ -40,7 +40,7 @@ let emacs_of_ocaml (t : Type.t) ocaml_value =
   | Int    -> sprintf {|env->make_integer(env, Long_val(%s))|} ocaml_value
   | Float  -> sprintf {|env->make_float(env, Double_val(%s))|} ocaml_value
   | Bool   -> sprintf {|(Bool_val(%s) ? ecaml_emacs_t() : emacs_nil)|} ocaml_value
-  | Value  -> sprintf {|EMACS_OF_OCAML(%s)|} ocaml_value
+  | Value  -> sprintf {|emacs_of_ocaml(env, %s)|} ocaml_value
   | Ignore -> raise_s [%message "cannot use [Ignore] as an input type"]
 ;;
 
@@ -49,7 +49,7 @@ let ocaml_of_emacs (t : Type.t) =
   | Int    -> {|Val_long(env->extract_integer(env, emacs_ret))|}
   | Float  -> {|caml_copy_double(env->extract_float(env, emacs_ret))|}
   | Bool   -> {|Val_bool(env->is_not_nil(env, emacs_ret))|}
-  | Value  -> {|ocaml_of_emacs(emacs_ret)|}
+  | Value  -> {|ocaml_of_emacs(env, emacs_ret)|}
   | Ignore -> {|Val_unit|}
 ;;
 

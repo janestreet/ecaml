@@ -11,6 +11,6 @@ emacs_value ecaml_cache_symbol_and_keep_alive(emacs_env *env, emacs_value *cache
 /* This is [ecaml_cache_symbol_and_keep_alive(_, "t")]. */
 emacs_value ecaml_emacs_t();
 
-#define EMACS_OF_OCAML(v) (*(emacs_value *)Data_custom_val(v))
+emacs_value emacs_of_ocaml(emacs_env* env, value val);
 
 #endif /* ECAML_STUBS_H */

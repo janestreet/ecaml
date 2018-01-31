@@ -18,6 +18,7 @@ let blue    = "blue"    |> of_name
 let cyan    = "cyan"    |> of_name
 let green   = "green"   |> of_name
 let magenta = "magenta" |> of_name
+let orange  = "orange"  |> of_name
 let red     = "red"     |> of_name
 let white   = "white"   |> of_name
 let yellow  = "yellow"  |> of_name
@@ -77,5 +78,13 @@ let rgb_exn ?on t : RGB.t =
 
 let of_rgb { RGB. r; g; b } =
   let p c = sprintf "%04X" (RGB.clamp c) in
+  of_name (concat [ "#"; p r; p g; p b ])
+;;
+
+let of_rgb8 ~r ~g ~b =
+  let min_value = 0 in
+  let max_value = 255 in
+  let clamp i = Int.max min_value (Int.min max_value i) in
+  let p c = sprintf "%02X" (clamp c) in
   of_name (concat [ "#"; p r; p g; p b ])
 ;;

@@ -1,6 +1,15 @@
 open! Core_kernel
 open! Import
 
+module F = struct
+  open Value.Type
+  open Funcall
+
+  let locate_file =
+    Q.locate_file
+    <: string @-> list string @-> option (list string) @-> option value @-> return (option string)
+end
+
 let to_value = Value.of_utf8_bytes
 
 let predicate q file = Symbol.funcall1 q (file |> to_value) |> Value.to_bool
@@ -29,8 +38,13 @@ let delete file = Symbol.funcall1_i Q.delete_file (file |> to_value)
 
 let copy ~src ~dst = Symbol.funcall2_i Q.copy_file (src |> to_value) (dst |> to_value)
 
-let rename ~src ~dst =
-  Symbol.funcall2_i Q.rename_file (src |> to_value) (dst |> to_value)
+let rename ~src ~dst ~replace_dst_if_exists =
+  Symbol.funcall3_i Q.rename_file (src |> to_value) (dst |> to_value)
+    (replace_dst_if_exists |> Value.of_bool)
+;;
+
+let locate ?suffixes ?predicate ~filename ~path () =
+  F.locate_file filename path suffixes predicate
 ;;
 
 let locate_dominating_file ~above ~basename =

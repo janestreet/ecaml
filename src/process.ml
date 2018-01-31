@@ -184,16 +184,17 @@ let call_result_exn
     |> Call.Result.of_value_exn)
 ;;
 
-let call_exn ?input ?working_directory prog args =
+let call_exn ?input ?working_directory ?(strip_whitespace=true) prog args =
   Current_buffer.set_temporarily_to_temp_buffer (fun () ->
     match
       call_result_exn prog args ?input ?working_directory
         ~output:Before_point_in_current_buffer
     with
     | Exit_status 0 ->
-      Current_buffer.contents ()
-      |> Text.to_utf8_bytes
-      |> String.strip
+      let buffer_contents = Current_buffer.contents () |> Text.to_utf8_bytes in
+      if strip_whitespace
+      then String.strip buffer_contents
+      else buffer_contents
     | result ->
       raise_s [%message
         "[Process.call_exn] failed"
@@ -201,6 +202,17 @@ let call_exn ?input ?working_directory prog args =
           (args : string list)
           (result : Call.Result.t)
           ~output:(Current_buffer.contents () : Text.t)])
+;;
+
+let call_expect_no_output_exn ?input ?working_directory ?(strip_whitespace=false) prog args =
+  let result = call_exn ?input ?working_directory ~strip_whitespace prog args in
+  if String.is_empty result
+  then ()
+  else raise_s [%message "[Process.call_expect_no_output_exn] produced unexpected output"
+                           (prog : string)
+                           (args : string list)
+                           (result : string)
+                           ~output:(Current_buffer.contents () : Text.t)]
 ;;
 
 let bash = "/bin/bash"

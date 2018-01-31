@@ -4,11 +4,15 @@ open! Ansi_color
 
 let color_string s = color_text (s |> Text.of_utf8_bytes)
 
-let escape codes =
+let escape' codes =
   concat [ "\027["
-         ; concat (codes |> List.map ~f:Int.to_string |> List.intersperse ~sep:";")
+         ; concat (
+             codes |> List.map ~f:(Option.value_map ~f:Int.to_string ~default:"")
+             |> List.intersperse ~sep:";")
          ; "m" ]
 ;;
+
+let escape codes = escape' (List.map codes ~f:(fun code -> Some code))
 
 let print_state_machine string =
   Ref.set_temporarily Ansi_color.print_state_machine true ~f:(fun () ->
@@ -20,27 +24,41 @@ let%expect_test "empty state machine" =
   [%expect {|
     (state_machine (
       (current_state (
-        attributes (
-          (background ())
-          (blink_rapid false)
-          (blink_slow  false)
-          (bold        false)
-          (faint       false)
-          (foreground ())
-          (italic        false)
-          (reverse_video false)
-          (underline     false))))
+        attributes_state (
+          Complete (
+            (background ())
+            (blink_rapid false)
+            (blink_slow  false)
+            (bold        false)
+            (faint       false)
+            (foreground ())
+            (italic        false)
+            (reverse_video false)
+            (underline     false)))))
       (empty_state (
-        attributes (
-          (background ())
-          (blink_rapid false)
-          (blink_slow  false)
-          (bold        false)
-          (faint       false)
-          (foreground ())
-          (italic        false)
-          (reverse_video false)
-          (underline     false)))))) |}];
+        attributes_state (
+          Complete (
+            (background ())
+            (blink_rapid false)
+            (blink_slow  false)
+            (bold        false)
+            (faint       false)
+            (foreground ())
+            (italic        false)
+            (reverse_video false)
+            (underline     false)))))
+      (all_states ((
+        attributes_state (
+          Complete (
+            (background ())
+            (blink_rapid false)
+            (blink_slow  false)
+            (bold        false)
+            (faint       false)
+            (foreground ())
+            (italic        false)
+            (reverse_video false)
+            (underline     false)))))))) |}];
 ;;
 
 let%expect_test "simple state machine" =
@@ -48,67 +66,56 @@ let%expect_test "simple state machine" =
   [%expect {|
     (state_machine (
       (current_state (
-        (attributes (
-          (background ())
-          (blink_rapid false)
-          (blink_slow  false)
-          (bold        false)
-          (faint       false)
-          (foreground ())
-          (italic        false)
-          (reverse_video false)
-          (underline     false)))
-        (next_state_by_code ((
-          1 (
+        (attributes_state (
+          Complete (
             (background ())
             (blink_rapid false)
             (blink_slow  false)
-            (bold        true)
+            (bold        false)
             (faint       false)
             (foreground ())
             (italic        false)
             (reverse_video false)
-            (underline     false)))))))
+            (underline     false))))
+        (next_state_by_code ((
+          1 (
+            Complete (
+              (background ())
+              (blink_rapid false)
+              (blink_slow  false)
+              (bold        true)
+              (faint       false)
+              (foreground ())
+              (italic        false)
+              (reverse_video false)
+              (underline     false))))))))
       (empty_state (
-        (attributes (
-          (background ())
-          (blink_rapid false)
-          (blink_slow  false)
-          (bold        false)
-          (faint       false)
-          (foreground ())
-          (italic        false)
-          (reverse_video false)
-          (underline     false)))
-        (next_state_by_code ((
-          1 (
+        (attributes_state (
+          Complete (
             (background ())
             (blink_rapid false)
             (blink_slow  false)
-            (bold        true)
+            (bold        false)
             (faint       false)
             (foreground ())
             (italic        false)
             (reverse_video false)
-            (underline     false)))))))
+            (underline     false))))
+        (next_state_by_code ((
+          1 (
+            Complete (
+              (background ())
+              (blink_rapid false)
+              (blink_slow  false)
+              (bold        true)
+              (faint       false)
+              (foreground ())
+              (italic        false)
+              (reverse_video false)
+              (underline     false))))))))
       (all_states (
-        ((attributes (
-           (background ())
-           (blink_rapid false)
-           (blink_slow  false)
-           (bold        true)
-           (faint       false)
-           (foreground ((
-             (brightness  Regular)
-             (color_index 1))))
-           (italic        false)
-           (reverse_video false)
-           (underline     false)))
-         (text_properties (
-           (face ((Attributes ((Foreground (Color red3)) (Weight Bold)))))
-           (font-lock-face ((Attributes ((Foreground (Color red3)) (Weight Bold)))))))
-         (next_state_by_code ((
-           0 (
+        ((attributes_state (
+           Complete (
              (background ())
              (blink_rapid false)
              (blink_slow  false)
@@ -117,33 +124,77 @@ let%expect_test "simple state machine" =
              (foreground ())
              (italic        false)
              (reverse_video false)
-             (underline     false))))))
-        ((attributes (
-           (background ())
-           (blink_rapid false)
-           (blink_slow  false)
-           (bold        true)
-           (faint       false)
-           (foreground ())
-           (italic        false)
-           (reverse_video false)
-           (underline     false)))
+             (underline     false))))
+         (next_state_by_code ((
+           1 (
+             Complete (
+               (background ())
+               (blink_rapid false)
+               (blink_slow  false)
+               (bold        true)
+               (faint       false)
+               (foreground ())
+               (italic        false)
+               (reverse_video false)
+               (underline     false)))))))
+        ((attributes_state (
+           Complete (
+             (background ())
+             (blink_rapid false)
+             (blink_slow  false)
+             (bold        true)
+             (faint       false)
+             (foreground ())
+             (italic        false)
+             (reverse_video false)
+             (underline     false))))
          (text_properties (
            (face ((Attributes ((Weight Bold)))))
            (font-lock-face ((Attributes ((Weight Bold)))))))
          (next_state_by_code ((
            31 (
+             Complete (
+               (background ())
+               (blink_rapid false)
+               (blink_slow  false)
+               (bold        true)
+               (faint       false)
+               (foreground ((
+                 Standard (
+                   (brightness  Regular)
+                   (color_index 1)))))
+               (italic        false)
+               (reverse_video false)
+               (underline     false)))))))
+        ((attributes_state (
+           Complete (
              (background ())
              (blink_rapid false)
              (blink_slow  false)
              (bold        true)
              (faint       false)
              (foreground ((
-               (brightness  Regular)
-               (color_index 1))))
+               Standard (
+                 (brightness  Regular)
+                 (color_index 1)))))
              (italic        false)
              (reverse_video false)
-             (underline     false)))))))))) |}];
+             (underline     false))))
+         (text_properties (
+           (face ((Attributes ((Foreground (Color red3)) (Weight Bold)))))
+           (font-lock-face ((Attributes ((Foreground (Color red3)) (Weight Bold)))))))
+         (next_state_by_code ((
+           0 (
+             Complete (
+               (background ())
+               (blink_rapid false)
+               (blink_slow  false)
+               (bold        false)
+               (faint       false)
+               (foreground ())
+               (italic        false)
+               (reverse_video false)
+               (underline     false))))))))))) |}];
 ;;
 
 let test ?(show_input = true) input =
@@ -168,10 +219,264 @@ let%expect_test "no codes" =
     (foo (Ok foo)) |}]
 ;;
 
-let%expect_test "empty escape sequence" =
+let%expect_test "reset escape sequence" =
   test_codes [];
   [%expect {|
-    ("\027[mfoo" (Ok foo)) |}]
+    ("\027[mfoo" (Ok foo)) |}];
+  test (concat [ escape [31]; "foo"; escape [0]; "bar" ]);
+  [%expect {|
+    ("\027[31mfoo\027[0mbar" (
+      Ok (foobar 0 3 (face (:foreground red3) font-lock-face (:foreground red3))))) |}];
+  test (concat [ escape [31]; "foo"; escape []; "bar" ]);
+  [%expect {|
+    ("\027[31mfoo\027[mbar" (
+      Ok (foobar 0 3 (face (:foreground red3) font-lock-face (:foreground red3))))) |}];
+;;
+
+let%expect_test "zero can be skipped" =
+  test (concat [
+    escape' [Some 38; Some 2; Some 255; None; Some 255];
+    "foo";]);
+  [%expect {|
+    ("\027[38;2;255;;255mfoo" (
+      Ok (
+        foo 0 3 (face (:foreground #FF00FF) font-lock-face (:foreground #FF00FF))))) |}]
+;;
+
+let%expect_test
+  "invalid escapes don't crash the thing and they also don't prevent further processing" =
+  test (concat [
+    escape [38; 2; 800; 0; 255];
+    "foo";
+    escape [31];
+    "bar";
+  ]);
+  [%expect {|
+    ("\027[38;2;800;0;255mfoo\027[31mbar" (
+      Ok (
+        "<invalid ANSI escape sequence \"\\027[38;2;800\">;0;255mfoobar"
+        56
+        59
+        (face (:foreground red3) font-lock-face (:foreground red3))))) |}];
+  test (concat [
+    escape [38; 5; 800; ];
+    "foo";
+    escape [31];
+    "bar";
+  ]);
+  [%expect {|
+    ("\027[38;5;800mfoo\027[31mbar" (
+      Ok (
+        "<invalid ANSI escape sequence \"\\027[38;5;800\">mfoobar"
+        50
+        53
+        (face (:foreground red3) font-lock-face (:foreground red3))))) |}];
+  test (concat [
+    escape [38; 5; 800; 31 ];
+    "foo";
+    escape [31];
+    "bar";
+  ]);
+  [%expect {|
+    ("\027[38;5;800;31mfoo\027[31mbar" (
+      Ok (
+        "<invalid ANSI escape sequence \"\\027[38;5;800\">;31mfoobar"
+        53
+        56
+        (face (:foreground red3) font-lock-face (:foreground red3))))) |}];
+  test (concat [
+    escape [38; 88 ];
+    "foo";
+    escape [31];
+    "bar";
+  ]);
+  [%expect {|
+    ("\027[38;88mfoo\027[31mbar" (
+      Ok (
+        "<invalid ANSI escape sequence \"\\027[38;88\">mfoobar"
+        47
+        50
+        (face (:foreground red3) font-lock-face (:foreground red3))))) |}];
+  test (concat [ escape [31]; "foo"; "\027["; "bar" ]);
+  test (concat [ escape [31]; "foo"; "\027"; "bar" ]);
+  [%expect {|
+    ("\027[31mfoo\027[bar" (
+      Ok (
+        "foo<invalid ANSI escape sequence \"\\027[\">bar"
+        0
+        3
+        (face (:foreground red3) font-lock-face (:foreground red3)))))
+    ("\027[31mfoo\027bar" (
+      Ok (
+        "foo<invalid ANSI escape sequence \"\\027\">bar"
+        0
+        3
+        (face (:foreground red3) font-lock-face (:foreground red3))))) |}]
+;;
+
+let%expect_test "256-indexed color" =
+  List.iter [
+    0; 1; 7; 8; 15; 16; 17; 22; 52; 100; 110; 115; 120; 127; 128; 150; 200; 230; 231; 232; 233; 254; 255]
+    ~f:(fun code ->
+      test_codes [ 38; 5; code ]);
+  [%expect {|
+    ("\027[38;5;0mfoo" (
+      Ok (foo 0 3 (face (:foreground black) font-lock-face (:foreground black)))))
+    ("\027[38;5;1mfoo" (
+      Ok (foo 0 3 (face (:foreground red3) font-lock-face (:foreground red3)))))
+    ("\027[38;5;7mfoo" (
+      Ok (foo 0 3 (face (:foreground gray90) font-lock-face (:foreground gray90)))))
+    ("\027[38;5;8mfoo" (
+      Ok (foo 0 3 (face (:foreground grey50) font-lock-face (:foreground grey50)))))
+    ("\027[38;5;15mfoo" (
+      Ok (foo 0 3 (face (:foreground white) font-lock-face (:foreground white)))))
+    ("\027[38;5;16mfoo" (
+      Ok (
+        foo 0 3 (face (:foreground #000000) font-lock-face (:foreground #000000)))))
+    ("\027[38;5;17mfoo" (
+      Ok (
+        foo 0 3 (face (:foreground #000033) font-lock-face (:foreground #000033)))))
+    ("\027[38;5;22mfoo" (
+      Ok (
+        foo 0 3 (face (:foreground #003300) font-lock-face (:foreground #003300)))))
+    ("\027[38;5;52mfoo" (
+      Ok (
+        foo 0 3 (face (:foreground #330000) font-lock-face (:foreground #330000)))))
+    ("\027[38;5;100mfoo" (
+      Ok (
+        foo 0 3 (face (:foreground #666600) font-lock-face (:foreground #666600)))))
+    ("\027[38;5;110mfoo" (
+      Ok (
+        foo 0 3 (face (:foreground #6699CC) font-lock-face (:foreground #6699CC)))))
+    ("\027[38;5;115mfoo" (
+      Ok (
+        foo 0 3 (face (:foreground #66CC99) font-lock-face (:foreground #66CC99)))))
+    ("\027[38;5;120mfoo" (
+      Ok (
+        foo 0 3 (face (:foreground #66FF66) font-lock-face (:foreground #66FF66)))))
+    ("\027[38;5;127mfoo" (
+      Ok (
+        foo 0 3 (face (:foreground #990099) font-lock-face (:foreground #990099)))))
+    ("\027[38;5;128mfoo" (
+      Ok (
+        foo 0 3 (face (:foreground #9900CC) font-lock-face (:foreground #9900CC)))))
+    ("\027[38;5;150mfoo" (
+      Ok (
+        foo 0 3 (face (:foreground #99CC66) font-lock-face (:foreground #99CC66)))))
+    ("\027[38;5;200mfoo" (
+      Ok (
+        foo 0 3 (face (:foreground #FF00CC) font-lock-face (:foreground #FF00CC)))))
+    ("\027[38;5;230mfoo" (
+      Ok (
+        foo 0 3 (face (:foreground #FFFFCC) font-lock-face (:foreground #FFFFCC)))))
+    ("\027[38;5;231mfoo" (
+      Ok (
+        foo 0 3 (face (:foreground #FFFFFF) font-lock-face (:foreground #FFFFFF)))))
+    ("\027[38;5;232mfoo" (
+      Ok (
+        foo 0 3 (face (:foreground #000000) font-lock-face (:foreground #000000)))))
+    ("\027[38;5;233mfoo" (
+      Ok (
+        foo 0 3 (face (:foreground #0B0B0B) font-lock-face (:foreground #0B0B0B)))))
+    ("\027[38;5;254mfoo" (
+      Ok (
+        foo 0 3 (face (:foreground #F3F3F3) font-lock-face (:foreground #F3F3F3)))))
+    ("\027[38;5;255mfoo" (
+      Ok (
+        foo 0 3 (face (:foreground #FFFFFF) font-lock-face (:foreground #FFFFFF))))) |}]
+;;
+
+let%expect_test "rgb color" =
+  List.iter [ 0; 10; 255 ]
+    ~f:(fun r ->
+      List.iter [ 0; 10; 255 ]
+        ~f:(fun g ->
+          List.iter [ 0; 10; 255 ]
+            ~f:(fun b ->
+              test_codes [ 38; 2; r; g; b ])
+        ));
+  [%expect {|
+    ("\027[38;2;0;0;0mfoo" (
+      Ok (
+        foo 0 3 (face (:foreground #000000) font-lock-face (:foreground #000000)))))
+    ("\027[38;2;0;0;10mfoo" (
+      Ok (
+        foo 0 3 (face (:foreground #00000A) font-lock-face (:foreground #00000A)))))
+    ("\027[38;2;0;0;255mfoo" (
+      Ok (
+        foo 0 3 (face (:foreground #0000FF) font-lock-face (:foreground #0000FF)))))
+    ("\027[38;2;0;10;0mfoo" (
+      Ok (
+        foo 0 3 (face (:foreground #000A00) font-lock-face (:foreground #000A00)))))
+    ("\027[38;2;0;10;10mfoo" (
+      Ok (
+        foo 0 3 (face (:foreground #000A0A) font-lock-face (:foreground #000A0A)))))
+    ("\027[38;2;0;10;255mfoo" (
+      Ok (
+        foo 0 3 (face (:foreground #000AFF) font-lock-face (:foreground #000AFF)))))
+    ("\027[38;2;0;255;0mfoo" (
+      Ok (
+        foo 0 3 (face (:foreground #00FF00) font-lock-face (:foreground #00FF00)))))
+    ("\027[38;2;0;255;10mfoo" (
+      Ok (
+        foo 0 3 (face (:foreground #00FF0A) font-lock-face (:foreground #00FF0A)))))
+    ("\027[38;2;0;255;255mfoo" (
+      Ok (
+        foo 0 3 (face (:foreground #00FFFF) font-lock-face (:foreground #00FFFF)))))
+    ("\027[38;2;10;0;0mfoo" (
+      Ok (
+        foo 0 3 (face (:foreground #0A0000) font-lock-face (:foreground #0A0000)))))
+    ("\027[38;2;10;0;10mfoo" (
+      Ok (
+        foo 0 3 (face (:foreground #0A000A) font-lock-face (:foreground #0A000A)))))
+    ("\027[38;2;10;0;255mfoo" (
+      Ok (
+        foo 0 3 (face (:foreground #0A00FF) font-lock-face (:foreground #0A00FF)))))
+    ("\027[38;2;10;10;0mfoo" (
+      Ok (
+        foo 0 3 (face (:foreground #0A0A00) font-lock-face (:foreground #0A0A00)))))
+    ("\027[38;2;10;10;10mfoo" (
+      Ok (
+        foo 0 3 (face (:foreground #0A0A0A) font-lock-face (:foreground #0A0A0A)))))
+    ("\027[38;2;10;10;255mfoo" (
+      Ok (
+        foo 0 3 (face (:foreground #0A0AFF) font-lock-face (:foreground #0A0AFF)))))
+    ("\027[38;2;10;255;0mfoo" (
+      Ok (
+        foo 0 3 (face (:foreground #0AFF00) font-lock-face (:foreground #0AFF00)))))
+    ("\027[38;2;10;255;10mfoo" (
+      Ok (
+        foo 0 3 (face (:foreground #0AFF0A) font-lock-face (:foreground #0AFF0A)))))
+    ("\027[38;2;10;255;255mfoo" (
+      Ok (
+        foo 0 3 (face (:foreground #0AFFFF) font-lock-face (:foreground #0AFFFF)))))
+    ("\027[38;2;255;0;0mfoo" (
+      Ok (
+        foo 0 3 (face (:foreground #FF0000) font-lock-face (:foreground #FF0000)))))
+    ("\027[38;2;255;0;10mfoo" (
+      Ok (
+        foo 0 3 (face (:foreground #FF000A) font-lock-face (:foreground #FF000A)))))
+    ("\027[38;2;255;0;255mfoo" (
+      Ok (
+        foo 0 3 (face (:foreground #FF00FF) font-lock-face (:foreground #FF00FF)))))
+    ("\027[38;2;255;10;0mfoo" (
+      Ok (
+        foo 0 3 (face (:foreground #FF0A00) font-lock-face (:foreground #FF0A00)))))
+    ("\027[38;2;255;10;10mfoo" (
+      Ok (
+        foo 0 3 (face (:foreground #FF0A0A) font-lock-face (:foreground #FF0A0A)))))
+    ("\027[38;2;255;10;255mfoo" (
+      Ok (
+        foo 0 3 (face (:foreground #FF0AFF) font-lock-face (:foreground #FF0AFF)))))
+    ("\027[38;2;255;255;0mfoo" (
+      Ok (
+        foo 0 3 (face (:foreground #FFFF00) font-lock-face (:foreground #FFFF00)))))
+    ("\027[38;2;255;255;10mfoo" (
+      Ok (
+        foo 0 3 (face (:foreground #FFFF0A) font-lock-face (:foreground #FFFF0A)))))
+    ("\027[38;2;255;255;255mfoo" (
+      Ok (
+        foo 0 3 (face (:foreground #FFFFFF) font-lock-face (:foreground #FFFFFF))))) |}]
 ;;
 
 let%expect_test "single code" =
@@ -232,7 +537,7 @@ let%expect_test "single code" =
       Ok (foo 0 3 (face (:foreground cyan3) font-lock-face (:foreground cyan3)))))
     ("\027[37mfoo" (
       Ok (foo 0 3 (face (:foreground gray90) font-lock-face (:foreground gray90)))))
-    ("\027[38mfoo" (Ok foo))
+    ("\027[38mfoo" (Ok "<invalid ANSI escape sequence \"\\027[38\">mfoo"))
     ("\027[39mfoo" (Ok foo))
     ("\027[40mfoo" (
       Ok (foo 0 3 (face (:background black) font-lock-face (:background black)))))
@@ -253,7 +558,7 @@ let%expect_test "single code" =
       Ok (foo 0 3 (face (:background cyan3) font-lock-face (:background cyan3)))))
     ("\027[47mfoo" (
       Ok (foo 0 3 (face (:background gray90) font-lock-face (:background gray90)))))
-    ("\027[48mfoo" (Ok foo))
+    ("\027[48mfoo" (Ok "<invalid ANSI escape sequence \"\\027[48\">mfoo"))
     ("\027[49mfoo" (Ok foo))
     ("\027[50mfoo" (Ok foo))
     ("\027[51mfoo" (Ok foo))

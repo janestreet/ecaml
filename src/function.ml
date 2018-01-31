@@ -9,12 +9,9 @@ include Value.Make_subtype (struct
 
 module Fn = struct
   type t = Value.t array -> Value.t [@@deriving sexp_of]
-end
 
-module Function_table_entry = struct
-  type t =
-    { callback : Fn.t }
-  [@@deriving fields, sexp_of]
+  let type_id = Type_equal.Id.create ~name:"Ecaml.Fn" sexp_of_t
+  let ecaml_type = Value.Type.caml_embed type_id
 end
 
 type 'a with_spec
@@ -31,57 +28,49 @@ module Expert = struct
 end
 
 let create =
-  let function_table : (Function_id.t, Function_table_entry.t) Hashtbl.t =
-    Function_id.Table.create ()
-  in
   let module M = struct
-    (** [make_function_internal docstring function_id] returns two values:
+    (** [make_dispatch_function docstring] returns a primitive Emacs function whose
+        documentation is [docstring] and that, when called from Emacs with arguments
+        [function_id] and [args], calls [dispatch_function function_id args].
 
-        - An Emacs function whose documentation is [docstring] and that, when called from
-        Emacs with arguments [args], calls [dispatch_function function_id args].
-
-        - An Emacs user_ptr whose finalizer calls [free_function function_id]. *)
-    external make_function_internal : string -> Function_id.t -> Value.t * Value.t
-      = "ecaml_make_function"
+        This is the only emacs function that we create using emacs module C API. All other
+        functions are lambdas that call this function. *)
+    external make_dispatch_function : string -> Value.t
+      = "ecaml_make_dispatch_function"
   end in
   let open M in
-  Ecaml_callback.(register free_function)
-    ~f:(fun function_id ->
-      if debug
-      then eprint_s [%message "Function.free_function" (function_id : Function_id.t)];
-      Hashtbl.remove function_table function_id);
-  (* The registration of [dispatch_function] happens before any callback from Emacs to
-     OCaml.  We ensure this because [ecaml_make_function] is the only C code that can
-     cause [dispatch_function] to be called. *)
+  (* [dispatch_function] is registered and emacs [dispatch] function is created before any
+     callback is created and can be called *)
   Ecaml_callback.(register dispatch_function)
-    ~f:(fun function_id args ->
+    ~f:(fun callback_id args ->
       if !Expert.raise_in_dispatch then raise_s [%message "dispatch"];
       try
-        let { Function_table_entry. callback } =
-          Hashtbl.find_exn function_table function_id in
+        let callback = Caml_embed.lookup_by_id_exn callback_id Fn.type_id in
         callback args
       with exn -> Value.Expert.non_local_exit_signal exn; Value.nil);
+  let dispatch =
+    make_dispatch_function
+      ([%message
+        "call-OCaml-function"
+          ~implemented_at:([%here] : Source_code_position.t)]
+       |> Sexp.to_string)
+  in
   fun ?docstring ?interactive ?optional_args ?rest_arg here ~args callback ->
-    let function_id = Function_id.create () in
-    Hashtbl.set function_table ~key:function_id ~data:{ callback };
-    let emacs_function, sentinel =
-      make_function_internal
-        ([%message
-          "call-OCaml-function"
-            (function_id : Function_id.t)
-            ~implemented_at:(here : Source_code_position.t)]
-         |> Sexp.to_string)
-        function_id
-    in
-    (* We wrap [emacs_function] with a lambda expression that, when called, calls
-       [emacs_function] with the same arguments.  The lambda expression also points to
-       [sentinel], so that when the lambda expression is collected, we run the
-       [sentinel]'s Emacs finalizer, which calls [free_function], which removes
-       [function_id] from [function_table].  We do not need to hold on to the lambda
-       expression from OCaml, because Emacs will hold on to it.  In particular, if the
-       OCaml finalizer for the lambda-expression OCaml value runs, that will decrement the
-       Emacs refcount, but will still leave it to Emacs to run [sentinel]'s finalizer
-       whenever the lambda expression is collected. *)
+    let callback = Fn.ecaml_type.to_value callback in
+    (* We wrap [callback] with a lambda expression that, when called, calls [dispatch]
+       with the [callback] and the same arguments. This way, lambda expression holds on to
+       the [callback] so [callback] is alive as long there is a reference to the lambda
+       expression.
+
+       This is a simple way to ensure that [callback] is alive as long as it can be called
+       by emacs. Creating a primitive function object (like we do for dispatch) would be
+       more efficient but there is no way to attach a reference or a finalizer to that
+       kind of object so we use lambda here.
+
+       We do not need to hold on to the lambda expression from OCaml, because Emacs will
+       hold on to it. In particular, if the OCaml finalizer for the lambda-expression
+       OCaml value runs, that will decrement the Emacs refcount, but will still leave it
+       to Emacs to run [callback]'s finalizer once the lambda is not referenced anymore. *)
     let module F = Form in
     F.lambda
       ?docstring
@@ -90,21 +79,26 @@ let create =
       ?rest_arg
       here
       ~args
-      ~body:(F.progn
-               [ sentinel |> F.quote
-               ; F.list
-                   ([ Q.apply |> F.symbol
-                    ; emacs_function |> F.quote ]
-                    @ (List.map ~f:F.symbol
-                         (args
-                          @ ( optional_args |> Option.value ~default:[])
-                          @ [ rest_arg      |> Option.value ~default:Q.nil ])))])
+      ~body:(F.(list
+                  ([ symbol Q.apply
+                   ; of_value_exn dispatch
+                   ; of_value_exn callback
+                   ] @
+                   (List.map ~f:symbol
+                      (args
+                       @ ( optional_args |> Option.value ~default:[])
+                       @ [ rest_arg      |> Option.value ~default:Q.nil ])))))
     |> F.eval
     |> of_value_exn
 ;;
 
+module For_testing = struct
+  let defun_symbols = ref []
+end
+
 let defun ?docstring ?interactive ?optional_args ?rest_arg here ~args symbol f =
   Load_history.add_entry here (Fun symbol);
+  For_testing.defun_symbols := symbol :: !For_testing.defun_symbols;
   Symbol.set_function symbol
     (create ?docstring ?interactive ?optional_args ?rest_arg here ~args f
      |> to_value);

@@ -4,10 +4,10 @@ open! Advice
 
 let%expect_test "" =
   let test_function = "test-function" |> Symbol.intern in
-  defun [%here] ~args:[] ~rest_arg:Q.rest test_function
-    (fun args ->
-       print_s [%message "test-function" (args : Value.t array)];
-       (13 |> Value.of_int_exn));
+  defun [%here] Value.Type.int test_function Defun.Let_syntax.(
+    let%map_open args = rest ("rest" |> Symbol.intern) Value.Type.value in
+    print_s [%message "test-function" (args : Value.t list)];
+    13);
   let call_test_function () =
     let result =
       Symbol.funcallN test_function ([ 1; 2; 3 ] |> List.map ~f:Value.of_int_exn) in

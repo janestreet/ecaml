@@ -33,6 +33,9 @@ val set_undo_enabled : bool -> unit
 val file_name     : unit -> string option
 val file_name_exn : unit -> string
 
+(** [(describe-function 'buffer-name)] *)
+val name : unit -> string
+
 (** [(describe-variable 'buffer-file-name)]
     [(Info-goto-node "(elisp)Buffer File Name")] *)
 val file_name_var : Filename.t Var.t

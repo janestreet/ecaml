@@ -5,20 +5,18 @@ open! Command
 let is_command value = print_s [%sexp (Value.is_command value : bool)]
 
 let%expect_test "[Raw_prefix_argument]" =
-  let f = "f" |> Symbol.intern in
-  defun [%here] f ~interactive:"P" ~args:[ "arg" |> Symbol.intern ]
-    (function
-      | [| arg |] ->
-        print_s [%message
-          ""
-            (arg : Value.t)
-            ~for_current_command:(
-              Current_buffer.value_exn Raw_prefix_argument.for_current_command
-              : Raw_prefix_argument.t)
-            ~raw_prefix_argument:(
-              arg |> Raw_prefix_argument.of_value_exn : Raw_prefix_argument.t)];
-        Value.nil
-      | _ -> assert false);
+  let f = Symbol.gensym () in
+  defun [%here] Value.Type.unit f ~interactive:"P"
+    (let open Defun.Let_syntax in
+     let%map_open arg = required ("arg" |> Symbol.intern) Value.Type.value in
+     print_s [%message
+       ""
+         (arg : Value.t)
+         ~for_current_command:(
+           Current_buffer.value_exn Raw_prefix_argument.for_current_command
+           : Raw_prefix_argument.t)
+         ~raw_prefix_argument:(
+           arg |> Raw_prefix_argument.of_value_exn : Raw_prefix_argument.t)]);
   is_command (f |> Symbol.to_value);
   [%expect {|
     true |}];

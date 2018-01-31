@@ -105,7 +105,8 @@ let defadvice
                               [ F.list [ q Q.ad_set_args
                                        ; 0 |> F.int
                                        ; q rest_arg ]
-                              ; q Q.ad_do_it ])]
+                              ; q Q.ad_do_it
+                              ; q Q.ad_return_value])]
           (F.list (
              [ q Q.funcall
              ; F.quote (

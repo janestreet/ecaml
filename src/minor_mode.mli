@@ -21,6 +21,10 @@ val enable  : t -> unit
     [(describe-function 'abbrev-mode)] *)
 val abbrev : t
 
+(** [(describe-variable 'goto-address-mode)]
+    [(describe-function 'goto-address-mode)]*)
+val goto_address : t
+
 (** [(describe-variable 'buffer-read-only)]
     [(describe-function 'read-only-mode)] *)
 val read_only : t
@@ -28,3 +32,7 @@ val read_only : t
 (** [(describe-variable 'view-mode)]
     [(describe-function 'view-mode)] *)
 val view : t
+
+(** [(describe-variable 'visual-line-mode)]
+    [(describe-function 'visual-line-mode)]*)
+val visual_line : t

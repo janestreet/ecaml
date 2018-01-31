@@ -72,6 +72,21 @@ let show_current_buffer_local_variables () =
                   : (Symbol.t * _ option) list)];
 ;;
 
+(* [with_input_macro keystrokes f] simulates typing [keystrokes] into [f] by defining a
+   keyboard macro that invokes [f] and then replays [keystrokes]. *)
+let with_input_macro string f =
+  let start_sequence = "C-c e" in
+  let keyseq =
+    String.concat ~sep:" " [start_sequence; string]
+    |> Key_sequence.create_exn
+  in
+  let keymap = Keymap.create () in
+  Keymap.define_key keymap (Key_sequence.create_exn start_sequence)
+    (Value (lambda_nullary_nil [%here] f ~interactive:"" |> Function.to_value));
+  Keymap.set_transient keymap;
+  Key_sequence.execute keyseq
+;;
+
 let with_input string f =
   let module Out_channel = Core.Out_channel in
   let module Unix = Core.Unix in
@@ -93,9 +108,7 @@ let with_input string f =
          ~_:(String.length string : int)]);
   Unix.dup2 ~src:r ~dst:Unix.stdin;
   Unix.close r;
-  protect ~f ~finally:(fun () ->
-    Unix.dup2 ~src:stdin_to_restore ~dst:Unix.stdin
-  )
+  protect ~f ~finally:(fun () -> Unix.dup2 ~src:stdin_to_restore ~dst:Unix.stdin)
 ;;
 
 let%expect_test "[with_input] with too long string" =

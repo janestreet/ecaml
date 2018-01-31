@@ -1,4 +1,8 @@
 open! Core_kernel
 open! Import
 
-let require t = Symbol.funcall1_i Q.require (t |> Symbol.to_value)
+module Q = struct
+  let require = "require" |> Symbol0.intern
+end
+
+let require t = Symbol0.funcall1_i (Q.require) (t |> Symbol0.to_value)

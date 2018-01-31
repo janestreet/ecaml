@@ -1,6 +1,18 @@
 open! Core_kernel
 open! Import
 
+module F = struct
+  open! Funcall
+  open! Value.Type
+
+  let add_hook    =
+    Q.add_hook    <: Symbol.type_ @-> Symbol.type_ @-> bool @-> bool @-> return_nil
+  let remove_hook =
+    Q.remove_hook <: Symbol.type_ @-> Symbol.type_ @-> bool          @-> return_nil
+  let run_hooks   =
+    Q.run_hooks   <: Symbol.type_                                    @-> return_nil
+end
+
 type file   = file : string -> unit [@@deriving sexp_of]
 type normal = unit          -> unit [@@deriving sexp_of]
 
@@ -45,8 +57,6 @@ type 'a t =
 
 let symbol t = t.var.symbol
 
-let symbol_as_value t = symbol t |> Symbol.to_value
-
 let value_exn t = Current_buffer.value_exn t.var
 
 let sexp_of_t _ t =
@@ -74,7 +84,14 @@ module Function = struct
     { symbol; type_ }
   ;;
 
-  let to_value t = t.symbol |> Symbol.to_value
+  let create_with_self ?docstring here type_ symbol f =
+    let self = { symbol; type_ } in
+    Function.defun ?docstring here symbol ~args:(Type.args type_)
+      (Type.fn ~symbol type_ (f self));
+    self
+  ;;
+
+  let symbol t = t.symbol
 end
 
 module Where = struct
@@ -85,25 +102,25 @@ module Where = struct
 end
 
 let add ?(buffer_local = false) ?(where = Where.Start) t function_ =
-  Symbol.funcall4_i Q.add_hook
-    (t |> symbol_as_value)
-    (function_ |> Function.to_value)
-    (match where with End -> Value.t | Start -> Value.nil)
-    (buffer_local |> Value.of_bool);
+  F.add_hook
+    (t |> symbol)
+    (Function.symbol function_)
+    (match where with
+     | End -> true
+     | Start -> false)
+    buffer_local
 ;;
 
-let remove t function_ =
-  Symbol.funcall2_i Q.remove_hook (t |> symbol_as_value) (function_ |> Function.to_value)
+let remove ?(buffer_local = false) t function_ =
+  F.remove_hook (t |> symbol) (Function.symbol function_) buffer_local
 ;;
 
 let clear t = Current_buffer.set_value t.var []
 
-let run t = Symbol.funcall1_i Q.run_hooks (t |> symbol_as_value)
+let run t = F.run_hooks (t |> symbol)
 
-let after_load = create File Q.after_load_functions
-
+let after_load  = create File   Q.after_load_functions
 let after_save  = create Normal Q.after_save_hook
-
 let kill_buffer = create Normal Q.kill_buffer_hook
 
 let after_load_once =

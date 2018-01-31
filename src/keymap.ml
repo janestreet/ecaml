@@ -25,6 +25,8 @@ let set_parent t parent =
      | Some parent -> parent |> to_value);
 ;;
 
+let set_transient t = Symbol.funcall1_i Q.set_transient_map (t |> to_value)
+
 module Kind = struct
   type t =
     | Full
@@ -86,6 +88,11 @@ module Entry = struct
       | k -> Keyboard_macro k
       | exception _ -> Value value)
   ;;
+
+  let type_ = { Value.Type.
+                name = [%sexp "Keymap.Entry"]
+              ; to_value
+              ; of_value_exn }
 end
 
 let lookup_key_exn ?(accept_defaults = false) t key_sequence =

@@ -30,7 +30,16 @@ val copy : src:string -> dst:string -> unit
 
 (** [(describe-function 'rename-file)]
     [(Info-goto-node "(elisp)Changing Files")] *)
-val rename : src:string -> dst:string -> unit
+val rename : src:string -> dst:string -> replace_dst_if_exists:bool -> unit
+
+(** [(describe-function 'locate-file)] *)
+val locate
+  :  ?suffixes:string list
+  -> ?predicate:Value.t
+  -> filename:string
+  -> path:string list
+  -> unit
+  -> string option
 
 (** [(describe-function 'locate-dominating-file)] *)
 val locate_dominating_file

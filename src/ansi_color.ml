@@ -29,7 +29,7 @@ module Brightness = struct
     | Bright
     | Faint
     | Regular
-  [@@deriving compare, sexp_of]
+  [@@deriving compare, hash, sexp_of]
 
   let make_fainter = function
     | Bright  -> Regular
@@ -38,29 +38,37 @@ module Brightness = struct
   ;;
 end
 
-module Color_index : sig
-  type t [@@deriving compare, sexp_of]
+module Bounded_int(Config : sig
+    val max_value : int
+    val name : string
+  end) () : sig
+  type t [@@deriving compare, hash, sexp]
 
   val _min_value : t
   val max_value : t
 
   val of_int_exn : int -> t
   val to_int : t -> int
-end = struct
-  let min_value = 0
-  let max_value = 7
 
-  include Validated.Make (struct
+end =
+struct
+  let min_value = 0
+  let max_value = Config.max_value
+
+  include Validated.Make_bin_io_compare_hash_sexp (struct
       let here = [%here]
 
-      type t = int [@@deriving sexp]
+      type t = int [@@deriving sexp, compare, hash, bin_io]
 
       let validate color_index =
         if min_value <= color_index && color_index <= max_value
         then Validate.pass
         else Validate.fail_s [%message
-               "color index not between zero and seven" (color_index : int)]
+               (sprintf "%s not between 0 and %d" Config.name max_value)
+                 (color_index : int)]
       ;;
+
+      let validate_binio_deserialization = true
     end)
 
   let to_int = raw
@@ -73,33 +81,77 @@ end = struct
   let max_value = create_exn max_value
 end
 
+module Color_index_standard = Bounded_int(struct
+    let max_value = 7
+    let name = "color index"
+  end) ()
+
+(** 8-bit color component value *)
+module Color_value_8bit = Bounded_int(struct
+    let max_value = 255
+    let name = "color value"
+  end) ()
+
+module Color_index_256 = Bounded_int(struct
+    let max_value = 255
+    let name = "color index"
+  end) ()
+
 module By_color_index : sig
   type 'a t [@@deriving sexp_of]
 
   val create_exn : 'a array -> 'a t
 
-  val get : 'a t -> Color_index.t -> 'a
+  val get : 'a t -> Color_index_standard.t -> 'a
 
 end = struct
   type 'a t = 'a array [@@deriving sexp_of]
 
   let create_exn array =
-    if Array.length array <> Color_index.(max_value |> to_int) + 1
+    if Array.length array <> Color_index_standard.(max_value |> to_int) + 1
     then raise_s [%message
            "[By_color_index.create_exn] got array of wrong length"
              (array : _ Array.t)];
     array
   ;;
 
-  let get t color_index = t.( color_index |> Color_index.to_int )
+  let get t color_index = t.( color_index |> Color_index_standard.to_int )
 
+end
+
+module Color_spec = struct
+
+  module Standard = struct
+    type t =
+      { brightness  : Brightness.t
+      ; color_index : Color_index_standard.t }
+    [@@deriving compare, hash, sexp_of]
+  end
+
+  type t =
+    | Standard of Standard.t
+    | Indexed_256 of Color_index_256.t
+    | Rgb of {
+        r : Color_value_8bit.t;
+        g : Color_value_8bit.t;
+        b : Color_value_8bit.t;
+      }
+  [@@deriving compare, hash, sexp_of]
+
+  let make_fainter t =
+    match t with
+    | Standard t ->
+      Standard { t with brightness = t.brightness |> Brightness.make_fainter }
+    | x ->
+      x
+  ;;
 end
 
 module Colors : sig
   type t [@@deriving sexp_of]
 
   val get : unit -> t
-  val color : t -> Brightness.t -> Color_index.t -> Color.t
+  val color : t -> Color_spec.t -> Color.t
   val faint_default_color : t -> Color.t
 end = struct
 
@@ -153,14 +205,60 @@ end = struct
     ; faint_default_color : Color.t }
   [@@deriving fields, sexp_of]
 
-  let color t (brightness : Brightness.t) color_index =
-    let by_color_index =
-      match brightness with
-      | Bright  -> t.bright
-      | Faint   -> t.faint
-      | Regular -> t.regular
+  let rgb6 index =
+    let b = index mod 6 in
+    let index = index / 6 in
+    let g = index mod 6 in
+    let index = index / 6 in
+    let r = index mod 6 in
+    let index = index / 6 in
+    assert (index = 0);
+    let r = r * 255 / 5 in
+    let g = g * 255 / 5 in
+    let b = b * 255 / 5 in
+    Color.of_rgb8 ~r ~g ~b
+
+  let grayscale24 index =
+    assert (index < 24);
+    assert (index >= 0);
+    let value = index * 255 / 23 in
+    Color.of_rgb8 ~r:value ~g:value ~b:value
+
+  let color t color_spec =
+    let standard_color ~brightness ~color_index =
+      let by_color_index =
+        match (brightness : Brightness.t) with
+        | Bright  -> t.bright
+        | Faint   -> t.faint
+        | Regular -> t.regular
+      in
+      By_color_index.get by_color_index color_index
     in
-    By_color_index.get by_color_index color_index
+    match (color_spec : Color_spec.t) with
+    | Standard { brightness; color_index; } ->
+      standard_color ~brightness ~color_index
+    | Indexed_256 color_index ->
+      let color_index = Color_index_256.to_int color_index in
+      (match color_index with
+       | 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 ->
+         standard_color ~brightness:Regular
+           ~color_index:(Color_index_standard.of_int_exn color_index)
+       | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15 ->
+         standard_color ~brightness:Bright
+           ~color_index:(Color_index_standard.of_int_exn (color_index - 8))
+       | color_index ->
+         let color_index = color_index - 16 in
+         if color_index < 6 * 6 * 6
+         then
+           rgb6 color_index
+         else
+           let color_index = color_index - 6 * 6 * 6 in
+           grayscale24 color_index)
+    | Rgb { r; g; b; } ->
+      let r = Color_value_8bit.to_int r in
+      let g = Color_value_8bit.to_int g in
+      let b = Color_value_8bit.to_int b in
+      Color.of_rgb8 ~r ~g ~b
   ;;
 
   let transform c ~f = Color.rgb_exn c |> Color.RGB.map ~f |> Color.of_rgb
@@ -195,26 +293,107 @@ end = struct
     ; faint_default_color }
 end
 
+module Code : sig
+  type t =
+    (* there are some single-code color specs; those currently come with [Single_code]
+       constructor and not with [Set_color] *)
+    | Single_code of int
+    | Set_color of {
+        subject : [`background | `foreground];
+        color : Color_spec.t;
+      }
+  [@@deriving compare, hash, sexp_of]
+
+  module Incomplete_param : sig
+    type t [@@deriving compare, hash, sexp_of]
+    val empty : t
+  end
+
+  type parse_result =
+    | Done of t
+    | Incomplete of Incomplete_param.t
+    | Invalid of Error.t
+
+  val feed : Incomplete_param.t -> int -> parse_result
+end = struct
+  module T = struct
+    type t =
+      (* there are some single-code color specs; those come with [Single_code]
+         constructor *)
+      | Single_code of int
+      | Set_color of {
+          subject : [`background | `foreground];
+          color : Color_spec.t;
+        }
+    [@@deriving compare, hash, sexp_of]
+  end
+  include T
+  include Comparable.Make_plain(T)
+  include Hashable.Make_plain(T)
+
+  module Incomplete_param = struct
+    type t =
+      | Complex_color of [ `background | `foreground ]
+      | Rgb_color of {
+          subject : [ `background | `foreground ];
+          (* incomplete list of rgb components of length up to 2 (3 would be complete) *)
+          components : Color_value_8bit.t list;
+        }
+      | Indexed_256_color of [ `background | `foreground ]
+      | None
+    [@@deriving compare, sexp_of, hash]
+
+    let empty = None
+  end
+
+  type parse_result =
+    | Done of t
+    | Incomplete of Incomplete_param.t
+    | Invalid of Error.t
+
+  let feed incomplete code = match (incomplete : Incomplete_param.t) with
+    | None -> (match code with
+      | 38 -> Incomplete (Complex_color `foreground)
+      | 48 -> Incomplete (Complex_color `background)
+      | code -> Done (Single_code code))
+    | Complex_color subject ->
+      (match code with
+       | 5 -> Incomplete (Indexed_256_color subject)
+       | 2 -> Incomplete (Incomplete_param.Rgb_color { subject; components = []; })
+       | _ -> Invalid (
+         Error.create_s [%message
+           "invalid 8-bit or 24-bit color escape code: should start with '2' or '5'"]))
+    | Rgb_color { subject; components; } ->
+      (match Color_value_8bit.of_int_exn code with
+       | exception exn ->
+         Invalid (Error.of_exn exn)
+       | value ->
+         let components = components @ [ value ] in
+         (match components with
+          | [ r; g; b; ] ->
+            Done (Set_color { subject; color = Rgb { r; g; b; }; })
+          | _ :: _ :: _ :: _ :: _ ->
+            failwith "impossible: too many rgb components"
+          | [] | [ _ ] | [ _; _; ] ->
+            Incomplete (Rgb_color { subject; components; })))
+    | Indexed_256_color subject ->
+      (match Color_index_256.of_int_exn code with
+       | exception exn ->
+         Invalid (Error.of_exn exn)
+       | color ->
+         Done (Set_color { subject; color = Indexed_256 color; }))
+
+end
+
 module Attributes : sig
-  type t [@@deriving sexp_of]
+  type t [@@deriving sexp_of, compare, hash]
 
   include Equal.S with type t := t
 
   val empty : t
-  val transition : t -> code:int -> t
+  val transition : t -> code:Code.t -> t
   val text_properties : t -> Colors.t -> Text.Property.t list
 end = struct
-
-  module Color_spec = struct
-    type t =
-      { brightness  : Brightness.t
-      ; color_index : Color_index.t }
-    [@@deriving compare, sexp_of]
-
-    let make_fainter t =
-      { t with brightness = t.brightness |> Brightness.make_fainter }
-    ;;
-  end
 
   type t =
     { background    : Color_spec.t option
@@ -225,8 +404,9 @@ end = struct
     ; foreground    : Color_spec.t option
     ; italic        : bool
     ; reverse_video : bool
-    ; underline     : bool }
-  [@@deriving compare, fields, sexp_of]
+    ; underline     : bool
+    }
+  [@@deriving compare, fields, sexp_of, hash]
 
   let equal = [%compare.equal: t]
 
@@ -239,7 +419,8 @@ end = struct
     ; foreground     = None
     ; italic         = false
     ; reverse_video  = false
-    ; underline      = false }
+    ; underline      = false
+    }
   ;;
 
   let to_face_spec t colors : Text.Face_spec.t =
@@ -262,7 +443,8 @@ end = struct
     let w f acc field =
       match f (Field.get field t) with
       | None -> acc
-      | Some (attr, v) -> Face.Attribute_and_value.T (attr, v) :: acc
+      | Some (attr, v) ->
+        Face.Attribute_and_value.T (attr, v) :: acc
     in
     let add_if_true attribute value =
       w (fun v ->
@@ -271,8 +453,8 @@ end = struct
         else None)
     in
     let add_color color_attribute f =
-      w (Option.map ~f:(fun { Color_spec. brightness; color_index } ->
-        color_attribute, f (Colors.color colors brightness color_index)))
+      w (Option.map ~f:(fun color_spec ->
+        color_attribute, f (Colors.color colors color_spec)))
     in
     let skip acc _ = acc in
     Fields.fold ~init
@@ -298,48 +480,62 @@ end = struct
          ; T (Text.Property_name.font_lock_face , face_spec) ]
   ;;
 
-  let color_spec ~brightness ~code ~offset =
-    { Color_spec. brightness; color_index = (code - offset) |> Color_index.of_int_exn }
+  let color_spec_standard ~brightness ~code ~offset =
+    Color_spec.Standard {
+      brightness; color_index = (code - offset) |> Color_index_standard.of_int_exn }
   ;;
 
-  let background t ~brightness ~code ~offset =
-    { t with background = Some (color_spec ~brightness ~code ~offset) }
+  let background_standard t ~brightness ~code ~offset =
+    { t with background = Some (color_spec_standard ~brightness ~code ~offset) }
   ;;
 
-  let foreground t ~brightness ~code ~offset =
-    { t with foreground = Some (color_spec ~brightness ~code ~offset) }
+  let foreground_standard t ~brightness ~code ~offset =
+    { t with foreground = Some (color_spec_standard ~brightness ~code ~offset) }
   ;;
 
-  let transition t ~code =
+  let set_color ~subject t color = match subject with
+    | `foreground ->
+      { t with foreground = Some color; }
+    | `background ->
+      { t with background = Some color; }
+
+  let transition t ~(code : Code.t) =
     (* [(find-function 'ansi-color-apply-sequence)]
        https://en.wikipedia.org/wiki/ANSI_escape_code *)
     match code with
-    |  0 -> empty
-    |  1 -> { t with bold          = true }
-    |  2 -> { t with faint         = true }
-    |  3 -> { t with italic        = true }
-    |  4 -> { t with underline     = true }
-    |  5 -> { t with blink_slow    = true }
-    |  6 -> { t with blink_rapid   = true }
-    |  7 -> { t with reverse_video = true }
-    | 21 -> { t with bold          = false }
-    | 22 -> { t with bold          = false }
-    | 23 -> { t with italic        = false }
-    | 24 -> { t with underline     = false }
-    | 25 -> { t with blink_slow    = false; blink_rapid = false }
-    | 27 -> { t with reverse_video = false }
-    | 30 | 31 | 32 | 33 | 34 | 35 | 36 | 37 ->
-      foreground t ~brightness:Regular ~code ~offset:30
-    | 39 -> { t with foreground = None }
-    | 40 | 41 | 42 | 43 | 44 | 45 | 46 | 47 ->
-      background t ~brightness:Regular ~code ~offset:40
-    | 49 -> { t with background = None }
-    | 90 | 91 | 92 | 93 | 94 | 95 | 96 | 97 ->
-      foreground t ~brightness:Bright ~code ~offset:90
-    | 100 | 101 | 102 | 103 | 104 | 105 | 106 | 107 ->
-      background t ~brightness:Bright ~code ~offset:100
-    | _ -> empty
+    | Set_color { subject; color; } ->
+      set_color ~subject t color
+    | Single_code code ->
+      match code with
+      |  0 -> empty
+      |  1 -> { t with bold          = true }
+      |  2 -> { t with faint         = true }
+      |  3 -> { t with italic        = true }
+      |  4 -> { t with underline     = true }
+      |  5 -> { t with blink_slow    = true }
+      |  6 -> { t with blink_rapid   = true }
+      |  7 -> { t with reverse_video = true }
+      | 21 -> { t with bold          = false }
+      | 22 -> { t with bold          = false }
+      | 23 -> { t with italic        = false }
+      | 24 -> { t with underline     = false }
+      | 25 -> { t with blink_slow    = false; blink_rapid = false }
+      | 27 -> { t with reverse_video = false }
+      | 30 | 31 | 32 | 33 | 34 | 35 | 36 | 37 ->
+        foreground_standard t ~brightness:Regular ~code ~offset:30
+      | 38 -> assert false (* not single-code: handled by [Set_color] *)
+      | 39 -> { t with foreground = None }
+      | 40 | 41 | 42 | 43 | 44 | 45 | 46 | 47 ->
+        background_standard t ~brightness:Regular ~code ~offset:40
+      | 48 -> assert false (* not single-code: handled by [Set_color] *)
+      | 49 -> { t with background = None }
+      | 90 | 91 | 92 | 93 | 94 | 95 | 96 | 97 ->
+        foreground_standard t ~brightness:Bright ~code ~offset:90
+      | 100 | 101 | 102 | 103 | 104 | 105 | 106 | 107 ->
+        background_standard t ~brightness:Bright ~code ~offset:100
+      | _ -> empty
   ;;
+
 end
 
 module Region = struct
@@ -354,45 +550,64 @@ module State_machine : sig
 
   val create : unit -> t
 
-  val transition : t -> code:int -> unit
+  val transition : t -> raw_code:int -> [ `Ok | `Invalid_escape | `Incomplete_escape ]
+  val reset : t -> unit
 
   val apply_current_state : t -> to_:Region.t -> unit
 
   val add_text_properties_in_current_buffer : t -> unit
 end = struct
   module State = struct
+
+    module Attributes_state = struct
+      module T = struct
+        type t =
+          | Complete of Attributes.t
+          | Incomplete_escape of Attributes.t * Code.Incomplete_param.t
+          | Invalid_escape
+        [@@deriving compare, hash, sexp_of]
+      end
+      include T
+      include Hashable.Make_plain(T)
+
+      let empty = Complete Attributes.empty
+
+      let text_properties t colors = match t with
+        | Invalid_escape | Incomplete_escape _ -> []
+        | Complete attributes -> Attributes.text_properties attributes colors
+    end
+
     type t =
-      { attributes         : Attributes.t
-      ; next_state_by_code : t option array
+      { attributes_state : Attributes_state.t
+      ; next_state_by_code : t Int.Table.t
       ; mutable regions    : Region.t list
       ; text_properties    : Text.Property.t list }
 
-    let sexp_of_next_state_by_code array =
-      Array.foldi array ~init:[] ~f:(fun i ac next ->
-        match next with
-        | None -> ac
-        | Some t -> (i, t.attributes) :: ac)
-      |> List.rev
-      |> [%sexp_of: (int * Attributes.t) list]
+    let sexp_of_next_state_by_code h =
+      List.map (Hashtbl.to_alist h |> List.sort ~cmp:(Comparable.lift Int.compare ~f:fst))
+        ~f:(fun (i, next) -> (i, next.attributes_state))
+      |> [%sexp_of: (int * Attributes_state.t) list]
     ;;
 
-    let sexp_of_t { attributes; next_state_by_code; regions; text_properties } =
+    let sexp_of_t {
+      attributes_state; next_state_by_code;
+      regions; text_properties } =
       [%message.omit_nil
         ""
-          (attributes : Attributes.t)
+          (attributes_state : Attributes_state.t)
           (text_properties : Text.Property.t list)
           (next_state_by_code : next_state_by_code)
           (regions : Region.t list)]
     ;;
 
-    let create attributes text_properties =
-      { attributes
-      ; next_state_by_code = Array.create ~len:(max_supported_code + 1) None
+    let create attributes_state text_properties =
+      { attributes_state
+      ; next_state_by_code = Int.Table.create ~size:4 ()
       ; text_properties
       ; regions            = [] }
     ;;
 
-    let empty () = create Attributes.empty []
+    let empty () = create Attributes_state.empty []
 
     let add_region t region =
       if not (List.is_empty t.text_properties) then t.regions <- region :: t.regions;
@@ -409,12 +624,17 @@ end = struct
   end
 
   type t =
-    { mutable all_states    : State.t list
+    { mutable all_states    : State.t State.Attributes_state.Table.t
     ; colors                : Colors.t
     ; mutable current_state : State.t
     ; empty_state           : State.t }
 
   let sexp_of_t { all_states; colors = _; current_state; empty_state } =
+    let all_states =
+      Hashtbl.data all_states
+      |> List.sort ~cmp:(Comparable.lift State.Attributes_state.compare
+                           ~f:(fun x -> x.State.attributes_state))
+    in
     [%message.omit_nil
       ""
         (current_state : State.t)
@@ -424,7 +644,9 @@ end = struct
 
   let create () =
     let empty_state = State.empty () in
-    { all_states    = []
+    { all_states    =
+        State.Attributes_state.Table.of_alist_exn ~size:16
+          [empty_state.attributes_state, empty_state]
     ; colors        = Colors.get ()
     ; current_state = empty_state
     ; empty_state }
@@ -433,39 +655,53 @@ end = struct
   let apply_current_state t ~to_:region = State.add_region t.current_state region
 
   let add_text_properties_in_current_buffer t =
-    List.iter t.all_states ~f:State.add_text_properties_in_current_buffer
+    Hashtbl.iter t.all_states
+      ~f:State.add_text_properties_in_current_buffer
   ;;
 
-  let transition t ~code : unit =
+  let reset t = t.current_state <- t.empty_state
+
+  let transition t ~raw_code =
     let current_state = t.current_state in
     let next_state =
-      match current_state.next_state_by_code.( code ) with
-      | exception _ -> t.empty_state
-      | Some state -> state
-      | None ->
-        let current_attributes = current_state.attributes in
-        let next_attributes = Attributes.transition current_attributes ~code in
+      (* the horrible [find_exn] is here so we can avoid allocating anything in the common
+         case *)
+      match Hashtbl.find_exn current_state.next_state_by_code raw_code with
+      | state -> state
+      | exception Not_found ->
+        let incomplete_param, current_attributes =
+          match current_state.attributes_state with
+          | Complete attributes -> Code.Incomplete_param.empty, attributes
+          | Invalid_escape -> Code.Incomplete_param.empty, Attributes.empty
+          | Incomplete_escape (attributes, incomplete_param) ->
+            incomplete_param, attributes
+        in
+        let next_attributes_state : State.Attributes_state.t =
+          match Code.feed incomplete_param raw_code with
+          | Done code ->
+            Complete (Attributes.transition current_attributes ~code)
+          | Incomplete incomplete_param ->
+            Incomplete_escape (current_attributes, incomplete_param)
+          | Invalid _ ->
+            Invalid_escape
+        in
         let next_state =
-          if phys_equal next_attributes Attributes.empty
-          then t.empty_state
-          else if phys_equal next_attributes current_attributes
-          then current_state
-          else (
-            match
-              List.find t.all_states ~f:(fun (state : State.t) ->
-                Attributes.equal state.attributes next_attributes)
-            with
-            | Some state -> state
-            | None ->
-              let state =
-                State.create next_attributes
-                  (Attributes.text_properties next_attributes t.colors) in
-              t.all_states <- state :: t.all_states;
-              state) in
-        current_state.next_state_by_code.( code ) <- Some next_state;
-        next_state in
+          Hashtbl.find_or_add t.all_states next_attributes_state
+            ~default:(fun () ->
+              State.create
+                next_attributes_state
+                (State.Attributes_state.text_properties next_attributes_state t.colors))
+        in
+        Hashtbl.set current_state.next_state_by_code ~key:raw_code ~data:next_state;
+        next_state
+    in
     t.current_state <- next_state;
+    match t.current_state.attributes_state with
+    | Invalid_escape -> `Invalid_escape
+    | Complete _ -> `Ok
+    | Incomplete_escape _ -> `Incomplete_escape
   ;;
+
 end
 
 let digit c = Char.to_int c - Char.to_int '0'
@@ -521,7 +757,7 @@ let [@inline always] get_char t =
   c
 ;;
 
-let transition t ~code = State_machine.transition t.state_machine ~code
+let transition t ~raw_code = State_machine.transition t.state_machine ~raw_code
 
 let show_invalid_escapes =
   Var.create ("ansi-color-show-invalid-escapes" |> Symbol.intern) Value.Type.bool
@@ -540,10 +776,12 @@ let rec start_normal t =
   t.append_start <- t.input_pos;
   normal t
 and normal t =
-  if t.input_pos < t.input_length
-  then
+  if t.input_pos = t.input_length
+  then append_to_output t ~input_offset:0
+  else (
     match get_char t with
     | '\027' ->
+      append_to_output t ~input_offset:1;
       t.escape_start <- t.input_pos - 1;
       if t.input_pos = t.input_length
       then invalid_escape t
@@ -551,31 +789,30 @@ and normal t =
         match get_char t with
         | '[' ->
           t.saw_escape <- true;
-          append_to_output t ~input_offset:2;
           escape t
         | _ -> invalid_escape t)
-    | _ -> normal t
-and escape t =
-  if t.input_pos = t.input_length
-  then invalid_escape t
-  else (
-    match get_char t with
-    | '0' .. '9' as c -> code t (digit c)
-    | ';' -> escape t
-    | 'm' -> start_normal t
-    | _ -> invalid_escape t)
+    | _ -> normal t)
+and escape t = code t 0
 and code t ac =
   if t.input_pos = t.input_length
   then invalid_escape t
   else (
     match get_char t with
     | '0' .. '9' as c -> code t (ac * 10 + digit c)
-    | ';' -> transition t ~code:ac; escape t
-    | 'm' -> transition t ~code:ac; start_normal t
+    | ';' ->
+      begin match transition t ~raw_code:ac with
+      | `Ok | `Incomplete_escape -> escape t
+      | `Invalid_escape -> invalid_escape t
+      end
+    | 'm' ->
+      begin match transition t ~raw_code:ac with
+      | `Ok -> start_normal t
+      | `Invalid_escape | `Incomplete_escape -> invalid_escape t
+      end
     | _ -> invalid_escape t)
 and invalid_escape t =
   t.input_pos <- t.input_pos - 1;
-  transition t ~code:0;
+  State_machine.reset t.state_machine;
   let invalid_escape_sequence =
     String.sub t.input ~pos:t.escape_start ~len:(t.input_pos - t.escape_start) in
   append_string_to_output t
@@ -593,7 +830,6 @@ let color_entire_buffer () =
   let input = Current_buffer.contents () |> Text.to_utf8_bytes in
   let t = create ~input in
   start_normal t;
-  append_to_output t ~input_offset:0;
   if !print_state_machine
   then print_s [%message "" ~state_machine:(t.state_machine : State_machine.t)];
   Out_channel.close t.out_channel;

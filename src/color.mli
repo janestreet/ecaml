@@ -15,6 +15,7 @@ val blue    : t
 val cyan    : t
 val green   : t
 val magenta : t
+val orange  : t
 val red     : t
 val white   : t
 val yellow  : t
@@ -61,3 +62,4 @@ val rgb_exn
   -> RGB.t
 
 val of_rgb : RGB.t -> t
+val of_rgb8 : r:int -> g:int -> b:int ->t

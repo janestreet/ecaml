@@ -59,13 +59,24 @@ let%expect_test "[copy], [rename], [delete]" =
   show_exists "copy.ml";
   [%expect {|
     true |}];
-  rename ~src:"copy.ml" ~dst:"rename.ml";
+  rename ~src:"copy.ml" ~dst:"rename.ml" ~replace_dst_if_exists:false;
   show_exists "copy.ml";
   [%expect {|
     false |}];
   show_exists "rename.ml";
   [%expect {|
     true |}];
+  copy ~src:"rename.ml" ~dst:"rename2.ml";
+  show_raise (fun () ->
+    Value.For_testing.map_elisp_signal_omit_data (fun () ->
+      rename ~src:"rename2.ml" ~dst:"rename.ml" ~replace_dst_if_exists:false));
+  [%expect {|
+    (raised file-already-exists) |}];
+  rename ~src:"rename2.ml" ~dst:"rename.ml" ~replace_dst_if_exists:true;
+  show_exists "rename.ml";
+  [%expect {| true |}];
+  show_exists "rename2.ml";
+  [%expect{| false |}];
   delete "rename.ml";
   show_exists "rename.ml";
   [%expect {|

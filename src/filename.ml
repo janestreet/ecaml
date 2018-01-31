@@ -8,15 +8,8 @@ include (String : sig
              with type comparator_witness = String.comparator_witness
          end)
 
-let of_value_exn = Value.to_utf8_bytes_exn
-let to_value     = Value.of_utf8_bytes
-
-let type_ =
-  { Value.Type.
-    of_value_exn
-  ; name = [%message "filename"]
-  ; to_value }
-;;
+let { Value.Type.name = _; of_value_exn; to_value } as type_ =
+  { Value.Type.string with name = [%message "filename"] }
 
 let is_absolute t =
   Symbol.funcall1 Q.file_name_absolute_p (t |> to_value) |> Value.to_bool

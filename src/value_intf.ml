@@ -44,15 +44,11 @@ end
 
 module type Subtype = sig
   type value
-  type 'a type_
 
   (** We expose [private value] for free identity conversions when the value is nested in
       some covariant type, e.g. [(symbols : Symbol.t list :> Value.t list)] rather than
       [List.map symbols ~f:Symbol.to_value]. *)
   type t = private value [@@deriving sexp_of]
-
-  val of_value_exn : value -> t
-  val to_value : t -> value
 
   (** [eq t1 t2 = Value.eq (to_value t1) (to_value t2)], i.e. [eq] checks whether the
       Emacs values underlying [t1] and [t2] are physically equal.  This is different than
@@ -60,7 +56,7 @@ module type Subtype = sig
       OCaml values.  I.e. [phys_equal t1 t2] implies [eq t1 t2], but not the converse. *)
   val eq : t -> t -> bool
 
-  val type_ : t type_
+  include Valueable0.S with type t := t
 end
 
 module type Value = sig
@@ -84,6 +80,8 @@ module type Value = sig
   val cdr_exn : t -> t (** [(describe-function 'cdr)] *)
 
   val to_list_exn : t -> f:(t -> 'a) -> 'a list
+
+  val option : ('a -> t) -> 'a option -> t
 
   val type_of : t -> t
 
@@ -119,7 +117,12 @@ module type Value = sig
   val of_bool : bool -> t
   val to_bool : t -> bool  (** [is_not_nil] *)
 
+  val emacs_min_int : int (** [(describe-variable 'most-negative-fixnum)] *)
+  val emacs_max_int : int (** [(describe-variable 'most-positive-fixnum)] *)
+
+  (** [of_int_exn n] raises if [n] is not in the range [emacs_min_int, emacs_max_int] *)
   val of_int_exn : int -> t
+
   val to_int_exn : t -> int
 
   val of_float     : float -> t
@@ -143,15 +146,45 @@ module type Value = sig
       ; to_value     : 'a -> value }
     [@@deriving sexp_of]
 
-    val bool   : bool   t
-    val int    : int    t
-    val string : string t
-    val value  : value  t
+    val bool    : bool   t
+    val ignored : unit   t
+    val int     : int    t
+    val string  : string t
+    val unit    : unit   t
+    val value   : value  t
 
     val list   : 'a t -> 'a list   t
     val option : 'a t -> 'a option t
 
     val alist  : 'a t -> 'b t -> ('a * 'b) list t
+
+    (** Represent a tuple (a,b) as the elisp cons cell (a . b) *)
+    val tuple  : 'a t -> 'b t -> ('a * 'b) t
+
+    (** Represent a tuple (a,b) as the elisp list '(a b) *)
+    val tuple2_as_list : 'a t -> 'b t -> ('a * 'b) t
+
+    (** Embed a sexpable ocaml type, so we can save values of the type in emacs, e.g. as
+        buffer local variables *)
+    val sexpable : (module Sexpable with type t = 'a) -> name:Sexp.t -> 'a t
+
+    (** Embed values of type ['a]. Note that unlike other functions above, the values are
+        not transformed, so this can be used to preserve state in emacs. More precisely,
+        this following returns [true]:
+        {[
+          let var = Var.create (Value.Type.caml_embed type_id) in
+          Current_buffer.set_value var v;
+          phys_equal v (Current_buffer.value_exn var)
+        ]}
+    *)
+    val caml_embed : 'a Type_equal.Id.t -> 'a t
+
+    val map
+      :  'a t
+      -> name : Sexp.t
+      -> of_  : ('a -> 'b)
+      -> to_  : ('b -> 'a)
+      -> 'b t
   end with type value := t
 
   module type Funcall          = Funcall          with type value := t
@@ -176,5 +209,17 @@ module type Value = sig
 
     val now : unit -> t
     val diff : t -> t -> t
+  end
+
+  module For_testing : sig
+    (** Used to edit non-deterministic stuff out of Elisp signals. *)
+    val map_elisp_signal
+      :  (unit -> 'a)
+      -> f:(symbol : t
+            -> data : t
+            -> reraise:(symbol : t -> data : t -> Nothing.t)
+            -> Nothing.t)
+      -> 'a
+    val map_elisp_signal_omit_data : (unit -> 'a) -> 'a
   end
 end

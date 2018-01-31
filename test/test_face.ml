@@ -119,7 +119,7 @@ let%expect_test "[attribute]" =
     (Font_foundry Unspecified)
     (Foreground Unspecified)
     (Height Unspecified)
-    (Inherit nil)
+    (Inherit Unspecified)
     (Inverse_video No)
     (Overline Absent)
     (Slant Unspecified)
@@ -150,7 +150,7 @@ let%expect_test "[all_defined], [attributes]" =
       (Foreground     Unspecified)
       (Background     Unspecified)
       (Stipple        unspecified)
-      (Inherit        unspecified)))
+      (Inherit        Unspecified)))
     (bold-italic (
       (Font_family    Unspecified)
       (Font_foundry   Unspecified)
@@ -166,7 +166,7 @@ let%expect_test "[all_defined], [attributes]" =
       (Foreground     Unspecified)
       (Background     Unspecified)
       (Stipple        unspecified)
-      (Inherit        unspecified)))
+      (Inherit        Unspecified)))
     (border (
       (Font_family    Unspecified)
       (Font_foundry   Unspecified)
@@ -182,7 +182,7 @@ let%expect_test "[all_defined], [attributes]" =
       (Foreground     Unspecified)
       (Background     Unspecified)
       (Stipple        unspecified)
-      (Inherit        unspecified)))
+      (Inherit        Unspecified)))
     (buffer-menu-buffer (
       (Font_family    Unspecified)
       (Font_foundry   Unspecified)
@@ -198,7 +198,7 @@ let%expect_test "[all_defined], [attributes]" =
       (Foreground     Unspecified)
       (Background     Unspecified)
       (Stipple        unspecified)
-      (Inherit        unspecified)))
+      (Inherit        Unspecified)))
     (button (
       (Font_family    Unspecified)
       (Font_foundry   Unspecified)
@@ -214,7 +214,7 @@ let%expect_test "[all_defined], [attributes]" =
       (Foreground     Unspecified)
       (Background     Unspecified)
       (Stipple        unspecified)
-      (Inherit        link)))
+      (Inherit (Face link))))
     (completions-annotations (
       (Font_family    Unspecified)
       (Font_foundry   Unspecified)
@@ -230,7 +230,7 @@ let%expect_test "[all_defined], [attributes]" =
       (Foreground     Unspecified)
       (Background     Unspecified)
       (Stipple        unspecified)
-      (Inherit        italic)))
+      (Inherit (Face italic))))
     (completions-common-part (
       (Font_family    Unspecified)
       (Font_foundry   Unspecified)
@@ -246,7 +246,7 @@ let%expect_test "[all_defined], [attributes]" =
       (Foreground     Unspecified)
       (Background     Unspecified)
       (Stipple        unspecified)
-      (Inherit        unspecified)))
+      (Inherit        Unspecified)))
     (completions-first-difference (
       (Font_family    Unspecified)
       (Font_foundry   Unspecified)
@@ -262,7 +262,7 @@ let%expect_test "[all_defined], [attributes]" =
       (Foreground     Unspecified)
       (Background     Unspecified)
       (Stipple        unspecified)
-      (Inherit        bold)))
+      (Inherit (Face bold))))
     (cursor (
       (Font_family    Unspecified)
       (Font_foundry   Unspecified)
@@ -278,7 +278,7 @@ let%expect_test "[all_defined], [attributes]" =
       (Foreground     Unspecified)
       (Background     Unspecified)
       (Stipple        unspecified)
-      (Inherit        unspecified)))
+      (Inherit        Unspecified)))
     (default (
       (Font_family    Unspecified)
       (Font_foundry   Unspecified)
@@ -294,7 +294,7 @@ let%expect_test "[all_defined], [attributes]" =
       (Foreground     Unspecified)
       (Background     Unspecified)
       (Stipple        nil)
-      (Inherit        nil)))
+      (Inherit        Unspecified)))
     (eldoc-highlight-function-argument (
       (Font_family    Unspecified)
       (Font_foundry   Unspecified)
@@ -310,7 +310,7 @@ let%expect_test "[all_defined], [attributes]" =
       (Foreground     Unspecified)
       (Background     Unspecified)
       (Stipple        unspecified)
-      (Inherit        bold)))
+      (Inherit (Face bold))))
     (error (
       (Font_family    Unspecified)
       (Font_foundry   Unspecified)
@@ -326,7 +326,7 @@ let%expect_test "[all_defined], [attributes]" =
       (Foreground     Unspecified)
       (Background     Unspecified)
       (Stipple        unspecified)
-      (Inherit        unspecified)))
+      (Inherit        Unspecified)))
     (escape-glyph (
       (Font_family    Unspecified)
       (Font_foundry   Unspecified)
@@ -342,7 +342,7 @@ let%expect_test "[all_defined], [attributes]" =
       (Foreground (Color brown))
       (Background Unspecified)
       (Stipple    unspecified)
-      (Inherit    unspecified)))
+      (Inherit    Unspecified)))
     (file-name-shadow (
       (Font_family    Unspecified)
       (Font_foundry   Unspecified)
@@ -358,7 +358,7 @@ let%expect_test "[all_defined], [attributes]" =
       (Foreground     Unspecified)
       (Background     Unspecified)
       (Stipple        unspecified)
-      (Inherit        shadow)))
+      (Inherit (Face shadow))))
     (fixed-pitch (
       (Font_family (Name Monospace))
       (Font_foundry   Unspecified)
@@ -374,7 +374,7 @@ let%expect_test "[all_defined], [attributes]" =
       (Foreground     Unspecified)
       (Background     Unspecified)
       (Stipple        unspecified)
-      (Inherit        unspecified)))
+      (Inherit        Unspecified)))
     (fixed-pitch-serif (
       (Font_family (Name "Monospace Serif"))
       (Font_foundry   Unspecified)
@@ -390,7 +390,7 @@ let%expect_test "[all_defined], [attributes]" =
       (Foreground     Unspecified)
       (Background     Unspecified)
       (Stipple        unspecified)
-      (Inherit        unspecified)))
+      (Inherit        Unspecified)))
     (font-lock-builtin-face (
       (Font_family    Unspecified)
       (Font_foundry   Unspecified)
@@ -406,7 +406,7 @@ let%expect_test "[all_defined], [attributes]" =
       (Foreground     Unspecified)
       (Background     Unspecified)
       (Stipple        unspecified)
-      (Inherit        unspecified)))
+      (Inherit        Unspecified)))
     (font-lock-comment-delimiter-face (
       (Font_family    Unspecified)
       (Font_foundry   Unspecified)
@@ -422,7 +422,7 @@ let%expect_test "[all_defined], [attributes]" =
       (Foreground     Unspecified)
       (Background     Unspecified)
       (Stipple        unspecified)
-      (Inherit        font-lock-comment-face)))
+      (Inherit (Face font-lock-comment-face))))
     (font-lock-comment-face (
       (Font_family    Unspecified)
       (Font_foundry   Unspecified)
@@ -438,7 +438,7 @@ let%expect_test "[all_defined], [attributes]" =
       (Foreground     Unspecified)
       (Background     Unspecified)
       (Stipple        unspecified)
-      (Inherit        unspecified)))
+      (Inherit        Unspecified)))
     (font-lock-constant-face (
       (Font_family    Unspecified)
       (Font_foundry   Unspecified)
@@ -454,7 +454,7 @@ let%expect_test "[all_defined], [attributes]" =
       (Foreground     Unspecified)
       (Background     Unspecified)
       (Stipple        unspecified)
-      (Inherit        unspecified)))
+      (Inherit        Unspecified)))
     (font-lock-doc-face (
       (Font_family    Unspecified)
       (Font_foundry   Unspecified)
@@ -470,7 +470,7 @@ let%expect_test "[all_defined], [attributes]" =
       (Foreground     Unspecified)
       (Background     Unspecified)
       (Stipple        unspecified)
-      (Inherit        font-lock-string-face)))
+      (Inherit (Face font-lock-string-face))))
     (font-lock-function-name-face (
       (Font_family    Unspecified)
       (Font_foundry   Unspecified)
@@ -486,7 +486,7 @@ let%expect_test "[all_defined], [attributes]" =
       (Foreground     Unspecified)
       (Background     Unspecified)
       (Stipple        unspecified)
-      (Inherit        unspecified)))
+      (Inherit        Unspecified)))
     (font-lock-keyword-face (
       (Font_family    Unspecified)
       (Font_foundry   Unspecified)
@@ -502,7 +502,7 @@ let%expect_test "[all_defined], [attributes]" =
       (Foreground     Unspecified)
       (Background     Unspecified)
       (Stipple        unspecified)
-      (Inherit        unspecified)))
+      (Inherit        Unspecified)))
     (font-lock-negation-char-face (
       (Font_family    Unspecified)
       (Font_foundry   Unspecified)
@@ -518,7 +518,7 @@ let%expect_test "[all_defined], [attributes]" =
       (Foreground     Unspecified)
       (Background     Unspecified)
       (Stipple        unspecified)
-      (Inherit        unspecified)))
+      (Inherit        Unspecified)))
     (font-lock-preprocessor-face (
       (Font_family    Unspecified)
       (Font_foundry   Unspecified)
@@ -534,7 +534,7 @@ let%expect_test "[all_defined], [attributes]" =
       (Foreground     Unspecified)
       (Background     Unspecified)
       (Stipple        unspecified)
-      (Inherit        font-lock-builtin-face)))
+      (Inherit (Face font-lock-builtin-face))))
     (font-lock-regexp-grouping-backslash (
       (Font_family    Unspecified)
       (Font_foundry   Unspecified)
@@ -550,7 +550,7 @@ let%expect_test "[all_defined], [attributes]" =
       (Foreground     Unspecified)
       (Background     Unspecified)
       (Stipple        unspecified)
-      (Inherit        bold)))
+      (Inherit (Face bold))))
     (font-lock-regexp-grouping-construct (
       (Font_family    Unspecified)
       (Font_foundry   Unspecified)
@@ -566,7 +566,7 @@ let%expect_test "[all_defined], [attributes]" =
       (Foreground     Unspecified)
       (Background     Unspecified)
       (Stipple        unspecified)
-      (Inherit        bold)))
+      (Inherit (Face bold))))
     (font-lock-string-face (
       (Font_family    Unspecified)
       (Font_foundry   Unspecified)
@@ -582,7 +582,7 @@ let%expect_test "[all_defined], [attributes]" =
       (Foreground     Unspecified)
       (Background     Unspecified)
       (Stipple        unspecified)
-      (Inherit        unspecified)))
+      (Inherit        Unspecified)))
     (font-lock-type-face (
       (Font_family    Unspecified)
       (Font_foundry   Unspecified)
@@ -598,7 +598,7 @@ let%expect_test "[all_defined], [attributes]" =
       (Foreground     Unspecified)
       (Background     Unspecified)
       (Stipple        unspecified)
-      (Inherit        unspecified)))
+      (Inherit        Unspecified)))
     (font-lock-variable-name-face (
       (Font_family    Unspecified)
       (Font_foundry   Unspecified)
@@ -614,7 +614,7 @@ let%expect_test "[all_defined], [attributes]" =
       (Foreground     Unspecified)
       (Background     Unspecified)
       (Stipple        unspecified)
-      (Inherit        unspecified)))
+      (Inherit        Unspecified)))
     (font-lock-warning-face (
       (Font_family    Unspecified)
       (Font_foundry   Unspecified)
@@ -630,7 +630,7 @@ let%expect_test "[all_defined], [attributes]" =
       (Foreground     Unspecified)
       (Background     Unspecified)
       (Stipple        unspecified)
-      (Inherit        error)))
+      (Inherit (Face error))))
     (fringe (
       (Font_family    Unspecified)
       (Font_foundry   Unspecified)
@@ -646,7 +646,7 @@ let%expect_test "[all_defined], [attributes]" =
       (Foreground     Unspecified)
       (Background (Color gray))
       (Stipple unspecified)
-      (Inherit unspecified)))
+      (Inherit Unspecified)))
     (glyphless-char (
       (Font_family    Unspecified)
       (Font_foundry   Unspecified)
@@ -662,7 +662,7 @@ let%expect_test "[all_defined], [attributes]" =
       (Foreground     Unspecified)
       (Background     Unspecified)
       (Stipple        unspecified)
-      (Inherit        underline)))
+      (Inherit (Face underline))))
     (header-line (
       (Font_family    Unspecified)
       (Font_foundry   Unspecified)
@@ -678,7 +678,7 @@ let%expect_test "[all_defined], [attributes]" =
       (Foreground     Unspecified)
       (Background     Unspecified)
       (Stipple        unspecified)
-      (Inherit        mode-line)))
+      (Inherit (Face mode-line))))
     (help-argument-name (
       (Font_family    Unspecified)
       (Font_foundry   Unspecified)
@@ -694,7 +694,7 @@ let%expect_test "[all_defined], [attributes]" =
       (Foreground     Unspecified)
       (Background     Unspecified)
       (Stipple        unspecified)
-      (Inherit        italic)))
+      (Inherit (Face italic))))
     (highlight (
       (Font_family    Unspecified)
       (Font_foundry   Unspecified)
@@ -710,7 +710,7 @@ let%expect_test "[all_defined], [attributes]" =
       (Foreground     Unspecified)
       (Background     Unspecified)
       (Stipple        unspecified)
-      (Inherit        unspecified)))
+      (Inherit        Unspecified)))
     (isearch (
       (Font_family    Unspecified)
       (Font_foundry   Unspecified)
@@ -726,7 +726,7 @@ let%expect_test "[all_defined], [attributes]" =
       (Foreground     Unspecified)
       (Background     Unspecified)
       (Stipple        unspecified)
-      (Inherit        unspecified)))
+      (Inherit        Unspecified)))
     (isearch-fail (
       (Font_family    Unspecified)
       (Font_foundry   Unspecified)
@@ -742,7 +742,7 @@ let%expect_test "[all_defined], [attributes]" =
       (Foreground     Unspecified)
       (Background     Unspecified)
       (Stipple        unspecified)
-      (Inherit        unspecified)))
+      (Inherit        Unspecified)))
     (italic (
       (Font_family    Unspecified)
       (Font_foundry   Unspecified)
@@ -758,7 +758,7 @@ let%expect_test "[all_defined], [attributes]" =
       (Foreground     Unspecified)
       (Background     Unspecified)
       (Stipple        unspecified)
-      (Inherit        unspecified)))
+      (Inherit        Unspecified)))
     (lazy-highlight (
       (Font_family    Unspecified)
       (Font_foundry   Unspecified)
@@ -774,7 +774,7 @@ let%expect_test "[all_defined], [attributes]" =
       (Foreground     Unspecified)
       (Background     Unspecified)
       (Stipple        unspecified)
-      (Inherit        unspecified)))
+      (Inherit        Unspecified)))
     (link (
       (Font_family    Unspecified)
       (Font_foundry   Unspecified)
@@ -790,7 +790,7 @@ let%expect_test "[all_defined], [attributes]" =
       (Foreground     Unspecified)
       (Background     Unspecified)
       (Stipple        unspecified)
-      (Inherit        underline)))
+      (Inherit (Face underline))))
     (link-visited (
       (Font_family    Unspecified)
       (Font_foundry   Unspecified)
@@ -806,7 +806,7 @@ let%expect_test "[all_defined], [attributes]" =
       (Foreground     Unspecified)
       (Background     Unspecified)
       (Stipple        unspecified)
-      (Inherit        link)))
+      (Inherit (Face link))))
     (match (
       (Font_family    Unspecified)
       (Font_foundry   Unspecified)
@@ -822,7 +822,7 @@ let%expect_test "[all_defined], [attributes]" =
       (Foreground     Unspecified)
       (Background (Color gray))
       (Stipple unspecified)
-      (Inherit unspecified)))
+      (Inherit Unspecified)))
     (menu (
       (Font_family    Unspecified)
       (Font_foundry   Unspecified)
@@ -838,7 +838,7 @@ let%expect_test "[all_defined], [attributes]" =
       (Foreground     Unspecified)
       (Background     Unspecified)
       (Stipple        unspecified)
-      (Inherit        unspecified)))
+      (Inherit        Unspecified)))
     (minibuffer-prompt (
       (Font_family    Unspecified)
       (Font_foundry   Unspecified)
@@ -854,7 +854,7 @@ let%expect_test "[all_defined], [attributes]" =
       (Foreground (Color "medium blue"))
       (Background Unspecified)
       (Stipple    unspecified)
-      (Inherit    unspecified)))
+      (Inherit    Unspecified)))
     (mode-line (
       (Font_family    Unspecified)
       (Font_foundry   Unspecified)
@@ -870,7 +870,7 @@ let%expect_test "[all_defined], [attributes]" =
       (Foreground     Unspecified)
       (Background     Unspecified)
       (Stipple        unspecified)
-      (Inherit        unspecified)))
+      (Inherit        Unspecified)))
     (mode-line-buffer-id (
       (Font_family    Unspecified)
       (Font_foundry   Unspecified)
@@ -886,7 +886,7 @@ let%expect_test "[all_defined], [attributes]" =
       (Foreground     Unspecified)
       (Background     Unspecified)
       (Stipple        unspecified)
-      (Inherit        unspecified)))
+      (Inherit        Unspecified)))
     (mode-line-emphasis (
       (Font_family    Unspecified)
       (Font_foundry   Unspecified)
@@ -902,7 +902,7 @@ let%expect_test "[all_defined], [attributes]" =
       (Foreground     Unspecified)
       (Background     Unspecified)
       (Stipple        unspecified)
-      (Inherit        unspecified)))
+      (Inherit        Unspecified)))
     (mode-line-highlight (
       (Font_family    Unspecified)
       (Font_foundry   Unspecified)
@@ -918,7 +918,7 @@ let%expect_test "[all_defined], [attributes]" =
       (Foreground     Unspecified)
       (Background     Unspecified)
       (Stipple        unspecified)
-      (Inherit        highlight)))
+      (Inherit (Face highlight))))
     (mode-line-inactive (
       (Font_family    Unspecified)
       (Font_foundry   Unspecified)
@@ -934,7 +934,7 @@ let%expect_test "[all_defined], [attributes]" =
       (Foreground     Unspecified)
       (Background     Unspecified)
       (Stipple        unspecified)
-      (Inherit        mode-line)))
+      (Inherit (Face mode-line))))
     (mouse (
       (Font_family    Unspecified)
       (Font_foundry   Unspecified)
@@ -950,7 +950,7 @@ let%expect_test "[all_defined], [attributes]" =
       (Foreground     Unspecified)
       (Background     Unspecified)
       (Stipple        unspecified)
-      (Inherit        unspecified)))
+      (Inherit        Unspecified)))
     (next-error (
       (Font_family    Unspecified)
       (Font_foundry   Unspecified)
@@ -966,7 +966,7 @@ let%expect_test "[all_defined], [attributes]" =
       (Foreground     Unspecified)
       (Background     Unspecified)
       (Stipple        unspecified)
-      (Inherit        region)))
+      (Inherit (Face region))))
     (nobreak-space (
       (Font_family    Unspecified)
       (Font_foundry   Unspecified)
@@ -982,7 +982,7 @@ let%expect_test "[all_defined], [attributes]" =
       (Foreground     Unspecified)
       (Background     Unspecified)
       (Stipple        unspecified)
-      (Inherit        unspecified)))
+      (Inherit        Unspecified)))
     (query-replace (
       (Font_family    Unspecified)
       (Font_foundry   Unspecified)
@@ -998,7 +998,7 @@ let%expect_test "[all_defined], [attributes]" =
       (Foreground     Unspecified)
       (Background     Unspecified)
       (Stipple        unspecified)
-      (Inherit        isearch)))
+      (Inherit (Face isearch))))
     (region (
       (Font_family    Unspecified)
       (Font_foundry   Unspecified)
@@ -1014,7 +1014,7 @@ let%expect_test "[all_defined], [attributes]" =
       (Foreground     Unspecified)
       (Background (Color gray))
       (Stipple unspecified)
-      (Inherit unspecified)))
+      (Inherit Unspecified)))
     (scroll-bar (
       (Font_family    Unspecified)
       (Font_foundry   Unspecified)
@@ -1030,7 +1030,7 @@ let%expect_test "[all_defined], [attributes]" =
       (Foreground     Unspecified)
       (Background     Unspecified)
       (Stipple        unspecified)
-      (Inherit        unspecified)))
+      (Inherit        Unspecified)))
     (secondary-selection (
       (Font_family    Unspecified)
       (Font_foundry   Unspecified)
@@ -1046,7 +1046,7 @@ let%expect_test "[all_defined], [attributes]" =
       (Foreground     Unspecified)
       (Background     Unspecified)
       (Stipple        unspecified)
-      (Inherit        unspecified)))
+      (Inherit        Unspecified)))
     (shadow (
       (Font_family    Unspecified)
       (Font_foundry   Unspecified)
@@ -1062,7 +1062,7 @@ let%expect_test "[all_defined], [attributes]" =
       (Foreground     Unspecified)
       (Background     Unspecified)
       (Stipple        unspecified)
-      (Inherit        unspecified)))
+      (Inherit        Unspecified)))
     (show-paren-match (
       (Font_family    Unspecified)
       (Font_foundry   Unspecified)
@@ -1078,7 +1078,7 @@ let%expect_test "[all_defined], [attributes]" =
       (Foreground     Unspecified)
       (Background     Unspecified)
       (Stipple        unspecified)
-      (Inherit        underline)))
+      (Inherit (Face underline))))
     (show-paren-mismatch (
       (Font_family    Unspecified)
       (Font_foundry   Unspecified)
@@ -1094,7 +1094,7 @@ let%expect_test "[all_defined], [attributes]" =
       (Foreground     Unspecified)
       (Background     Unspecified)
       (Stipple        unspecified)
-      (Inherit        unspecified)))
+      (Inherit        Unspecified)))
     (success (
       (Font_family    Unspecified)
       (Font_foundry   Unspecified)
@@ -1110,7 +1110,7 @@ let%expect_test "[all_defined], [attributes]" =
       (Foreground     Unspecified)
       (Background     Unspecified)
       (Stipple        unspecified)
-      (Inherit        unspecified)))
+      (Inherit        Unspecified)))
     (tool-bar (
       (Font_family    Unspecified)
       (Font_foundry   Unspecified)
@@ -1126,7 +1126,7 @@ let%expect_test "[all_defined], [attributes]" =
       (Foreground (Color black))
       (Background Unspecified)
       (Stipple    unspecified)
-      (Inherit    unspecified)))
+      (Inherit    Unspecified)))
     (tooltip (
       (Font_family    Unspecified)
       (Font_foundry   Unspecified)
@@ -1142,7 +1142,7 @@ let%expect_test "[all_defined], [attributes]" =
       (Foreground     Unspecified)
       (Background     Unspecified)
       (Stipple        unspecified)
-      (Inherit        variable-pitch)))
+      (Inherit (Face variable-pitch))))
     (trailing-whitespace (
       (Font_family    Unspecified)
       (Font_foundry   Unspecified)
@@ -1158,7 +1158,7 @@ let%expect_test "[all_defined], [attributes]" =
       (Foreground     Unspecified)
       (Background     Unspecified)
       (Stipple        unspecified)
-      (Inherit        unspecified)))
+      (Inherit        Unspecified)))
     (tty-menu-disabled-face (
       (Font_family    Unspecified)
       (Font_foundry   Unspecified)
@@ -1174,7 +1174,7 @@ let%expect_test "[all_defined], [attributes]" =
       (Foreground (Color white))
       (Background (Color blue))
       (Stipple unspecified)
-      (Inherit unspecified)))
+      (Inherit Unspecified)))
     (tty-menu-enabled-face (
       (Font_family    Unspecified)
       (Font_foundry   Unspecified)
@@ -1190,7 +1190,7 @@ let%expect_test "[all_defined], [attributes]" =
       (Foreground (Color yellow))
       (Background (Color blue))
       (Stipple unspecified)
-      (Inherit unspecified)))
+      (Inherit Unspecified)))
     (tty-menu-selected-face (
       (Font_family    Unspecified)
       (Font_foundry   Unspecified)
@@ -1206,7 +1206,7 @@ let%expect_test "[all_defined], [attributes]" =
       (Foreground     Unspecified)
       (Background (Color red))
       (Stipple unspecified)
-      (Inherit unspecified)))
+      (Inherit Unspecified)))
     (underline (
       (Font_family    Unspecified)
       (Font_foundry   Unspecified)
@@ -1222,7 +1222,7 @@ let%expect_test "[all_defined], [attributes]" =
       (Foreground     Unspecified)
       (Background     Unspecified)
       (Stipple        unspecified)
-      (Inherit        unspecified)))
+      (Inherit        Unspecified)))
     (variable-pitch (
       (Font_family (Name "Sans Serif"))
       (Font_foundry   Unspecified)
@@ -1238,7 +1238,7 @@ let%expect_test "[all_defined], [attributes]" =
       (Foreground     Unspecified)
       (Background     Unspecified)
       (Stipple        unspecified)
-      (Inherit        unspecified)))
+      (Inherit        Unspecified)))
     (vc-conflict-state (
       (Font_family    Unspecified)
       (Font_foundry   Unspecified)
@@ -1254,7 +1254,7 @@ let%expect_test "[all_defined], [attributes]" =
       (Foreground     Unspecified)
       (Background     Unspecified)
       (Stipple        unspecified)
-      (Inherit        vc-state-base)))
+      (Inherit (Face vc-state-base))))
     (vc-edited-state (
       (Font_family    Unspecified)
       (Font_foundry   Unspecified)
@@ -1270,7 +1270,7 @@ let%expect_test "[all_defined], [attributes]" =
       (Foreground     Unspecified)
       (Background     Unspecified)
       (Stipple        unspecified)
-      (Inherit        vc-state-base)))
+      (Inherit (Face vc-state-base))))
     (vc-locally-added-state (
       (Font_family    Unspecified)
       (Font_foundry   Unspecified)
@@ -1286,7 +1286,7 @@ let%expect_test "[all_defined], [attributes]" =
       (Foreground     Unspecified)
       (Background     Unspecified)
       (Stipple        unspecified)
-      (Inherit        vc-state-base)))
+      (Inherit (Face vc-state-base))))
     (vc-locked-state (
       (Font_family    Unspecified)
       (Font_foundry   Unspecified)
@@ -1302,7 +1302,7 @@ let%expect_test "[all_defined], [attributes]" =
       (Foreground     Unspecified)
       (Background     Unspecified)
       (Stipple        unspecified)
-      (Inherit        vc-state-base)))
+      (Inherit (Face vc-state-base))))
     (vc-missing-state (
       (Font_family    Unspecified)
       (Font_foundry   Unspecified)
@@ -1318,7 +1318,7 @@ let%expect_test "[all_defined], [attributes]" =
       (Foreground     Unspecified)
       (Background     Unspecified)
       (Stipple        unspecified)
-      (Inherit        vc-state-base)))
+      (Inherit (Face vc-state-base))))
     (vc-needs-update-state (
       (Font_family    Unspecified)
       (Font_foundry   Unspecified)
@@ -1334,7 +1334,7 @@ let%expect_test "[all_defined], [attributes]" =
       (Foreground     Unspecified)
       (Background     Unspecified)
       (Stipple        unspecified)
-      (Inherit        vc-state-base)))
+      (Inherit (Face vc-state-base))))
     (vc-removed-state (
       (Font_family    Unspecified)
       (Font_foundry   Unspecified)
@@ -1350,7 +1350,7 @@ let%expect_test "[all_defined], [attributes]" =
       (Foreground     Unspecified)
       (Background     Unspecified)
       (Stipple        unspecified)
-      (Inherit        vc-state-base)))
+      (Inherit (Face vc-state-base))))
     (vc-state-base (
       (Font_family    Unspecified)
       (Font_foundry   Unspecified)
@@ -1366,7 +1366,7 @@ let%expect_test "[all_defined], [attributes]" =
       (Foreground     Unspecified)
       (Background     Unspecified)
       (Stipple        unspecified)
-      (Inherit        unspecified)))
+      (Inherit        Unspecified)))
     (vc-up-to-date-state (
       (Font_family    Unspecified)
       (Font_foundry   Unspecified)
@@ -1382,7 +1382,7 @@ let%expect_test "[all_defined], [attributes]" =
       (Foreground     Unspecified)
       (Background     Unspecified)
       (Stipple        unspecified)
-      (Inherit        vc-state-base)))
+      (Inherit (Face vc-state-base))))
     (vertical-border (
       (Font_family    Unspecified)
       (Font_foundry   Unspecified)
@@ -1398,7 +1398,7 @@ let%expect_test "[all_defined], [attributes]" =
       (Foreground     Unspecified)
       (Background     Unspecified)
       (Stipple        unspecified)
-      (Inherit        mode-line-inactive)))
+      (Inherit (Face mode-line-inactive))))
     (warning (
       (Font_family    Unspecified)
       (Font_foundry   Unspecified)
@@ -1414,7 +1414,7 @@ let%expect_test "[all_defined], [attributes]" =
       (Foreground     Unspecified)
       (Background     Unspecified)
       (Stipple        unspecified)
-      (Inherit        unspecified)))
+      (Inherit        Unspecified)))
     (window-divider (
       (Font_family    Unspecified)
       (Font_foundry   Unspecified)
@@ -1430,7 +1430,7 @@ let%expect_test "[all_defined], [attributes]" =
       (Foreground (Color gray60))
       (Background Unspecified)
       (Stipple    unspecified)
-      (Inherit    unspecified)))
+      (Inherit    Unspecified)))
     (window-divider-first-pixel (
       (Font_family    Unspecified)
       (Font_foundry   Unspecified)
@@ -1446,7 +1446,7 @@ let%expect_test "[all_defined], [attributes]" =
       (Foreground (Color gray80))
       (Background Unspecified)
       (Stipple    unspecified)
-      (Inherit    unspecified)))
+      (Inherit    Unspecified)))
     (window-divider-last-pixel (
       (Font_family    Unspecified)
       (Font_foundry   Unspecified)
@@ -1462,5 +1462,5 @@ let%expect_test "[all_defined], [attributes]" =
       (Foreground (Color gray40))
       (Background Unspecified)
       (Stipple    unspecified)
-      (Inherit    unspecified))) |}]
+      (Inherit    Unspecified))) |}]
 ;;

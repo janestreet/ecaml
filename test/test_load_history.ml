@@ -12,7 +12,7 @@ let%expect_test "\
     ~group:("custom-group" |> Customization.Group.of_string)
     ~standard_value:Value.nil;
   defvar [%here] var Value.nil ~docstring:"foo";
-  defun [%here] fun_ ~args:[] (fun _ -> Value.nil);
+  defun_nullary_nil [%here] fun_ Fn.id;
   update_emacs_with_entries ~chop_prefix:"app/emacs/" ~in_dir:"<dir>";
   let show_defining_file symbol =
     print_s [%sexp (defining_file symbol : string option)] in

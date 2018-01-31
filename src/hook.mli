@@ -36,6 +36,8 @@ end
 module Function : sig
   type 'a t [@@deriving sexp_of]
 
+  (** [create here return_type symbol f] defines an emacs function named [symbol]
+      that runs [f] when called. It returns an ['a t] usable for modifying hooks. *)
   val create
     :  ?docstring : string
     -> Source_code_position.t
@@ -43,6 +45,20 @@ module Function : sig
     -> Symbol.t
     -> 'a
     -> 'a t
+
+  (** [create_with_self here return_type symbol f] works the same as [create], except that
+      the ['a t] it returns is also passed as an argument to [f].
+
+      This is useful, for example, if [f] wants to remove itself from a hook once it is
+      called. *)
+  val create_with_self
+    :  ?docstring : string
+    -> Source_code_position.t
+    -> 'a Type.t
+    -> Symbol.t
+    -> ('a t -> 'a)
+    -> 'a t
+
 end
 
 (** [(describe-function 'add-hook)]
@@ -56,7 +72,7 @@ val add
 
 (** [(describe-function 'remove-hook)]
     [(Info-goto-node "(elisp)Setting Hooks")] *)
-val remove : 'a t -> 'a Function.t -> unit
+val remove : ?buffer_local:bool -> 'a t -> 'a Function.t -> unit
 
 val clear : _ t -> unit
 

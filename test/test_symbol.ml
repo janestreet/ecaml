@@ -36,3 +36,18 @@ let%expect_test "[set_function], [function_exn]" =
   [%expect {|
     13 |}];
 ;;
+
+let%expect_test "[gensym]" =
+  let s1 = gensym () in
+  let s2 = gensym () in
+  print_s [%message (s1 : Symbol.t) (s2 : Symbol.t)];
+  [%expect {|
+    ((s1 G0)
+     (s2 G1)) |}];
+  let s1 = gensym ~prefix:"jane-ecaml-test-" () in
+  let s2 = gensym ~prefix:"jane-ecaml-test-" () in
+  print_s [%message (s1 : Symbol.t) (s2 : Symbol.t)];
+  [%expect {|
+    ((s1 jane-ecaml-test-2)
+     (s2 jane-ecaml-test-3)) |}];
+;;

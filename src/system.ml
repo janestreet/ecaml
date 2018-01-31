@@ -1,6 +1,11 @@
 open! Core_kernel
 open! Import
 
+module Q = struct
+  include Q
+  let system_name = "system-name" |> Symbol.intern
+end
+
 let string_option = Value.Type.(option string)
 
 let getenv ~var =
@@ -15,6 +20,8 @@ let setenv ~var ~value =
 ;;
 
 let process_environment = Var.create Q.process_environment Value.Type.(list string)
+
+let exec_path = Var.create Q.exec_path Value.Type.(list string)
 
 module Var_and_value = struct
   type t =
@@ -33,3 +40,5 @@ let setenv_temporarily vars_and_values ~f =
         |> Value.Type.(list string).to_value)
        (Current_buffer.value_exn process_environment));
 ;;
+
+let hostname () = Symbol.funcall0 Q.system_name |> Value.to_utf8_bytes_exn

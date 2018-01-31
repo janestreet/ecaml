@@ -26,3 +26,7 @@ val to_value : t -> Value.t
 module Expert : sig
   val raise_in_dispatch : bool ref
 end
+
+module For_testing : sig
+  val defun_symbols : Symbol.t list ref
+end
