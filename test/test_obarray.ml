@@ -7,7 +7,7 @@ let%expect_test "[iter], [standard]" =
   iter standard ~f:(fun s -> all := Symbol.name s :: !all);
   print_s [%sexp (List.length !all : int)];
   [%expect {|
-    15_408 |}];
+    15_258 |}];
   print_s [%sexp (!all |> List.sort ~cmp:String.compare |> (fun l -> List.take l 100)
                   : string list)];
   [%expect {|
@@ -24,7 +24,6 @@ let%expect_test "[iter], [standard]" =
      ,.
      ,@
      -
-     --cl-block-nil--
      --dolist-tail--
      --dotimes-counter--
      --dotimes-limit--
@@ -110,5 +109,6 @@ let%expect_test "[iter], [standard]" =
      :crop
      :data
      :decode-translation-table
-     :default-char) |}];
+     :default-char
+     :designation) |}];
 ;;

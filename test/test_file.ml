@@ -39,14 +39,25 @@ let%expect_test "[exists], [is_*]" =
 
 let%expect_test "[is_below]" =
   let dir = Current_buffer.(value_exn directory) in
-  let is_below file ~dir = print_s [%sexp (is_below file ~dir : bool)] in
+  let is_below ?debug file ~dir =
+    let result = is_below file ~dir in
+    match debug with
+    | None -> print_s [%sexp (result : bool)]
+    | Some () ->
+      if result
+      then print_s [%sexp (result : bool)]
+      else print_s [%sexp (result : bool),
+                          ~~(Ecaml.File.truename file : string),
+                          ~~(Ecaml.File.truename dir : string),
+                          ~~(Ecaml.File.exists dir : bool)]
+  in
   is_below "foo" ~dir;
   [%expect {|
     true |}];
   is_below "/" ~dir;
   [%expect {|
     false |}];
-  is_below "foo" ~dir:(Filename.directory dir |> Option.value_exn);
+  is_below ~debug:() "foo" ~dir:(Filename.directory dir |> Option.value_exn);
   [%expect {|
     true |}];
 ;;

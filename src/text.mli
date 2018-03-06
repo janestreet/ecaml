@@ -8,6 +8,11 @@ open! Import
 
 include Value.Subtype
 
+module Compare_as_string : sig
+  include Comparable.S with type t = t
+  include Sexpable.S with type t := t
+end
+
 (** [(describe-function 'aref)]
     [(Info-goto-node "(elisp)String Basics")] *)
 val char_code : t -> int -> Char_code.t

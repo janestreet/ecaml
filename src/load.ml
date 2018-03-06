@@ -1,7 +1,7 @@
 open! Core_kernel
 open! Import
 
-let load_path = Var.create Q.load_path Value.Type.(list string)
+let load_path = Var.create Q.load_path Value.Type.path_list
 
 let path () = Current_buffer.value_exn load_path
 

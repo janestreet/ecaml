@@ -23,6 +23,21 @@ let of_utf8_bytes string = string |> Value.of_utf8_bytes |> of_value_exn
 
 let to_utf8_bytes t = t |> to_value |> Value.to_utf8_bytes_exn
 
+module Compare_as_string = struct
+  module T0 = struct
+    type nonrec t = t
+    let compare = Comparable.lift [%compare: string] ~f:to_utf8_bytes
+    let of_string = of_utf8_bytes
+    let to_string = to_utf8_bytes
+  end
+  module T = struct
+    include T0
+    include Sexpable.Of_stringable (T0)
+  end
+  include T
+  include Comparable.Make (T)
+end
+
 let length t = Symbol.funcall1 Q.length (t |> to_value) |> Value.to_int_exn
 
 let concat ts = Symbol.funcallN Q.concat (ts : t list :> Value.t list) |> of_value_exn

@@ -28,7 +28,6 @@ let%expect_test "[all_provided]" =
                   : Symbol.t list)];
   [%expect {|
     (abbrev
-     advice
      backquote
      base64
      button

@@ -7,4 +7,15 @@ include Value.Make_subtype (struct
     let is_in_subtype = Value.is_hash_table
   end)
 
-let create () = Symbol.funcall0 Q.make_hash_table |> of_value_exn
+module F = struct
+  open Funcall
+  open Value.Type
+
+  let hash_table_keys = Q.hash_table_keys <: type_ @-> return (list string)
+
+  let make_hash_table = Q.make_hash_table <: nullary @-> return type_
+end
+
+let create = F.make_hash_table
+
+let keys = F.hash_table_keys

@@ -535,6 +535,14 @@ module Type = struct
     ; to_value     = Fn.compose t.to_value to_ }
   ;;
 
+  let path_list =
+    option string
+    |> map ~name:[%message "path-list-element"]
+         ~of_:(Option.value ~default:".")
+         ~to_:Option.return
+    |> list
+  ;;
+
 end
 
 module type Subtype = Subtype

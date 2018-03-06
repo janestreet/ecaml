@@ -50,6 +50,7 @@ module Symbol            = Symbol
 module Syntax_table      = Syntax_table
 module System            = System
 module Text              = Text
+module Thing_at_point    = Thing_at_point
 module Timer             = Timer
 module User              = User
 module Value             = Value
@@ -62,7 +63,6 @@ module Working_directory = Working_directory
 open! Core_kernel
 open! Import
 
-let defadvice           = Advice.        defadvice
 let defcustom           = Customization. defcustom
 let define_derived_mode = Major_mode.    define_derived_mode
 let defun               = Defun.         defun

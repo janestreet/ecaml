@@ -2,6 +2,30 @@ open! Core_kernel
 open! Import
 open! Ansi_color
 
+let color_text' ~use_temp_file text =
+  Current_buffer.set_temporarily_to_temp_buffer (fun () ->
+    Point.insert_text text;
+    color_region_in_current_buffer
+      ~start:(Point.min ()) ~end_:(Point.max ()) ~use_temp_file ();
+    Current_buffer.contents ~text_properties:true ())
+;;
+
+let color_text text =
+  let with_temp_file = color_text' ~use_temp_file:true text in
+  let without_temp_file = color_text' ~use_temp_file:false text in
+  (match [%compare.equal: Sexp.t]
+           (Text.sexp_of_t with_temp_file)
+           (Text.sexp_of_t without_temp_file) with
+  | true -> ()
+  | false ->
+    print_s [%message
+      "With temp file different from without temp file"
+        (with_temp_file : Text.t)
+        (without_temp_file : Text.t)
+    ]);
+  without_temp_file
+;;
+
 let color_string s = color_text (s |> Text.of_utf8_bytes)
 
 let escape' codes =
@@ -16,7 +40,7 @@ let escape codes = escape' (List.map codes ~f:(fun code -> Some code))
 
 let print_state_machine string =
   Ref.set_temporarily Ansi_color.print_state_machine true ~f:(fun () ->
-    ignore (color_text (string |> Text.of_utf8_bytes) : Text.t));
+    ignore (color_text' ~use_temp_file:false (string |> Text.of_utf8_bytes) : Text.t));
 ;;
 
 let%expect_test "empty state machine" =
@@ -662,12 +686,14 @@ let%expect_test "large code" =
 
 let%expect_test "rendering invalid escape sequences" =
   List.iter
-    [ "\027["
+    [ "\027"
+    ; "\027["
     ; "\027[foo"
     ; "\027[31foo" ]
     ~f:(fun input ->
       print_s [%message "" input ~_:(color_string input : Text.t)]);
   [%expect {|
+    ("\027" "<invalid ANSI escape sequence \"\\027\">")
     ("\027[" "<invalid ANSI escape sequence \"\\027\">[")
     ("\027[foo" "<invalid ANSI escape sequence \"\\027[\">foo")
     ("\027[31foo" "<invalid ANSI escape sequence \"\\027[31\">foo") |}];
@@ -677,12 +703,14 @@ let%expect_test "customization to disable rendering invalid escape sequences" =
   Current_buffer.set_value_temporarily Ansi_color.show_invalid_escapes false
     ~f:(fun () ->
       List.iter
-        [ "\027["
+        [ "\027"
+        ; "\027["
         ; "\027[foo"
         ; "\027[31foo" ]
         ~f:(fun input ->
           print_s [%message "" input ~_:(color_string input : Text.t)]));
   [%expect {|
+    ("\027" "\027")
     ("\027[" "\027[")
     ("\027[foo" "\027[foo")
     ("\027[31foo" "\027[31foo") |}];
@@ -694,11 +722,11 @@ let%expect_test "color region twice" =
     let show () =
       print_s [%sexp (
         Current_buffer.contents ~text_properties:true () : Text.t)] in
-    color_current_buffer () ~start:(Point.min ()) ~end_:(Point.max ());
+    color_region_in_current_buffer () ~start:(Point.min ()) ~end_:(Point.max ());
     show ();
     [%expect {|
       (foo 0 3 (face (:foreground red3) font-lock-face (:foreground red3))) |}];
-    color_current_buffer () ~start:(Point.min ()) ~end_:(Point.max ());
+    color_region_in_current_buffer () ~start:(Point.min ()) ~end_:(Point.max ());
     show ();
     [%expect {|
       (foo 0 3 (face (:foreground red3) font-lock-face (:foreground red3))) |}]);
@@ -720,18 +748,83 @@ let%expect_test "color buffer twice" =
       (foo 0 3 (face (:foreground red3) font-lock-face (:foreground red3))) |}]);
 ;;
 
-let%expect_test "[color_current_buffer] and point" =
+let test_point_preservation ~left ~right ~colorize =
   Current_buffer.set_temporarily_to_temp_buffer (fun () ->
-    Point.insert (concat [ escape [ 31 ]; "foo" ]);
-    let show_point () = print_s [%sexp (Point.get () : Position.t)] in
-    show_point ();
-    [%expect {|
-      9 |}];
-    color_current_buffer () ~start:(Point.min ()) ~end_:(Point.max ());
-    [%expect {| |}];
-    show_point ();
-    [%expect {|
-      1 |}]);
+    Point.insert left;
+    let middle = Point.get () in
+    Point.insert right;
+    Point.goto_char middle;
+    let show_point () =
+      Text.concat
+        [(Current_buffer.contents ~text_properties:true ~end_:(Point.get ()) ());
+         Text.of_utf8_bytes "<point>";
+         (Current_buffer.contents ~text_properties:true ~start:(Point.get ()) ());
+        ]
+    in
+    let before = show_point () in
+    colorize ();
+    let after = show_point () in
+    print_s [%sexp
+      {
+        before = (before : Text.t);
+        after = (after : Text.t);
+      }
+    ])
+;;
+
+let%expect_test "[color_current_buffer] and point" =
+  test_point_preservation
+    ~left:(concat [ escape [ 31 ]; "red"; escape [ 32 ]; "gr" ])
+    ~right:(concat [ "een"; escape [ 34 ]; "blue"; escape [ 0 ] ])
+    ~colorize:(fun () -> color_current_buffer ());
+  [%expect {|
+    ((before "\027[31mred\027[32mgr<point>een\027[34mblue\027[0m")
+     (after (
+       <point>redgreenblue 7 10
+       (font-lock-face (:foreground red3) face (:foreground red3))
+       10
+       15
+       (font-lock-face (:foreground green3) face (:foreground green3))
+       15
+       19
+       (font-lock-face (:foreground blue2) face (:foreground blue2))))) |}]
+;;
+
+let%expect_test "[color_region_in_current_buffer] and point" =
+  test_point_preservation
+    ~left:(concat [ escape [ 31 ]; "red"; escape [ 32 ]; "gr" ])
+    ~right:(concat [ "een"; escape [ 34 ]; "blue"; escape [ 0 ] ])
+    ~colorize:(fun () ->
+      color_region_in_current_buffer ~start:(Point.min ()) ~end_:(Point.max ())  ());
+  [%expect {|
+    ((before "\027[31mred\027[32mgr<point>een\027[34mblue\027[0m")
+     (after (
+       redgr<point>eenblue 0 3
+       (font-lock-face (:foreground red3) face (:foreground red3))
+       3
+       5
+       (font-lock-face (:foreground green3) face (:foreground green3))
+       12
+       15
+       (font-lock-face (:foreground green3) face (:foreground green3))
+       15
+       19
+       (font-lock-face (:foreground blue2) face (:foreground blue2))))) |}]
+;;
+
+let%expect_test "multibyte character handling" =
+  Current_buffer.set_temporarily_to_temp_buffer (fun () ->
+    Point.insert "Ж";
+    let middle = Point.get () in
+    Point.insert (concat [ escape [ 31 ]; "x"; escape [ 0 ];  ]);
+    color_region_in_current_buffer
+      ~start:middle ~end_:(Point.max ())
+      ~use_temp_file:false ();
+    print_s [%sexp
+      (Current_buffer.contents ~text_properties:true ~end_:(Point.get ()) () : Text.t)
+    ]);
+  [%expect {|
+    ("\208\150x" 1 2 (face (:foreground red3) font-lock-face (:foreground red3))) |}]
 ;;
 
 let%expect_test "patdiff output" =

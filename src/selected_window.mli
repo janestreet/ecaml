@@ -29,3 +29,9 @@ val find_file : string -> unit
 
 (** [(describe-function 'view-file)] *)
 val view_file : string -> unit
+
+(** [(describe-function 'save-selected-window)] *)
+val save_selected_window : (unit -> 'a) -> 'a
+
+(** [(describe-function 'save-window-excursion)] *)
+val save_window_excursion : (unit -> 'a) -> 'a

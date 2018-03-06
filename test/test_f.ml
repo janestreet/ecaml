@@ -4,13 +4,13 @@ open! Funcall
 open Value.Type
 
 let%expect_test _ =
-  let message = Q.message <: string @-> int @-> string @-> string @-> int @-> return_nil in
+  let message = Q.message <: string @-> int @-> string @-> string @-> int @-> return nil in
   message "%S %S %S %S" 1 "two" "three" 4;
   [%expect {| 1 "two" "three" 4 |}]
 ;;
 
 let%expect_test "[nullary]" =
-  let point = nullary int Q.point in
+  let point = Q.point <: nullary @-> return int in
   print_s [%sexp (point () : int)];
   [%expect {| 1 |}]
 ;;

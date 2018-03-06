@@ -21,3 +21,6 @@ let split_vertically_exn   () = Symbol.funcall0_i Q.split_window_vertically
 
 let find_file path = Symbol.funcall1_i Q.find_file (path |> Value.of_utf8_bytes)
 let view_file path = Symbol.funcall1_i Q.view_file (path |> Value.of_utf8_bytes)
+
+let save_window_excursion f = Save_wrappers.save_window_excursion f
+let save_selected_window  f = Save_wrappers.save_selected_window  f

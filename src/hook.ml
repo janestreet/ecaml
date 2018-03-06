@@ -6,11 +6,11 @@ module F = struct
   open! Value.Type
 
   let add_hook    =
-    Q.add_hook    <: Symbol.type_ @-> Symbol.type_ @-> bool @-> bool @-> return_nil
+    Q.add_hook    <: Symbol.type_ @-> Symbol.type_ @-> bool @-> bool @-> return nil
   let remove_hook =
-    Q.remove_hook <: Symbol.type_ @-> Symbol.type_ @-> bool          @-> return_nil
+    Q.remove_hook <: Symbol.type_ @-> Symbol.type_ @-> bool          @-> return nil
   let run_hooks   =
-    Q.run_hooks   <: Symbol.type_                                    @-> return_nil
+    Q.run_hooks   <: Symbol.type_                                    @-> return nil
 end
 
 type file   = file : string -> unit [@@deriving sexp_of]

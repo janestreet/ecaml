@@ -548,14 +548,20 @@ end
 module State_machine : sig
   type t [@@deriving sexp_of]
 
+  module State : sig
+    type t [@@deriving sexp_of]
+  end
   val create : unit -> t
 
   val transition : t -> raw_code:int -> [ `Ok | `Invalid_escape | `Incomplete_escape ]
   val reset : t -> unit
 
-  val apply_current_state : t -> to_:Region.t -> unit
+  val current_state          : t -> State.t
+  val is_current_state_empty : t -> bool
 
-  val add_text_properties_in_current_buffer : t -> unit
+  val apply_state         : t -> State.t -> start:int -> end_:int -> unit
+  val apply_current_state : t            -> start:int -> end_:int -> unit
+
 end = struct
   module State = struct
 
@@ -580,8 +586,9 @@ end = struct
     type t =
       { attributes_state : Attributes_state.t
       ; next_state_by_code : t Int.Table.t
-      ; mutable regions    : Region.t list
-      ; text_properties    : Text.Property.t list }
+      ; text_properties : Text.Property.t list
+      ; add_text_properties : start:int -> end_:int -> unit
+      }
 
     let sexp_of_next_state_by_code h =
       List.map (Hashtbl.to_alist h |> List.sort ~cmp:(Comparable.lift Int.compare ~f:fst))
@@ -591,36 +598,27 @@ end = struct
 
     let sexp_of_t {
       attributes_state; next_state_by_code;
-      regions; text_properties } =
+      text_properties; add_text_properties = _ } =
       [%message.omit_nil
         ""
           (attributes_state : Attributes_state.t)
           (text_properties : Text.Property.t list)
           (next_state_by_code : next_state_by_code)
-          (regions : Region.t list)]
+      ]
     ;;
 
     let create attributes_state text_properties =
+      let add_text_properties =
+        unstage (Current_buffer.add_text_properties_staged text_properties)
+      in
       { attributes_state
       ; next_state_by_code = Int.Table.create ~size:4 ()
       ; text_properties
-      ; regions            = [] }
+      ; add_text_properties
+      }
     ;;
 
     let empty () = create Attributes_state.empty []
-
-    let add_region t region =
-      if not (List.is_empty t.text_properties) then t.regions <- region :: t.regions;
-    ;;
-
-    let add_text_properties_in_current_buffer t =
-      let set_text_properties =
-        unstage (Current_buffer.add_text_properties_staged t.text_properties) in
-      List.iter t.regions ~f:(fun { Region. pos; len } ->
-        set_text_properties
-          ~start:pos
-          ~end_: (pos + len));
-    ;;
   end
 
   type t =
@@ -642,6 +640,8 @@ end = struct
         (all_states : State.t list)]
   ;;
 
+  let current_state t = t.current_state
+
   let create () =
     let empty_state = State.empty () in
     { all_states    =
@@ -652,12 +652,15 @@ end = struct
     ; empty_state }
   ;;
 
-  let apply_current_state t ~to_:region = State.add_region t.current_state region
+  let is_current_state_empty t = phys_equal t.current_state t.empty_state
 
-  let add_text_properties_in_current_buffer t =
-    Hashtbl.iter t.all_states
-      ~f:State.add_text_properties_in_current_buffer
+  let apply_state _t (state : State.t) ~start ~end_ =
+    match state.text_properties with
+    | [] -> ()
+    | _  -> state.add_text_properties ~start ~end_
   ;;
+
+  let apply_current_state t ~start ~end_ = apply_state t t.current_state ~start ~end_
 
   let reset t = t.current_state <- t.empty_state
 
@@ -706,49 +709,97 @@ end
 
 let digit c = Char.to_int c - Char.to_int '0'
 
+module Temp_file_state = struct
+  type t =
+    { out_channel : Out_channel.t
+    ; temp_file : string
+    ; mutable regions : (Region.t * State_machine.State.t) list
+    }
+  [@@deriving sexp_of]
+
+  let create () =
+    let temp_file = Caml.Filename.temp_file "ecaml-ansi-color" "" in
+    { out_channel = Out_channel.create temp_file
+    ; temp_file
+    ; regions = []
+    }
+end
+
 type t =
-  { mutable append_start : int
-  ; mutable escape_start : int
+  { mutable output_pos : int
+  ; mutable region_start : int
   ; input                : string
   ; input_length         : int
   ; mutable input_pos    : int
-  ; out_channel          : Out_channel.t
-  ; output_file          : string
-  ; mutable output_pos   : int
   ; mutable saw_escape   : bool
-  ; state_machine        : State_machine.t }
+  ; state_machine        : State_machine.t
+  ; mode : [ `Use_temp_file of Temp_file_state.t
+           | `In_place_colorization
+           ]
+  }
 [@@deriving sexp_of]
 
-let create ~input =
-  let output_file = Caml.Filename.temp_file "ecaml-ansi-color" "" in
-  { append_start  = 0
-  ; escape_start  = 0
+let create ~input ~output_pos ~mode =
+  { region_start  = 0
   ; input
   ; input_length  = String.length input
   ; input_pos     = 0
-  ; out_channel   = Out_channel.create output_file
-  ; output_file
-  ; output_pos    = 1
+  ; output_pos
   ; saw_escape    = false
-  ; state_machine = State_machine.create () }
+  ; state_machine = State_machine.create ()
+  ; mode
+  }
 ;;
 
-let append_to_output t ~input_offset =
-  let len = (t.input_pos - input_offset) - t.append_start in
+let colorize t ~input_offset =
+  let len = (t.input_pos - input_offset) - t.region_start in
   if len > 0
-  then (
-    Out_channel.output_substring t.out_channel ~buf:t.input ~pos:t.append_start ~len;
-    State_machine.apply_current_state t.state_machine ~to_:{ pos = t.output_pos; len };
-    t.output_pos <- t.output_pos + len);
+  then begin
+    let start = t.output_pos in
+    let end_  = t.output_pos + len in
+    begin match t.mode with
+    | `In_place_colorization ->
+      State_machine.apply_current_state t.state_machine ~start ~end_
+    | `Use_temp_file temp_file_state ->
+      Out_channel.output_substring temp_file_state.out_channel ~buf:t.input ~pos:t.region_start ~len;
+      if not (State_machine.is_current_state_empty t.state_machine) then
+        (let region = { Region.pos = start; len } in
+         temp_file_state.regions <-
+           (region, State_machine.current_state t.state_machine) ::
+           temp_file_state.regions);
+    end;
+    t.region_start <- t.region_start + len;
+    t.output_pos <- end_;
+  end;
 ;;
 
-let append_string_to_output t string =
-  let len = String.length string in
+let delete_escape t =
+  let len = t.input_pos - t.region_start in
   if len > 0
-  then (
-    Out_channel.output_string t.out_channel string;
-    State_machine.apply_current_state t.state_machine ~to_:{ pos = t.output_pos; len };
-    t.output_pos <- t.output_pos + len);
+  then begin
+    t.region_start <- t.region_start + len;
+    match t.mode with
+    | `Use_temp_file _ -> ()
+    | `In_place_colorization ->
+      let start = Position.of_int_exn t.output_pos in
+      let end_ = Position.of_int_exn (t.output_pos + len) in
+      Current_buffer.delete_region ~start ~end_;
+  end
+;;
+
+let print_invalid_escape t =
+  let len = t.input_pos - t.region_start in
+  let invalid_escape_string = String.sub t.input ~pos:t.region_start ~len in
+  let message = sprintf "<invalid ANSI escape sequence %S>" invalid_escape_string in
+  delete_escape t;
+  begin match t.mode with
+  | `Use_temp_file temp_file_state ->
+    Out_channel.output_string temp_file_state.out_channel message;
+  | `In_place_colorization ->
+    Point.goto_char (Position.of_int_exn t.output_pos);
+    Point.insert message;
+  end;
+  t.output_pos <- t.output_pos + String.length message;
 ;;
 
 let [@inline always] get_char t =
@@ -773,22 +824,21 @@ let () =
 (* [start_normal], [normal], [escape], and [code], are a custom DFA for processing text
    containing ANSI escape sequences. *)
 let rec start_normal t =
-  t.append_start <- t.input_pos;
+  t.region_start <- t.input_pos;
   normal t
 and normal t =
   if t.input_pos = t.input_length
-  then append_to_output t ~input_offset:0
+  then colorize t ~input_offset:0
   else (
     match get_char t with
     | '\027' ->
-      append_to_output t ~input_offset:1;
-      t.escape_start <- t.input_pos - 1;
+      t.saw_escape <- true;
+      colorize t ~input_offset:1;
       if t.input_pos = t.input_length
       then invalid_escape t
       else (
         match get_char t with
         | '[' ->
-          t.saw_escape <- true;
           escape t
         | _ -> invalid_escape t)
     | _ -> normal t)
@@ -806,89 +856,100 @@ and code t ac =
       end
     | 'm' ->
       begin match transition t ~raw_code:ac with
-      | `Ok -> start_normal t
+      | `Ok -> delete_escape t; start_normal t
       | `Invalid_escape | `Incomplete_escape -> invalid_escape t
       end
     | _ -> invalid_escape t)
 and invalid_escape t =
-  t.input_pos <- t.input_pos - 1;
+  if t.input_pos > t.region_start + 1
+  then t.input_pos <- t.input_pos - 1;
   State_machine.reset t.state_machine;
-  let invalid_escape_sequence =
-    String.sub t.input ~pos:t.escape_start ~len:(t.input_pos - t.escape_start) in
-  append_string_to_output t
-    (if Current_buffer.value_exn show_invalid_escapes
-     then (sprintf "<invalid ANSI escape sequence %S>" invalid_escape_sequence)
-     else invalid_escape_sequence);
+  if Current_buffer.value_exn show_invalid_escapes then
+    print_invalid_escape t
+  else
+    colorize t ~input_offset:0;
   start_normal t
 ;;
 
 let print_state_machine = ref false
 
-let color_entire_buffer () =
+(* [set_multibyte] on large buffers is very slow, so we do it only when necessary. In the
+   case of [use_temp_file = true] we don't need to change multibyte until right before we
+   apply the text properties and then only after the region was deleted and buffer is much
+   smaller (actually empty in the usual case of coloring the whole buffer) *)
+let color_region ~start ~end_ ~use_temp_file =
   let before = Time_ns.now () in
-  let buffer_was_modified = Current_buffer.is_modified () in
-  let input = Current_buffer.contents () |> Text.to_utf8_bytes in
-  let t = create ~input in
+  let is_multibyte = Current_buffer.is_multibyte () in
+  let input = Current_buffer.contents () ~start ~end_ |> Text.to_utf8_bytes in
+  let show_messages = String.length input >= 1_000_000 in
+  let mode, start, end_ =
+    if use_temp_file then
+      `Use_temp_file (Temp_file_state.create ()), start, end_
+    else begin
+      let start, end_ =
+        (* Positions are not preserved when changing multibyte since they are just ints,
+           but markers' positions are updated. So we do this round-about way of getting
+           new positions of [start] and [end_] after changing multibyte. *)
+        if not is_multibyte then start, end_
+        else begin
+          let marker_of_position p =
+            let m = Marker.create () in
+            Current_buffer.set_marker_position m p;
+            m
+          in
+          let position_of_marker m = Marker.position m |> Option.value_exn in
+          let start = marker_of_position start in
+          let end_  = marker_of_position end_  in
+          Current_buffer.set_multibyte false;
+          position_of_marker start, position_of_marker end_
+        end
+      in
+      `In_place_colorization, start, end_
+    end
+  in
+  let message = "Colorizing ..." in
+  let output_pos = if use_temp_file then 0 else Position.to_int start in
+  let t = create ~input ~output_pos ~mode in
   start_normal t;
   if !print_state_machine
   then print_s [%message "" ~state_machine:(t.state_machine : State_machine.t)];
-  Out_channel.close t.out_channel;
-  if t.saw_escape
+  if t.saw_escape && show_messages then (Echo_area.message message);
+  begin match mode with
+  | `In_place_colorization -> ()
+  | `Use_temp_file temp_file_state ->
+    Out_channel.close temp_file_state.out_channel;
+    if t.saw_escape then begin
+      Current_buffer.delete_region ~start ~end_;
+      Point.goto_char start;
+      Current_buffer.set_multibyte false;
+      let start = Point.get () |> Position.to_int in
+      Point.insert_file_contents_exn temp_file_state.temp_file;
+      List.iter temp_file_state.regions ~f:(fun (region, state) ->
+        State_machine.apply_state t.state_machine state
+          ~start:(start + region.pos) ~end_:(start + region.pos + region.len));
+    end;
+    Sys.remove temp_file_state.temp_file;
+  end;
+  Current_buffer.set_multibyte is_multibyte;
+  if show_messages && t.saw_escape && not am_running_inline_test
   then (
-    let show_messages = String.length t.input >= 1_000_000 in
-    let message = "Colorizing ..." in
-    if show_messages then Echo_area.message message;
-    Current_buffer.(set_value read_only) false;
-    Current_buffer.set_undo_enabled false;
-    Current_buffer.erase ();
-    Current_buffer.set_multibyte false;
-    Point.insert_file_contents_exn t.output_file;
-    Point.goto_min ();
-    State_machine.add_text_properties_in_current_buffer t.state_machine;
-    Current_buffer.set_multibyte true;
-    Current_buffer.(set_value read_only) true;
-    if not buffer_was_modified then Current_buffer.set_modified false;
-    if show_messages && not am_running_inline_test
-    then (
-      let took = Time_ns.diff (Time_ns.now ()) before in
-      Echo_area.message (
-        concat [
-          message;" done (took "; took |> Time_ns.Span.to_sec |> sprintf "%.3f"; "s)" ])));
-  Sys.remove t.output_file;
+    let took = Time_ns.diff (Time_ns.now ()) before in
+    Echo_area.message (
+      concat [
+        message;" done (took "; took |> Time_ns.Span.to_sec |> sprintf "%.3f"; "s)" ]));
   t.saw_escape
 ;;
 
-let maybe_color_text text =
-  Current_buffer.set_temporarily_to_temp_buffer (fun () ->
-    Point.insert_text text;
-    let colored = color_entire_buffer () in
-    if colored
-    then Some (Current_buffer.contents ~text_properties:true ())
-    else None)
-;;
+let color_region_in_current_buffer ~start ~end_ ?(use_temp_file = false) () =
+  Current_buffer.save_excursion (fun () ->
+    ignore (color_region ~start ~end_ ~use_temp_file : bool))
 
-let color_text text =
-  match maybe_color_text text with
-  | None -> text
-  | Some x -> x
-;;
-
-let color_region ~start ~end_ =
-  let input = Current_buffer.contents () ~start ~end_ in
-  match maybe_color_text input with
-  | None -> ()
-  | Some colored ->
-    Current_buffer.kill_region ~start ~end_;
-    Point.goto_char start;
-    Point.insert_text colored;
-    Point.goto_char start;
-;;
-
-let color_current_buffer ?start ?end_ () =
-  match start, end_ with
-  | None, None -> ignore (color_entire_buffer () : bool);
-  | _, _ ->
-    color_region
-      ~start:(match start with Some x -> x | None -> Point.min ())
-      ~end_:( match end_  with Some x -> x | None -> Point.max ())
+let color_current_buffer () =
+  let buffer_was_modified = Current_buffer.is_modified () in
+  Current_buffer.(set_value read_only) false;
+  Current_buffer.set_undo_enabled false;
+  ignore (color_region ~start:(Point.min ()) ~end_:(Point.max ()) ~use_temp_file:true : bool);
+  if not buffer_was_modified then Current_buffer.set_modified false;
+  Current_buffer.(set_value read_only) true;
+  Point.goto_char (Point.min ());
 ;;

@@ -6,7 +6,7 @@ module F = struct
   open! Value.Type
 
   let describe_function  =
-    Symbol.intern "describe-function" <: Symbol.type_ @-> return_nil
+    Symbol.intern "describe-function" <: Symbol.type_ @-> return nil
 end
 
 let function_ ?(obscure_symbol=false) symbol =

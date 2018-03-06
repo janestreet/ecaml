@@ -173,8 +173,14 @@ val kill_region
   -> end_  : Position.t
   -> unit
 
+(** [(describe-function 'save-current-buffer)] *)
+val save_current_buffer : (unit -> 'a) -> 'a
+
 (** [(describe-function 'save-excursion)] *)
 val save_excursion : (unit -> 'a) -> 'a
+
+(** [(describe-function 'save-restriction)] *)
+val save_restriction : (unit -> 'a) -> 'a
 
 (** [(describe-function 'set-buffer-multibyte)].
     [(Info-goto-node "(elisp)Selecting a Representation")]. *)

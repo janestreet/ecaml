@@ -47,6 +47,10 @@ let read
       ~prompt
   =
   let predicate = Value.nil in
+  let prompt =
+    match default with
+    | None -> prompt
+    | Some d -> concat [ prompt; "(default = "; d; ") " ] in
   Symbol.funcallN Q.completing_read
     [ prompt |> Value.of_utf8_bytes
     ; collection |> List.map ~f:Value.of_utf8_bytes |> Value.list

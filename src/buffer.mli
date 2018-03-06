@@ -52,7 +52,10 @@ val buffer_local_value : t -> 'a Var.t -> 'a
 val buffer_local_variables : t -> (Symbol.t * Value.t option) list
 
 (** [(describe-function 'find-file-noselect)]
-    [(Info-goto-node "(elisp)Visiting Functions")] *)
+    [(Info-goto-node "(elisp)Visiting Functions")]
+
+    See also [Selected_window.find_file].
+*)
 val find_file_noselect : Filename.t -> t
 
 module Which_buffers : sig

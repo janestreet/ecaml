@@ -179,6 +179,11 @@ module type Value = sig
     *)
     val caml_embed : 'a Type_equal.Id.t -> 'a t
 
+    (** A list of directories. Each element is a string (directory name) or nil (try
+        default directory). nil values are converted to ".", which has the same meaning.
+    *)
+    val path_list : string list t
+
     val map
       :  'a t
       -> name : Sexp.t

@@ -7,9 +7,13 @@ open! Import
 
         let not : bool -> bool = Q.not <: bool @-> return bool
 
+        let about_emacs : unit -> unit = Q.about_emacs <: nullary @-> return nil
+
       end
 
       let non f = Fn.compose F.not f
+
+      let about_emacs = F.about_emacs
 
     ]} The [F] convention is borrowed from the Emacs C source.
 *)
@@ -18,14 +22,10 @@ type 'a t
 
 val return : 'a Value.Type.t -> 'a t
 
-val return_nil : unit t
+val nil     : unit Value.Type.t
+val nullary : unit Value.Type.t
 
 (** [Q.foo <: ...] types an Elisp function, like how [foo :> t] types an OCaml value. *)
 val (<:) : Symbol.t -> 'a t -> 'a
 
 val (@->) : 'a Value.Type.t -> 'b t -> ('a -> 'b) t
-
-(** {1} Special cases for nullary functions *)
-
-val nullary     : 'a Value.Type.t -> Symbol.t -> unit -> 'a
-val nullary_nil :                    Symbol.t -> unit -> unit
