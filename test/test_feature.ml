@@ -23,7 +23,7 @@ let%expect_test "[require] uses [Symbol.equal]" =
 
 let%expect_test "[all_provided]" =
   print_s [%sexp (all_provided ()
-                  |> List.sort ~cmp:(fun t1 t2 ->
+                  |> List.sort ~compare:(fun t1 t2 ->
                     String.compare (Symbol.name t1) (Symbol.name t2))
                   : Symbol.t list)];
   [%expect {|

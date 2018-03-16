@@ -591,7 +591,7 @@ end = struct
       }
 
     let sexp_of_next_state_by_code h =
-      List.map (Hashtbl.to_alist h |> List.sort ~cmp:(Comparable.lift Int.compare ~f:fst))
+      List.map (Hashtbl.to_alist h |> List.sort ~compare:(Comparable.lift Int.compare ~f:fst))
         ~f:(fun (i, next) -> (i, next.attributes_state))
       |> [%sexp_of: (int * Attributes_state.t) list]
     ;;
@@ -630,8 +630,8 @@ end = struct
   let sexp_of_t { all_states; colors = _; current_state; empty_state } =
     let all_states =
       Hashtbl.data all_states
-      |> List.sort ~cmp:(Comparable.lift State.Attributes_state.compare
-                           ~f:(fun x -> x.State.attributes_state))
+      |> List.sort ~compare:(Comparable.lift State.Attributes_state.compare
+                               ~f:(fun x -> x.State.attributes_state))
     in
     [%message.omit_nil
       ""
@@ -671,7 +671,7 @@ end = struct
          case *)
       match Hashtbl.find_exn current_state.next_state_by_code raw_code with
       | state -> state
-      | exception Not_found ->
+      | exception (Not_found_s _ | Caml.Not_found) ->
         let incomplete_param, current_attributes =
           match current_state.attributes_state with
           | Complete attributes -> Code.Incomplete_param.empty, attributes

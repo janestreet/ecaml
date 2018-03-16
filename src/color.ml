@@ -39,7 +39,7 @@ let is_supported = is Q.color_supported_p
 let defined ?on () =
   Symbol.funcall1 Q.defined_colors (frame on)
   |> Value.to_list_exn ~f:of_value_exn
-  |> List.sort ~cmp:compare
+  |> List.sort ~compare
 ;;
 
 module RGB = struct

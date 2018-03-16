@@ -510,7 +510,7 @@ module Attribute_and_value = struct
 
   let sort_by_attribute_name ts =
     List.sort ts
-      ~cmp:(fun (T (a1, _)) (T (a2, _)) -> Attribute.compare_name a1 a2)
+      ~compare:(fun (T (a1, _)) (T (a2, _)) -> Attribute.compare_name a1 a2)
   ;;
 
   let to_value_list (T (attribute, value)) =
@@ -529,7 +529,7 @@ let frame option =
 let all_defined () =
   Symbol.funcall0 Q.face_list
   |> Value.to_list_exn ~f:of_value_exn
-  |> List.sort ~cmp:compare
+  |> List.sort ~compare
 ;;
 
 let font_family_list ?on () =

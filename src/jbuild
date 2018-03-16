@@ -3,7 +3,7 @@
   (public_name ecaml)
   (libraries (core_kernel
               expect_test_helpers_kernel))
-  (preprocess (pps (ppx_jane -annotated-ignores ppx_driver.runner)))
+  (preprocess (pps (ppx_jane -annotated-ignores ppxlib.runner)))
   (flags   (:standard -safe-string))
   ;; We need -std=c99 to enable (stack-allocated) variable-length arrays in ecaml_funcall.
   (c_flags (:standard -std=c99))

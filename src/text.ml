@@ -125,7 +125,7 @@ module Face_spec = struct
   let normalize t =
     t
     |> List.map ~f:One.normalize
-    |> List.sort ~cmp:One.compare
+    |> List.sort ~compare:One.compare
   ;;
 
   let to_value t =

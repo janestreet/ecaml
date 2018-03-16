@@ -8,7 +8,7 @@ let%expect_test "[iter], [standard]" =
   print_s [%sexp (List.length !all : int)];
   [%expect {|
     15_258 |}];
-  print_s [%sexp (!all |> List.sort ~cmp:String.compare |> (fun l -> List.take l 100)
+  print_s [%sexp (!all |> List.sort ~compare:String.compare |> (fun l -> List.take l 100)
                   : string list)];
   [%expect {|
     (%
