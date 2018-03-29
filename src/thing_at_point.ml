@@ -5,17 +5,17 @@ module F = struct
   open Value.Type
   open Funcall
 
-  let beginning_of_thing       =
-    Q.beginning_of_thing       <: Symbol.type_          @-> return nil
+  let beginning_of_thing =
+    Q.beginning_of_thing <: Symbol.type_ @-> return nil
   let bounds_of_thing_at_point =
     Q.bounds_of_thing_at_point
     <: Symbol.type_ @-> return (option (tuple Position.type_ Position.type_))
-  let end_of_thing             =
-    Q.end_of_thing             <: Symbol.type_          @-> return nil
-  let forward_thing            =
-    Q.forward_thing            <: Symbol.type_ @-> int  @-> return nil
-  let thing_at_point           =
-    Q.thing_at_point           <: Symbol.type_ @-> bool @-> return (option Text.type_)
+  let end_of_thing =
+    Q.end_of_thing <: Symbol.type_ @-> return nil
+  let forward_thing =
+    Q.forward_thing <: Symbol.type_ @-> int  @-> return bool
+  let thing_at_point =
+    Q.thing_at_point <: Symbol.type_ @-> bool @-> return (option Text.type_)
 end
 
 type t =
@@ -25,6 +25,7 @@ type t =
   | Line
   | List
   | Number
+  | Other of Symbol.t
   | Page
   | Sentence
   | Sexp
@@ -47,6 +48,7 @@ let to_symbol = function
   | Line        -> Q.line
   | List        -> Q.list
   | Number      -> Q.number
+  | Other sym   -> sym
   | Page        -> Q.page
   | Sentence    -> Q.sentence
   | Sexp        -> Q.sexp
@@ -79,8 +81,32 @@ let forward ?(n=1) thing =
 let bounds thing =
   with_settings thing ~f:(fun () -> F.bounds_of_thing_at_point (thing |> to_symbol))
 
-let beginning thing =
+let did_not_raise f x =
+  match f x with
+  | _ -> true
+  | exception _ -> false
+;;
+
+let beginning_exn thing =
   with_settings thing ~f:(fun () -> F.beginning_of_thing (thing |> to_symbol))
 
-let end_ thing =
+let beginning = did_not_raise beginning_exn
+
+let end_exn thing =
   with_settings thing ~f:(fun () -> F.end_of_thing (thing |> to_symbol))
+
+let end_ = did_not_raise end_exn
+
+let bounds_prop  = Symbol.Property.create Q.bounds_of_thing_at_point Function.type_
+
+let defthing
+      ~(bounds : unit -> (Position.t * Position.t) option)
+      loc
+      symbol =
+  Symbol.Property.put
+    bounds_prop
+    symbol
+    (Defun.lambda_nullary loc
+       Value.Type.(option (tuple Position.type_ Position.type_))
+       bounds);
+;;

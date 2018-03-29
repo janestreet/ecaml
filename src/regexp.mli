@@ -8,6 +8,10 @@ open! Import
 
 include Value.Subtype
 
+(** [Rx.t] is the preferred way to construct regexps, especially when the alternative
+    involves string manipulation in OCaml. *)
+val of_rx : Rx.t -> t
+
 val match_anything : t
 val match_nothing  : t
 

@@ -24,6 +24,28 @@ val set_function : t -> Value.t -> unit
 
 type symbol = t
 
+module Property : sig
+  type 'a t
+  [@@deriving sexp_of]
+
+  (** A property of an Emacs symbol.
+
+      [(Info-goto-node "(elisp)Symbol Properties")] *)
+
+  (** Create a property named by the given symbol. *)
+  val create : symbol -> 'a Value.Type.t -> 'a t
+
+  (** [(describe-function 'get)] *)
+  val get : 'a t -> symbol -> 'a option
+
+  (** [(describe-function 'get)] *)
+  val get_exn : 'a t -> symbol -> 'a
+
+  (** [(describe-function 'put)] *)
+  val put : 'a t -> symbol -> 'a -> unit
+
+end
+
 module type Subtype = sig
   type t
 

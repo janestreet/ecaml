@@ -81,6 +81,7 @@ module Q = struct
   let commandp               = "commandp"               |> intern
   let cons                   = "cons"                   |> intern
   let consp                  = "consp"                  |> intern
+  let elt                    = "elt"                    |> intern
   let equal                  = "equal"                  |> intern
   let error                  = "error"                  |> intern
   let eventp                 = "eventp"                 |> intern
@@ -90,6 +91,7 @@ module Q = struct
   let functionp              = "functionp"              |> intern
   let hash_table_p           = "hash-table-p"           |> intern
   let keymapp                = "keymapp"                |> intern
+  let length                 = "length"                 |> intern
   let list                   = "list"                   |> intern
   let markerp                = "markerp"                |> intern
   let nil                    = "nil"                    |> intern
@@ -101,6 +103,7 @@ module Q = struct
   let syntax_table_p         = "syntax-table-p"         |> intern
   let t                      = "t"                      |> intern
   let timerp                 = "timerp"                 |> intern
+  let vector                 = "vector"                 |> intern
   let vectorp                = "vectorp"                |> intern
   let window_configuration_p = "window-configuration-p" |> intern
   let windowp                = "windowp"                |> intern
@@ -351,6 +354,14 @@ let to_list_exn (t : t) ~f =
   loop t []
 ;;
 
+let to_array_exn (t : t) ~f =
+  let length = funcall1 Q.length t |> to_int_exn in
+  Array.init length ~f:(fun i ->
+    f (funcall2 Q.elt t (of_int_exn i)))
+;;
+
+let vector arr = funcallN_array Q.vector arr
+
 let looks_nice_in_symbol = function
   | 'a' .. 'z'
   | 'A' .. 'Z'
@@ -493,6 +504,12 @@ module Type = struct
     { name         = [%message "list" ~_:(t.name : Sexp.t)]
     ; of_value_exn = to_list_exn ~f:t.of_value_exn
     ; to_value     = fun l -> list (List.map l ~f:t.to_value) }
+  ;;
+
+  let vector t =
+    { name         = [%message "vector" ~_:(t.name : Sexp.t)]
+    ; of_value_exn = to_array_exn ~f:t.of_value_exn
+    ; to_value     = fun a -> vector (Array.map a ~f:t.to_value) }
   ;;
 
   let tuple t1 t2 =

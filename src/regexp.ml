@@ -13,6 +13,8 @@ let of_pattern string = string |> Value.of_utf8_bytes |> of_value_exn
 
 let to_pattern t = t |> to_value |> Value.to_utf8_bytes_exn
 
+let of_rx rx = of_pattern (Rx.pattern rx)
+
 let match_anything = of_pattern ""
 let match_nothing  = of_pattern "z^"
 

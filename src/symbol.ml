@@ -8,7 +8,9 @@ module Q = struct
   let fboundp         = "fboundp"         |> intern
   let fset            = "fset"            |> intern
   let gensym          = "gensym"          |> intern
+  let get             = "get"             |> intern
   let make_symbol     = "make-symbol"     |> intern
+  let put             = "put"             |> intern
   let symbol_function = "symbol-function" |> intern
   let symbol_name     = "symbol-name"     |> intern
 end
@@ -38,7 +40,38 @@ let gensym ?prefix () =
 
 let set_function t value = funcall2_i Q.fset (t |> to_value) value
 
-type symbol = t
+type symbol = t [@@deriving sexp_of]
+
+module Property = struct
+
+  type 'a t =
+    { name  : symbol
+    ; type_ : 'a Value.Type.t }
+  [@@deriving sexp_of]
+
+  let create name type_ = { name; type_ }
+
+  let get { name; type_ } sym =
+    funcall2 Q.get
+      (sym  |> to_value)
+      (name |> to_value)
+    |> (Value.Type.option type_).of_value_exn
+  ;;
+
+  let get_exn t symbol =
+    match get t symbol with
+    | Some value -> value
+    | None -> raise_s [%message (symbol : symbol) "has no property" (t.name : symbol)]
+  ;;
+
+  let put { name; type_ } sym value =
+    funcall3_i Q.put
+      (sym   |> to_value)
+      (name  |> to_value)
+      (value |> type_.to_value)
+  ;;
+
+end
 
 module type Subtype = sig
   type t

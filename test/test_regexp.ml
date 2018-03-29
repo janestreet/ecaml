@@ -225,3 +225,282 @@ let%expect_test "[Last_match.get_exn]" =
      (start (Ok 1))
      (end_  (Ok 4))) |}];
 ;;
+
+let%expect_test "[of_rx]" =
+  let test inputs rx =
+    let t = of_rx rx in
+    print_s [%message (t : t)];
+    List.iter inputs ~f:(fun input ->
+      let matches = does_match t (Text.of_utf8_bytes input) in
+      print_s [%message (input : string) (matches : bool)])
+  in
+  test [ "a"; "z"; "-"; "b" ] (Any_in [ Chars_in "a-z" ]);
+  [%expect {|
+    (t "\\(?:[-az]\\)")
+    ((input   a)
+     (matches true))
+    ((input   z)
+     (matches true))
+    ((input   -)
+     (matches true))
+    ((input   b)
+     (matches false)) |}];
+  test [ "a"; "b"; "z"; "A"; "B"; "Z"; "."; "-" ]
+    (Any_in [ Chars_in "."; Range ('a', 'z'); Range ('A', 'Z') ]);
+  [%expect {|
+    (t "\\(?:[.A-Za-z]\\)")
+    ((input   a)
+     (matches true))
+    ((input   b)
+     (matches true))
+    ((input   z)
+     (matches true))
+    ((input   A)
+     (matches true))
+    ((input   B)
+     (matches true))
+    ((input   Z)
+     (matches true))
+    ((input   .)
+     (matches true))
+    ((input   -)
+     (matches false)) |}];
+  test [ "a"; "b"; "z"; "."; "-" ]
+    (Any_in [ Chars_in "-"; Range ('a', 'z') ]);
+  [%expect {|
+    (t "\\(?:[-a-z]\\)")
+    ((input   a)
+     (matches true))
+    ((input   b)
+     (matches true))
+    ((input   z)
+     (matches true))
+    ((input   .)
+     (matches false))
+    ((input   -)
+     (matches true)) |}];
+  test [ "foo.*"; "foobar" ] (Exactly "foo.*");
+  [%expect {|
+    (t "\\(?:foo\\.\\*\\)")
+    ((input   foo.*)
+     (matches true))
+    ((input   foobar)
+     (matches false)) |}];
+  test [ "\nfoo"; "foo"; "barfoo" ] (Seq [ Line Start; Exactly "foo" ]);
+  [%expect {|
+    (t "\\(?:^foo\\)")
+    ((input   "\nfoo")
+     (matches true))
+    ((input   foo)
+     (matches true))
+    ((input   barfoo)
+     (matches false)) |}];
+  test [ "foo\n"; "foo"; "foobar" ] (Seq [ Exactly "foo"; Line End ]);
+  [%expect {|
+    (t "\\(?:foo$\\)")
+    ((input   "foo\n")
+     (matches true))
+    ((input   foo)
+     (matches true))
+    ((input   foobar)
+     (matches false)) |}];
+  test [ "a"; "b" ] (None_in [ Chars_in "a" ]);
+  [%expect {|
+    (t "\\(?:[^a]\\)")
+    ((input   a)
+     (matches false))
+    ((input   b)
+     (matches true)) |}];
+  test [ "a"; "b"; "c" ] (Or [ Exactly "a"; Exactly "b" ]);
+  [%expect {|
+    (t "\\(?:[ab]\\)")
+    ((input   a)
+     (matches true))
+    ((input   b)
+     (matches true))
+    ((input   c)
+     (matches false)) |}];
+  test [ "ab"; "pq"; "ap" ] (Or [ Exactly "ab"; Exactly "pq" ]);
+  [%expect {|
+    (t "\\(?:\\(?:ab\\|pq\\)\\)")
+    ((input   ab)
+     (matches true))
+    ((input   pq)
+     (matches true))
+    ((input   ap)
+     (matches false)) |}];
+  test [ "foo"; "bar" ] (Pattern "foo.*");
+  [%expect {|
+    (t "\\(?:foo.*\\)")
+    ((input   foo)
+     (matches true))
+    ((input   bar)
+     (matches false)) |}];
+  Current_buffer.set_temporarily_to_temp_buffer (fun () ->
+    Point.insert "foobar";
+    Point.goto_min ();
+    let matches = Point.search_forward_regexp (of_rx (Seq [ Point; Exactly "foobar" ])) in
+    print_s [%message (matches : bool)];
+    Point.goto_min ();
+    let matches = Point.search_forward_regexp (of_rx (Seq [ Exactly "foobar"; Point ])) in
+    print_s [%message (matches : bool)]);
+  [%expect {|
+    (matches true)
+    (matches false) |}];
+  List.iter ~f:(fun (min, max) ->
+    test [ "cr"; "car"; "cdr"; "cadr"; "caddr" ]
+      (Seq [ Exactly "c"
+           ; Repeat { min; max; t = Any_in [ Chars_in "ad" ] }
+           ; Exactly "r" ]))
+    [ 0, None
+    ; 0, Some 1
+    ; 1, None
+    ; 2, None
+    ; 1, Some 2
+    ];
+  [%expect {|
+    (t "\\(?:c[ad]*r\\)")
+    ((input   cr)
+     (matches true))
+    ((input   car)
+     (matches true))
+    ((input   cdr)
+     (matches true))
+    ((input   cadr)
+     (matches true))
+    ((input   caddr)
+     (matches true))
+    (t "\\(?:c[ad]?r\\)")
+    ((input   cr)
+     (matches true))
+    ((input   car)
+     (matches true))
+    ((input   cdr)
+     (matches true))
+    ((input   cadr)
+     (matches false))
+    ((input   caddr)
+     (matches false))
+    (t "\\(?:c[ad]+r\\)")
+    ((input   cr)
+     (matches false))
+    ((input   car)
+     (matches true))
+    ((input   cdr)
+     (matches true))
+    ((input   cadr)
+     (matches true))
+    ((input   caddr)
+     (matches true))
+    (t "\\(?:c[ad]\\{2,\\}r\\)")
+    ((input   cr)
+     (matches false))
+    ((input   car)
+     (matches false))
+    ((input   cdr)
+     (matches false))
+    ((input   cadr)
+     (matches true))
+    ((input   caddr)
+     (matches true))
+    (t "\\(?:c[ad]\\{1,2\\}r\\)")
+    ((input   cr)
+     (matches false))
+    ((input   car)
+     (matches true))
+    ((input   cdr)
+     (matches true))
+    ((input   cadr)
+     (matches true))
+    ((input   caddr)
+     (matches false)) |}];
+  List.iter ~f:(fun rx ->
+    let t =
+      of_rx (Seq [ Exactly "foo"
+                 ; Repeat { min = 0; max = Some 1; t = rx }
+                 ; Exactly "baz" ])
+    in
+    print_s [%message (t : t)];
+    List.iter [ "foobarbaz"; "foobaz"; "foo" ] ~f:(fun input ->
+      let matches = does_match ~update_last_match:true t (Text.of_utf8_bytes input) in
+      let submatch_1 = Option.try_with (fun () -> Last_match.text_exn ~subexp:1 ()) in
+      print_s [%message (input : string) (matches : bool) (submatch_1 : Text.t option)]))
+    [ Rx.Submatch (Exactly "bar")
+    ; Submatch (Exactly "qux")
+    ; Submatch_n { index = 1; t = Exactly "bar"}
+    ; Submatch_n { index = 2; t = Exactly "bar"}];
+  [%expect {|
+    (t "\\(?:foo\\(bar\\)?baz\\)")
+    ((input   foobarbaz)
+     (matches true)
+     (submatch_1 (bar)))
+    ((input   foobaz)
+     (matches true)
+     (submatch_1 ()))
+    ((input   foo)
+     (matches false)
+     (submatch_1 ()))
+    (t "\\(?:foo\\(qux\\)?baz\\)")
+    ((input   foobarbaz)
+     (matches false)
+     (submatch_1 ()))
+    ((input   foobaz)
+     (matches true)
+     (submatch_1 ()))
+    ((input   foo)
+     (matches false)
+     (submatch_1 ()))
+    (t "\\(?:foo\\(?1:bar\\)?baz\\)")
+    ((input   foobarbaz)
+     (matches true)
+     (submatch_1 (bar)))
+    ((input   foobaz)
+     (matches true)
+     (submatch_1 ()))
+    ((input   foo)
+     (matches false)
+     (submatch_1 ()))
+    (t "\\(?:foo\\(?2:bar\\)?baz\\)")
+    ((input   foobarbaz)
+     (matches true)
+     (submatch_1 ()))
+    ((input   foobaz)
+     (matches true)
+     (submatch_1 ()))
+    ((input   foo)
+     (matches false)
+     (submatch_1 ())) |}];
+  List.iter ~f:(fun index ->
+    let t =
+      of_rx
+        (Submatch (Seq [ Exactly "foo"
+                       ; Submatch (Exactly "bar")
+                       ; Submatch_n { index; t = Exactly "baz" }
+                       ; Submatch (Exactly "qux")]))
+    in
+    print_s [%message (t : t)];
+    match does_match ~update_last_match:true t (Text.of_utf8_bytes "foobarbazqux") with
+    | exception exn -> print_s [%sexp (exn : exn)]
+    | matches ->
+      let submatch = Option.try_with (Last_match.text_exn ~subexp:index) in
+      print_s [%message (matches : bool) (index : int) (submatch : Text.t option)])
+    [ 0; 1; 2; 3; 4 ];
+  [%expect {|
+    (t "\\(?:\\(foo\\(bar\\)\\(?0:baz\\)\\(qux\\)\\)\\)")
+    (invalid-regexp ("Invalid regular expression"))
+    (t "\\(?:\\(foo\\(bar\\)\\(?1:baz\\)\\(qux\\)\\)\\)")
+    (invalid-regexp ("Invalid regular expression"))
+    (t "\\(?:\\(foo\\(bar\\)\\(?2:baz\\)\\(qux\\)\\)\\)")
+    ((matches true)
+     (index   2)
+     (submatch (baz)))
+    (t "\\(?:\\(foo\\(bar\\)\\(?3:baz\\)\\(qux\\)\\)\\)")
+    ((matches true)
+     (index   3)
+     (submatch (baz)))
+    (t "\\(?:\\(foo\\(bar\\)\\(?4:baz\\)\\(qux\\)\\)\\)")
+    ((matches true)
+     (index   4)
+     (submatch (baz))) |}];
+  [%expect {| |}]
+;;

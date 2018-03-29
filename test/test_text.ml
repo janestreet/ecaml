@@ -2,6 +2,11 @@ open! Core_kernel
 open! Import
 open! Text
 
+module Q = struct
+  include Q
+  let format = "format" |> Symbol.intern
+end
+
 let face           = Property_name.face
 let font_lock_face = Property_name.font_lock_face
 

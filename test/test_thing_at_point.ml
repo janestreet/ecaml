@@ -40,7 +40,7 @@ let%expect_test "[find], [bounds]" =
   );
 ;;
 
-let%expect_test "[forward], [beginning], [end_]" =
+let%expect_test "[forward], [beginning], [beginning_exn], [end_], [end_exn]" =
   let show_point () =
     let point = Point.get () in
     printf "%s│%s"
@@ -52,48 +52,52 @@ let%expect_test "[forward], [beginning], [end_]" =
     [%expect {|
       │This is/a test!buffer with
       various|things to match*against |}];
-    forward Word;
+    print_s [%sexp (forward Word : bool)];
+    [%expect {| true |}];
     show_point ();
     [%expect {|
       This│ is/a test!buffer with
       various|things to match*against |}];
-    forward ~n:2 Word;
+    print_s [%sexp (forward ~n:2 Word : bool)];
     show_point ();
     [%expect {|
+      true
       This is/a│ test!buffer with
       various|things to match*against |}];
     (* Sadly, (forward-thing 'filename) is broken, at least as of GNU Emacs 25.3.1. *)
     show_raise (fun () ->
-      forward alpha_or_bang;
+      ignore (forward alpha_or_bang : bool);
       show_point ());
     [%expect {| (raised ("Can't determine how to move over a filename")) |}];
     Point.forward_char_exn 1;
-    end_ Word;
+    end_exn Word;
     show_point();
     [%expect {|
       This is/a test│!buffer with
       various|things to match*against |}];
-    end_ Word;
+    print_s [%sexp (end_ Word : bool)];
+    [%expect {|true|}];
     show_point();
     [%expect {|
       This is/a test│!buffer with
       various|things to match*against |}];
-    beginning Word;
+    beginning_exn Word;
     show_point();
     [%expect {|
       This is/a │test!buffer with
       various|things to match*against |}];
-    end_ alpha_or_bang;
+    end_exn alpha_or_bang;
     show_point();
     [%expect {|
       This is/a test!buffer│ with
       various|things to match*against |}];
-    beginning alpha_or_bang;
+    print_s [%sexp (beginning alpha_or_bang : bool)];
+    [%expect {|true|}];
     show_point();
     [%expect {|
       This is/a │test!buffer with
       various|things to match*against |}];
-    beginning alpha_or_bang;
+    beginning_exn alpha_or_bang;
     show_point();
     [%expect {|
       This is/a │test!buffer with

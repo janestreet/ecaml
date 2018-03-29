@@ -81,6 +81,9 @@ module type Value = sig
 
   val to_list_exn : t -> f:(t -> 'a) -> 'a list
 
+  val vector : t array -> t
+  val to_array_exn : t -> f:(t -> 'a) -> 'a array
+
   val option : ('a -> t) -> 'a option -> t
 
   val type_of : t -> t
@@ -154,6 +157,7 @@ module type Value = sig
     val value   : value  t
 
     val list   : 'a t -> 'a list   t
+    val vector : 'a t -> 'a array  t
     val option : 'a t -> 'a option t
 
     val alist  : 'a t -> 'b t -> ('a * 'b) list t

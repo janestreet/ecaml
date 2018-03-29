@@ -30,8 +30,9 @@ let files
   then files
   else (
     List.filter files ~f:(fun file ->
-      let n = Filename.nondirectory file in
-      not (n = "." || n = "..")))
+      match Filename.nondirectory file with
+      | "." | ".." -> false
+      | _ -> true))
 ;;
 
 let files_recursively

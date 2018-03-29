@@ -24,3 +24,6 @@ let add_gc_root =
   let gc_roots = Stack.create () in
   fun f -> Stack.push gc_roots f
 let add_gc_root a = add_gc_root (fun () -> Gc.keep_alive a)
+
+(* included last so it can't be shadowed *)
+include Int.Replace_polymorphic_compare

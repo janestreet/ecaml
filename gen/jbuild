@@ -1,7 +1,6 @@
 (executables
  ((names (gen_c gen_ml))
   (libraries (core_kernel))
-  (flags (:standard -safe-string))
   (preprocess (pps (ppx_jane ppxlib.runner)))))
 
 
