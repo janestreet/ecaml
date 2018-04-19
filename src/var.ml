@@ -1,6 +1,13 @@
 open! Core_kernel
 open! Import
 
+module Q = struct
+  include Q
+  let default_boundp                   = "default-boundp"                   |> Symbol.intern
+  let make_variable_buffer_local       = "make-variable-buffer-local"       |> Symbol.intern
+  let set_default                      = "set-default"                      |> Symbol.intern
+end
+
 type 'a t =
   { symbol : Symbol.t
   ; type_  : 'a Value.Type.t }

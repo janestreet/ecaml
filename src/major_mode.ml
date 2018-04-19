@@ -1,6 +1,15 @@
 open! Core_kernel
 open! Import
 
+module Q = struct
+  include Q
+  let define_derived_mode              = "define-derived-mode"              |> Symbol.intern
+  let fundamental_mode                 = "fundamental-mode"                 |> Symbol.intern
+  let prog_mode                        = "prog-mode"                        |> Symbol.intern
+  let special_mode                     = "special-mode"                     |> Symbol.intern
+  let text_mode                        = "text-mode"                        |> Symbol.intern
+end
+
 module Current_buffer = Current_buffer0
 
 type t =

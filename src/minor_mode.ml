@@ -1,6 +1,15 @@
 open! Core_kernel
 open! Import
 
+module Q = struct
+  include Q
+  let abbrev_mode                      = "abbrev-mode"                      |> Symbol.intern
+  let goto_address_mode                = "goto-address-mode"                |> Symbol.intern
+  let read_only_mode                   = "read-only-mode"                   |> Symbol.intern
+  let view_mode                        = "view-mode"                        |> Symbol.intern
+  let visual_line_mode                 = "visual-line-mode"                 |> Symbol.intern
+end
+
 
 type t =
   { function_name : Symbol.t

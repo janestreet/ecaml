@@ -11,11 +11,7 @@
 open! Core_kernel
 open! Import
 
-(** [(describe-function 'current-buffer)] *)
-val get : unit -> Buffer.t
-
-(** [(describe-function 'set-buffer)] *)
-val set : Buffer.t -> unit
+include Current_buffer0_intf.Current_buffer0_public
 
 (** [(describe-variable 'default-directory)]
     [(Info-goto-node "(elisp)File Name Expansion")] *)
@@ -92,22 +88,6 @@ val major_mode : unit -> Major_mode.t
 
 val change_major_mode : Major_mode.t -> unit
 
-val value        : 'a Var.t -> 'a option (** [(describe-function 'symbol-value)   ] *)
-val value_exn    : 'a Var.t -> 'a        (** [(describe-function 'symbol-value)   ] *)
-
-(** [(describe-function 'set)]. *)
-val set_value : 'a Var.t -> 'a -> unit
-
-(** [(describe-function 'makunbound)] *)
-val clear_value : 'a Var.t -> unit
-
-val set_value_temporarily : 'a Var.t -> 'a -> f:(unit -> 'b) -> 'b
-
-val set_values_temporarily : Var.And_value.t list -> f:(unit -> 'a) -> 'a
-
-(** [(describe-function 'bound-and-true-p]. *)
-val has_non_null_value : _ Var.t -> bool
-
 (** [(describe-function 'make-local-variable)]
     [(Info-goto-node "(elisp)Creating Buffer-Local")] *)
 val make_buffer_local : _ Var.t -> unit
@@ -173,14 +153,24 @@ val kill_region
   -> end_  : Position.t
   -> unit
 
+(** [(describe-function 'widen)]
+    [(Info-goto-node "(elisp)Narrowing")] *)
+val widen : unit -> unit
+
 (** [(describe-function 'save-current-buffer)] *)
 val save_current_buffer : (unit -> 'a) -> 'a
 
 (** [(describe-function 'save-excursion)] *)
 val save_excursion : (unit -> 'a) -> 'a
 
+(** [(describe-function 'save-mark-and-excursion)] *)
+val save_mark_and_excursion : (unit -> 'a) -> 'a
+
 (** [(describe-function 'save-restriction)] *)
 val save_restriction : (unit -> 'a) -> 'a
+
+(** Preserve the buffer's point and first displayed visual line. *)
+val save_window_display_state : (unit -> 'a) -> 'a
 
 (** [(describe-function 'set-buffer-multibyte)].
     [(Info-goto-node "(elisp)Selecting a Representation")]. *)

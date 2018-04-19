@@ -1,6 +1,34 @@
 open! Core_kernel
 open! Import
 
+module Q = struct
+  include Q
+  let backward_sexp          = "backward-sexp"          |> Symbol.intern
+  let beginning_of_line      = "beginning-of-line"      |> Symbol.intern
+  let current_column         = "current-column"         |> Symbol.intern
+  let end_of_line            = "end-of-line"            |> Symbol.intern
+  let forward_char           = "forward-char"           |> Symbol.intern
+  let forward_line           = "forward-line"           |> Symbol.intern
+  let forward_sexp           = "forward-sexp"           |> Symbol.intern
+  let goto_char              = "goto-char"              |> Symbol.intern
+  let indent_line_to         = "indent-line-to"         |> Symbol.intern
+  let insert                 = "insert"                 |> Symbol.intern
+  let insert_file_contents   = "insert-file-contents"   |> Symbol.intern
+  let kill_word              = "kill-word"              |> Symbol.intern
+  let line_number_at_pos     = "line-number-at-pos"     |> Symbol.intern
+  let looking_at             = "looking-at"             |> Symbol.intern
+  let looking_at_p           = "looking-at-p"           |> Symbol.intern
+  let move_to_column         = "move-to-column"         |> Symbol.intern
+  let point_marker           = "point-marker"           |> Symbol.intern
+  let point_max_marker       = "point-max-marker"       |> Symbol.intern
+  let point_min_marker       = "point-min-marker"       |> Symbol.intern
+  let search_backward        = "search-backward"        |> Symbol.intern
+  let search_backward_regexp = "search-backward-regexp" |> Symbol.intern
+  let search_forward         = "search-forward"         |> Symbol.intern
+  let search_forward_regexp  = "search-forward-regexp"  |> Symbol.intern
+  let simple                 = "simple"                 |> Symbol.intern
+end
+
 module Current_buffer = Current_buffer0
 
 let get () = Symbol.funcall0 Q.point |> Position.of_value_exn
@@ -41,6 +69,10 @@ let line_number =
 let column_number () = Symbol.funcall0 Q.current_column |> Value.to_int_exn
 
 let goto_column n = Symbol.funcall1_i Q.move_to_column (n |> Value.of_int_exn)
+
+let indent_line_to ~column =
+  Symbol.funcall1_i Q.indent_line_to (column |> Value.of_int_exn)
+;;
 
 let insert      string = Symbol.funcall1_i Q.insert (string |> Value.of_utf8_bytes)
 let insert_text text   = Symbol.funcall1_i Q.insert (text   |> Text.to_value)

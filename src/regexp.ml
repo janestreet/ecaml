@@ -1,6 +1,20 @@
 open! Core_kernel
 open! Import
 
+module Q = struct
+  include Q
+  let match_beginning                  = "match-beginning"                  |> Symbol.intern
+  let match_data                       = "match-data"                       |> Symbol.intern
+  let match_end                        = "match-end"                        |> Symbol.intern
+  let match_string                     = "match-string"                     |> Symbol.intern
+  let match_string_no_properties       = "match-string-no-properties"       |> Symbol.intern
+  let regexp_opt                       = "regexp-opt"                       |> Symbol.intern
+  let regexp_quote                     = "regexp-quote"                     |> Symbol.intern
+  let set_match_data                   = "set-match-data"                   |> Symbol.intern
+  let string_match                     = "string-match"                     |> Symbol.intern
+  let string_match_p                   = "string-match-p"                   |> Symbol.intern
+end
+
 module Current_buffer = Current_buffer0
 
 include Value.Make_subtype (struct

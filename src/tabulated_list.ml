@@ -1,6 +1,17 @@
 open! Core_kernel
 open! Import
 
+module Q = struct
+  include Q
+  let tabulated_list_entries           = "tabulated-list-entries"           |> Symbol.intern
+  let tabulated_list_format            = "tabulated-list-format"            |> Symbol.intern
+  let tabulated_list_get_id            = "tabulated-list-get-id"            |> Symbol.intern
+  let tabulated_list_init_header       = "tabulated-list-init-header"       |> Symbol.intern
+  let tabulated_list_mode              = "tabulated-list-mode"              |> Symbol.intern
+  let tabulated_list_print             = "tabulated-list-print"             |> Symbol.intern
+  let tabulated_list_sort_key          = "tabulated-list-sort-key"          |> Symbol.intern
+end
+
 module F = struct
   open! Funcall
   open! Value.Type

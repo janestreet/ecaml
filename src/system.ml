@@ -3,7 +3,11 @@ open! Import
 
 module Q = struct
   include Q
-  let system_name = "system-name" |> Symbol.intern
+  let exec_path           = "exec-path"           |> Symbol.intern
+  let getenv              = "getenv"              |> Symbol.intern
+  let process_environment = "process-environment" |> Symbol.intern
+  let setenv              = "setenv"              |> Symbol.intern
+  let system_name         = "system-name"         |> Symbol.intern
 end
 
 let string_option = Value.Type.(option string)

@@ -56,6 +56,8 @@ module type Subtype = sig
       OCaml values.  I.e. [phys_equal t1 t2] implies [eq t1 t2], but not the converse. *)
   val eq : t -> t -> bool
 
+  val is_in_subtype : value -> bool
+
   include Valueable0.S with type t := t
 end
 
@@ -92,7 +94,6 @@ module type Value = sig
   val is_array                : t -> bool (** [(describe-function 'arrayp)] *)
   val is_buffer               : t -> bool (** [(describe-function 'bufferp)] *)
   val is_command              : t -> bool (** [(describe-function 'commandp)] *)
-  val is_cons                 : t -> bool (** [(describe-function 'consp)] *)
   val is_event                : t -> bool (** [(describe-function 'eventp)] *)
   val is_float                : t -> bool (** [(describe-function 'floatp)] *)
   val is_font                 : t -> bool (** [(describe-function 'fontp)] *)
@@ -112,6 +113,15 @@ module type Value = sig
   val is_vector               : t -> bool (** [(describe-function 'vectorp)] *)
   val is_window               : t -> bool (** [(describe-function 'windowp)] *)
   val is_window_configuration : t -> bool (** [(describe-function 'window-configuration-p)] *)
+
+  (** [(describe-function 'consp)]
+
+      If supplied, [?car] and [?cdr] are additionally required to return true for the car
+      and cdr, respectively. *)
+  val is_cons
+    :  ?car : (t -> bool) (** default: const true *)
+    -> ?cdr : (t -> bool) (** default: const true *)
+    -> t -> bool
 
   val eq : t -> t -> bool
 

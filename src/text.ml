@@ -1,6 +1,22 @@
 open! Core_kernel
 open! Import
 
+module Q = struct
+  include Q
+  let background_color                 = "background-color"                 |> Symbol.intern
+  let concat                           = "concat"                           |> Symbol.intern
+  let font_lock_face                   = "font-lock-face"                   |> Symbol.intern
+  let foreground_color                 = "foreground-color"                 |> Symbol.intern
+  let get_text_property                = "get-text-property"                |> Symbol.intern
+  let multibyte_string_p               = "multibyte-string-p"               |> Symbol.intern
+  let propertize                       = "propertize"                       |> Symbol.intern
+  let remove_list_of_text_properties   = "remove-list-of-text-properties"   |> Symbol.intern
+  let string_bytes                     = "string-bytes"                     |> Symbol.intern
+  let string_to_multibyte              = "string-to-multibyte"              |> Symbol.intern
+  let string_to_unibyte                = "string-to-unibyte"                |> Symbol.intern
+  let text_properties_at               = "text-properties-at"               |> Symbol.intern
+end
+
 include Value.Make_subtype (struct
     let name = "text"
     let here = [%here]

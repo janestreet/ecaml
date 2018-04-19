@@ -1,6 +1,14 @@
 open! Core_kernel
 open! Import
 
+module Q = struct
+  include Q
+  let boundp                           = "boundp"                           |> Symbol.intern
+  let current_buffer                   = "current-buffer"                   |> Symbol.intern
+  let makunbound                       = "makunbound"                       |> Symbol.intern
+  let set_buffer                       = "set-buffer"                       |> Symbol.intern
+end
+
 module Buffer = Buffer0
 
 let get () = Symbol.funcall0 Q.current_buffer |> Buffer.of_value_exn

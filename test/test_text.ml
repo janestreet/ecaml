@@ -4,7 +4,9 @@ open! Text
 
 module Q = struct
   include Q
-  let format = "format" |> Symbol.intern
+  let background_color = "background-color" |> Symbol.intern
+  let foreground_color = "foreground-color" |> Symbol.intern
+  let format           = "format"           |> Symbol.intern
 end
 
 let face           = Property_name.face

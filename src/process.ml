@@ -1,6 +1,26 @@
 open! Core_kernel
 open! Import
 
+module Q = struct
+  include Q
+  let call_process                     = "call-process"                     |> Symbol.intern
+  let delete_process                   = "delete-process"                   |> Symbol.intern
+  let get_process                      = "get-process"                      |> Symbol.intern
+  let local                            = "local"                            |> Symbol.intern
+  let make_network_process             = "make-network-process"             |> Symbol.intern
+  let output                           = "output"                           |> Symbol.intern
+  let process                          = "process"                          |> Symbol.intern
+  let process_buffer                   = "process-buffer"                   |> Symbol.intern
+  let process_command                  = "process-command"                  |> Symbol.intern
+  let process_id                       = "process-id"                       |> Symbol.intern
+  let process_list                     = "process-list"                     |> Symbol.intern
+  let process_name                     = "process-name"                     |> Symbol.intern
+  let process_query_on_exit_flag       = "process-query-on-exit-flag"       |> Symbol.intern
+  let process_status                   = "process-status"                   |> Symbol.intern
+  let set_process_query_on_exit_flag   = "set-process-query-on-exit-flag"   |> Symbol.intern
+  let start_process                    = "start-process"                    |> Symbol.intern
+end
+
 include Process0
 
 let equal = eq
@@ -229,4 +249,8 @@ let shell_command_result
 
 let shell_command_exn ?input ?working_directory command =
   call_exn bash [ "-c"; command ] ?input ?working_directory
+;;
+
+let shell_command_expect_no_output_exn ?input ?working_directory command =
+  call_expect_no_output_exn bash [ "-c"; command ] ?input ?working_directory
 ;;

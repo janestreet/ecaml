@@ -1,6 +1,24 @@
 open! Core_kernel
 open! Import
 
+module Q = struct
+  include Q
+  let beginning_of_thing               = "beginning-of-thing"               |> Symbol.intern
+  let bounds_of_thing_at_point         = "bounds-of-thing-at-point"         |> Symbol.intern
+  let email                            = "email"                            |> Symbol.intern
+  let end_of_thing                     = "end-of-thing"                     |> Symbol.intern
+  let filename                         = "filename"                         |> Symbol.intern
+  let forward_thing                    = "forward-thing"                    |> Symbol.intern
+  let line                             = "line"                             |> Symbol.intern
+  let page                             = "page"                             |> Symbol.intern
+  let sentence                         = "sentence"                         |> Symbol.intern
+  let thing_at_point                   = "thing-at-point"                   |> Symbol.intern
+  let thing_at_point_file_name_chars   = "thing-at-point-file-name-chars"   |> Symbol.intern
+  let url                              = "url"                              |> Symbol.intern
+  let whitespace                       = "whitespace"                       |> Symbol.intern
+  let word                             = "word"                             |> Symbol.intern
+end
+
 module F = struct
   open Value.Type
   open Funcall

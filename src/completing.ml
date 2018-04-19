@@ -1,6 +1,12 @@
 open! Core_kernel
 open! Import
 
+module Q = struct
+  include Q
+  let completing_read                  = "completing-read"                  |> Symbol.intern
+  let completing_read_multiple         = "completing-read-multiple"         |> Symbol.intern
+end
+
 module Initial_input = struct
   type t =
     | Empty

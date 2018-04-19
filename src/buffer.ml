@@ -1,6 +1,22 @@
 open! Core_kernel
 open! Import
 
+module Q = struct
+  include Q
+  let buffer_list            = "buffer-list"            |> Symbol.intern
+  let buffer_local_value     = "buffer-local-value"     |> Symbol.intern
+  let buffer_name            = "buffer-name"            |> Symbol.intern
+  let display_buffer         = "display-buffer"         |> Symbol.intern
+  let find_file_noselect     = "find-file-noselect"     |> Symbol.intern
+  let generate_new_buffer    = "generate-new-buffer"    |> Symbol.intern
+  let get_buffer             = "get-buffer"             |> Symbol.intern
+  let get_buffer_create      = "get-buffer-create"      |> Symbol.intern
+  let get_buffer_process     = "get-buffer-process"     |> Symbol.intern
+  let get_buffer_window_list = "get-buffer-window-list" |> Symbol.intern
+  let get_file_buffer        = "get-file-buffer"        |> Symbol.intern
+  let save_some_buffers      = "save-some-buffers"      |> Symbol.intern
+end
+
 module Process = Process0
 module Window  = Window0
 
@@ -42,6 +58,13 @@ let create ~name =
 
 let find ~name =
   let v = Symbol.funcall1 Q.get_buffer (name |> Value.of_utf8_bytes) in
+  if Value.is_nil v
+  then None
+  else Some (v |> of_value_exn)
+;;
+
+let find_visiting ~file =
+  let v = Symbol.funcall1 Q.get_file_buffer (file |> Value.of_utf8_bytes) in
   if Value.is_nil v
   then None
   else Some (v |> of_value_exn)

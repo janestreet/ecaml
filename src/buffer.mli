@@ -29,6 +29,10 @@ val create : name : string -> t
     [(describe-function 'get-buffer)]. *)
 val find : name : string -> t option
 
+(** [(describe-function 'get-file-buffer)].
+    [(Info-goto-node "(elisp)Buffer File Name")] *)
+val find_visiting : file : Filename.t -> t option
+
 (** [find ~name] returns the live buffer whose name is [name], and if there is no such
     buffer, creates it.  [(describe-function 'get-buffer-create)]. *)
 val find_or_create : name : string -> t

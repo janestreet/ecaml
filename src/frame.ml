@@ -1,6 +1,19 @@
 open! Core_kernel
 open! Import
 
+module Q = struct
+  include Q
+  let frame_height                     = "frame-height"                     |> Symbol.intern
+  let frame_list                       = "frame-list"                       |> Symbol.intern
+  let frame_parameters                 = "frame-parameters"                 |> Symbol.intern
+  let frame_pixel_height               = "frame-pixel-height"               |> Symbol.intern
+  let frame_pixel_width                = "frame-pixel-width"                |> Symbol.intern
+  let frame_width                      = "frame-width"                      |> Symbol.intern
+  let select_frame                     = "select-frame"                     |> Symbol.intern
+  let selected_frame                   = "selected-frame"                   |> Symbol.intern
+  let visible_frame_list               = "visible-frame-list"               |> Symbol.intern
+end
+
 include Value.Make_subtype (struct
     let name = "frame"
     let here = [%here]

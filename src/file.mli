@@ -60,3 +60,17 @@ val write
   -> Filename.t
   -> string
   -> unit
+
+(** [(describe-function 'make-temp-file)]
+    [(Info-goto-node "(elisp)Unique File Names")] *)
+val make_temp_file : prefix : string -> suffix : string -> Filename.t
+
+(** Creates a temp file, calls [f] on its name, and deletes it after [f] returns, even if
+    [f] returns by raising.
+
+    N.B. This is not the behavior of [(describe-function 'with-temp-file)]. *)
+val with_temp_file
+  :  f : (Filename.t -> 'a)
+  -> prefix : string
+  -> suffix : string
+  -> 'a

@@ -138,6 +138,12 @@ val shell_command_exn
   -> string
   -> string
 
+val shell_command_expect_no_output_exn
+  :  ?input             : Call.Input.t         (** default is [Dev_null] *)
+  -> ?working_directory : Working_directory.t  (** default is [Root] *)
+  -> string
+  -> unit
+
 (** [(Info-goto-node "(elisp)Network Servers")]
     [(describe-function 'make-network-process)] *)
 val create_unix_network_process

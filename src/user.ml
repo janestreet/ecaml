@@ -1,6 +1,19 @@
 open! Core_kernel
 open! Import
 
+module Q = struct
+  include Q
+  let group_gid                        = "group-gid"                        |> Symbol.intern
+  let group_real_gid                   = "group-real-gid"                   |> Symbol.intern
+  let system_groups                    = "system-groups"                    |> Symbol.intern
+  let system_users                     = "system-users"                     |> Symbol.intern
+  let user_full_name                   = "user-full-name"                   |> Symbol.intern
+  let user_login_name                  = "user-login-name"                  |> Symbol.intern
+  let user_real_login_name             = "user-real-login-name"             |> Symbol.intern
+  let user_real_uid                    = "user-real-uid"                    |> Symbol.intern
+  let user_uid                         = "user-uid"                         |> Symbol.intern
+end
+
 let login_name () = Symbol.funcall0 Q.user_login_name |> Value.to_utf8_bytes_exn
 
 let real_login_name () = Symbol.funcall0 Q.user_real_login_name |> Value.to_utf8_bytes_exn
@@ -39,4 +52,3 @@ let initialize () =
            (system_group_names () : string list)];
        Value.nil);
 ;;
-

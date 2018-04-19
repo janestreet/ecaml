@@ -1,6 +1,15 @@
 open! Core_kernel
 open! Import
 
+module Q = struct
+  include Q
+  let color_defined_p                  = "color-defined-p"                  |> Symbol.intern
+  let color_gray_p                     = "color-gray-p"                     |> Symbol.intern
+  let color_supported_p                = "color-supported-p"                |> Symbol.intern
+  let color_values                     = "color-values"                     |> Symbol.intern
+  let defined_colors                   = "defined-colors"                   |> Symbol.intern
+end
+
 include Value.Make_subtype (struct
     let name = "color"
     let here = [%here]

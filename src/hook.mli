@@ -92,6 +92,10 @@ val after_load_once : file -> unit
     [(Info-goto-node "(elisp)Saving Buffers")] *)
 val after_save : normal t
 
+(** [(describe-variable 'before-save-hook)]
+    [(Info-goto-node "(elisp)Saving Buffers")] *)
+val before_save : normal t
+
 (** [(describe-variable 'kill-buffer-hook)]
     [(Info-goto-node "(elisp)Killing Buffers")] *)
 val kill_buffer : normal t

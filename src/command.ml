@@ -1,6 +1,13 @@
 open! Core_kernel
 open! Import
 
+module Q = struct
+  include Q
+  let call_interactively               = "call-interactively"               |> Symbol.intern
+  let current_prefix_arg               = "current-prefix-arg"               |> Symbol.intern
+  let prefix_numeric_value             = "prefix-numeric-value"             |> Symbol.intern
+end
+
 module Current_buffer = Current_buffer0
 
 include Value.Make_subtype (struct

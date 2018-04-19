@@ -1,6 +1,11 @@
 open! Core_kernel
 open! Import
 
+module Q = struct
+  include Q
+  let find_function                    = "find-function"                    |> Symbol.intern
+end
+
 let find_function function_ =
   Symbol.funcall1_i Q.find_function (function_ |> Symbol.to_value);
 ;;

@@ -740,12 +740,10 @@ let%expect_test "color buffer twice" =
         Current_buffer.contents ~text_properties:true () : Text.t)] in
     color_current_buffer ();
     show ();
-    [%expect {|
-      (foo 0 3 (face (:foreground red3) font-lock-face (:foreground red3))) |}];
+    [%expect {| (foo 0 3 (face (:foreground red3) font-lock-face (:foreground red3))) |}];
     color_current_buffer ();
     show ();
-    [%expect {|
-      (foo 0 3 (face (:foreground red3) font-lock-face (:foreground red3))) |}]);
+    [%expect {| (foo 0 3 (face (:foreground red3) font-lock-face (:foreground red3))) |}])
 ;;
 
 let test_point_preservation ~left ~right ~colorize =

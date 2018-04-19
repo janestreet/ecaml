@@ -1,10 +1,30 @@
 open! Core_kernel
 open! Import
 
+module Q = struct
+  include Input_event0.Q
+  let alt                              = "alt"                              |> Symbol.intern
+  let click                            = "click"                            |> Symbol.intern
+  let control                          = "control"                          |> Symbol.intern
+  let double                           = "double"                           |> Symbol.intern
+  let down                             = "down"                             |> Symbol.intern
+  let drag                             = "drag"                             |> Symbol.intern
+  let event_basic_type                 = "event-basic-type"                 |> Symbol.intern
+  let event_modifiers                  = "event-modifiers"                  |> Symbol.intern
+  let hyper                            = "hyper"                            |> Symbol.intern
+  let meta                             = "meta"                             |> Symbol.intern
+  let read_event                       = "read-event"                       |> Symbol.intern
+  let shift                            = "shift"                            |> Symbol.intern
+  let super                            = "super"                            |> Symbol.intern
+  let triple                           = "triple"                           |> Symbol.intern
+  let unread_command_events            = "unread-command-events"            |> Symbol.intern
+end
+
 module Current_buffer = Current_buffer0
 module Key_sequence   = Key_sequence0
 
-include Input_event0
+include (Input_event0 : module type of struct include Input_event0 end
+         with module Q := Q)
 
 let read () = Symbol.funcall0 Q.read_event |> of_value_exn
 

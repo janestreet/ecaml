@@ -3,6 +3,11 @@ open! Import
 open! Funcall
 open Value.Type
 
+module Q = struct
+  let message = "message" |> Symbol.intern
+  let point   = "point"   |> Symbol.intern
+end
+
 let%expect_test _ =
   let message = Q.message <: string @-> int @-> string @-> string @-> int @-> return nil in
   message "%S %S %S %S" 1 "two" "three" 4;

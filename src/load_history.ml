@@ -1,6 +1,14 @@
 open! Core_kernel
 open! Import
 
+module Q = struct
+  include Q
+  let autoload                         = "autoload"                         |> Symbol.intern
+  let defface                          = "defface"                          |> Symbol.intern
+  let load_history                     = "load-history"                     |> Symbol.intern
+  let symbol_file                      = "symbol-file"                      |> Symbol.intern
+end
+
 module Current_buffer = Current_buffer0
 
 type t = Value.t

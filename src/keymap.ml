@@ -1,6 +1,21 @@
 open! Core_kernel
 open! Import
 
+module Q = struct
+  include Q
+  let copy_keymap                      = "copy-keymap"                      |> Symbol.intern
+  let current_global_map               = "current-global-map"               |> Symbol.intern
+  let define_key                       = "define-key"                       |> Symbol.intern
+  let keymap_parent                    = "keymap-parent"                    |> Symbol.intern
+  let lookup_key                       = "lookup-key"                       |> Symbol.intern
+  let make_keymap                      = "make-keymap"                      |> Symbol.intern
+  let make_sparse_keymap               = "make-sparse-keymap"               |> Symbol.intern
+  let set_keymap_parent                = "set-keymap-parent"                |> Symbol.intern
+  let set_transient_map                = "set-transient-map"                |> Symbol.intern
+  let undefined                        = "undefined"                        |> Symbol.intern
+  let use_global_map                   = "use-global-map"                   |> Symbol.intern
+end
+
 include Value.Make_subtype (struct
     let name = "keymap"
     let here = [%here]

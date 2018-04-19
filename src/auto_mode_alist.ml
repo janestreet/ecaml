@@ -1,6 +1,11 @@
 open! Core_kernel
 open! Import
 
+module Q = struct
+  include Q
+  let auto_mode_alist                  = "auto-mode-alist"                  |> Symbol.intern
+end
+
 module Entry = struct
   type t =
     { delete_suffix_and_recur : bool

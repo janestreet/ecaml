@@ -3,9 +3,7 @@
 open! Core_kernel
 open! Import
 
-type t = Input_event0.t [@@deriving sexp_of]
-
-include Value.Subtype with type t := t
+include Input_event0_intf.Input_event0_public with type t = Input_event0.t
 
 (** [create_exn string] is a specialized version of [Key_sequence.create] that raises
     unless [string] denotes a key sequence of length one.
@@ -23,10 +21,6 @@ include Value.Subtype with type t := t
     "<mouse-2>"
     "C-<down-mouse-3>" *)
 val create_exn : string -> t
-
-(** [(describe-function 'single-key-description)]
-    [(Info-goto-node "(elisp)Describing Characters")] *)
-val description : t -> string
 
 (** [(describe-function 'read-event)]
     [(Info-goto-node "(elisp)Reading One Event")] *)

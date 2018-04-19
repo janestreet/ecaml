@@ -7,6 +7,9 @@ val save_current_buffer : (unit -> 'a) -> 'a
 (** [(describe-function 'save-excursion)] *)
 val save_excursion : (unit -> 'a) -> 'a
 
+(** [(describe-function 'save-mark-and-excursion)] *)
+val save_mark_and_excursion : (unit -> 'a) -> 'a
+
 (** [(describe-function 'save-restriction)] *)
 val save_restriction : (unit -> 'a) -> 'a
 

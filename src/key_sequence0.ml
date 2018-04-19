@@ -1,6 +1,14 @@
 open! Core_kernel
 open! Import
 
+module Q = struct
+  include Q
+  let elt                  = "elt"                  |> Symbol.intern
+  let key_description      = "key-description"      |> Symbol.intern
+  let listify_key_sequence = "listify-key-sequence" |> Symbol.intern
+  let read_kbd_macro       = "read-kbd-macro"       |> Symbol.intern
+end
+
 module Z = struct
   module Input_event = Input_event0
 end

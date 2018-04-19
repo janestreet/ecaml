@@ -1,6 +1,17 @@
 open! Core_kernel
 open! Import
 
+module Q = struct
+  include Q
+  let eval                             = "eval"                             |> Symbol.intern
+  let interactive                      = "interactive"                      |> Symbol.intern
+  let lambda                           = "lambda"                           |> Symbol.intern
+  let let_                             = "let"                              |> Symbol.intern
+  let progn                            = "progn"                            |> Symbol.intern
+  let read_from_whole_string           = "read-from-whole-string"           |> Symbol.intern
+  let thingatpt                        = "thingatpt"                        |> Symbol.intern
+end
+
 include Value.Make_subtype (struct
     let name = "form"
     let here = [%here]

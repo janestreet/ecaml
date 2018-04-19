@@ -1,6 +1,16 @@
 open! Core_kernel
 open! Import
 
+module Q = struct
+  include Q
+  let copy_marker                      = "copy-marker"                      |> Symbol.intern
+  let make_marker                      = "make-marker"                      |> Symbol.intern
+  let marker_buffer                    = "marker-buffer"                    |> Symbol.intern
+  let marker_insertion_type            = "marker-insertion-type"            |> Symbol.intern
+  let marker_position                  = "marker-position"                  |> Symbol.intern
+  let set_marker_insertion_type        = "set-marker-insertion-type"        |> Symbol.intern
+end
+
 include Value.Make_subtype (struct
     let name = "marker"
     let here = [%here]

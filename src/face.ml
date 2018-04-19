@@ -1,6 +1,40 @@
 open! Core_kernel
 open! Import
 
+module Q = struct
+  include Q
+  let bold                             = "bold"                             |> Symbol.intern
+  let condensed                        = "condensed"                        |> Symbol.intern
+  let expanded                         = "expanded"                         |> Symbol.intern
+  let extra_bold                       = "extra-bold"                       |> Symbol.intern
+  let extra_condensed                  = "extra-condensed"                  |> Symbol.intern
+  let extra_expanded                   = "extra-expanded"                   |> Symbol.intern
+  let extra_light                      = "extra-light"                      |> Symbol.intern
+  let face_all_attributes              = "face-all-attributes"              |> Symbol.intern
+  let face_attribute                   = "face-attribute"                   |> Symbol.intern
+  let face_attribute_relative_p        = "face-attribute-relative-p"        |> Symbol.intern
+  let face_list                        = "face-list"                        |> Symbol.intern
+  let face_spec_set                    = "face-spec-set"                    |> Symbol.intern
+  let font_family_list                 = "font-family-list"                 |> Symbol.intern
+  let italic                           = "italic"                           |> Symbol.intern
+  let light                            = "light"                            |> Symbol.intern
+  let merge_face_attribute             = "merge-face-attribute"             |> Symbol.intern
+  let normal                           = "normal"                           |> Symbol.intern
+  let oblique                          = "oblique"                          |> Symbol.intern
+  let reverse_italic                   = "reverse-italic"                   |> Symbol.intern
+  let reverse_oblique                  = "reverse-oblique"                  |> Symbol.intern
+  let semi_bold                        = "semi-bold"                        |> Symbol.intern
+  let semi_condensed                   = "semi-condensed"                   |> Symbol.intern
+  let semi_expanded                    = "semi-expanded"                    |> Symbol.intern
+  let semi_light                       = "semi-light"                       |> Symbol.intern
+  let set_face_attribute               = "set-face-attribute"               |> Symbol.intern
+  let ultra_bold                       = "ultra-bold"                       |> Symbol.intern
+  let ultra_condensed                  = "ultra-condensed"                  |> Symbol.intern
+  let ultra_expanded                   = "ultra-expanded"                   |> Symbol.intern
+  let ultra_light                      = "ultra-light"                      |> Symbol.intern
+  let unspecified                      = "unspecified"                      |> Symbol.intern
+end
+
 module Value = struct
   include Value
 

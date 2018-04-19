@@ -1,6 +1,16 @@
 open! Core_kernel
 open! Import
 
+module Q = struct
+  include Q
+  let cancel_timer                     = "cancel-timer"                     |> Symbol.intern
+  let memq                             = "memq"                             |> Symbol.intern
+  let run_at_time                      = "run-at-time"                      |> Symbol.intern
+  let sit_for                          = "sit-for"                          |> Symbol.intern
+  let sleep_for                        = "sleep-for"                        |> Symbol.intern
+  let timer_list                       = "timer-list"                       |> Symbol.intern
+end
+
 include Value.Make_subtype (struct
     let name = "timer"
     let here = [%here]

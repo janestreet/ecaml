@@ -23,22 +23,9 @@
   (action (bash "../gen/gen_ml.exe > ${@}"))
   (fallback)))
 
-
-(rule
- ((targets (unnecessarily-global-symbols-for-review.txt))
-  (deps (unnecessarily-global-symbols.sh (glob_files "*.ml")))
-  (action (bash "./unnecessarily-global-symbols.sh > ${@}"))
-  (fallback)))
-
-(rule
- ((targets (unnecessarily-global-symbols-files-for-review.txt))
-  (deps (unnecessarily-global-symbols-for-review.txt))
-  (action (bash "sed -rn 's/^(.*) is the only call site .*$/\\1/p' ${^} | sort | uniq -c | sort -nrk 1 > ${@}"))
-  (fallback)))
-
 (alias
  ((name DEFAULT)
-  (deps (unnecessarily-global-symbols-files-for-review.txt
-         unnecessarily-global-symbols-for-review.txt))))
+  (deps (unnecessarily-global-symbols.sh (glob_files "*.ml")))
+  (action (bash "./unnecessarily-global-symbols.sh"))))
 
 (jbuild_version 1)

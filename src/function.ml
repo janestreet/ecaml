@@ -1,6 +1,11 @@
 open! Core_kernel
 open! Import
 
+module Q = struct
+  include Q
+  let apply                            = "apply"                            |> Symbol.intern
+end
+
 include Value.Make_subtype (struct
     let name = "function"
     let here = [%here]

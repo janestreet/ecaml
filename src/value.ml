@@ -73,6 +73,7 @@ external intern : string -> t = "ecaml_intern"
 let intern = wrap_raise1 intern
 
 module Q = struct
+  let append                 = "append"                 |> intern
   let arrayp                 = "arrayp"                 |> intern
   let bufferp                = "bufferp"                |> intern
   let car                    = "car"                    |> intern
@@ -81,7 +82,7 @@ module Q = struct
   let commandp               = "commandp"               |> intern
   let cons                   = "cons"                   |> intern
   let consp                  = "consp"                  |> intern
-  let elt                    = "elt"                    |> intern
+  let debug_on_error         = "debug-on-error"         |> intern
   let equal                  = "equal"                  |> intern
   let error                  = "error"                  |> intern
   let eventp                 = "eventp"                 |> intern
@@ -91,7 +92,6 @@ module Q = struct
   let functionp              = "functionp"              |> intern
   let hash_table_p           = "hash-table-p"           |> intern
   let keymapp                = "keymapp"                |> intern
-  let length                 = "length"                 |> intern
   let list                   = "list"                   |> intern
   let markerp                = "markerp"                |> intern
   let nil                    = "nil"                    |> intern
@@ -264,6 +264,7 @@ let to_int_exn (t : t) =
 ;;
 
 let get_int_var string = funcall1 Q.symbol_value (string |> intern) |> to_int_exn
+let debug_on_error () = is_not_nil (funcall1 Q.symbol_value Q.debug_on_error)
 
 let emacs_min_int = get_int_var "most-negative-fixnum"
 let emacs_max_int = get_int_var "most-positive-fixnum"
@@ -317,7 +318,6 @@ let is_nil t = eq t nil
 let is_array                t = funcall1 Q.arrayp                 t |> to_bool
 let is_buffer               t = funcall1 Q.bufferp                t |> to_bool
 let is_command              t = funcall1 Q.commandp               t |> to_bool
-let is_cons                 t = funcall1 Q.consp                  t |> to_bool
 let is_event                t = funcall1 Q.eventp                 t |> to_bool
 let is_float                t = funcall1 Q.floatp                 t |> to_bool
 let is_font                 t = funcall1 Q.fontp                  t |> to_bool
@@ -343,6 +343,16 @@ let car_exn  t = funcall1 Q.car  t
 let cdr_exn  t = funcall1 Q.cdr  t
 let cadr_exn t = funcall1 Q.cadr t
 
+let is_cons ?car ?cdr t =
+  funcall1 Q.consp t |> to_bool
+  && (match car with
+    | None -> true
+    | Some is_car -> is_car (car_exn t))
+  && (match cdr with
+    | None -> true
+    | Some is_cdr -> is_cdr (cdr_exn t))
+;;
+
 let to_list_exn (t : t) ~f =
   let rec loop t ac =
     if is_nil t
@@ -355,9 +365,8 @@ let to_list_exn (t : t) ~f =
 ;;
 
 let to_array_exn (t : t) ~f =
-  let length = funcall1 Q.length t |> to_int_exn in
-  Array.init length ~f:(fun i ->
-    f (funcall2 Q.elt t (of_int_exn i)))
+  let length = vec_size t in
+  Array.init length ~f:(fun i -> f (vec_get t i))
 ;;
 
 let vector arr = funcallN_array Q.vector arr
@@ -388,14 +397,21 @@ let non_local_exit_signal exn =
     external non_local_exit_signal : t -> t -> unit =
       "ecaml_non_local_exit_signal" end in
   let symbol, data =
+    let append_backtrace_if_debugging rest =
+      match debug_on_error () with
+      | true ->
+        [%sexp { backtrace : Backtrace.t = Backtrace.Exn.most_recent () }]
+        |> pretty_sexp
+        |> funcall2 Q.append rest
+      | false -> rest
+    in
     match exn with
     | Elisp_signal { symbol; data } ->
       (* This case preserves an Elisp signal as it crosses an OCaml boundary. *)
-      symbol, data
+      symbol, append_backtrace_if_debugging data
     | _ ->
-      let sexp = exn |> Exn.sexp_of_t in
       let string, rest =
-        match sexp with
+        match [%sexp (exn : exn)] with
         | Atom string                  -> string , []
         | List [ Atom string ]         -> string , []
         | List [ Atom string; rest ]   -> string , [ rest |> pretty_sexp ]
@@ -403,7 +419,7 @@ let non_local_exit_signal exn =
         | List rest                    -> "error", [ List rest |> pretty_sexp ] in
       (* For the [error] symbol, the error data should be a list whose car is a string.
          See [(Info-goto-node "(elisp)Signaling Errors")]. *)
-      Q.error, list ((string |> of_utf8_bytes) :: rest) in
+      Q.error, append_backtrace_if_debugging (list ((string |> of_utf8_bytes) :: rest)) in
   M.non_local_exit_signal symbol data
 ;;
 
@@ -570,6 +586,8 @@ module Make_subtype (M : Make_subtype_arg) = struct
   open M
 
   type nonrec t = t [@@deriving sexp_of]
+
+  let is_in_subtype = is_in_subtype
 
   let to_value t = t
 

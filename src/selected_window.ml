@@ -1,6 +1,17 @@
 open! Core_kernel
 open! Import
 
+module Q = struct
+  include Q
+  let find_file                        = "find-file"                        |> Symbol.intern
+  let select_window                    = "select-window"                    |> Symbol.intern
+  let selected_window                  = "selected-window"                  |> Symbol.intern
+  let split_window_horizontally        = "split-window-horizontally"        |> Symbol.intern
+  let split_window_vertically          = "split-window-vertically"          |> Symbol.intern
+  let switch_to_buffer                 = "switch-to-buffer"                 |> Symbol.intern
+  let view_file                        = "view-file"                        |> Symbol.intern
+end
+
 let get () = Symbol.funcall0 Q.selected_window |> Window.of_value_exn
 
 let set

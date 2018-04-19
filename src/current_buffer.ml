@@ -1,9 +1,73 @@
 open! Core_kernel
 open! Import
 
-include (Current_buffer0
-         : (module type of Current_buffer0
-             with module Buffer := Buffer0))
+module Q = struct
+  include Current_buffer0.Q
+  let buffer_disable_undo                 = "buffer-disable-undo"                 |> Symbol.intern
+  let buffer_enable_undo                  = "buffer-enable-undo"                  |> Symbol.intern
+  let buffer_modified_p                   = "buffer-modified-p"                   |> Symbol.intern
+  let buffer_restore_window_display_state = "Buffer.restore-window-display-state" |> Symbol.intern
+  let buffer_substring                    = "buffer-substring"                    |> Symbol.intern
+  let buffer_substring_no_properties      = "buffer-substring-no-properties"      |> Symbol.intern
+  let buffer_undo_list                    = "buffer-undo-list"                    |> Symbol.intern
+  let buffer_window_display_state         = "Buffer.window-display-state"         |> Symbol.intern
+  let bury_buffer                         = "bury-buffer"                         |> Symbol.intern
+  let char_syntax                         = "char-syntax"                         |> Symbol.intern
+  let current_local_map                   = "current-local-map"                   |> Symbol.intern
+  let current_minor_mode_maps             = "current-minor-mode-maps"             |> Symbol.intern
+  let deactivate_mark                     = "deactivate-mark"                     |> Symbol.intern
+  let default_directory                   = "default-directory"                   |> Symbol.intern
+  let delete_duplicate_lines              = "delete-duplicate-lines"              |> Symbol.intern
+  let delete_region                       = "delete-region"                       |> Symbol.intern
+  let enable_multibyte_characters         = "enable-multibyte-characters"         |> Symbol.intern
+  let erase_buffer                        = "erase-buffer"                        |> Symbol.intern
+  let fill_column                         = "fill-column"                         |> Symbol.intern
+  let flush_lines                         = "flush-lines"                         |> Symbol.intern
+  let ignore_auto                         = "ignore-auto"                         |> Symbol.intern
+  let indent_region                       = "indent-region"                       |> Symbol.intern
+  let kill_local_variable                 = "kill-local-variable"                 |> Symbol.intern
+  let kill_region                         = "kill-region"                         |> Symbol.intern
+  let local_variable_if_set_p             = "local-variable-if-set-p"             |> Symbol.intern
+  let local_variable_p                    = "local-variable-p"                    |> Symbol.intern
+  let major_mode                          = "major-mode"                          |> Symbol.intern
+  let make_local_variable                 = "make-local-variable"                 |> Symbol.intern
+  let mark_active                         = "mark-active"                         |> Symbol.intern
+  let mark_marker                         = "mark-marker"                         |> Symbol.intern
+  let noconfirm                           = "noconfirm"                           |> Symbol.intern
+  let paragraph_separate                  = "paragraph-separate"                  |> Symbol.intern
+  let paragraph_start                     = "paragraph-start"                     |> Symbol.intern
+  let rename_buffer                       = "rename-buffer"                       |> Symbol.intern
+  let revert_buffer                       = "revert-buffer"                       |> Symbol.intern
+  let revert_buffer_function              = "revert-buffer-function"              |> Symbol.intern
+  let save_buffer                         = "save-buffer"                         |> Symbol.intern
+  let set_buffer_modified_p               = "set-buffer-modified-p"               |> Symbol.intern
+  let set_buffer_multibyte                = "set-buffer-multibyte"                |> Symbol.intern
+  let set_mark                            = "set-mark"                            |> Symbol.intern
+  let set_syntax_table                    = "set-syntax-table"                    |> Symbol.intern
+  let sort_lines                          = "sort-lines"                          |> Symbol.intern
+  let syntax_table                        = "syntax-table"                        |> Symbol.intern
+  let text_property_not_all               = "text-property-not-all"               |> Symbol.intern
+  let transient_mark_mode                 = "transient-mark-mode"                 |> Symbol.intern
+  let undo                                = "undo"                                |> Symbol.intern
+  let undo_boundary                       = "undo-boundary"                       |> Symbol.intern
+  let use_local_map                       = "use-local-map"                       |> Symbol.intern
+  let widen                               = "widen"                               |> Symbol.intern
+end
+
+include (Current_buffer0 : Current_buffer0_intf.Current_buffer0 with module Q := Q)
+
+module Window_display_state = struct
+  include Value.Make_subtype
+      (struct
+        let here = [%here]
+        let name = "Buffer.window-display-state"
+        let is_in_subtype =
+          let open Value in
+          is_cons ~car:Position.is_in_subtype
+            ~cdr:(is_cons ~car:Position.is_in_subtype ~cdr:Position.is_in_subtype)
+        ;;
+      end)
+end
 
 module F = struct
   open Value.Type
@@ -17,6 +81,7 @@ module F = struct
   let kill_buffer         = Q.kill_buffer         <: nullary @-> return nil
   let save_buffer         = Q.save_buffer         <: nullary @-> return nil
   let undo_boundary       = Q.undo_boundary       <: nullary @-> return nil
+  let widen               = Q.widen               <: nullary @-> return nil
 
   let buffer_local_variables  = Q.buffer_local_variables  <: nullary @-> return (list value)
   let buffer_modified_p       = Q.buffer_modified_p       <: nullary @-> return bool
@@ -43,7 +108,10 @@ module F = struct
   let char_syntax             = Q.char_syntax             <: Char_code.type_ @-> return Char_code.type_
   let local_variable_p        = Q.local_variable_p        <: Symbol.type_    @-> return bool
   let local_variable_if_set_p = Q.local_variable_if_set_p <: Symbol.type_    @-> return bool
-
+  let buffer_window_display_state =
+    Q.buffer_window_display_state <: nullary @-> return Window_display_state.type_
+  let buffer_restore_window_display_state =
+    Q.buffer_restore_window_display_state <: Window_display_state.type_ @-> return nil
 
   let add_text_properties =
     Q.add_text_properties <: Position.type_ @-> Position.type_ @-> list value @-> return nil
@@ -175,9 +243,18 @@ let erase = F.erase_buffer
 let delete_region ~start ~end_ = F.delete_region start end_
 let kill_region   ~start ~end_ = F.kill_region   start end_
 
-let save_current_buffer   f = Save_wrappers.save_current_buffer f
-let save_excursion        f = Save_wrappers.save_excursion f
-let save_restriction      f = Save_wrappers.save_restriction f
+let widen = F.widen
+
+let save_current_buffer     f = Save_wrappers.save_current_buffer     f
+let save_excursion          f = Save_wrappers.save_excursion          f
+let save_mark_and_excursion f = Save_wrappers.save_mark_and_excursion f
+let save_restriction        f = Save_wrappers.save_restriction        f
+
+let save_window_display_state f =
+  let window_display_state = F.buffer_window_display_state () in
+  Exn.protect ~f
+    ~finally:(fun () -> F.buffer_restore_window_display_state window_display_state)
+;;
 
 let set_multibyte = F.set_buffer_multibyte
 

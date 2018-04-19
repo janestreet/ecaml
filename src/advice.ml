@@ -1,6 +1,14 @@
 open! Core_kernel
 open! Import
 
+module Q = struct
+  include Q
+  let advice_add                       = "advice-add"                       |> Symbol.intern
+  let advice_remove                    = "advice-remove"                    |> Symbol.intern
+  let inner                            = "inner"                            |> Symbol.intern
+  let rest                             = "rest"                             |> Symbol.intern
+end
+
 module F = struct
   open! Funcall
   open! Value.Type

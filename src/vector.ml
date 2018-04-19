@@ -1,6 +1,12 @@
 open! Core_kernel
 open! Import
 
+module Q = struct
+  include Q
+  let make_vector                      = "make-vector"                      |> Symbol.intern
+  let vconcat                          = "vconcat"                          |> Symbol.intern
+end
+
 include Value.Make_subtype (struct
     let name = "vector"
     let here = [%here]

@@ -44,7 +44,6 @@ module Obarray           = Obarray
 module Point             = Point
 module Position          = Position
 module Process           = Process
-module Q                 = Q
 module Regexp            = Regexp
 module Rx                = Rx
 module Selected_window   = Selected_window
@@ -65,6 +64,11 @@ module Working_directory = Working_directory
 
 open! Core_kernel
 open! Import
+
+module Q = struct
+  include Q
+  let inhibit_read_only                = "inhibit-read-only"                |> Symbol.intern
+end
 
 let defcustom           = Customization. defcustom
 let define_derived_mode = Major_mode.    define_derived_mode
@@ -97,8 +101,16 @@ let inhibit_read_only = Var.create Q.inhibit_read_only Value.Type.bool
 let inhibit_read_only f = Current_buffer.set_value_temporarily inhibit_read_only true ~f
 
 let () =
-  defun_nullary_nil [%here] ("ecaml-test-raise" |> Symbol.intern) ~interactive:""
-    (fun () -> raise_s [%message "foo" "bar"]);
+  let symbol = "ecaml-test-raise" |> Symbol.intern in
+  defun [%here] Value.Type.unit symbol ~interactive:""
+    (let open Defun.Let_syntax in
+     let%map_open n = optional Q.number Value.Type.int
+     in
+     let n = Option.value n ~default:0 in
+     (if n <= 0
+      then raise_s [%message "foo" "bar" "baz"]
+      else Value.Type.(Funcall.(symbol <: option int @-> return nil)) (Some (n - 1)));
+     ());
   (* Replace [false] with [true] to define a function for testing
      [Minibuffer.read_from]. *)
   if false

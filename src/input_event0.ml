@@ -1,6 +1,11 @@
 open! Core_kernel
 open! Import
 
+module Q = struct
+  include Q
+  let single_key_description           = "single-key-description"           |> Symbol.intern
+end
+
 include Value.Make_subtype (struct
     let name = "input-event"
     let here = [%here]

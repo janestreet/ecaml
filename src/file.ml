@@ -1,6 +1,27 @@
 open! Core_kernel
 open! Import
 
+module Q = struct
+  include Q
+  let copy_file                        = "copy-file"                        |> Symbol.intern
+  let delete_file                      = "delete-file"                      |> Symbol.intern
+  let file_directory_p                 = "file-directory-p"                 |> Symbol.intern
+  let file_executable_p                = "file-executable-p"                |> Symbol.intern
+  let file_exists_p                    = "file-exists-p"                    |> Symbol.intern
+  let file_in_directory_p              = "file-in-directory-p"              |> Symbol.intern
+  let file_readable_p                  = "file-readable-p"                  |> Symbol.intern
+  let file_regular_p                   = "file-regular-p"                   |> Symbol.intern
+  let file_symlink_p                   = "file-symlink-p"                   |> Symbol.intern
+  let file_truename                    = "file-truename"                    |> Symbol.intern
+  let file_writable_p                  = "file-writable-p"                  |> Symbol.intern
+  let locate_file                      = "locate-file"                      |> Symbol.intern
+  let locate_dominating_file           = "locate-dominating-file"           |> Symbol.intern
+  let make_temp_file                   = "make-temp-file"                   |> Symbol.intern
+  let no_message                       = "no-message"                       |> Symbol.intern
+  let rename_file                      = "rename-file"                      |> Symbol.intern
+  let write_region                     = "write-region"                     |> Symbol.intern
+end
+
 module F = struct
   open Value.Type
   open Funcall
@@ -74,4 +95,17 @@ let write ?(append = false) filename data =
     (filename |> to_value)
     (append |> Value.of_bool)
     (Q.no_message |> Symbol.to_value) (* squelch the [Wrote file] message *)
+;;
+
+let make_temp_file ~prefix ~suffix =
+  Symbol.funcall3 Q.make_temp_file
+    (prefix |> Value.of_utf8_bytes)
+    Value.nil
+    (suffix |> Value.of_utf8_bytes)
+  |> Filename.of_value_exn
+;;
+
+let with_temp_file ~f ~prefix ~suffix =
+  let filename = make_temp_file ~prefix ~suffix in
+  Exn.protect ~f:(fun () -> f filename) ~finally:(fun () -> delete filename)
 ;;

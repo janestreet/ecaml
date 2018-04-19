@@ -1,6 +1,17 @@
 open! Core_kernel
 open! Import
 
+module Q = struct
+  include Q
+  let add_hook             = "add-hook"             |> Symbol.intern
+  let after_load_functions = "after-load-functions" |> Symbol.intern
+  let after_save_hook      = "after-save-hook"      |> Symbol.intern
+  let before_save_hook     = "before-save-hook"     |> Symbol.intern
+  let kill_buffer_hook     = "kill-buffer-hook"     |> Symbol.intern
+  let remove_hook          = "remove-hook"          |> Symbol.intern
+  let run_hooks            = "run-hooks"            |> Symbol.intern
+end
+
 module F = struct
   open! Funcall
   open! Value.Type
@@ -121,6 +132,7 @@ let run t = F.run_hooks (t |> symbol)
 
 let after_load  = create File   Q.after_load_functions
 let after_save  = create Normal Q.after_save_hook
+let before_save = create Normal Q.before_save_hook
 let kill_buffer = create Normal Q.kill_buffer_hook
 
 let after_load_once =

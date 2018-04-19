@@ -1,6 +1,12 @@
 open! Core_kernel
 open! Import
 
+module Q = struct
+  include Q
+  let hash_table_keys                  = "hash-table-keys"                  |> Symbol.intern
+  let make_hash_table                  = "make-hash-table"                  |> Symbol.intern
+end
+
 include Value.Make_subtype (struct
     let name = "hash-table"
     let here = [%here]

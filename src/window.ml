@@ -1,6 +1,20 @@
 open! Core_kernel
 open! Import
 
+module Q = struct
+  include Q
+  let delete_window                    = "delete-window"                    |> Symbol.intern
+  let set_window_buffer                = "set-window-buffer"                |> Symbol.intern
+  let set_window_point                 = "set-window-point"                 |> Symbol.intern
+  let window_body_height               = "window-body-height"               |> Symbol.intern
+  let window_buffer                    = "window-buffer"                    |> Symbol.intern
+  let window_height                    = "window-height"                    |> Symbol.intern
+  let window_list                      = "window-list"                      |> Symbol.intern
+  let window_live_p                    = "window-live-p"                    |> Symbol.intern
+  let window_point                     = "window-point"                     |> Symbol.intern
+  let window_width                     = "window-width"                     |> Symbol.intern
+end
+
 include Window0
 
 let equal = eq

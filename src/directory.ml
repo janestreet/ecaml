@@ -1,6 +1,14 @@
 open! Core_kernel
 open! Import
 
+module Q = struct
+  include Q
+  let delete_directory                 = "delete-directory"                 |> Symbol.intern
+  let directory_files                  = "directory-files"                  |> Symbol.intern
+  let directory_files_recursively      = "directory-files-recursively"      |> Symbol.intern
+  let make_directory                   = "make-directory"                   |> Symbol.intern
+end
+
 let create ?(parents = false) dirname =
   Symbol.funcall2_i Q.make_directory
     (dirname |> Filename.to_value)

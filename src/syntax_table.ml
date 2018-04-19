@@ -1,6 +1,14 @@
 open! Core_kernel
 open! Import
 
+module Q = struct
+  include Q
+  let copy_syntax_table                = "copy-syntax-table"                |> Symbol.intern
+  let make_syntax_table                = "make-syntax-table"                |> Symbol.intern
+  let modify_syntax_entry              = "modify-syntax-entry"              |> Symbol.intern
+  let standard_syntax_table            = "standard-syntax-table"            |> Symbol.intern
+end
+
 include Value.Make_subtype (struct
     let name = "syntax-table"
     let here = [%here]

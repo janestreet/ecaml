@@ -92,6 +92,9 @@ val goto_column : int -> unit
 (** [goto_line l = goto_min (); forward_line (l - 1)] *)
 val goto_line : int -> unit
 
+(** [(describe-function 'indent-line-to)] *)
+val indent_line_to : column : int -> unit
+
 (** [(describe-function 'insert)] *)
 val insert      : string -> unit
 val insert_text : Text.t -> unit

@@ -1,6 +1,29 @@
 open! Core_kernel
 open! Import
 
+module Q = struct
+  include Q
+  let alist                            = "alist"                            |> Symbol.intern
+  let boolean                          = "boolean"                          |> Symbol.intern
+  let character                        = "character"                        |> Symbol.intern
+  let choice                           = "choice"                           |> Symbol.intern
+  let coding_system                    = "coding-system"                    |> Symbol.intern
+  let color                            = "color"                            |> Symbol.intern
+  let const                            = "const"                            |> Symbol.intern
+  let defcustom                        = "defcustom"                        |> Symbol.intern
+  let directory                        = "directory"                        |> Symbol.intern
+  let float                            = "float"                            |> Symbol.intern
+  let function_                        = "function"                         |> Symbol.intern
+  let group                            = "group"                            |> Symbol.intern
+  let hook                             = "hook"                             |> Symbol.intern
+  let integer                          = "integer"                          |> Symbol.intern
+  let plist                            = "plist"                            |> Symbol.intern
+  let radio                            = "radio"                            |> Symbol.intern
+  let repeat                           = "repeat"                           |> Symbol.intern
+  let string                           = "string"                           |> Symbol.intern
+  let variable                         = "variable"                         |> Symbol.intern
+end
+
 let q value = Value.list [ Symbol.to_value Q.quote; value ]
 
 module Group = struct

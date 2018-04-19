@@ -20,6 +20,14 @@
 open! Core_kernel
 open! Import
 
+module Q = struct
+  include Q
+  let ansi_color                       = "ansi-color"                       |> Symbol.intern
+  let ansi_color_bright_vector         = "ansi-color-bright-names-vector"   |> Symbol.intern
+  let ansi_color_faint_vector          = "ansi-color-faint-names-vector"    |> Symbol.intern
+  let ansi_color_names_vector          = "ansi-color-names-vector"          |> Symbol.intern
+end
+
 let max_supported_code = 109
 
 let customization_group = "ansi-colors" |> Customization.Group.of_string
@@ -545,6 +553,35 @@ module Region = struct
   [@@deriving sexp_of]
 end
 
+module Add_text_properties : sig
+  type t
+  val empty : t
+  val create : Text.Property.t list -> t
+  val apply : t -> (start : int -> end_ : int -> unit)
+  val is_empty : t -> bool
+end = struct
+  type t =
+    | Empty
+    | Non_empty of (start : int -> end_ : int -> unit)
+
+  let empty = Empty
+
+  let create = function
+    | [] -> Empty
+    | (_ :: _) as t ->
+      Non_empty (Staged.unstage (Current_buffer.add_text_properties_staged t))
+
+  let apply t ~start ~end_ =
+    match t with
+    | Empty -> ()
+    | Non_empty f -> f ~start ~end_
+
+  let is_empty =
+    function
+    | Empty -> true
+    | Non_empty _ -> false
+end
+
 module State_machine : sig
   type t [@@deriving sexp_of]
 
@@ -556,11 +593,7 @@ module State_machine : sig
   val transition : t -> raw_code:int -> [ `Ok | `Invalid_escape | `Incomplete_escape ]
   val reset : t -> unit
 
-  val current_state          : t -> State.t
-  val is_current_state_empty : t -> bool
-
-  val apply_state         : t -> State.t -> start:int -> end_:int -> unit
-  val apply_current_state : t            -> start:int -> end_:int -> unit
+  val current_text_properties : t -> Add_text_properties.t
 
 end = struct
   module State = struct
@@ -587,7 +620,7 @@ end = struct
       { attributes_state : Attributes_state.t
       ; next_state_by_code : t Int.Table.t
       ; text_properties : Text.Property.t list
-      ; add_text_properties : start:int -> end_:int -> unit
+      ; add_text_properties : Add_text_properties.t
       }
 
     let sexp_of_next_state_by_code h =
@@ -608,9 +641,7 @@ end = struct
     ;;
 
     let create attributes_state text_properties =
-      let add_text_properties =
-        unstage (Current_buffer.add_text_properties_staged text_properties)
-      in
+      let add_text_properties = Add_text_properties.create text_properties in
       { attributes_state
       ; next_state_by_code = Int.Table.create ~size:4 ()
       ; text_properties
@@ -642,6 +673,8 @@ end = struct
 
   let current_state t = t.current_state
 
+  let current_text_properties t = (current_state t).add_text_properties
+
   let create () =
     let empty_state = State.empty () in
     { all_states    =
@@ -651,16 +684,6 @@ end = struct
     ; current_state = empty_state
     ; empty_state }
   ;;
-
-  let is_current_state_empty t = phys_equal t.current_state t.empty_state
-
-  let apply_state _t (state : State.t) ~start ~end_ =
-    match state.text_properties with
-    | [] -> ()
-    | _  -> state.add_text_properties ~start ~end_
-  ;;
-
-  let apply_current_state t ~start ~end_ = apply_state t t.current_state ~start ~end_
 
   let reset t = t.current_state <- t.empty_state
 
@@ -713,9 +736,8 @@ module Temp_file_state = struct
   type t =
     { out_channel : Out_channel.t
     ; temp_file : string
-    ; mutable regions : (Region.t * State_machine.State.t) list
+    ; mutable regions : (Region.t * Add_text_properties.t) list
     }
-  [@@deriving sexp_of]
 
   let create () =
     let temp_file = Caml.Filename.temp_file "ecaml-ansi-color" "" in
@@ -725,87 +747,156 @@ module Temp_file_state = struct
     }
 end
 
+exception End_of_input
+
+(** Represents the colorization I/O backend.
+    It has an input stream, a buffer and a colorized output stream. *)
+module Colorization_backend : sig
+  type t
+
+  (** Reads the next character from the input stream into the buffer and
+      returns it. Raises [End_of_input] if end of input was reached. *)
+  val get_char_exn : t -> char
+
+  (** Writes the buffer verbatim to the output (and applies the properties associated
+      with the given [State.t]).
+      The last [except_for_last] bytes are kept in the buffer. *)
+  val keep_verbatim : t -> except_for_last:int -> Add_text_properties.t -> unit
+
+  (** Drops the buffer without writing it to the output. *)
+  val drop : t -> unit
+
+  (** Prints an "invalid escape" error message and clears the buffer.
+      Before doing so it rewinds the input by 1 byte if possible, with the assumption that
+      the last character of the escape sequence might not be intended to be a part of it.
+  *)
+  val print_invalid_escape : t -> verbose:bool -> unit
+
+  val create :
+    mode:[ `Use_temp_file of Temp_file_state.t | `In_place_colorization ]
+    -> input:string -> output_pos:int -> t
+
+  val finished : t ->
+    [ `Use_temp_file of Temp_file_state.t
+    | `In_place_colorization
+    ]
+end = struct
+
+  type t =
+    { mutable output_pos   : int
+    ; input                : string
+    ; input_length         : int
+    ; mutable region_start : int
+    ; mutable input_pos    : int
+    ; mode :
+        [ `Use_temp_file of Temp_file_state.t
+        | `In_place_colorization
+        ]
+    }
+
+  let create ~mode ~input ~output_pos =
+    { input
+    ; input_length = String.length input
+    ; region_start = 0
+    ; input_pos = 0
+    ; output_pos
+    ; mode
+    }
+
+  let finished t =
+    assert (Int.(=) t.input_length t.input_pos);
+    assert (Int.(=) t.input_length t.region_start);
+    t.mode
+  ;;
+
+  let [@inline always] get_char_exn t =
+    if t.input_length = t.input_pos
+    then
+      raise End_of_input
+    else (
+      let c = t.input.[ t.input_pos ] in
+      t.input_pos <- t.input_pos + 1;
+      c
+    )
+  ;;
+
+  let drop t =
+    let len = t.input_pos - t.region_start in
+    if len > 0
+    then begin
+      t.region_start <- t.input_pos;
+      match t.mode with
+      | `Use_temp_file _ -> ()
+      | `In_place_colorization ->
+        let start = Position.of_int_exn t.output_pos in
+        let end_ = Position.of_int_exn (t.output_pos + len) in
+        Current_buffer.delete_region ~start ~end_;
+    end
+  ;;
+
+  let keep_verbatim t ~except_for_last add_text_properties =
+    let len = (t.input_pos - except_for_last) - t.region_start in
+    assert (len >= 0);
+    if len > 0
+    then begin
+      let start = t.output_pos in
+      let end_  = t.output_pos + len in
+      begin match t.mode with
+      | `In_place_colorization ->
+        Add_text_properties.apply add_text_properties ~start ~end_
+      | `Use_temp_file temp_file_state ->
+        Out_channel.output_substring temp_file_state.out_channel
+          ~buf:t.input ~pos:t.region_start ~len;
+        if not (Add_text_properties.is_empty add_text_properties) then
+          (let region = { Region.pos = start; len } in
+           temp_file_state.regions <-
+             (region, add_text_properties) ::
+             temp_file_state.regions);
+      end;
+      t.region_start <- t.region_start + len;
+      t.output_pos <- end_;
+    end;
+  ;;
+
+  let attempt_rewind t =
+    if t.input_pos > t.region_start + 1
+    then
+      t.input_pos <- t.input_pos - 1
+  ;;
+
+  let print_invalid_escape t ~verbose =
+    attempt_rewind t;
+    match verbose with
+    | false ->
+      keep_verbatim t ~except_for_last:0 Add_text_properties.empty
+    | true ->
+      let len = t.input_pos - t.region_start in
+      let invalid_escape_string = String.sub t.input ~pos:t.region_start ~len in
+      let message = sprintf "<invalid ANSI escape sequence %S>" invalid_escape_string in
+      drop t;
+      begin match t.mode with
+      | `Use_temp_file temp_file_state ->
+        Out_channel.output_string temp_file_state.out_channel message;
+      | `In_place_colorization ->
+        Point.goto_char (Position.of_int_exn t.output_pos);
+        Point.insert message;
+      end;
+      t.output_pos <- t.output_pos + String.length message;
+  ;;
+
+end
+
 type t =
-  { mutable output_pos : int
-  ; mutable region_start : int
-  ; input                : string
-  ; input_length         : int
-  ; mutable input_pos    : int
+  { backend : Colorization_backend.t
   ; mutable saw_escape   : bool
   ; state_machine        : State_machine.t
-  ; mode : [ `Use_temp_file of Temp_file_state.t
-           | `In_place_colorization
-           ]
   }
-[@@deriving sexp_of]
 
 let create ~input ~output_pos ~mode =
-  { region_start  = 0
-  ; input
-  ; input_length  = String.length input
-  ; input_pos     = 0
-  ; output_pos
+  { backend = Colorization_backend.create ~input ~output_pos ~mode
   ; saw_escape    = false
   ; state_machine = State_machine.create ()
-  ; mode
   }
-;;
-
-let colorize t ~input_offset =
-  let len = (t.input_pos - input_offset) - t.region_start in
-  if len > 0
-  then begin
-    let start = t.output_pos in
-    let end_  = t.output_pos + len in
-    begin match t.mode with
-    | `In_place_colorization ->
-      State_machine.apply_current_state t.state_machine ~start ~end_
-    | `Use_temp_file temp_file_state ->
-      Out_channel.output_substring temp_file_state.out_channel ~buf:t.input ~pos:t.region_start ~len;
-      if not (State_machine.is_current_state_empty t.state_machine) then
-        (let region = { Region.pos = start; len } in
-         temp_file_state.regions <-
-           (region, State_machine.current_state t.state_machine) ::
-           temp_file_state.regions);
-    end;
-    t.region_start <- t.region_start + len;
-    t.output_pos <- end_;
-  end;
-;;
-
-let delete_escape t =
-  let len = t.input_pos - t.region_start in
-  if len > 0
-  then begin
-    t.region_start <- t.region_start + len;
-    match t.mode with
-    | `Use_temp_file _ -> ()
-    | `In_place_colorization ->
-      let start = Position.of_int_exn t.output_pos in
-      let end_ = Position.of_int_exn (t.output_pos + len) in
-      Current_buffer.delete_region ~start ~end_;
-  end
-;;
-
-let print_invalid_escape t =
-  let len = t.input_pos - t.region_start in
-  let invalid_escape_string = String.sub t.input ~pos:t.region_start ~len in
-  let message = sprintf "<invalid ANSI escape sequence %S>" invalid_escape_string in
-  delete_escape t;
-  begin match t.mode with
-  | `Use_temp_file temp_file_state ->
-    Out_channel.output_string temp_file_state.out_channel message;
-  | `In_place_colorization ->
-    Point.goto_char (Position.of_int_exn t.output_pos);
-    Point.insert message;
-  end;
-  t.output_pos <- t.output_pos + String.length message;
-;;
-
-let [@inline always] get_char t =
-  let c = t.input.[ t.input_pos ] in
-  t.input_pos <- t.input_pos + 1;
-  c
 ;;
 
 let transition t ~raw_code = State_machine.transition t.state_machine ~raw_code
@@ -821,54 +912,52 @@ let () =
     ~standard_value:Value.t
 ;;
 
-(* [start_normal], [normal], [escape], and [code], are a custom DFA for processing text
+let keep_verbatim t =
+  Colorization_backend.keep_verbatim t.backend
+    (State_machine.current_text_properties t.state_machine)
+;;
+
+let get_char_exn t = Colorization_backend.get_char_exn t.backend
+
+(* [normal], [escape], and [code], are a custom DFA for processing text
    containing ANSI escape sequences. *)
-let rec start_normal t =
-  t.region_start <- t.input_pos;
-  normal t
-and normal t =
-  if t.input_pos = t.input_length
-  then colorize t ~input_offset:0
-  else (
-    match get_char t with
-    | '\027' ->
-      t.saw_escape <- true;
-      colorize t ~input_offset:1;
-      if t.input_pos = t.input_length
-      then invalid_escape t
-      else (
-        match get_char t with
-        | '[' ->
-          escape t
-        | _ -> invalid_escape t)
-    | _ -> normal t)
+let rec normal t =
+  match get_char_exn t with
+  | exception End_of_input ->
+    keep_verbatim t ~except_for_last:0
+  | '\027' ->
+    t.saw_escape <- true;
+    keep_verbatim t ~except_for_last:1;
+    (match get_char_exn t with
+     | exception End_of_input ->
+       invalid_escape t
+     | '[' ->
+       escape t
+     | _ ->
+       invalid_escape t)
+  | _ -> normal t
 and escape t = code t 0
 and code t ac =
-  if t.input_pos = t.input_length
-  then invalid_escape t
-  else (
-    match get_char t with
-    | '0' .. '9' as c -> code t (ac * 10 + digit c)
-    | ';' ->
-      begin match transition t ~raw_code:ac with
-      | `Ok | `Incomplete_escape -> escape t
-      | `Invalid_escape -> invalid_escape t
-      end
-    | 'm' ->
-      begin match transition t ~raw_code:ac with
-      | `Ok -> delete_escape t; start_normal t
-      | `Invalid_escape | `Incomplete_escape -> invalid_escape t
-      end
-    | _ -> invalid_escape t)
+  match get_char_exn t with
+  | exception End_of_input ->
+    invalid_escape t
+  | '0' .. '9' as c -> code t (ac * 10 + digit c)
+  | ';' ->
+    begin match transition t ~raw_code:ac with
+    | `Ok | `Incomplete_escape -> escape t
+    | `Invalid_escape -> invalid_escape t
+    end
+  | 'm' ->
+    begin match transition t ~raw_code:ac with
+    | `Ok -> Colorization_backend.drop t.backend; normal t
+    | `Invalid_escape | `Incomplete_escape -> invalid_escape t
+    end
+  | _ -> invalid_escape t
 and invalid_escape t =
-  if t.input_pos > t.region_start + 1
-  then t.input_pos <- t.input_pos - 1;
   State_machine.reset t.state_machine;
-  if Current_buffer.value_exn show_invalid_escapes then
-    print_invalid_escape t
-  else
-    colorize t ~input_offset:0;
-  start_normal t
+  Colorization_backend.print_invalid_escape t.backend
+    ~verbose:(Current_buffer.value_exn show_invalid_escapes);
+  normal t
 ;;
 
 let print_state_machine = ref false
@@ -910,11 +999,11 @@ let color_region ~start ~end_ ~use_temp_file =
   let message = "Colorizing ..." in
   let output_pos = if use_temp_file then 0 else Position.to_int start in
   let t = create ~input ~output_pos ~mode in
-  start_normal t;
+  normal t;
   if !print_state_machine
   then print_s [%message "" ~state_machine:(t.state_machine : State_machine.t)];
   if t.saw_escape && show_messages then (Echo_area.message message);
-  begin match mode with
+  begin match Colorization_backend.finished t.backend with
   | `In_place_colorization -> ()
   | `Use_temp_file temp_file_state ->
     Out_channel.close temp_file_state.out_channel;
@@ -924,9 +1013,10 @@ let color_region ~start ~end_ ~use_temp_file =
       Current_buffer.set_multibyte false;
       let start = Point.get () |> Position.to_int in
       Point.insert_file_contents_exn temp_file_state.temp_file;
-      List.iter temp_file_state.regions ~f:(fun (region, state) ->
-        State_machine.apply_state t.state_machine state
-          ~start:(start + region.pos) ~end_:(start + region.pos + region.len));
+      List.iter temp_file_state.regions ~f:(fun (region, add_text_properties) ->
+        Add_text_properties.apply add_text_properties
+          ~start:(start + region.pos)
+          ~end_:(start + region.pos + region.len))
     end;
     Sys.remove temp_file_state.temp_file;
   end;

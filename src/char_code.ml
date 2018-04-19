@@ -1,6 +1,12 @@
 open! Core_kernel
 open! Import
 
+module Q = struct
+  include Q
+  let characterp                       = "characterp"                       |> Symbol.intern
+  let max_char                         = "max-char"                         |> Symbol.intern
+end
+
 include Value.Make_subtype (struct
     let name = "char-code"
     let here = [%here]

@@ -1,6 +1,12 @@
 open! Core_kernel
 open! Import
 
+module Q = struct
+  include Q
+  let mapatoms                         = "mapatoms"                         |> Symbol.intern
+  let obarray                          = "obarray"                          |> Symbol.intern
+end
+
 include Value.Make_subtype (struct
     let name = "obarray"
     let here = [%here]

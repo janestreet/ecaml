@@ -101,17 +101,45 @@ let%expect_test "raising from OCaml to OCaml with Emacs in between" =
 
 let%expect_test "raising from OCaml to OCaml through many layers of Emacs" =
   let rec loop n =
-    if n = 0
-    then raise_s [%sexp "zzz"]
-    else
-      Value.funcall0
-        (Function.create [%here] ~args:[]
-           (fun _ -> loop (n - 1))
-         |> Function.to_value)
+    Test_function_file1.funcall0 (fun () ->
+      if n <= 0
+      then raise_s [%message "foo" "bar" "baz"]
+      else loop (n - 1))
   in
-  show_raise (fun () -> loop 5);
+  let files_in_backtrace f =
+    Backtrace.Exn.with_recording true ~f:(fun () ->
+      match f () with
+      | () -> []
+      | exception _ ->
+        let backtrace = Caml.Printexc.get_raw_backtrace () in
+        match Caml.Printexc.backtrace_slots backtrace with
+        | None -> []
+        | Some slots ->
+          Array.filter_map slots ~f:Caml.Printexc.Slot.location
+          |> Array.map ~f:(fun slot -> slot.filename)
+          |> Array.to_list)
+  in
+  let files = files_in_backtrace (fun () -> loop 1) in
+  (match List.mem files Test_function_file1.filename ~equal:String.(=) with
+   | true -> ()
+   | false ->
+     print_cr [%here] [%message
+       "Backtrace has no frames from" Test_function_file1.filename]);
+  [%expect {| |}];
+  let debug_on_error = Var.create ("debug-on-error" |> Symbol.intern) Value.Type.bool in
+  Current_buffer.set_value_temporarily debug_on_error true ~f:(fun () ->
+    let show_errors = false in
+    match show_errors with
+    | true ->
+      Ref.set_temporarily Backtrace.elide false ~f:(fun () ->
+        require_does_raise ~show_backtrace:true [%here] (fun () ->
+          loop 1))
+    | false -> require_does_raise [%here] (fun () -> loop 1));
   [%expect {|
-    (raised (zzz)) |}];
+    (foo
+      (bar baz)
+      (backtrace ("<backtrace elided in test>"))
+      (backtrace ("<backtrace elided in test>"))) |}]
 ;;
 
 let%expect_test "function descriptions" =

@@ -1,6 +1,19 @@
 open! Core_kernel
 open! Import
 
+module Q = struct
+  include Q
+  let directory_file_name      = "directory-file-name"      |> Symbol.intern
+  let expand_file_name         = "expand-file-name"         |> Symbol.intern
+  let file_name_absolute_p     = "file-name-absolute-p"     |> Symbol.intern
+  let file_name_as_directory   = "file-name-as-directory"   |> Symbol.intern
+  let file_name_directory      = "file-name-directory"      |> Symbol.intern
+  let file_name_extension      = "file-name-extension"      |> Symbol.intern
+  let file_name_nondirectory   = "file-name-nondirectory"   |> Symbol.intern
+  let file_name_sans_extension = "file-name-sans-extension" |> Symbol.intern
+  let file_relative_name       = "file-relative-name"       |> Symbol.intern
+end
+
 include (String : sig
            type t = string [@@deriving sexp_of]
            include Comparable.S

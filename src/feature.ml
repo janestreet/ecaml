@@ -1,6 +1,12 @@
 open! Core_kernel
 open! Import
 
+module Q = struct
+  include Q
+  let featurep                         = "featurep"                         |> Symbol.intern
+  let features                         = "features"                         |> Symbol.intern
+end
+
 include Feature0
 
 let provide t = Symbol.funcall1_i Q.provide (t |> Symbol.to_value)

@@ -1,6 +1,17 @@
 open! Core_kernel
 open! Import
 
+module Q = struct
+  include Q
+  let minibuffer_exit_hook             = "minibuffer-exit-hook"             |> Symbol.intern
+  let minibuffer_history               = "minibuffer-history"               |> Symbol.intern
+  let minibuffer_setup_hook            = "minibuffer-setup-hook"            |> Symbol.intern
+  let read_from_minibuffer             = "read-from-minibuffer"             |> Symbol.intern
+  let y_or_n_p                         = "y-or-n-p"                         |> Symbol.intern
+  let y_or_n_p_with_timeout            = "y-or-n-p-with-timeout"            |> Symbol.intern
+  let yes_or_no_p                      = "yes-or-no-p"                      |> Symbol.intern
+end
+
 let y_or_n ~prompt =
   Symbol.funcall1 Q.y_or_n_p (prompt |> Value.of_utf8_bytes)
   |> Value.to_bool

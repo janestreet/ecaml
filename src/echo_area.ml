@@ -1,6 +1,12 @@
 open! Core_kernel
 open! Import
 
+module Q = struct
+  include Q
+  let inhibit_message                  = "inhibit-message"                  |> Symbol.intern
+  let message                          = "message"                          |> Symbol.intern
+end
+
 module Current_buffer = Current_buffer0
 
 let message_value value = Symbol.funcall2_i Q.message (Value.of_utf8_bytes "%s") value

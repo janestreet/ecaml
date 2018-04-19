@@ -1,6 +1,13 @@
 open! Core_kernel
 open! Import
 
+module Q = struct
+  include Q
+  let comment_end                      = "comment-end"                      |> Symbol.intern
+  let comment_multi_line               = "comment-multi-line"               |> Symbol.intern
+  let comment_start                    = "comment-start"                    |> Symbol.intern
+end
+
 let start = Var.create Q.comment_start Value.Type.string
 let end_  = Var.create Q.comment_end   Value.Type.string
 
