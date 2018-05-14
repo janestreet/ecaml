@@ -6,7 +6,7 @@
     [(Info-goto-node "(elisp)Where Defined")] *)
 
 open! Core_kernel
-open! Import
+open! Import0
 
 (** [(describe-function 'symbol-file)] *)
 val defining_file : Symbol.t -> string option

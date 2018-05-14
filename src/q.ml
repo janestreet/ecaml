@@ -3,7 +3,7 @@
     The naming convention is to use the emacs name but replace '-' with '_'. *)
 
 open! Core_kernel
-open! Import
+open! Import0
 
 let add_text_properties              = "add-text-properties"              |> Symbol.intern
 let append                           = "append"                           |> Symbol.intern

@@ -1,7 +1,7 @@
 (** This module is used to enforce the expected types of registered callbacks. *)
 
 open! Core_kernel
-open! Import
+open! Import0
 
 module Value = Value0
 

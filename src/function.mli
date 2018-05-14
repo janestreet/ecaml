@@ -1,7 +1,7 @@
 (** Functions that call from Emacs to OCaml. *)
 
 open! Core_kernel
-open! Import
+open! Import0
 
 module Fn : sig
   type t = Value.t array -> Value.t

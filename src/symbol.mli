@@ -3,7 +3,7 @@
     [(Info-goto-node "(elisp)Symbols")] *)
 
 open! Core_kernel
-open! Import
+open! Import0
 
 include Symbol0_intf.Symbol0 with type t = Symbol0.t
 

@@ -4,7 +4,7 @@
     - [(Info-goto-node "(elisp)Buffers")] *)
 
 open! Core_kernel
-open! Import
+open! Import0
 
 include Value.Subtype with type t = Buffer0.t
 

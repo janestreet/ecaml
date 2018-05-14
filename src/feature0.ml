@@ -1,5 +1,5 @@
 open! Core_kernel
-open! Import
+open! Import0
 
 module Q = struct
   let require = "require" |> Symbol0.intern

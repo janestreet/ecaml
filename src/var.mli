@@ -2,7 +2,7 @@
     [Value.t] via an ['a Type.t]. *)
 
 open! Core_kernel
-open! Import
+open! Import0
 
 type 'a t =
   { symbol : Symbol.t

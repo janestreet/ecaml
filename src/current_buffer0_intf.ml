@@ -1,5 +1,5 @@
 open! Core_kernel
-open! Import
+open! Import0
 
 module type Current_buffer0_public = sig
   (** [(describe-function 'current-buffer)] *)

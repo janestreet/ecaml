@@ -4,7 +4,7 @@
     [(Info-goto-node "(elisp)File Names")] *)
 
 open! Core_kernel
-open! Import
+open! Import0
 
 type t = string [@@deriving compare, sexp_of]
 

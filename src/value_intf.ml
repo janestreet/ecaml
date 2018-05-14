@@ -7,7 +7,7 @@
     built on top of this module. *)
 
 open! Core_kernel
-open! Import
+open! Import0
 
 module type Make_subtype_arg = sig
   type value

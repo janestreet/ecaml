@@ -11,7 +11,7 @@
     [(Info-goto-node "(elisp)Faces")] *)
 
 open! Core_kernel
-open! Import
+open! Import0
 
 include Value.Subtype
 
