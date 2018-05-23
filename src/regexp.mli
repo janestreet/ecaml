@@ -82,6 +82,9 @@ module Last_match : sig
     -> unit
     -> int
 
+  (*_ See the Jane Street Style Guide for an explanation of [Private] submodules:
+
+    https://opensource.janestreet.com/standards/#private-submodules *)
   module Private : sig
     module Location : sig
       type t =
