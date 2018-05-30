@@ -9,4 +9,4 @@ open! Import
 
 (** [(describe-function 'grep))]
     [(Info-goto-node "(emacs)Grep Searching")] *)
-val grep : command : string -> unit
+val grep : command:string -> unit

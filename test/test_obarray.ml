@@ -7,14 +7,18 @@ let%expect_test "[iter], [standard]" =
   iter standard ~f:(fun s -> all := Symbol.name s :: !all);
   print_s [%sexp (List.length !all : int)];
   [%expect {|
-    15_262 |}];
-  print_s [%sexp (!all |> List.sort ~compare:String.compare |> (fun l -> List.take l 100)
-                  : string list)];
-  [%expect {|
+    15_336 |}];
+  print_s
+    [%sexp
+      ( !all |> List.sort ~compare:String.compare |> fun l -> List.take l 100
+                                                              : string list )];
+  [%expect
+    {|
     (%
      &context
      &define
      &key
+     &not
      &optional
      &or
      &rest
@@ -109,6 +113,5 @@ let%expect_test "[iter], [standard]" =
      :crlfiles
      :crop
      :data
-     :decode-translation-table
-     :default-char) |}];
+     :decode-translation-table) |}]
 ;;

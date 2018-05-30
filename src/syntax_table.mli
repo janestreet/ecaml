@@ -45,7 +45,8 @@ module Class : sig
     | Word_constituent
   [@@deriving enumerate, sexp_of]
 
-  include Equal.S          with type t := t
+  include Equal.S with type t := t
+
   include Hashable.S_plain with type t := t
 
   val of_char_code_exn : Char_code.t -> t
@@ -67,11 +68,11 @@ module Flag : sig
 end
 
 module Descriptor : sig
-  type t = Class.t * Flag.t list
-  [@@deriving sexp_of]
+  type t = Class.t * Flag.t list [@@deriving sexp_of]
 end
 
 (** [(describe-function 'modify-syntax-entry)]
     [(Info-goto-node "(elisp)Syntax Table Functions")] *)
-val set      : t -> Char_code.t -> Class.t -> Flag.t list -> unit
-val set_char : t -> char        -> Class.t -> Flag.t list -> unit
+val set : t -> Char_code.t -> Class.t -> Flag.t list -> unit
+
+val set_char : t -> char -> Class.t -> Flag.t list -> unit

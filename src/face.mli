@@ -20,6 +20,7 @@ include Equal.S with type t := t
 val default : t
 
 val of_name : string -> t
+
 val to_name : t -> string
 
 (** [(Info-goto-node "(elisp)Face Attributes")] *)
@@ -71,7 +72,7 @@ end
 module Height : sig
   type t =
     | Scale_underlying_face of float
-    | Tenths_of_point       of int
+    | Tenths_of_point of int
     | Unspecified
   [@@deriving sexp_of]
 end
@@ -175,22 +176,22 @@ end
 (** [(Info-goto-node "(elisp)Face Attributes")] *)
 module Attribute : sig
   type _ t =
-    | Background     : Background.t     t
-    | Box            : Box.t            t
-    | Font           : Font.t           t
-    | Font_family    : Font_family.t    t
-    | Font_foundry   : Font_foundry.t   t
-    | Foreground     : Foreground.t     t
-    | Height         : Height.t         t
-    | Inherit        : Inherit.t        t
-    | Inverse_video  : Inverse_video.t  t
-    | Overline       : Overline.t       t
-    | Slant          : Slant.t          t
-    | Stipple        : Stipple.t        t
+    | Background : Background.t t
+    | Box : Box.t t
+    | Font : Font.t t
+    | Font_family : Font_family.t t
+    | Font_foundry : Font_foundry.t t
+    | Foreground : Foreground.t t
+    | Height : Height.t t
+    | Inherit : Inherit.t t
+    | Inverse_video : Inverse_video.t t
+    | Overline : Overline.t t
+    | Slant : Slant.t t
+    | Stipple : Stipple.t t
     | Strike_through : Strike_through.t t
-    | Underline      : Underline.t      t
-    | Weight         : Weight.t         t
-    | Width          : Width.t          t
+    | Underline : Underline.t t
+    | Weight : Weight.t t
+    | Width : Width.t t
   [@@deriving sexp_of]
 
   val to_symbol : _ t -> Symbol.t
@@ -201,14 +202,17 @@ module Attribute : sig
 
   val unspecified_value : 'a t -> 'a
 
-  module Packed : sig
+  module Packed :
+  sig
     type 'a attribute = 'a t
+
     type t = T : _ attribute -> t
 
     include Symbol.Subtype with type t := t
 
     val all : t list
-  end with type 'a attribute := 'a t
+  end
+  with type 'a attribute := 'a t
 
   (** A relative value is one that doesn’t entirely override whatever is inherited from
       another face.  For most attributes, the only relative value is [Unspecified].
@@ -221,8 +225,7 @@ module Attribute : sig
 end
 
 module Attribute_and_value : sig
-  type t = T : 'a Attribute.t * 'a -> t
-  [@@deriving sexp_of]
+  type t = T : 'a Attribute.t * 'a -> t [@@deriving sexp_of]
 
   val of_value_exn : Value.t -> t
 
@@ -236,28 +239,23 @@ val all_defined : unit -> t list
 
 (** [(describe-function 'face-attribute)] *)
 val font_family_list
-  :  ?on : Frame.t  (** default is selected frame *)
+  :  ?on:Frame.t (** default is selected frame *)
   -> unit
   -> string list
 
 (** [(describe-function 'face-attribute)] *)
 val attribute_value
-  :  ?on : Frame.t  (** default is selected frame *)
+  :  ?on:Frame.t (** default is selected frame *)
   -> t
   -> 'a Attribute.t
   -> 'a
 
 (** [(describe-function 'set-face-attribute)] *)
-val set_attribute
-  :  ?on : Frame.t
-  -> t
-  -> 'a Attribute.t
-  -> 'a
-  -> unit
+val set_attribute : ?on:Frame.t -> t -> 'a Attribute.t -> 'a -> unit
 
 (** [(describe-function 'face-all-attributes)] *)
 val attributes
-  :  ?on : Frame.t  (** default is selected frame *)
+  :  ?on:Frame.t (** default is selected frame *)
   -> t
   -> Attribute_and_value.t list
 

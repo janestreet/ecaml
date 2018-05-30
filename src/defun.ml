@@ -1,18 +1,28 @@
 open! Core_kernel
 open! Import
 
-type _ t =
-  | Return : 'a -> 'a t
-  | Map    : 'a t * ('a -> 'b) -> 'b t
-  | Both   : 'a t * 'b t -> ('a * 'b) t
-  | Required : Symbol.t * 'a        Value.Type.t -> 'a        t
-  | Optional : Symbol.t * 'a option Value.Type.t -> 'a option t
-  | Rest     : Symbol.t * 'a        Value.Type.t -> 'a list   t
+include Defun_intf
 
-module Open_on_rhs = struct
-  let return x    = Return x
-  let map    t ~f = Map    (t, f)
-  let both   t t' = Both   (t, t')
+module T0 = struct
+
+  type _ t =
+    | Return : 'a -> 'a t
+    | Map    : 'a t * ('a -> 'b) -> 'b t
+    | Both   : 'a t * 'b t -> ('a * 'b) t
+    | Required : Symbol.t * 'a        Value.Type.t -> 'a        t
+    | Optional : Symbol.t * 'a option Value.Type.t -> 'a option t
+    | Rest     : Symbol.t * 'a        Value.Type.t -> 'a list   t
+
+  let return x  = Return  x
+  let map t ~f  = Map     (t, f)
+  let both t t' = Both    (t, t')
+  let apply f x = both f  x |> map ~f:(fun (f, x) -> f x)
+  let map       = `Custom map
+end
+module T = struct
+  include T0
+  include Applicative.Make (T0)
+
   let required name type_ = Required (name, type_)
   let optional name type_ = Optional (name, Value.Type.option type_)
   let rest     name type_ = Rest     (name, type_)
@@ -20,15 +30,12 @@ module Open_on_rhs = struct
   let optional_with_default name default type_ =
     Map (optional name type_, Option.value ~default)
   ;;
-end
-include Open_on_rhs
 
-module Let_syntax = struct
-  module Let_syntax = struct
-    include Open_on_rhs
-    module Open_on_rhs = Open_on_rhs
-  end
 end
+include T
+
+module Open_on_rhs_intf = struct module type S = S with type 'a t = 'a t end
+include Applicative.Make_let_syntax (T) (Open_on_rhs_intf) (T)
 
 let consume_arg args type_ ~pos =
   let arg = type_.Value.Type.of_value_exn (Array.get args !pos) in
@@ -123,7 +130,7 @@ let get_fn t return_type =
              ~used:(!pos : int) (args : Value.t array)]
 ;;
 
-let defun ?docstring ?interactive here return_type symbol t =
+let defun ?(define_keys=[]) ?docstring ?interactive here return_type symbol t =
   Function.defun
     ?docstring
     ?interactive
@@ -132,18 +139,20 @@ let defun ?docstring ?interactive here return_type symbol t =
     here
     symbol
     (get_fn t return_type)
-    ~args:(get_required t)
+    ~args:(get_required t);
+  List.iter define_keys ~f:(fun (keymap, keys) ->
+    Keymap.define_key keymap (Key_sequence.create_exn keys) (Symbol symbol));
 ;;
 
-let defun_nullary ?docstring ?interactive here return_type symbol f =
-  defun ?docstring ?interactive here return_type symbol
+let defun_nullary ?define_keys ?docstring ?interactive here return_type symbol f =
+  defun ?define_keys ?docstring ?interactive here return_type symbol
     (let open Let_syntax in
      let%map_open () = return () in
      f ())
 ;;
 
-let defun_nullary_nil ?docstring ?interactive here symbol f =
-  defun_nullary ?docstring ?interactive here Value.Type.unit symbol f
+let defun_nullary_nil ?define_keys ?docstring ?interactive here symbol f =
+  defun_nullary ?define_keys ?docstring ?interactive here Value.Type.unit symbol f
 ;;
 
 let lambda ?docstring ?interactive here return_type t =

@@ -15,14 +15,15 @@ let show t =
           ~data:char
     done;
     let by_class =
-      Hashtbl.map by_class ~f:(fun chars ->
-        String.of_char_list (List.rev chars)) in
+      Hashtbl.map by_class ~f:(fun chars -> String.of_char_list (List.rev chars))
+    in
     print_s [%sexp (by_class : string Class.Table.t)])
 ;;
 
 let%expect_test "[standard]" =
   show standard;
-  [%expect {|
+  [%expect
+    {|
     ((Close_paren         ")]}")
      (Escape              "\\")
      (Open_paren          "([{")
@@ -31,12 +32,13 @@ let%expect_test "[standard]" =
      (Symbol_constitutent &*+-/<=>_|)
      (Whitespace          " ")
      (Word_constituent
-      $%0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz)) |}];
+      $%0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz)) |}]
 ;;
 
 let%expect_test "[create]" =
   show (create ());
-  [%expect {|
+  [%expect
+    {|
     ((Close_paren         ")]}")
      (Escape              "\\")
      (Open_paren          "([{")
@@ -45,12 +47,13 @@ let%expect_test "[create]" =
      (Symbol_constitutent &*+-/<=>_|)
      (Whitespace          " ")
      (Word_constituent
-      $%0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz)) |}];
+      $%0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz)) |}]
 ;;
 
 let%expect_test "[create]" =
   show (copy (create ()));
-  [%expect {|
+  [%expect
+    {|
     ((Close_paren         ")]}")
      (Escape              "\\")
      (Open_paren          "([{")
@@ -59,7 +62,7 @@ let%expect_test "[create]" =
      (Symbol_constitutent &*+-/<=>_|)
      (Whitespace          " ")
      (Word_constituent
-      $%0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz)) |}];
+      $%0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz)) |}]
 ;;
 
 let%expect_test "[set_char]" =
@@ -72,9 +75,13 @@ let%expect_test "[set_char]" =
       | Inherit_standard -> ()
       | _ ->
         set_char t char class_ [];
-        let round_trip = Current_buffer.syntax_class (char |> Char_code.of_char_exn) in
-        require [%here] (Class.equal class_ round_trip)
-          ~if_false_then_print_s:(
-            lazy [%message "" (class_ : Class.t) (round_trip : Class.t)])));
-  [%expect {| |}];
+        let round_trip =
+          Current_buffer.syntax_class (char |> Char_code.of_char_exn)
+        in
+        require
+          [%here]
+          (Class.equal class_ round_trip)
+          ~if_false_then_print_s:
+            (lazy [%message "" (class_ : Class.t) (round_trip : Class.t)])));
+  [%expect {| |}]
 ;;

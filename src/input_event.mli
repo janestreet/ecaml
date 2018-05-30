@@ -29,7 +29,7 @@ val read : unit -> t
 module Basic : sig
   type t =
     | Char_code of Char_code.t
-    | Symbol    of Symbol.t
+    | Symbol of Symbol.t
   [@@deriving sexp_of]
 end
 
@@ -60,4 +60,5 @@ val modifiers : t -> Modifier.t list
 (** [(describe-variable 'unread-command-events)]
     [(Info-goto-node "(elisp)Event Input Misc")] *)
 val unread_command_input : t list Var.t
+
 val enqueue_unread_command_input : t list -> unit

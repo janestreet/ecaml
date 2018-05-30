@@ -10,11 +10,11 @@ open! Import
 
 (** [(describe-function 'getenv)]
     [(Info-goto-node "(elisp)System Environment")] *)
-val getenv : var: string -> string option
+val getenv : var:string -> string option
 
 (** [(describe-function 'setenv)]
     [(Info-goto-node "(elisp)System Environment")] *)
-val setenv : var : string -> value : string option -> unit
+val setenv : var:string -> value:string option -> unit
 
 (** [(describe-variable 'process-environment)]
     [(Info-goto-node "(elisp)System Environment")] *)
@@ -27,8 +27,9 @@ val exec_path : string list Var.t
 
 module Var_and_value : sig
   type t =
-    { var   : string
-    ; value : string }
+    { var : string
+    ; value : string
+    }
   [@@deriving sexp_of]
 end
 

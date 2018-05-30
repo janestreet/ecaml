@@ -14,6 +14,7 @@ module type Input_event0 = sig
 
   module Q : sig
     include module type of Q
+
     val single_key_description : Symbol.t
   end
 end

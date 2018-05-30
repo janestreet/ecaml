@@ -1,12 +1,12 @@
 open! Core_kernel
 open! Import0
-
 module Id = Caml_embedded_id
 
 type t = Value0.t
 
-external ecaml_inject  : Id.t -> t    = "ecaml_inject"
-external ecaml_project : t    -> Id.t = "ecaml_project"
+external ecaml_inject : Id.t -> t = "ecaml_inject"
+
+external ecaml_project : t -> Id.t = "ecaml_project"
 
 let embedded_values = Id.Table.create ()
 
@@ -32,14 +32,12 @@ let of_value_exn v =
   let id = ecaml_project v in
   if Hashtbl.mem embedded_values id
   then v
-  else
-    failwith "Ecaml value doesn't represent ocaml embedded value"
+  else failwith "Ecaml value doesn't represent ocaml embedded value"
 ;;
 
 let initialize =
-  Ecaml_callback.(register free_embedded_caml_values)
-    ~f:(fun ids ->
-      Array.iter ids ~f:(fun id -> Hashtbl.remove embedded_values id))
+  Ecaml_callback.(register free_embedded_caml_values) ~f:(fun ids ->
+    Array.iter ids ~f:(fun id -> Hashtbl.remove embedded_values id))
 ;;
 
 let debug_sexp () = [%sexp_of: Univ.t Id.Table.t] embedded_values

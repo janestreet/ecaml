@@ -5,43 +5,45 @@ open! Face
 let%expect_test "[font_family_list]" =
   print_s [%sexp (font_family_list () : string list)];
   [%expect {|
-    () |}];
+    () |}]
 ;;
 
 let some_attribute_value (type a) (attribute : a Attribute.t) : a option =
   let open Attribute in
   match attribute with
-  | Background     -> Some (Color Color.red)
-  | Box            -> None
-  | Font           -> None
-  | Font_family    -> Some (Name "family")
-  | Font_foundry   -> Some (Name "foundry")
-  | Foreground     -> Some (Color Color.red)
-  | Height         -> Some (Scale_underlying_face 0.5)
-  | Inherit        -> None
-  | Inverse_video  -> Some Yes
-  | Overline       -> Some Foreground
-  | Slant          -> Some Italic
-  | Stipple        -> None
+  | Background -> Some (Color Color.red)
+  | Box -> None
+  | Font -> None
+  | Font_family -> Some (Name "family")
+  | Font_foundry -> Some (Name "foundry")
+  | Foreground -> Some (Color Color.red)
+  | Height -> Some (Scale_underlying_face 0.5)
+  | Inherit -> None
+  | Inverse_video -> Some Yes
+  | Overline -> Some Foreground
+  | Slant -> Some Italic
+  | Stipple -> None
   | Strike_through -> Some Foreground
-  | Underline      -> Some Foreground
-  | Weight         -> Some Ultra_bold
-  | Width          -> Some Ultra_condensed
+  | Underline -> Some Foreground
+  | Weight -> Some Ultra_bold
+  | Width -> Some Ultra_condensed
 ;;
 
 let%expect_test "[is_relative]" =
   List.iter Attribute.Packed.all ~f:(fun (Attribute.Packed.T attribute) ->
-    match some_attribute_value attribute  with
+    match some_attribute_value attribute with
     | None -> ()
     | Some value ->
-      print_s [%message
-        ""
-          ~_:(T (attribute, value) : Attribute_and_value.t)
-          ~is_relative:(Attribute.is_relative attribute value : bool)
-          ~unspecified_is_relative:(
-            Attribute.is_relative attribute (Attribute.unspecified_value attribute)
-            : bool)]);
-  [%expect {|
+      print_s
+        [%message
+          ""
+            ~_:(T (attribute, value) : Attribute_and_value.t)
+            ~is_relative:(Attribute.is_relative attribute value : bool)
+            ~unspecified_is_relative:
+              ( Attribute.is_relative attribute (Attribute.unspecified_value attribute)
+                : bool )]);
+  [%expect
+    {|
     ((Background (Color red))
      (is_relative             false)
      (unspecified_is_relative true))
@@ -77,16 +79,18 @@ let%expect_test "[is_relative]" =
      (unspecified_is_relative true))
     ((Width                   Ultra_condensed)
      (is_relative             false)
-     (unspecified_is_relative true)) |}];
+     (unspecified_is_relative true)) |}]
 ;;
 
 let%expect_test "[merge]" =
   let test b1 b2 =
-    print_s [%message
-      ""
-        ~_:(b1 : Background.t)
-        ~_:(b2 : Background.t)
-        ~merge:(Attribute.merge Background  b1 b2 : Background.t)] in
+    print_s
+      [%message
+        ""
+          ~_:(b1 : Background.t)
+          ~_:(b2 : Background.t)
+          ~merge:(Attribute.merge Background b1 b2 : Background.t)]
+  in
   test (Color Color.red) Unspecified;
   [%expect {|
     ((Color red) Unspecified (merge (Color red))) |}];
@@ -104,14 +108,16 @@ let%expect_test "[merge]" =
   [%expect {|
     ((Color black)
      (Color red)
-     (merge (Color black))) |}];
+     (merge (Color black))) |}]
 ;;
 
 let%expect_test "[attribute]" =
   let t = of_name "default" in
   List.iter Attribute.Packed.all ~f:(fun (Attribute.Packed.T attribute) ->
-    print_s [%sexp (T (attribute, attribute_value t attribute) : Attribute_and_value.t)]);
-  [%expect {|
+    print_s
+      [%sexp (T (attribute, attribute_value t attribute) : Attribute_and_value.t)]);
+  [%expect
+    {|
     (Background Unspecified)
     (Box nil)
     (Font unspecified)
@@ -132,9 +138,9 @@ let%expect_test "[attribute]" =
 
 let%expect_test "[all_defined], [attributes]" =
   List.iter (all_defined ()) ~f:(fun t ->
-    print_s [%message
-      "" ~_:(t : t) ~_:(attributes t : Attribute_and_value.t list)]);
-  [%expect {|
+    print_s [%message "" ~_:(t : t) ~_:(attributes t : Attribute_and_value.t list)]);
+  [%expect
+    {|
     (bold (
       (Font_family    Unspecified)
       (Font_foundry   Unspecified)

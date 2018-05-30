@@ -2,7 +2,7 @@ open! Core_kernel
 
 let initialize_module =
   Printexc.record_backtrace true;
-  Sexp.of_int_style := `Underscores;
+  Sexp.of_int_style := `Underscores
 ;;
 
 let concat = String.concat
@@ -23,6 +23,8 @@ let async_ecaml_is_enabled = false
 let add_gc_root =
   let gc_roots = Stack.create () in
   fun f -> Stack.push gc_roots f
+;;
+
 let add_gc_root a = add_gc_root (fun () -> Gc.keep_alive a)
 
 (* included last so it can't be shadowed *)

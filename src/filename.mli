@@ -8,14 +8,15 @@ open! Import0
 
 type t = string [@@deriving compare, sexp_of]
 
-include Comparable.S
-  with type t := t
+include Comparable.S with type t := t
   with type comparator_witness = String.comparator_witness
+
 include Valueable.S with type t := t
 
 (** [(describe-function 'file-name-directory)]
     [(Info-goto-node "(elisp)File Name Components")] *)
-val directory     : t -> t option
+val directory : t -> t option
+
 val directory_exn : t -> t
 
 (** [(describe-function 'file-name-nondirectory)]

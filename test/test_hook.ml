@@ -3,6 +3,7 @@ open! Import
 open! Hook
 
 let t = create Normal ("some-hook" |> Symbol.intern)
+
 let () = clear t
 
 let show t = print_s [%sexp (t : _ t)]
@@ -12,7 +13,9 @@ let create_function s =
 ;;
 
 let f1 = create_function "f1"
+
 let f2 = create_function "f2"
+
 let f3 = create_function "f3"
 
 let%expect_test "[add]" =
@@ -39,7 +42,7 @@ let%expect_test "[add]" =
     ((symbol some-hook)
      (type_  Normal)
      (value (f2 f1 f3))) |}];
-  clear t;
+  clear t
 ;;
 
 let%expect_test "[add] when present" =
@@ -50,7 +53,7 @@ let%expect_test "[add] when present" =
     ((symbol some-hook)
      (type_  Normal)
      (value (f1))) |}];
-  clear t;
+  clear t
 ;;
 
 let%expect_test "[remove]" =
@@ -73,7 +76,7 @@ let%expect_test "[remove]" =
     ((symbol some-hook)
      (type_  Normal)
      (value ())) |}];
-  clear t;
+  clear t
 ;;
 
 let%expect_test "[remove] when absent" =
@@ -95,7 +98,7 @@ let%expect_test "[remove] when absent" =
     ((symbol some-hook)
      (type_  Normal)
      (value (f2))) |}];
-  clear t;
+  clear t
 ;;
 
 let%expect_test "[run]" =
@@ -108,7 +111,7 @@ let%expect_test "[run]" =
   run t;
   [%expect {|
     f2
-    f1 |}];
+    f1 |}]
 ;;
 
 let create_after_load_fun s =
@@ -133,20 +136,26 @@ let%expect_test "[after_load] hooks" =
     f2
     f1 |}];
   remove after_load f1;
-  remove after_load f2;
+  remove after_load f2
 ;;
 
 let%expect_test "[after_save], [kill_buffer]" =
   let file = "test-after-save.tmp" in
   Selected_window.find_file file;
   add after_save ~buffer_local:true
-    (Function.create [%here] Normal ("test-after-save-hook" |> Symbol.intern)
+    (Function.create
+       [%here]
+       Normal
+       ("test-after-save-hook" |> Symbol.intern)
        (fun () -> print_s [%message "after-save hook ran"]));
   print_s [%sexp (Current_buffer.is_buffer_local (var after_save) : bool)];
   [%expect {|
     true |}];
   add kill_buffer ~buffer_local:true
-    (Function.create [%here] Normal ("test-kill-buffer-hook" |> Symbol.intern)
+    (Function.create
+       [%here]
+       Normal
+       ("test-kill-buffer-hook" |> Symbol.intern)
        (fun () -> print_s [%message "kill-buffer hook ran"]));
   Point.insert "foo";
   Current_buffer.save ();
@@ -155,5 +164,5 @@ let%expect_test "[after_save], [kill_buffer]" =
   Current_buffer.kill ();
   [%expect {|
     "kill-buffer hook ran" |}];
-  File.delete file;
+  File.delete file
 ;;

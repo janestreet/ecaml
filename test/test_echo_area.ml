@@ -9,7 +9,7 @@ let show () =
   let buffer = Buffer.find_or_create ~name:"*Messages*" in
   Current_buffer.set_temporarily buffer ~f:(fun () ->
     print_string (Current_buffer.contents () |> Text.to_utf8_bytes));
-  Buffer.kill buffer;
+  Buffer.kill buffer
 ;;
 
 let%expect_test "[message_value]" =
@@ -48,9 +48,8 @@ let%expect_test "[message_s]" =
    prevents [message] from displaying the data, but that it is still put in the *Messages*
    buffer. *)
 let%expect_test "[inhibit_messages]" =
-  inhibit_messages (fun () ->
-    message "hello");
+  inhibit_messages (fun () -> message "hello");
   show ();
   [%expect {|
-    hello |}];
+    hello |}]
 ;;

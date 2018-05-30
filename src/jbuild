@@ -14,18 +14,23 @@
 (rule
  ((targets (generated_stubs.c))
   (deps (../gen/gen_c.exe))
-  (action (bash "../gen/gen_c.exe > ${@}"))
+  (action (bash "../gen/gen_c.exe > ${@}.tmp && mv ${@}.tmp ${@}"))
   (fallback)))
 
 (rule
  ((targets (generated_bindings.ml))
-  (deps (../gen/gen_ml.exe))
-  (action (bash "../gen/gen_ml.exe > ${@}"))
+  (deps (../gen/gen_ml.exe ${ROOT}/bin/apply-style jbuild))
+  (action (bash "../gen/gen_ml.exe |
+           ${ROOT}/bin/apply-style -- \
+             format - -original-file ${@} -directory-config jbuild \
+             > ${@}.tmp &&
+           mv ${@}.tmp ${@}"))
   (fallback)))
 
 (alias
  ((name DEFAULT)
   (deps (unnecessarily-global-symbols.sh (glob_files "*.ml")))
   (action (bash "./unnecessarily-global-symbols.sh"))))
+
 
 (jbuild_version 1)

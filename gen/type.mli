@@ -7,4 +7,3 @@ type t =
   | Ignore  (** Ignore return value. Cannot be used as an input type. *)
   | Int
   | Value
-;;

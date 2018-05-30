@@ -6,27 +6,29 @@ let foo = "foo" |> Symbol.intern
 
 let%expect_test "[require] raise" =
   show_raise (fun () -> require foo);
-  [%expect {|
-    (raised (file-error ("Cannot open load file" "No such file or directory" foo))) |}];
+  [%expect
+    {|
+    (raised (file-error ("Cannot open load file" "No such file or directory" foo))) |}]
 ;;
 
-let%expect_test "[provide], [require]" =
-  provide foo;
-  require foo;
-;;
+let%expect_test "[provide], [require]" = provide foo; require foo
 
 let%expect_test "[require] uses [Symbol.equal]" =
   show_raise (fun () -> require (Symbol.create ~name:"foo"));
-  [%expect {|
-    (raised (file-error ("Cannot open load file" "No such file or directory" foo))) |}];
+  [%expect
+    {|
+    (raised (file-error ("Cannot open load file" "No such file or directory" foo))) |}]
 ;;
 
 let%expect_test "[all_provided]" =
-  print_s [%sexp (all_provided ()
-                  |> List.sort ~compare:(fun t1 t2 ->
-                    String.compare (Symbol.name t1) (Symbol.name t2))
-                  : Symbol.t list)];
-  [%expect {|
+  print_s
+    [%sexp
+      ( all_provided ()
+        |> List.sort ~compare:(fun t1 t2 ->
+          String.compare (Symbol.name t1) (Symbol.name t2))
+        : Symbol.t list )];
+  [%expect
+    {|
     (abbrev
      backquote
      base64
@@ -98,6 +100,7 @@ let%expect_test "[all_provided]" =
      newcomment
      overlay
      page
+     pcase
      prog-mode
      regexp-opt
      register
@@ -108,6 +111,7 @@ let%expect_test "[all_provided]" =
      sha1
      simple
      slovak
+     subr-x
      syntax
      tabulated-list
      tai-viet
@@ -127,7 +131,7 @@ let%expect_test "[all_provided]" =
      x
      x-dnd
      x-toolkit
-     x-win) |}];
+     x-win) |}]
 ;;
 
 let%expect_test "[is_provided]" =
@@ -136,5 +140,5 @@ let%expect_test "[is_provided]" =
     true |}];
   print_s [%sexp (is_provided ("zzz" |> Symbol.intern) : bool)];
   [%expect {|
-    false |}];
+    false |}]
 ;;

@@ -8,9 +8,12 @@
 open! Core_kernel
 open! Import
 
-val message       : string -> unit
-val messagef      : ('a, unit, string, unit) format4 -> 'a
-val message_s     : Sexp.t -> unit
+val message : string -> unit
+
+val messagef : ('a, unit, string, unit) format4 -> 'a
+
+val message_s : Sexp.t -> unit
+
 val message_value : Value.t -> unit
 
 (** [(describe-variable 'inhibit-message)] *)

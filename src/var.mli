@@ -6,7 +6,8 @@ open! Import0
 
 type 'a t =
   { symbol : Symbol.t
-  ; type_  : 'a Value.Type.t }
+  ; type_ : 'a Value.Type.t
+  }
 [@@deriving fields, sexp_of]
 
 type 'a var = 'a t
@@ -14,13 +15,11 @@ type 'a var = 'a t
 val create : Symbol.t -> 'a Value.Type.t -> 'a t
 
 module And_value : sig
-  type t = T : 'a var * 'a -> t
-  [@@deriving sexp_of]
+  type t = T : 'a var * 'a -> t [@@deriving sexp_of]
 end
 
 module And_value_option : sig
-  type t = T : 'a var * 'a option -> t
-  [@@deriving sexp_of]
+  type t = T : 'a var * 'a option -> t [@@deriving sexp_of]
 end
 
 val symbol_as_value : _ t -> Value.t

@@ -3,19 +3,23 @@ open! Import0
 
 module Q = struct
   include Q
-  let eval                             = "eval"                             |> Symbol.intern
-  let interactive                      = "interactive"                      |> Symbol.intern
-  let lambda                           = "lambda"                           |> Symbol.intern
-  let let_                             = "let"                              |> Symbol.intern
-  let progn                            = "progn"                            |> Symbol.intern
-  let read_from_whole_string           = "read-from-whole-string"           |> Symbol.intern
-  let thingatpt                        = "thingatpt"                        |> Symbol.intern
+
+  let eval = "eval" |> Symbol.intern
+  and interactive = "interactive" |> Symbol.intern
+  and lambda = "lambda" |> Symbol.intern
+  and let_ = "let" |> Symbol.intern
+  and progn = "progn" |> Symbol.intern
+  and read_from_whole_string = "read-from-whole-string" |> Symbol.intern
+  and thingatpt = "thingatpt" |> Symbol.intern
+  ;;
 end
 
 include Value.Make_subtype (struct
     let name = "form"
+
     let here = [%here]
-    let is_in_subtype = fun _ -> true
+
+    let is_in_subtype _ = true
   end)
 
 let string s = s |> Value.of_utf8_bytes |> of_value_exn
@@ -53,7 +57,8 @@ let let_ bindings body =
     ; bindings
       |> List.map ~f:(fun (v, e) -> Value.list [ v |> Symbol.to_value; e |> to_value ])
       |> Value.list
-    ; body |> to_value ]
+    ; body |> to_value
+    ]
   |> of_value_exn
 ;;
 
@@ -64,52 +69,60 @@ let lambda =
      | None -> ()
      | Some docstring ->
        if String.mem docstring '\000'
-       then (raise_s [%message "docstring contains a NUL byte" (docstring : string)]));
+       then raise_s [%message "docstring contains a NUL byte" (docstring : string)]);
     let args =
       [ args
-      ; optional_args |> Option.value_map ~default:[]
-                           ~f:(fun optional_args -> Q.A.optional :: optional_args)
-      ; rest_arg      |> Option.value_map ~default:[]
-                           ~f:(fun rest_arg -> [ Q.A.rest; rest_arg ])]
+      ; optional_args
+        |> Option.value_map ~default:[] ~f:(fun optional_args ->
+          Q.A.optional :: optional_args)
+      ; rest_arg
+        |> Option.value_map ~default:[] ~f:(fun rest_arg -> [ Q.A.rest; rest_arg ])
+      ]
       |> List.concat
       |> (fun x -> (x : Symbol.t list :> Value.t list))
       |> Value.list
     in
     let here =
-      concat [ "Implemented at [";here |> Source_code_position.to_string;"]." ] in
+      concat [ "Implemented at ["; here |> Source_code_position.to_string; "]." ]
+    in
     let docstring =
       match docstring with
       | None -> here
-      | Some s -> concat [ s
-                         ; if String.is_empty s
-                           || String.is_suffix s ~suffix:"\n\n"
-                           then ""
-                           else if String.is_suffix s ~suffix:"\n"
-                           then "\n"
-                           else "\n\n"
-                         ; here ] in
-    [ Q.lambda    |> Symbol.to_value  |> some
-    ; args        |> some
-    ; docstring   |> Value.of_utf8_bytes |> some
-    ; interactive |> Option.map
-                       ~f:(fun interactive ->
-                         Value.list [ Q.interactive |> Symbol.to_value
-                                    ; interactive |> Value.of_utf8_bytes ])
-    ; body |> to_value |> some ]
+      | Some s ->
+        concat
+          [ s
+          ; (if String.is_empty s || String.is_suffix s ~suffix:"\n\n"
+             then ""
+             else if String.is_suffix s ~suffix:"\n"
+             then "\n"
+             else "\n\n")
+          ; here
+          ]
+    in
+    [ Q.lambda |> Symbol.to_value |> some
+    ; args |> some
+    ; docstring |> Value.of_utf8_bytes |> some
+    ; interactive
+      |> Option.map ~f:(fun interactive ->
+        Value.list
+          [ Q.interactive |> Symbol.to_value; interactive |> Value.of_utf8_bytes ])
+    ; body |> to_value |> some
+    ]
     |> List.filter_opt
     |> Value.list
     |> of_value_exn
 ;;
 
 let defvar here symbol initial_value ~docstring =
-  ignore (
-    eval (
-      [ Q.defvar      |> Symbol.to_value
-      ; symbol        |> Symbol.to_value
-      ; initial_value |> q
-      ; docstring     |> Value.of_utf8_bytes ]
-      |> Value.list
-      |> of_value_exn)
-    : Value.t);
-  Load_history.add_entry here (Var symbol);
+  ignore
+    ( eval
+        ([ Q.defvar |> Symbol.to_value
+         ; symbol |> Symbol.to_value
+         ; initial_value |> q
+         ; docstring |> Value.of_utf8_bytes
+         ]
+         |> Value.list
+         |> of_value_exn)
+      : Value.t );
+  Load_history.add_entry here (Var symbol)
 ;;

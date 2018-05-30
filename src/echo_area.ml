@@ -3,8 +3,10 @@ open! Import
 
 module Q = struct
   include Q
-  let inhibit_message                  = "inhibit-message"                  |> Symbol.intern
-  let message                          = "message"                          |> Symbol.intern
+
+  let inhibit_message = "inhibit-message" |> Symbol.intern
+  and message = "message" |> Symbol.intern
+  ;;
 end
 
 module Current_buffer = Current_buffer0

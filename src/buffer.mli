@@ -13,29 +13,37 @@ type buffer = t
 include Equal.S with type t := t
 
 (** Accessors *)
-val file_name : t -> string option     (** - [(describe-function 'buffer-file-name)] *)
-val is_live   : t -> bool              (** - [(describe-function 'buffer-live-p)   ] *)
-val name      : t -> string option     (** - [(describe-function 'buffer-name)     ] *)
-val process   : t -> Process0.t option (** - [(describe-function 'get-buffer-process)] *)
+
+(** - [(describe-function 'buffer-file-name)] *)
+val file_name : t -> string option
+
+(** - [(describe-function 'buffer-live-p)   ] *)
+val is_live : t -> bool
+
+(** - [(describe-function 'buffer-name)     ] *)
+val name : t -> string option
+
+(** - [(describe-function 'get-buffer-process)] *)
+val process : t -> Process0.t option
 
 (** [all_live] returns a list of all live buffers.  [(describe-function 'buffer-list)]. *)
 val all_live : unit -> t list
 
 (** [create ~name] creates a new buffer with name [name], adjusting the name if necessary
     to make the buffer's name unique.  [(describe-function 'generate-new-buffer)]. *)
-val create : name : string -> t
+val create : name:string -> t
 
 (** [find ~name] returns the live buffer whose name is [name], if any.
     [(describe-function 'get-buffer)]. *)
-val find : name : string -> t option
+val find : name:string -> t option
 
 (** [(describe-function 'get-file-buffer)].
     [(Info-goto-node "(elisp)Buffer File Name")] *)
-val find_visiting : file : Filename.t -> t option
+val find_visiting : file:Filename.t -> t option
 
 (** [find ~name] returns the live buffer whose name is [name], and if there is no such
     buffer, creates it.  [(describe-function 'get-buffer-create)]. *)
-val find_or_create : name : string -> t
+val find_or_create : name:string -> t
 
 (** [kill t] kills [t], so that [not (is_live t)].  [(describe-function 'kill-buffer)]. *)
 val kill : t -> unit
@@ -72,7 +80,7 @@ end
 (** [(describe-function 'save-some-buffers)]
     [(Info-goto-node "(elisp)Saving Buffers")] *)
 val save_some
-  :  ?query : bool  (** default is [true] *)
-  -> ?which_buffers : Which_buffers.t  (** default is [File_visiting] *)
+  :  ?query:bool (** default is [true] *)
+  -> ?which_buffers:Which_buffers.t (** default is [File_visiting] *)
   -> unit
   -> unit

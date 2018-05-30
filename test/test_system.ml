@@ -24,5 +24,5 @@ let%expect_test "[setenv], [getenv], [setenv_temporarily]" =
       (d) |}]);
   getenv ();
   [%expect {|
-    (b) |}];
+    (b) |}]
 ;;

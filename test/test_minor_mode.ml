@@ -14,7 +14,7 @@ let%expect_test "[is_enabled], [enable], [disable]" =
   disable view;
   is_enabled ();
   [%expect {|
-    false |}];
+    false |}]
 ;;
 
 let%expect_test "[abbrev]" =
@@ -29,7 +29,7 @@ let%expect_test "[abbrev]" =
   disable abbrev;
   is_enabled ();
   [%expect {|
-    false |}];
+    false |}]
 ;;
 
 let%expect_test "[read_only]" =
@@ -44,5 +44,5 @@ let%expect_test "[read_only]" =
   disable read_only;
   is_enabled ();
   [%expect {|
-    false |}];
+    false |}]
 ;;

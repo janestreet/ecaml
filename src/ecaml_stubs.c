@@ -706,6 +706,23 @@ ecaml_vec_size(value vec)
   CAMLreturn(Val_long(ret_val));
 }
 
+CAMLprim value
+ecaml_text_to_char_array(value text)
+{
+  CAMLparam1(text);
+  CAMLlocal1(arr);
+  emacs_env* env = ecaml_active_env_or_die();
+  emacs_value string = emacs_of_ocaml(env, text);
+  emacs_value vector = env->funcall(env, env->intern(env, "string-to-vector"), 1, &string);
+  ptrdiff_t size = env->vec_size(env, vector);
+  arr = caml_alloc(size, 0);
+  for (ptrdiff_t i = 0; i < size; i++) {
+    Field(arr, i) =
+      Val_long (env->extract_integer(env, env->vec_get(env, vector, i)));
+  }
+  CAMLreturn(arr);
+}
+
 static value* caml_embedded_ids_to_free = NULL;
 static long caml_embedded_ids_to_free_size = 0;
 static long caml_embedded_ids_to_free_index = 0;

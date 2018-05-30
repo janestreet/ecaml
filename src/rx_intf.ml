@@ -10,12 +10,11 @@ open! Import
 
 module Char_class = struct
   type t =
-    (** [Chars_in s] matches characters in [s] (e.g., "[:digit:]" matches ':')  *)
     | Chars_in of string
-    (** [Range (c1, c2)] matches characters between [c1] and [c2] inclusive. *)
+    (** [Chars_in s] matches characters in [s] (e.g., "[:digit:]" matches ':')  *)
     | Range of char * char
+    (** [Range (c1, c2)] matches characters between [c1] and [c2] inclusive. *)
   [@@deriving sexp_of]
-
 end
 
 module Start_or_end = struct
@@ -26,17 +25,17 @@ module Start_or_end = struct
 end
 
 module T = struct
-
   type t =
+    | Any_char
     | Any_in of Char_class.t list
     (** [Exactly s] matches exactly the string [s] (e.g., '.' only matches '.') *)
     | Exactly of string
     | Line of Start_or_end.t
     | None_in of Char_class.t list
+    | One_or_more of t
     | Or of t list
     (** [Pattern s] interprets [s] as a regexp (e.g., '.' matches any character) *)
-    | Pattern of string
-    (** Matches zero characters, but only where the point is. *)
+    | Pattern of string  (** Matches zero characters, but only where the point is. *)
     | Point
     | Repeat of { min : int; max : int option; t : t }
     | Seq of t list
@@ -54,16 +53,19 @@ module T = struct
         been assigned that index. If [index] is less, then it is an error to use the
         resulting regexp. *)
     | Submatch_n of { index : int; t : t }
+    | Zero_or_more of t
+    | Zero_or_one of t
   [@@deriving sexp_of]
-
 end
 
 module type Rx = sig
-  module Char_class   : module type of struct include Char_class   end
-  module Start_or_end : module type of struct include Start_or_end end
+  module Char_class : module type of struct
+    include Char_class end
+
+  module Start_or_end : module type of struct
+    include Start_or_end end
 
   include module type of T with type t = T.t
 
   val pattern : t -> string
-
 end

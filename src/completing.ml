@@ -3,8 +3,12 @@ open! Import
 
 module Q = struct
   include Q
-  let completing_read                  = "completing-read"                  |> Symbol.intern
-  let completing_read_multiple         = "completing-read-multiple"         |> Symbol.intern
+
+  let completing_read = "completing-read" |> Symbol.intern
+  and completing_read_multiple = "completing-read-multiple" |> Symbol.intern
+  and confirm = "confirm" |> Symbol.intern
+  and confirm_after_completion = "confirm-after-completion" |> Symbol.intern
+  ;;
 end
 
 module Initial_input = struct
@@ -19,6 +23,28 @@ module Initial_input = struct
     | Point_at_pos (s, i) -> Value.cons (Value.of_utf8_bytes s) (Value.of_int_exn i)
   ;;
 
+  let of_value_exn value =
+    List.find_map_exn
+      ~f:(fun f -> f value)
+      [ (fun value ->
+          match Symbol.equal (Symbol.of_value_exn value) Q.nil with
+          | true -> Some Empty
+          | false -> None
+          | exception _ -> None)
+      ; (fun value ->
+           match Value.to_utf8_bytes_exn value with
+           | s -> Some (Point_at_end s)
+           | exception _ -> None)
+      ; (fun value ->
+           match Value.Type.(tuple string int).of_value_exn value with
+           | s, i -> Some (Point_at_pos (s, i))
+           | exception _ -> None)
+      ]
+  ;;
+
+  let type_ =
+    { Value.Type.name = [%sexp "completing", "initial-input"]; of_value_exn; to_value }
+  ;;
 end
 
 module Require_match = struct
@@ -29,34 +55,38 @@ module Require_match = struct
     | Require_match_or_null
     | True
 
-  let to_value t =
-    let symbol =
-      match t with
-      | Confirm -> Symbol.intern "confirm"
-      | Confirm_after_completion -> Symbol.intern "confirm-after-completion"
-      | False -> Q.nil
-      | Require_match_or_null -> Symbol.intern "other"
-      | True -> Q.t
-    in
-    Symbol.to_value symbol
+  let ({ Value.Type.of_value_exn; to_value; _ } as type_) =
+    Value.Type.map Symbol.type_
+      ~name:[%sexp "completing", "require-match"]
+      ~of_:(fun symbol ->
+        List.Assoc.find
+          [ Q.confirm, Confirm
+          ; Q.confirm_after_completion, Confirm_after_completion
+          ; Q.nil, False
+          ; Q.t, True
+          ]
+          symbol
+          ~equal:Symbol.equal
+        |> Option.value ~default:Require_match_or_null)
+      ~to_:(function
+        | Confirm -> Q.confirm
+        | Confirm_after_completion -> Q.confirm_after_completion
+        | False -> Q.nil
+        | Require_match_or_null -> Symbol.intern "other"
+        | True -> Q.t)
   ;;
 
+  let default = False
 end
 
-let read
-      ?default
-      ?history
-      ?(initial_input=Initial_input.Empty)
-      ?(require_match=Require_match.False)
-      ()
-      ~collection
-      ~prompt
-  =
+let read ?default ?history ?(initial_input=Initial_input.Empty)
+      ?(require_match=Require_match.default) () ~collection ~prompt =
   let predicate = Value.nil in
   let prompt =
     match default with
     | None -> prompt
-    | Some d -> concat [ prompt; "(default = "; d; ") " ] in
+    | Some d -> concat [ prompt; "(default = "; d; ") " ]
+  in
   Symbol.funcallN Q.completing_read
     [ prompt |> Value.of_utf8_bytes
     ; collection |> List.map ~f:Value.of_utf8_bytes |> Value.list
@@ -71,16 +101,9 @@ let read
 
 let crm_separator = Var.create ("crm-separator" |> Symbol.intern) Value.Type.string
 
-let read_multiple
-      ?default
-      ?history
-      ?(initial_input=Initial_input.Empty)
-      ?(require_match=Require_match.False)
-      ?(separator_regexp="[ \t]*,[ \t]*")
-      ()
-      ~collection
-      ~prompt
-  =
+let read_multiple ?default ?history ?(initial_input=Initial_input.Empty)
+      ?(require_match=Require_match.False) ?(separator_regexp="[ \t]*,[ \t]*") ()
+      ~collection ~prompt =
   let predicate = Value.nil in
   Current_buffer.set_value_temporarily crm_separator separator_regexp ~f:(fun () ->
     Symbol.funcallN Q.completing_read_multiple

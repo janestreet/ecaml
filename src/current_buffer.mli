@@ -21,12 +21,15 @@ val directory : Filename.t Var.t
     [(Info-goto-node "(elisp)Undo")]
     [(Info-goto-node "(elisp)Maintaining Undo")] *)
 val undo_list : unit -> Value.t
+
 val is_undo_enabled : unit -> bool
+
 val set_undo_enabled : bool -> unit
 
 (** [(describe-function 'buffer-file-name)]
     [(Info-goto-node "(elisp)Buffer File Name")] *)
-val file_name     : unit -> string option
+val file_name : unit -> string option
+
 val file_name_exn : unit -> string
 
 (** [(describe-function 'buffer-name)] *)
@@ -34,7 +37,7 @@ val name : unit -> string
 
 (** [(describe-variable 'buffer-file-name)]
     [(Info-goto-node "(elisp)Buffer File Name")] *)
-val file_name_var : Filename.t Var.t
+val file_name_var : Filename.t option Var.t
 
 (** [(describe-function 'undo-boundary)]
     [(Info-goto-node "(elisp)Undo")] *)
@@ -88,6 +91,9 @@ val major_mode : unit -> Major_mode.t
 
 val change_major_mode : Major_mode.t -> unit
 
+(** [(describe-function 'set-auto-mode)] *)
+val set_auto_mode : ?keep_mode_if_same:bool -> unit -> unit
+
 (** [(describe-function 'make-local-variable)]
     [(Info-goto-node "(elisp)Creating Buffer-Local")] *)
 val make_buffer_local : _ Var.t -> unit
@@ -123,9 +129,9 @@ val minor_mode_keymaps : unit -> Keymap.t list
 (** [(describe-function 'buffer-substring)]
     [(describe-function 'buffer-substring-no-properties)] *)
 val contents
-  :  ?start           : Position.t  (** default is [Point.min ()] *)
-  -> ?end_            : Position.t  (** default is [Point.max ()] *)
-  -> ?text_properties : bool        (** default is false *)
+  :  ?start:Position.t (** default is [Point.min ()] *)
+  -> ?end_:Position.t (** default is [Point.max ()] *)
+  -> ?text_properties:bool (** default is false *)
   -> unit
   -> Text.t
 
@@ -142,16 +148,10 @@ val erase : unit -> unit
 
 (** [(describe-function 'delete-region)]
     [(Info-goto-node "(elisp)Deletion")] *)
-val delete_region
-  :  start : Position.t
-  -> end_  : Position.t
-  -> unit
+val delete_region : start:Position.t -> end_:Position.t -> unit
 
 (** [(describe-function 'kill-region)] *)
-val kill_region
-  :  start : Position.t
-  -> end_  : Position.t
-  -> unit
+val kill_region : start:Position.t -> end_:Position.t -> unit
 
 (** [(describe-function 'widen)]
     [(Info-goto-node "(elisp)Narrowing")] *)
@@ -182,17 +182,13 @@ val is_multibyte : unit -> bool
 (** [rename_exn] renames the current buffer, raising if [name] is already taken and
     [unique = false]; with [unique = true] it generates a new name.  [(describe-function
     'rename-buffer)]. *)
-val rename_exn
-  :  ?unique : bool
-  -> unit
-  -> name : string
-  -> unit
+val rename_exn : ?unique:bool -> unit -> name:string -> unit
 
 (** [(describe-function 'put-text-property)]
     [(Info-goto-node "(elisp)Changing Properties")]. *)
 val set_text_property
-  :  ?start : Position.t  (** default is [Point.min ()] *)
-  -> ?end_  : Position.t  (** default is [Point.max ()] *)
+  :  ?start:Position.t (** default is [Point.min ()] *)
+  -> ?end_:Position.t (** default is [Point.max ()] *)
   -> 'a Text.Property_name.t
   -> 'a
   -> unit
@@ -203,15 +199,13 @@ val set_text_property
 val set_text_property_staged
   :  'a Text.Property_name.t
   -> 'a
-  -> (start : int
-      -> end_ : int
-      -> unit) Staged.t
+  -> (start:int -> end_:int -> unit) Staged.t
 
 (** [(describe-function 'set-text-properties)]
     [(Info-goto-node "(elisp)Changing Properties")]. *)
 val set_text_properties
-  :  ?start : Position.t  (** default is [Point.min ()] *)
-  -> ?end_  : Position.t  (** default is [Point.max ()] *)
+  :  ?start:Position.t (** default is [Point.min ()] *)
+  -> ?end_:Position.t (** default is [Point.max ()] *)
   -> Text.Property.t list
   -> unit
 
@@ -220,15 +214,13 @@ val set_text_properties
     the Elisp property value once, and reuses it for each region. *)
 val set_text_properties_staged
   :  Text.Property.t list
-  -> (start : int
-      -> end_ : int
-      -> unit) Staged.t
+  -> (start:int -> end_:int -> unit) Staged.t
 
 (** [(describe-function 'add-text-properties)]
     [(Info-goto-node "(elisp)Changing Properties")]. *)
 val add_text_properties
-  :  ?start : Position.t  (** default is [Point.min ()] *)
-  -> ?end_  : Position.t  (** default is [Point.max ()] *)
+  :  ?start:Position.t (** default is [Point.min ()] *)
+  -> ?end_:Position.t (** default is [Point.max ()] *)
   -> Text.Property.t list
   -> unit
 
@@ -237,16 +229,14 @@ val add_text_properties
     the Elisp property value once, and reuses it for each region. *)
 val add_text_properties_staged
   :  Text.Property.t list
-  -> (start : int
-      -> end_ : int
-      -> unit) Staged.t
+  -> (start:int -> end_:int -> unit) Staged.t
 
 (** [text_property_is_present property_name] returns [true] if any text in the region from
     [start] to [end_] uses [property_name].  [(describe-function
     'text-property-not-all)] *)
 val text_property_is_present
-  :  ?start : Position.t  (** default is [Point.min ()] *)
-  -> ?end_  : Position.t  (** default is [Point.max ()] *)
+  :  ?start:Position.t (** default is [Point.min ()] *)
+  -> ?end_:Position.t (** default is [Point.max ()] *)
   -> _ Text.Property_name.t
   -> bool
 
@@ -284,40 +274,37 @@ val set_syntax_table : Syntax_table.t -> unit
 
 (** [(describe-function 'flush-lines)] *)
 val delete_lines_matching
-  :  ?start : Position.t (** default is [Point.min ()] *)
-  -> ?end_  : Position.t (** default is [Point.max ()] *)
+  :  ?start:Position.t (** default is [Point.min ()] *)
+  -> ?end_:Position.t (** default is [Point.max ()] *)
   -> Regexp.t
   -> unit
 
 (** [(describe-function 'sort-lines)]
     [(Info-goto-node "(elisp)Sorting")] *)
 val sort_lines
-  :  ?start : Position.t (** default is [Point.min ()] *)
-  -> ?end_  : Position.t (** default is [Point.max ()] *)
+  :  ?start:Position.t (** default is [Point.min ()] *)
+  -> ?end_:Position.t (** default is [Point.max ()] *)
   -> unit
   -> unit
 
 (** [(describe-function 'delete-duplicate-lines)] *)
 val delete_duplicate_lines
-  :  ?start : Position.t (** default is [Point.min ()] *)
-  -> ?end_  : Position.t (** default is [Point.max ()] *)
+  :  ?start:Position.t (** default is [Point.min ()] *)
+  -> ?end_:Position.t (** default is [Point.max ()] *)
   -> unit
   -> unit
 
 (** [(describe-function 'indent-region)]
     [(Info-goto-node "(elisp)Region Indent")] *)
 val indent_region
-  :  ?start : Position.t (** default is [Point.min ()] *)
-  -> ?end_  : Position.t (** default is [Point.max ()] *)
+  :  ?start:Position.t (** default is [Point.min ()] *)
+  -> ?end_:Position.t (** default is [Point.max ()] *)
   -> unit
   -> unit
 
 (** [(describe-function 'revert-buffer)]
     [(Info-goto-node "(elisp)Reverting")] *)
-val revert
-  :  ?confirm : bool  (** default is [false] *)
-  -> unit
-  -> unit
+val revert : ?confirm:bool (** default is [false] *) -> unit -> unit
 
 (** [(describe-variable 'revert-buffer-function)] *)
-val set_revert_buffer_function : (confirm : bool -> unit) -> unit
+val set_revert_buffer_function : (confirm:bool -> unit) -> unit

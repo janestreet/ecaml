@@ -3,23 +3,28 @@ open! Import
 
 module Q = struct
   include Q
-  let background_color                 = "background-color"                 |> Symbol.intern
-  let concat                           = "concat"                           |> Symbol.intern
-  let font_lock_face                   = "font-lock-face"                   |> Symbol.intern
-  let foreground_color                 = "foreground-color"                 |> Symbol.intern
-  let get_text_property                = "get-text-property"                |> Symbol.intern
-  let multibyte_string_p               = "multibyte-string-p"               |> Symbol.intern
-  let propertize                       = "propertize"                       |> Symbol.intern
-  let remove_list_of_text_properties   = "remove-list-of-text-properties"   |> Symbol.intern
-  let string_bytes                     = "string-bytes"                     |> Symbol.intern
-  let string_to_multibyte              = "string-to-multibyte"              |> Symbol.intern
-  let string_to_unibyte                = "string-to-unibyte"                |> Symbol.intern
-  let text_properties_at               = "text-properties-at"               |> Symbol.intern
+
+  let background_color = "background-color" |> Symbol.intern
+  and concat = "concat" |> Symbol.intern
+  and font_lock_face = "font-lock-face" |> Symbol.intern
+  and foreground_color = "foreground-color" |> Symbol.intern
+  and get_text_property = "get-text-property" |> Symbol.intern
+  and multibyte_string_p = "multibyte-string-p" |> Symbol.intern
+  and propertize = "propertize" |> Symbol.intern
+  and remove_list_of_text_properties = "remove-list-of-text-properties" |> Symbol.intern
+  and string = "string" |> Symbol.intern
+  and string_bytes = "string-bytes" |> Symbol.intern
+  and string_to_multibyte = "string-to-multibyte" |> Symbol.intern
+  and string_to_unibyte = "string-to-unibyte" |> Symbol.intern
+  and text_properties_at = "text-properties-at" |> Symbol.intern
+  ;;
 end
 
 include Value.Make_subtype (struct
     let name = "text"
+
     let here = [%here]
+
     let is_in_subtype = Value.is_string
   end)
 
@@ -29,9 +34,7 @@ let char_code t i =
 ;;
 
 let set_char_code t i char_code =
-  Symbol.funcall3_i Q.aset
-    (t |> to_value)
-    (i |> Value.of_int_exn)
+  Symbol.funcall3_i Q.aset (t |> to_value) (i |> Value.of_int_exn)
     (char_code |> Char_code.to_value)
 ;;
 
@@ -42,14 +45,19 @@ let to_utf8_bytes t = t |> to_value |> Value.to_utf8_bytes_exn
 module Compare_as_string = struct
   module T0 = struct
     type nonrec t = t
+
     let compare = Comparable.lift [%compare: string] ~f:to_utf8_bytes
+
     let of_string = of_utf8_bytes
+
     let to_string = to_utf8_bytes
   end
+
   module T = struct
     include T0
     include Sexpable.Of_stringable (T0)
   end
+
   include T
   include Comparable.Make (T)
 end
@@ -77,19 +85,19 @@ module Face_spec = struct
         String.compare (Face.to_name face1) (Face.to_name face2)
       | Attributes a1, Attributes a2 ->
         List.compare Face.Attribute_and_value.compare_attribute_name a1 a2
-      | Face _ , _      -> -1
-      | _      , Face _ ->  1
+      | Face _, _ -> -1
+      | _, Face _ -> 1
     ;;
 
     let to_value (t : t) : Value.t =
       match t with
       | Attributes attributes ->
-        Value.list (
-          List.fold (List.rev attributes) ~init:[]
-            ~f:(fun ac (Face.Attribute_and_value.T (attribute, value)) ->
-              (attribute |> Face.Attribute.to_symbol |> Symbol.to_value)
-              :: (value |> Face.Attribute.to_value attribute)
-              :: ac))
+        Value.list
+          (List.fold (List.rev attributes) ~init:[] ~f:
+             (fun ac (Face.Attribute_and_value.T (attribute, value)) ->
+                (attribute |> Face.Attribute.to_symbol |> Symbol.to_value)
+                :: (value |> Face.Attribute.to_value attribute)
+                :: ac))
       | Face face -> face |> Face.to_value
     ;;
 
@@ -105,7 +113,7 @@ module Face_spec = struct
         let car = Value.car_exn value in
         let cdr = Value.cdr_exn value in
         if not (Value.is_cons cdr)
-        then (
+        then
           (* Old style specs: [(background-color . color)] [(foreground-color . color)] *)
           let symbol = car |> Symbol.of_value_exn in
           let color = cdr |> Color.of_value_exn in
@@ -113,8 +121,8 @@ module Face_spec = struct
           then Attributes [ T (Foreground, Color color) ]
           else if Symbol.equal symbol Q.background_color
           then Attributes [ T (Background, Color color) ]
-          else raise_unexpected value)
-        else (
+          else raise_unexpected value
+        else
           let rec loop value ac =
             if Value.is_nil value
             then Attributes (List.rev ac)
@@ -124,25 +132,23 @@ module Face_spec = struct
               let cdr = Value.cdr_exn value in
               if Value.is_cons car
               then loop cdr ((car |> Face.Attribute_and_value.of_value_exn) :: ac)
-              else (
+              else
                 let module A = Face.Attribute.Packed in
-                let A.T attribute = car |> A.of_value_exn in
-                loop (Value.cdr_exn cdr)
-                  (T (attribute,
-                      Value.car_exn cdr
-                      |> Face.Attribute.of_value_exn attribute)
-                   :: ac))) in
-          loop value [])
+                let (A.T attribute) = car |> A.of_value_exn in
+                loop
+                  (Value.cdr_exn cdr)
+                  (T
+                     ( attribute
+                     , Value.car_exn cdr |> Face.Attribute.of_value_exn attribute )
+                   :: ac))
+          in
+          loop value []
     ;;
   end
 
   type t = One.t list [@@deriving sexp_of]
 
-  let normalize t =
-    t
-    |> List.map ~f:One.normalize
-    |> List.sort ~compare:One.compare
-  ;;
+  let normalize t = t |> List.map ~f:One.normalize |> List.sort ~compare:One.compare
 
   let to_value t =
     match t with
@@ -161,13 +167,12 @@ module Face_spec = struct
   ;;
 
   let of_value_exn value =
-    try
-      of_value_exn value
-    with exn ->
-      raise_s [%message
-        "[Text.Face_spec.of_value_exn] got unexpected value"
-          (value : Value.t)
-          (exn : exn)]
+    try of_value_exn value with exn ->
+      raise_s
+        [%message
+          "[Text.Face_spec.of_value_exn] got unexpected value"
+            (value : Value.t)
+            (exn : exn)]
   ;;
 end
 
@@ -175,9 +180,12 @@ module Property_name = struct
   module type S = sig
     module Property_value : sig
       type t [@@deriving sexp_of]
+
       val of_value_exn : Value.t -> t
+
       val to_value : t -> Value.t
     end
+
     val name : Symbol.t
   end
 
@@ -205,8 +213,10 @@ module Property_name = struct
   module Unknown = struct
     module Property_value = struct
       include Value
+
       let of_value_exn = Fn.id
-      let to_value     = Fn.id
+
+      let to_value = Fn.id
     end
   end
 
@@ -226,19 +236,22 @@ module Property_name = struct
     let of_name_as_value_exn value =
       match Symbol.of_value_exn value with
       | exception _ ->
-        raise_s [%message
-          "[Text.Property.Packed.of_name_as_value_exn] got unexpected value"
-            (value : Value.t)]
+        raise_s
+          [%message
+            "[Text.Property.Packed.of_name_as_value_exn] got unexpected value"
+              (value : Value.t)]
       | symbol ->
         match
           List.find !all_except_unknown ~f:(fun t -> Symbol.equal symbol (name t))
         with
         | Some t -> t
         | None ->
-          T (module struct
-            include Unknown
-            let name = symbol
-          end)
+          T
+            ( module struct
+              include Unknown
+
+              let name = symbol
+            end )
     ;;
   end
 
@@ -253,18 +266,20 @@ module Property_name = struct
 
   let face : _ t =
     create_and_register
-      (module struct
+      ( module struct
         include Face_name
+
         let name = Q.face
-      end)
+      end )
   ;;
 
   let font_lock_face : _ t =
     create_and_register
-      (module struct
+      ( module struct
         include Face_name
+
         let name = Q.font_lock_face
-      end)
+      end )
   ;;
 end
 
@@ -283,24 +298,25 @@ module Property = struct
     if Value.is_nil value
     then []
     else if not (Value.is_cons value)
-    then raise_s [%message
-           "[Text.Property.of_property_list_exn] got unexpected value" (value : Value.t)]
-    else (
+    then
+      raise_s
+        [%message
+          "[Text.Property.of_property_list_exn] got unexpected value" (value : Value.t)]
+    else
       let module N = Property_name.Packed in
-      let N.T property_name = Value.car_exn value |> N.of_name_as_value_exn in
+      let (N.T property_name) = Value.car_exn value |> N.of_name_as_value_exn in
       let property_value_and_rest = Value.cdr_exn value in
-      T (property_name
+      T
+        ( property_name
         , Value.car_exn property_value_and_rest
-          |> Property_name.of_value_exn property_name)
-      :: of_property_list_exn (Value.cdr_exn property_value_and_rest))
+          |> Property_name.of_value_exn property_name )
+      :: of_property_list_exn (Value.cdr_exn property_value_and_rest)
   ;;
 
   let to_property_list ts =
     List.fold (List.rev ts) ~init:[] ~f:(fun ac (T (name, value)) ->
       let module Name = (val name) in
-      (Name.name |> Symbol.to_value)
-      :: (value |> Name.Property_value.to_value)
-      :: ac)
+      (Name.name |> Symbol.to_value) :: (value |> Name.Property_value.to_value) :: ac)
   ;;
 end
 
@@ -312,19 +328,17 @@ let propertize t properties =
 
 let property_value t ~at property_name =
   let value =
-    Symbol.funcall3 Q.get_text_property
-      (at |> Value.of_int_exn)
+    Symbol.funcall3 Q.get_text_property (at |> Value.of_int_exn)
       (property_name |> Property_name.name |> Symbol.to_value)
-      (t |> to_value) in
+      (t |> to_value)
+  in
   if Value.is_nil value
   then None
   else Some (value |> Property_name.of_value_exn property_name)
 ;;
 
 let properties t ~at =
-  Symbol.funcall2 Q.text_properties_at
-    (at |> Value.of_int_exn)
-    (t |> to_value)
+  Symbol.funcall2 Q.text_properties_at (at |> Value.of_int_exn) (t |> to_value)
   |> Property.of_property_list_exn
 ;;
 
@@ -343,45 +357,39 @@ let get_end t end_ =
 ;;
 
 let set_property ?start ?end_ t property_name property_value =
-  Symbol.funcall5_i Q.put_text_property
-    (start |> get_start)
-    (end_  |> get_end t)
+  Symbol.funcall5_i Q.put_text_property (start |> get_start)
+    (end_ |> get_end t)
     (property_name |> Property_name.name_as_value)
     (property_value |> Property_name.to_value property_name)
-    (t |> to_value);
+    (t |> to_value)
 ;;
 
 let add_properties ?start ?end_ t properties =
-  Symbol.funcall4_i Q.add_text_properties
-    (start |> get_start)
-    (end_  |> get_end t)
+  Symbol.funcall4_i Q.add_text_properties (start |> get_start)
+    (end_ |> get_end t)
     (properties |> Property.to_property_list |> Value.list)
-    (t |> to_value);
+    (t |> to_value)
 ;;
 
 let set_properties ?start ?end_ t properties =
-  Symbol.funcall4_i Q.set_text_properties
-    (start |> get_start)
-    (end_  |> get_end t)
+  Symbol.funcall4_i Q.set_text_properties (start |> get_start)
+    (end_ |> get_end t)
     (properties |> Property.to_property_list |> Value.list)
-    (t |> to_value);
+    (t |> to_value)
 ;;
 
 let remove_properties ?start ?end_ t property_names =
-  Symbol.funcall4_i Q.remove_list_of_text_properties
-    (start |> get_start)
-    (end_  |> get_end t)
+  Symbol.funcall4_i Q.remove_list_of_text_properties (start |> get_start)
+    (end_ |> get_end t)
     (property_names |> List.map ~f:Property_name.Packed.name_as_value |> Value.list)
-    (t |> to_value);
+    (t |> to_value)
 ;;
 
 let is_multibyte t =
   Symbol.funcall1 Q.multibyte_string_p (t |> to_value) |> Value.to_bool
 ;;
 
-let num_bytes t =
-  Symbol.funcall1 Q.string_bytes (t |> to_value) |> Value.to_int_exn
-;;
+let num_bytes t = Symbol.funcall1 Q.string_bytes (t |> to_value) |> Value.to_int_exn
 
 let to_multibyte t =
   Symbol.funcall1 Q.string_to_multibyte (t |> to_value) |> of_value_exn
@@ -390,3 +398,9 @@ let to_multibyte t =
 let to_unibyte_exn t =
   Symbol.funcall1 Q.string_to_unibyte (t |> to_value) |> of_value_exn
 ;;
+
+let of_char_array chars =
+  Symbol.funcallN_array Q.string (Array.map chars ~f:Char_code.to_value) |> of_value_exn
+;;
+
+external to_char_array : t -> Char_code.t array = "ecaml_text_to_char_array"

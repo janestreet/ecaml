@@ -8,8 +8,11 @@ module type Current_buffer0_public = sig
   (** [(describe-function 'set-buffer)] *)
   val set : Buffer0.t -> unit
 
-  val value        : 'a Var.t -> 'a option (** [(describe-function 'symbol-value)   ] *)
-  val value_exn    : 'a Var.t -> 'a        (** [(describe-function 'symbol-value)   ] *)
+  (** [(describe-function 'symbol-value)   ] *)
+  val value : 'a Var.t -> 'a option
+
+  (** [(describe-function 'symbol-value)   ] *)
+  val value_exn : 'a Var.t -> 'a
 
   (** [(describe-function 'set)]. *)
   val set_value : 'a Var.t -> 'a -> unit
@@ -23,7 +26,6 @@ module type Current_buffer0_public = sig
 
   (** [(describe-function 'bound-and-true-p]. *)
   val has_non_null_value : _ Var.t -> bool
-
 end
 
 module type Current_buffer0 = sig
@@ -32,9 +34,12 @@ module type Current_buffer0 = sig
   module Q : sig
     include module type of Q
 
-    val boundp         : Symbol.t
+    val boundp : Symbol.t
+
     val current_buffer : Symbol.t
-    val makunbound     : Symbol.t
-    val set_buffer     : Symbol.t
+
+    val makunbound : Symbol.t
+
+    val set_buffer : Symbol.t
   end
 end

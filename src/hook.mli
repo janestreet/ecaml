@@ -12,12 +12,13 @@ open! Import
 
 type 'a t [@@deriving sexp_of]
 
-type file = file : string -> unit
+type file = file:string -> unit
+
 type normal = unit -> unit
 
 module Type : sig
   type 'a t =
-    | File   : file   t
+    | File : file t
     | Normal : normal t
   [@@deriving sexp_of]
 end
@@ -39,7 +40,7 @@ module Function : sig
   (** [create here return_type symbol f] defines an emacs function named [symbol]
       that runs [f] when called. It returns an ['a t] usable for modifying hooks. *)
   val create
-    :  ?docstring : string
+    :  ?docstring:string
     -> Source_code_position.t
     -> 'a Type.t
     -> Symbol.t
@@ -52,20 +53,19 @@ module Function : sig
       This is useful, for example, if [f] wants to remove itself from a hook once it is
       called. *)
   val create_with_self
-    :  ?docstring : string
+    :  ?docstring:string
     -> Source_code_position.t
     -> 'a Type.t
     -> Symbol.t
     -> ('a t -> 'a)
     -> 'a t
-
 end
 
 (** [(describe-function 'add-hook)]
     [(Info-goto-node "(elisp)Setting Hooks")] *)
 val add
-  :  ?buffer_local : bool (** default is [false] *)
-  -> ?where : Where.t     (** default is [Start] *)
+  :  ?buffer_local:bool (** default is [false] *)
+  -> ?where:Where.t (** default is [Start] *)
   -> 'a t
   -> 'a Function.t
   -> unit

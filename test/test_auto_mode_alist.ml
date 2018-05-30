@@ -3,20 +3,25 @@ open! Import
 open! Auto_mode_alist
 
 let%expect_test "[add]" =
-  add [{ delete_suffix_and_recur = false
-       ; filename_match = "foo" |> Regexp.quote
-       ; function_ = Some ("foo-mode" |> Symbol.intern) }];
+  add
+    [ { delete_suffix_and_recur = false
+      ; filename_match = "foo" |> Regexp.quote
+      ; function_ = Some ("foo-mode" |> Symbol.intern)
+      }
+    ];
   print_s [%sexp (List.take (Current_buffer.value_exn auto_mode_alist) 1 : t)];
-  [%expect {|
+  [%expect
+    {|
     ((
       (filename_match          foo)
       (function_               foo-mode)
-      (delete_suffix_and_recur false))) |}];
+      (delete_suffix_and_recur false))) |}]
 ;;
 
 let%expect_test "[auto_mode_alist]" =
   print_s [%sexp (Current_buffer.value_exn auto_mode_alist : t)];
-  [%expect {|
+  [%expect
+    {|
     (((filename_match          foo)
       (function_               foo-mode)
       (delete_suffix_and_recur false))

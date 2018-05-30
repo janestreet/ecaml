@@ -16,23 +16,17 @@ open! Import
     defines function [advice_name] with body [f] and adds it as advice on [for_function].
 *)
 val add
-  :  ?docstring   : string
-  -> ?interactive : string
+  :  ?docstring:string
+  -> ?interactive:string
   -> Source_code_position.t
   -> 'a Value.Type.t
   -> Symbol.t
-  -> (inner : (Value.t list -> Value.t) -> inner_args : Value.t list -> 'a)
-  -> for_function : Symbol.t
+  -> (inner:(Value.t list -> Value.t) -> inner_args:Value.t list -> 'a)
+  -> for_function:Symbol.t
   -> unit
 
 (** [(describe-function 'advice-add)] *)
-val add_predefined_function
-  :  Symbol.t
-  -> for_function : Symbol.t
-  -> unit
+val add_predefined_function : Symbol.t -> for_function:Symbol.t -> unit
 
 (** [(describe-function 'advice-remove)] *)
-val remove
-  :  Symbol.t
-  -> for_function : Symbol.t
-  -> unit
+val remove : Symbol.t -> for_function:Symbol.t -> unit

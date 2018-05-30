@@ -10,7 +10,7 @@ include Value.Subtype
 val type_ : 'a Value.Type.t -> 'a array Value.Type.t
 
 (** [(describe-function 'make-vector)] *)
-val create : len : int -> Value.t -> t
+val create : len:int -> Value.t -> t
 
 val length : t -> int
 

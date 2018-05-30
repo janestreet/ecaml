@@ -14,7 +14,8 @@ open! Import
 
 type t = Window0.t [@@deriving sexp_of]
 
-include Equal.S       with type t := t
+include Equal.S with type t := t
+
 include Value.Subtype with type t := t
 
 (** [(describe-function 'window-list)] *)
@@ -24,15 +25,25 @@ val all_in_selected_frame : unit -> t list
 val is_live : t -> bool
 
 (** Accessors *)
-val body_height_exn : t -> int        (** [(describe-function 'window-body-height)] *)
-val buffer_exn      : t -> Buffer.t   (** [(describe-function 'window-buffer)     ] *)
-val height_exn      : t -> int        (** [(describe-function 'window-height)     ] *)
-val point_exn       : t -> Position.t (** [(describe-function 'window-point)      ] *)
-val width_exn       : t -> int        (** [(describe-function 'window-width)      ] *)
+
+(** [(describe-function 'window-body-height)] *)
+val body_height_exn : t -> int
+
+(** [(describe-function 'window-buffer)     ] *)
+val buffer_exn : t -> Buffer.t
+
+(** [(describe-function 'window-height)     ] *)
+val height_exn : t -> int
+
+(** [(describe-function 'window-point)      ] *)
+val point_exn : t -> Position.t
+
+(** [(describe-function 'window-width)      ] *)
+val width_exn : t -> int
 
 (** [(describe-function 'set-window-buffer)] *)
 val set_buffer_exn
-  :  ?keep_margins : bool (** default is [false] *)
+  :  ?keep_margins:bool (** default is [false] *)
   -> t
   -> Buffer.t
   -> unit
@@ -42,3 +53,9 @@ val set_point_exn : t -> Position.t -> unit
 
 (** [(describe-function 'delete-window)] *)
 val delete_exn : t -> unit
+
+(** [(describe-function 'window-start)] *)
+val start : t -> Position.t
+
+(** [(describe-function 'window-end)] *)
+val end_ : t -> Position.t

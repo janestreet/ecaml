@@ -7,6 +7,7 @@ module Group : sig
   type t [@@deriving sexp_of]
 
   val of_string : string -> t
+
   val to_string : t -> string
 end
 
@@ -53,7 +54,7 @@ val defcustom
   :  Source_code_position.t
   -> Symbol.t
   -> Type.t
-  -> docstring      : string
-  -> group          : Group.t
-  -> standard_value : Value.t
+  -> docstring:string
+  -> group:Group.t
+  -> standard_value:Value.t
   -> unit

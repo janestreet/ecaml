@@ -7,8 +7,9 @@ open! Import
 module Entry : sig
   type t =
     { delete_suffix_and_recur : bool
-    ; filename_match          : Regexp.t
-    ; function_               : Symbol.t option }
+    ; filename_match : Regexp.t
+    ; function_ : Symbol.t option
+    }
   [@@deriving sexp_of]
 end
 

@@ -14,5 +14,5 @@ let%expect_test "options" =
       " */" |}];
     show multi_line Bool.sexp_of_t;
     [%expect {|
-      true |}]);
+      true |}])
 ;;

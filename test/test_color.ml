@@ -3,32 +3,26 @@ open! Import
 open! Color
 
 let show t =
-  print_s [%message
-    ""
-      ~color:(t : t)
-      ~is_gray:     (is_gray      t : bool)
-      ~is_defined:  (is_defined   t : bool)
-      ~is_supported:(is_supported t : bool)
-      ~rgb:         (rgb_exn      t : RGB.t)]
+  print_s
+    [%message
+      ""
+        ~color:(t : t)
+        ~is_gray:(is_gray t : bool)
+        ~is_defined:(is_defined t : bool)
+        ~is_supported:(is_supported t : bool)
+        ~rgb:(rgb_exn t : RGB.t)]
 ;;
 
 let%expect_test "[defined]" =
   print_s [%sexp (defined () : t list)];
   [%expect {|
-    (black blue cyan green magenta red white yellow) |}];
+    (black blue cyan green magenta red white yellow) |}]
 ;;
 
 let%expect_test "attributes" =
-  List.iter ~f:show
-    [ black
-    ; blue
-    ; cyan
-    ; green
-    ; magenta
-    ; red
-    ; white
-    ; yellow ];
-  [%expect {|
+  List.iter ~f:show [ black; blue; cyan; green; magenta; red; white; yellow ];
+  [%expect
+    {|
     ((color        black)
      (is_gray      true)
      (is_defined   true)
@@ -92,26 +86,25 @@ let%expect_test "attributes" =
      (rgb (
        (r 65_535)
        (g 65_535)
-       (b 0)))) |}];
+       (b 0)))) |}]
 ;;
 
 let%expect_test "[rgb_exn] raise" =
-  require_does_raise [%here] (fun () ->
-    rgb_exn ("zzz" |> of_name));
+  require_does_raise [%here] (fun () -> rgb_exn ("zzz" |> of_name));
   [%expect {|
-    ("[Color.rgb_exn] got non-displayable color" (color zzz)) |}];
+    ("[Color.rgb_exn] got non-displayable color" (color zzz)) |}]
 ;;
 
 let%expect_test "[of_rgb]" =
-  let max = 1 lsl 16 - 1 in
-  List.iter
-    ~f:(fun (r, g, b) -> show (of_rgb { r; g; b }))
-    [ 0 ,   0   , 0
-    ; max , 0   , 0
-    ; 0 ,   max , 0
-    ; 0,    0   , max
-    ; max , max , max ];
-  [%expect {|
+  let f = (1 lsl 16) - 1 in
+  let ooo = 0, 0, 0
+  and foo = f, 0, 0
+  and ofo = 0, f, 0
+  and oof = 0, 0, f
+  and fff = f, f, f in
+  List.iter [ ooo; foo; ofo; oof; fff ] ~f:(fun (r, g, b) -> show (of_rgb { r; g; b }));
+  [%expect
+    {|
     ((color        #000000000000)
      (is_gray      true)
      (is_defined   true)
@@ -151,5 +144,5 @@ let%expect_test "[of_rgb]" =
      (rgb (
        (r 65_535)
        (g 65_535)
-       (b 65_535)))) |}];
+       (b 65_535)))) |}]
 ;;

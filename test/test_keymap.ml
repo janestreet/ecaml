@@ -10,32 +10,25 @@ let lookup_key_exn t key = lookup_key_exn t (Key_sequence.create_exn key)
 
 let show_keys t keys =
   List.iter keys ~f:(fun key ->
-    print_s [%message
-      ""
-        ~_:(key : string)
-        ~_:(lookup_key_exn t key : Entry.t)]);
+    print_s [%message "" ~_:(key : string) ~_:(lookup_key_exn t key : Entry.t)])
 ;;
 
 let%expect_test "[global], [lookup_key_exn]" =
-  show_keys (global ())
-    [ "a"
-    ; "C-c"
-    ; "C-x C-a"
-    ; "C-x C-f"
-    ; "ESC" ];
-  [%expect {|
+  show_keys (global ()) [ "a"; "C-c"; "C-x C-a"; "C-x C-f"; "ESC" ];
+  [%expect
+    {|
     (a (Command self-insert-command))
     (C-c (Keymap mode-specific-command-prefix))
     ("C-x C-a" Absent)
     ("C-x C-f" (Command find-file))
-    (ESC (Keymap ESC-prefix)) |}];
+    (ESC (Keymap ESC-prefix)) |}]
 ;;
 
 let%expect_test "[create]" =
   let t = create () in
   show t;
   [%expect {|
-    (keymap) |}];
+    (keymap) |}]
 ;;
 
 let%expect_test "[define_key]" =
@@ -50,7 +43,8 @@ let%expect_test "[define_key]" =
     (keymap (98 keymap (99 . yyy)) (97 . zzz)) |}];
   define_key t "bd" Undefined;
   show t;
-  [%expect {|
+  [%expect
+    {|
     (keymap
       (98 keymap
         (100 . undefined)
@@ -63,14 +57,15 @@ let%expect_test "[define_key]" =
   define_key t "b" Absent;
   show t;
   [%expect {|
-    (keymap (98) (97 . zzz)) |}];
+    (keymap (98) (97 . zzz)) |}]
 ;;
 
 let%expect_test "[lookup_key_exn] too long" =
   show_raise (fun () -> lookup_key_exn (create ()) "ab");
-  [%expect {|
+  [%expect
+    {|
     (raised (
-      "[Keymap.lookup_key_exn] got too long key sequence" (key_sequence "a b"))) |}];
+      "[Keymap.lookup_key_exn] got too long key sequence" (key_sequence "a b"))) |}]
 ;;
 
 let%expect_test "[set_global]" =
@@ -78,7 +73,7 @@ let%expect_test "[set_global]" =
   let t = create () in
   set_global t;
   require [%here] (eq t (global ()));
-  set_global saved;
+  set_global saved
 ;;
 
 let%expect_test "[parent], [set_parent]" =
@@ -93,7 +88,7 @@ let%expect_test "[parent], [set_parent]" =
   set_parent t None;
   print_s [%sexp (parent t : t option)];
   [%expect {|
-    () |}];
+    () |}]
 ;;
 
 let%expect_test "[deep_copy]" =
@@ -106,13 +101,14 @@ let%expect_test "[deep_copy]" =
     (keymap (97 keymap (98 keymap (99 . undefined)))) |}];
   show t2;
   [%expect {|
-    (keymap (97 keymap (98 keymap (99)))) |}];
+    (keymap (97 keymap (98 keymap (99)))) |}]
 ;;
 
 let%expect_test "[create ~kind:Full ()]" =
   let t = create ~kind:Full () in
   show t;
-  [%expect {|
+  [%expect
+    {|
     (keymap
      #^[nil
      nil
@@ -181,5 +177,5 @@ let%expect_test "[create ~kind:Full ()]" =
      nil
      nil
      nil
-     nil]) |}];
+     nil]) |}]
 ;;

@@ -10,5 +10,5 @@ let%expect_test "[inhibit_read_only]" =
     inhibit_read_only (fun () -> Point.insert "foo");
     print_s [%sexp (Current_buffer.contents () : Text.t)];
     [%expect {|
-      foo |}]);
+      foo |}])
 ;;

@@ -9,17 +9,18 @@ end
 
 include Value.Subtype
 
-type 'a with_spec
-  =  ?docstring     : string
-  -> ?interactive   : string
-  -> ?optional_args : Symbol.t list
-  -> ?rest_arg      : Symbol.t
+type 'a with_spec =
+  ?docstring:string
+  -> ?interactive:string
+  -> ?optional_args:Symbol.t list
+  -> ?rest_arg:Symbol.t
   -> Source_code_position.t
-  -> args           : Symbol.t list
+  -> args:Symbol.t list
   -> 'a
 
-val create : (             Fn.t -> t    ) with_spec
-val defun  : ( Symbol.t -> Fn.t -> unit ) with_spec
+val create : (Fn.t -> t) with_spec
+
+val defun : (Symbol.t -> Fn.t -> unit) with_spec
 
 val to_value : t -> Value.t
 

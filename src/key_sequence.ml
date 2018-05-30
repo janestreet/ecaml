@@ -3,11 +3,18 @@ open! Import
 
 module Q = struct
   include Key_sequence0.Q
-  let execute_kbd_macro                = "execute-kbd-macro"                |> Symbol.intern
-  let read_key_sequence_vector         = "read-key-sequence-vector"         |> Symbol.intern
+
+  let execute_kbd_macro = "execute-kbd-macro" |> Symbol.intern
+  and read_key_sequence_vector = "read-key-sequence-vector" |> Symbol.intern
+  ;;
 end
 
-include (Key_sequence0 : module type of struct include Key_sequence0 end with module Q := Q)
+include (
+  Key_sequence0 :
+    module type of struct
+    include Key_sequence0
+  end
+  with module Q := Q)
 
 let execute t = Symbol.funcall1_i Q.execute_kbd_macro (t |> to_value)
 

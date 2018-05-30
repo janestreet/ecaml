@@ -3,29 +3,31 @@ open! Import0
 
 module Q = struct
   include Q
-  let apply                            = "apply"                            |> Symbol.intern
+
+  let apply = "apply" |> Symbol.intern
 end
 
 include Value.Make_subtype (struct
     let name = "function"
-    let here = [%here]
-    let is_in_subtype = Value.is_function
+    and here = [%here]
+    and is_in_subtype = Value.is_function
   end)
 
 module Fn = struct
   type t = Value.t array -> Value.t [@@deriving sexp_of]
 
   let type_id = Type_equal.Id.create ~name:"Ecaml.Fn" sexp_of_t
+
   let ecaml_type = Value.Type.caml_embed type_id
 end
 
-type 'a with_spec
-  =  ?docstring     : string
-  -> ?interactive   : string
-  -> ?optional_args : Symbol.t list
-  -> ?rest_arg      : Symbol.t
+type 'a with_spec =
+  ?docstring:string
+  -> ?interactive:string
+  -> ?optional_args:Symbol.t list
+  -> ?rest_arg:Symbol.t
   -> Source_code_position.t
-  -> args           : Symbol.t list
+  -> args:Symbol.t list
   -> 'a
 
 module Expert = struct
@@ -40,24 +42,23 @@ let create =
 
         This is the only emacs function that we create using emacs module C API. All other
         functions are lambdas that call this function. *)
-    external make_dispatch_function : string -> Value.t
-      = "ecaml_make_dispatch_function"
+    external make_dispatch_function : string -> Value.t = "ecaml_make_dispatch_function"
   end in
   let open M in
   (* [dispatch_function] is registered and emacs [dispatch] function is created before any
      callback is created and can be called *)
-  Ecaml_callback.(register dispatch_function)
-    ~f:(fun callback_id args ->
-      if !Expert.raise_in_dispatch then raise_s [%message "dispatch"];
-      try
-        let callback = Caml_embed.lookup_by_id_exn callback_id Fn.type_id in
-        callback args
-      with exn -> Value.Expert.non_local_exit_signal exn; Value.nil);
+  Ecaml_callback.(register dispatch_function) ~f:(fun callback_id args ->
+    if !Expert.raise_in_dispatch then raise_s [%message "dispatch"];
+    try
+      let callback = Caml_embed.lookup_by_id_exn callback_id Fn.type_id in
+      callback args
+    with exn ->
+      Value.Expert.non_local_exit_signal exn;
+      Value.nil);
   let dispatch =
     make_dispatch_function
       ([%message
-        "call-OCaml-function"
-          ~implemented_at:([%here] : Source_code_position.t)]
+        "call-OCaml-function" ~implemented_at:([%here] : Source_code_position.t)]
        |> Sexp.to_string)
   in
   fun ?docstring ?interactive ?optional_args ?rest_arg here ~args callback ->
@@ -77,22 +78,15 @@ let create =
        OCaml value runs, that will decrement the Emacs refcount, but will still leave it
        to Emacs to run [callback]'s finalizer once the lambda is not referenced anymore. *)
     let module F = Form in
-    F.lambda
-      ?docstring
-      ?interactive
-      ?optional_args
-      ?rest_arg
-      here
-      ~args
-      ~body:(F.(list
-                  ([ symbol Q.apply
-                   ; of_value_exn dispatch
-                   ; of_value_exn callback
-                   ] @
-                   (List.map ~f:symbol
-                      (args
-                       @ ( optional_args |> Option.value ~default:[])
-                       @ [ rest_arg      |> Option.value ~default:Q.nil ])))))
+    F.lambda ?docstring ?interactive ?optional_args ?rest_arg here ~args
+      ~body:
+        F.(
+          list
+            ([ symbol Q.apply; of_value_exn dispatch; of_value_exn callback ]
+             @ List.map ~f:symbol
+                 (args
+                  @ (optional_args |> Option.value ~default:[])
+                  @ [ rest_arg |> Option.value ~default:Q.nil ])))
     |> F.eval
     |> of_value_exn
 ;;
@@ -105,6 +99,5 @@ let defun ?docstring ?interactive ?optional_args ?rest_arg here ~args symbol f =
   Load_history.add_entry here (Fun symbol);
   For_testing.defun_symbols := symbol :: !For_testing.defun_symbols;
   Symbol.set_function symbol
-    (create ?docstring ?interactive ?optional_args ?rest_arg here ~args f
-     |> to_value);
+    (create ?docstring ?interactive ?optional_args ?rest_arg here ~args f |> to_value)
 ;;

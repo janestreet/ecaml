@@ -13,7 +13,8 @@ include Value.Subtype
 val of_rx : Rx.t -> t
 
 val match_anything : t
-val match_nothing  : t
+
+val match_nothing : t
 
 (** [(Info-goto-node "(elisp)Syntax of Regexps")] *)
 val of_pattern : string -> t
@@ -59,8 +60,8 @@ module Last_match : sig
       [(describe-function 'match-string)]
       [(Info-goto-node "(elisp)Simple Match Data")] *)
   val text_exn
-    :  ?subexp          : int   (** default is entire match *)
-    -> ?text_properties : bool  (** default is [false] *)
+    :  ?subexp:int (** default is entire match *)
+    -> ?text_properties:bool (** default is [false] *)
     -> unit
     -> Text.t
 
@@ -68,23 +69,18 @@ module Last_match : sig
       parenthesized subexpression.
       [(describe-function 'match-beginning)]
       [(Info-goto-node "(elisp)Simple Match Data")] *)
-  val start_exn
-    :  ?subexp : int  (** default is entire match *)
-    -> unit
-    -> int
+  val start_exn : ?subexp:int (** default is entire match *) -> unit -> int
 
   (** [end_exn] returns the index after the end of the last match, or the [subexp]'th
       parenthesized subexpression.
       [(describe-function 'match-end)]
       [(Info-goto-node "(elisp)Simple Match Data")] *)
-  val end_exn
-    :  ?subexp : int  (** default is entire match *)
-    -> unit
-    -> int
+  val end_exn : ?subexp:int (** default is entire match *) -> unit -> int
 
   (*_ See the Jane Street Style Guide for an explanation of [Private] submodules:
 
     https://opensource.janestreet.com/standards/#private-submodules *)
+
   module Private : sig
     module Location : sig
       type t =
@@ -104,16 +100,33 @@ end
     [(describe-function 'string-match-p)]
     [(Info-goto-node "(elisp)Regexp Search")] *)
 val match_
-  :  ?start             : int   (** default is 0 *)
-  -> ?update_last_match : bool  (** default is [false] *)
+  :  ?start:int (** default is 0 *)
+  -> ?update_last_match:bool (** default is [false] *)
   -> t
   -> Text.t
   -> int option
 
 (** [does_match t text] is [is_some (match_ t text)] *)
 val does_match
-  :  ?start             : int   (** default is 0 *)
-  -> ?update_last_match : bool  (** default is [false] *)
+  :  ?start:int (** default is 0 *)
+  -> ?update_last_match:bool (** default is [false] *)
   -> t
   -> Text.t
   -> bool
+
+val extract
+  :  ?start:int (** default is 0            *)
+  -> ?subexp:int (** default is entire match *)
+  -> t
+  -> Text.t
+  -> string option
+
+val extract_string
+  :  ?start:int (** default is 0            *)
+  -> ?subexp:int (** default is entire match *)
+  -> t
+  -> string
+  -> string option
+
+(** [(describe-function 'save-match-data)] *)
+val save_match_data : (unit -> 'a) -> 'a

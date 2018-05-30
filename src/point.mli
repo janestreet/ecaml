@@ -37,7 +37,7 @@ val goto_min : unit -> unit
 val beginning_of_line : unit -> unit
 
 (** [(describe-function 'end-of-line)]. *)
-val end_of_line       : unit -> unit
+val end_of_line : unit -> unit
 
 (** [forward_char_exn n] moves point [n] characters forward (backward if [n] is negative).
     [forward_char_exn] raises on reaching end or beginning of buffer.  [(describe-function
@@ -93,10 +93,11 @@ val goto_column : int -> unit
 val goto_line : int -> unit
 
 (** [(describe-function 'indent-line-to)] *)
-val indent_line_to : column : int -> unit
+val indent_line_to : column:int -> unit
 
 (** [(describe-function 'insert)] *)
-val insert      : string -> unit
+val insert : string -> unit
+
 val insert_text : Text.t -> unit
 
 (** [(describe-function 'insert-file-contents)] *)
@@ -106,9 +107,15 @@ val insert_file_contents_exn : string -> unit
 val kill_word : int -> unit
 
 (** [(Info-goto-node "(elisp)Creating Markers")] *)
-val marker_at     : unit -> Marker.t  (** [(describe-function 'point-marker)]. *)
-val marker_at_min : unit -> Marker.t  (** [(describe-function 'point-min-marker)]. *)
-val marker_at_max : unit -> Marker.t  (** [(describe-function 'point-max-marker)]. *)
+
+(** [(describe-function 'point-marker)]. *)
+val marker_at : unit -> Marker.t
+
+(** [(describe-function 'point-min-marker)]. *)
+val marker_at_min : unit -> Marker.t
+
+(** [(describe-function 'point-max-marker)]. *)
+val marker_at_max : unit -> Marker.t
 
 (** There are eight search functions, varying by whether they:
 
@@ -129,25 +136,32 @@ val marker_at_max : unit -> Marker.t  (** [(describe-function 'point-max-marker)
     [(describe-function 'search-backward-regexp)]
     [(describe-function 'search-forward-regexp)] *)
 
-type 'a with_search_options
-  =  ?bound             : Position.t  (** default is no bound *)
-  -> ?update_last_match : bool        (** default is [false] *)
+type 'a with_search_options =
+  ?bound:Position.t (** default is no bound *)
+  -> ?update_last_match:bool (** default is [false] *)
   -> 'a
 
-val search_backward            : (string   -> bool) with_search_options
-val search_backward_exn        : (string   -> unit) with_search_options
-val search_forward             : (string   -> bool) with_search_options
-val search_forward_exn         : (string   -> unit) with_search_options
-val search_backward_regexp     : (Regexp.t -> bool) with_search_options
+val search_backward : (string -> bool) with_search_options
+
+val search_backward_exn : (string -> unit) with_search_options
+
+val search_forward : (string -> bool) with_search_options
+
+val search_forward_exn : (string -> unit) with_search_options
+
+val search_backward_regexp : (Regexp.t -> bool) with_search_options
+
 val search_backward_regexp_exn : (Regexp.t -> unit) with_search_options
-val search_forward_regexp      : (Regexp.t -> bool) with_search_options
-val search_forward_regexp_exn  : (Regexp.t -> unit) with_search_options
+
+val search_forward_regexp : (Regexp.t -> bool) with_search_options
+
+val search_forward_regexp_exn : (Regexp.t -> unit) with_search_options
 
 (** [looking_at regexp] returns [true] if the text after point matches [regexp].
     [(describe-function 'looking-at)]
     [(describe-function 'looking-at-p)]
     [(Info-goto-node "(elisp)Regexp Search")] *)
-val looking_at
-  :  ?update_last_match : bool  (** default is [false] *)
-  -> Regexp.t
-  -> bool
+val looking_at : ?update_last_match:bool (** default is [false] *) -> Regexp.t -> bool
+
+(** [(describe-function 'recenter)] *)
+val recenter : ?screen_line:int -> unit -> unit

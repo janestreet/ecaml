@@ -4,9 +4,11 @@ open! Import
 let eval_int_var string = Form.eval (string |> Symbol.intern |> Form.symbol)
 
 let most_negative_fixnum_value = eval_int_var "most-negative-fixnum"
+
 let most_positive_fixnum_value = eval_int_var "most-positive-fixnum"
 
 let most_negative_fixnum = Value.emacs_min_int
+
 let most_positive_fixnum = Value.emacs_max_int
 
 let%expect_test "most-{neg,pos}itive-fixnum" =
@@ -21,7 +23,7 @@ let%expect_test "most-{neg,pos}itive-fixnum" =
     2305843009213693951 |}];
   print_s [%sexp (most_positive_fixnum : int)];
   [%expect {|
-    2_305_843_009_213_693_951 |}];
+    2_305_843_009_213_693_951 |}]
 ;;
 
 let%expect_test "[Value.of_int]" =
@@ -39,10 +41,10 @@ let%expect_test "[Value.of_int]" =
     ; most_positive_fixnum + 1
     ; Int.max_value - 1
     ; Int.max_value
-    ]
-    ~f:(fun i ->
-      let v = Or_error.try_with (fun () ->
-        require_no_allocation [%here] (fun () -> Value.of_int_exn i))
+    ] ~f:(fun i ->
+      let v =
+        Or_error.try_with (fun () ->
+          require_no_allocation [%here] (fun () -> Value.of_int_exn i))
       in
       let i' =
         match v with
@@ -51,14 +53,16 @@ let%expect_test "[Value.of_int]" =
           Or_error.try_with (fun () -> Value.to_int_exn v)
         | Error _ as x -> x
       in
-      print_s [%message
-        ""
-          (i : int)
-          (v : Value.t Or_error.t)
-          (i' : int Or_error.t)];
+      print_s [%message "" (i : int) (v : Value.t Or_error.t) (i' : int Or_error.t)];
       if most_negative_fixnum <= i && i <= most_positive_fixnum
-      then (require [%here] (match i' with  Ok i' -> i = i' | Error _ -> false)));
-  [%expect {|
+      then
+        require
+          [%here]
+          (match i' with
+           | Ok i' -> i = i'
+           | Error _ -> false));
+  [%expect
+    {|
     ((i -4_611_686_018_427_387_904)
      (v (
        Error (
@@ -139,17 +143,15 @@ let%expect_test "[Value.of_int]" =
      (i' (
        Error (
          "validation errors" ((
-           overflow-error "value 4611686018427387903 > bound 2305843009213693951")))))) |}];
+           overflow-error "value 4611686018427387903 > bound 2305843009213693951")))))) |}]
 ;;
 
 let%expect_test "ints coming from emacs are not boxed" =
   let v = Form.eval (Form.read "123456") in
-  print_s [%message "Value" (v : Value.t)
-                      ~boxed:(Obj.is_block (Obj.repr v) : bool)];
+  print_s [%message "Value" (v : Value.t) ~boxed:(Obj.is_block (Obj.repr v) : bool)];
   require [%here] (Value.to_int_exn v = 123_456);
   [%expect {|
     (Value
       (v     123456)
-      (boxed false)) |}];
+      (boxed false)) |}]
 ;;
-

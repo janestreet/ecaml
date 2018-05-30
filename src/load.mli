@@ -9,10 +9,7 @@ open! Import
 
 (** [(describe-function 'load)]
     [(Info-goto-node "(elisp)How Programs Do Loading")] *)
-val load
-  :  ?message : bool  (** default is [true] *)
-  -> string
-  -> unit
+val load : ?message:bool (** default is [true] *) -> string -> unit
 
 (** [(describe-variable 'load-path)]
     [(Info-goto-node "(elisp)Library Search")] *)

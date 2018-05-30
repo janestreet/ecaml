@@ -5,4 +5,4 @@ module Q = struct
   let require = "require" |> Symbol0.intern
 end
 
-let require t = Symbol0.funcall1_i (Q.require) (t |> Symbol0.to_value)
+let require t = Symbol0.funcall1_i Q.require (t |> Symbol0.to_value)

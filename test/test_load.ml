@@ -4,7 +4,8 @@ open! Load
 
 let%expect_test "[load_path]" =
   print_s [%sexp (List.tl_exn (path ()) : string list)];
-  [%expect {|
+  [%expect
+    {|
     (/j/office/app/emacs/builds/25.2/share/emacs/25.2/lisp
      /j/office/app/emacs/builds/25.2/share/emacs/25.2/lisp/vc
      /j/office/app/emacs/builds/25.2/share/emacs/25.2/lisp/url
@@ -27,7 +28,7 @@ let%expect_test "[load_path]" =
      /j/office/app/emacs/builds/25.2/share/emacs/25.2/lisp/cedet
      /j/office/app/emacs/builds/25.2/share/emacs/25.2/lisp/calendar
      /j/office/app/emacs/builds/25.2/share/emacs/25.2/lisp/calc
-     /j/office/app/emacs/builds/25.2/share/emacs/25.2/lisp/obsolete) |}];
+     /j/office/app/emacs/builds/25.2/share/emacs/25.2/lisp/obsolete) |}]
 ;;
 
 let%expect_test "[load]" =
@@ -37,7 +38,10 @@ let%expect_test "[load]" =
   Current_buffer.save ();
   Current_buffer.kill ();
   load file ~message:false;
-  print_s [%sexp (Current_buffer.value_exn (Var.create ("zzz" |> Symbol.intern) Value.Type.int) : int)];
+  print_s
+    [%sexp
+      ( Current_buffer.value_exn (Var.create ("zzz" |> Symbol.intern) Value.Type.int)
+        : int )];
   [%expect {|
-    13 |}];
+    13 |}]
 ;;

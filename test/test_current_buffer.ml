@@ -28,20 +28,20 @@ let%expect_test "[set_transient_mark_mode], [transient_mark_mode_is_enabled]" =
       true |}]);
   show ();
   [%expect {|
-    true |}];
+    true |}]
 ;;
 
 let%expect_test "enable transient-mark-mode for the duration of this file" =
   set_value transient_mark_mode true;
   print_s [%sexp (value_exn transient_mark_mode : bool)];
   [%expect {|
-    true |}];
+    true |}]
 ;;
 
 let%expect_test "[get]" =
   show ();
   [%expect {|
-    "#<buffer *scratch*>" |}];
+    "#<buffer *scratch*>" |}]
 ;;
 
 let%expect_test "[set]" =
@@ -55,7 +55,7 @@ let%expect_test "[set]" =
   show ();
   [%expect {|
     "#<buffer *scratch*>" |}];
-  Buffer.kill t;
+  Buffer.kill t
 ;;
 
 let%expect_test "[set_temporarily]" =
@@ -68,7 +68,7 @@ let%expect_test "[set_temporarily]" =
   show ();
   [%expect {|
     "#<buffer *scratch*>" |}];
-  Buffer.kill t;
+  Buffer.kill t
 ;;
 
 let%expect_test "[set_temporarily] when [~f] raises" =
@@ -80,7 +80,7 @@ let%expect_test "[set_temporarily] when [~f] raises" =
   show ();
   [%expect {|
     "#<buffer *scratch*>" |}];
-  Buffer.kill t;
+  Buffer.kill t
 ;;
 
 let%expect_test "[set_temporarily_to_temp_buffer]" =
@@ -89,20 +89,21 @@ let%expect_test "[set_temporarily_to_temp_buffer]" =
     "#<buffer *temp-buffer*>" |}];
   show ();
   [%expect {|
-    "#<buffer *scratch*>" |}];
+    "#<buffer *scratch*>" |}]
 ;;
 
 let%expect_test "[value_exn] raise" =
   let var = int_var "z" in
   show_raise (fun () -> value_exn var);
-  [%expect {|
-    (raised ("[Current_buffer.value_exn] of undefined variable" (z int))) |}];
+  [%expect
+    {|
+    (raised ("[Current_buffer.value_exn] of undefined variable" (z int))) |}]
 ;;
 
 let%expect_test "[value] of unbound symbol" =
   print_s [%sexp (value (int_var "z") : int option)];
   [%expect {|
-    () |}];
+    () |}]
 ;;
 
 let%expect_test "[clear_value]" =
@@ -118,7 +119,7 @@ let%expect_test "[clear_value]" =
   clear_value var;
   show ();
   [%expect {|
-    () |}];
+    () |}]
 ;;
 
 let%expect_test "[set_value], [value_exn]" =
@@ -126,7 +127,7 @@ let%expect_test "[set_value], [value_exn]" =
   set_value var 13;
   print_s [%sexp (value_exn var : int)];
   [%expect {|
-    13 |}];
+    13 |}]
 ;;
 
 let%expect_test "[has_non_null_value]" =
@@ -146,7 +147,7 @@ let%expect_test "[has_non_null_value]" =
   set_value var (13 |> Value.of_int_exn);
   show ();
   [%expect {|
-    true |}];
+    true |}]
 ;;
 
 let%expect_test "[set_value_temporarily]" =
@@ -162,7 +163,7 @@ let%expect_test "[set_value_temporarily]" =
       14 |}]);
   show ();
   [%expect {|
-    13 |}];
+    13 |}]
 ;;
 
 let%expect_test "[set_value_temporarily] with an unbound var" =
@@ -177,7 +178,7 @@ let%expect_test "[set_value_temporarily] with an unbound var" =
       (13) |}]);
   show ();
   [%expect {|
-    () |}];
+    () |}]
 ;;
 
 let%expect_test "[set_value_temporarily] with a buffer-local and changed buffer" =
@@ -187,7 +188,8 @@ let%expect_test "[set_value_temporarily] with a buffer-local and changed buffer"
   let b2 = Buffer.create ~name:"b2" in
   let value_in buffer = Buffer.buffer_local_value buffer var in
   let show_values () =
-    print_s [%message "" ~b1:(value_in b1 : int option) ~b2:(value_in b2 : int option)] in
+    print_s [%message "" ~b1:(value_in b1 : int option) ~b2:(value_in b2 : int option)]
+  in
   show_values ();
   [%expect {|
     ((b1 ())
@@ -204,17 +206,13 @@ let%expect_test "[set_value_temporarily] with a buffer-local and changed buffer"
       Current_buffer.set b2);
     show_values ();
     [%expect {|
-      ((b1 (13)) (b2 ())) |}]);
+      ((b1 (13)) (b2 ())) |}])
 ;;
 
 let%expect_test "[set_values_temporarily]" =
   let v1 = int_var "z1" in
   let v2 = int_var "z2" in
-  let show () =
-    print_s [%message
-      ""
-        ~_:(value_exn v1 : int)
-        ~_:(value_exn v2 : int)] in
+  let show () = print_s [%message "" ~_:(value_exn v1 : int) ~_:(value_exn v2 : int)] in
   set_value v1 13;
   set_value v2 14;
   show ();
@@ -226,13 +224,13 @@ let%expect_test "[set_values_temporarily]" =
       (15 16) |}]);
   show ();
   [%expect {|
-    (13 14) |}];
+    (13 14) |}]
 ;;
 
 let%expect_test "[file_name]" =
   let show_file_basename () =
-    print_s [%sexp (file_name () |> Option.map ~f:Filename.nondirectory
-                    : string option)] in
+    print_s [%sexp (file_name () |> Option.map ~f:Filename.nondirectory : string option)]
+  in
   show_file_basename ();
   [%expect {|
     () |}];
@@ -240,14 +238,14 @@ let%expect_test "[file_name]" =
   show_file_basename ();
   [%expect {|
     (test_current_buffer.ml) |}];
-  kill ();
+  kill ()
 ;;
 
 let%expect_test "[file_name_exn] raise" =
-  set_temporarily_to_temp_buffer (fun () ->
-    show_raise (fun () -> file_name_exn ()));
-  [%expect {|
-    (raised ("buffer does not have a file name" "#<buffer *temp-buffer*>")) |}];
+  set_temporarily_to_temp_buffer (fun () -> show_raise (fun () -> file_name_exn ()));
+  [%expect
+    {|
+    (raised ("buffer does not have a file name" "#<buffer *temp-buffer*>")) |}]
 ;;
 
 let%expect_test "[is_modified], [set_modified]" =
@@ -262,7 +260,7 @@ let%expect_test "[is_modified], [set_modified]" =
     set_modified false;
     print_s [%sexp (is_modified () : bool)];
     [%expect {|
-      false |}]);
+      false |}])
 ;;
 
 let%expect_test "[contents]" =
@@ -274,12 +272,12 @@ let%expect_test "[contents]" =
     print_s [%sexp (contents () : Text.t)];
     [%expect {|
       foo |}];
-    print_s [%sexp (contents ()
-                      ~start:(1 |> Position.of_int_exn)
-                      ~end_:( 2 |> Position.of_int_exn)
-                    : Text.t)];
+    print_s
+      [%sexp
+        ( contents () ~start:(1 |> Position.of_int_exn) ~end_:(2 |> Position.of_int_exn)
+          : Text.t )];
     [%expect {|
-      f |}]);
+      f |}])
 ;;
 
 let%expect_test "[contents_text ~text_properties:true], [insert_text]" =
@@ -288,18 +286,23 @@ let%expect_test "[contents_text ~text_properties:true], [insert_text]" =
     show ();
     [%expect {|
       "" |}];
-    Point.insert_text (Text.propertize (Text.of_utf8_bytes "foo")
-                         [ T (Text.Property_name.face, background_red) ]);
+    Point.insert_text
+      (Text.propertize
+         (Text.of_utf8_bytes "foo")
+         [ T (Text.Property_name.face, background_red) ]);
     show ();
     [%expect {|
        (foo 0 3 (face (:background red))) |}];
-    print_s [%sexp (contents ()
-                      ~start:(1 |> Position.of_int_exn)
-                      ~end_:( 2 |> Position.of_int_exn)
-                      ~text_properties:true
-                    : Text.t)];
+    print_s
+      [%sexp
+        ( contents
+            ()
+            ~start:(1 |> Position.of_int_exn)
+            ~end_:(2 |> Position.of_int_exn)
+            ~text_properties:true
+          : Text.t )];
     [%expect {|
-      (f 0 1 (face (:background red))) |}]);
+      (f 0 1 (face (:background red))) |}])
 ;;
 
 let%expect_test "[kill]" =
@@ -312,7 +315,7 @@ let%expect_test "[kill]" =
   kill ();
   show_live ();
   [%expect {|
-    false |}];
+    false |}]
 ;;
 
 let%expect_test "[save]" =
@@ -326,7 +329,7 @@ let%expect_test "[save]" =
     print_s [%sexp (contents () : Text.t)];
     [%expect {|
       foobar |}]);
-  Sys.remove file;
+  Sys.remove file
 ;;
 
 let%expect_test "[erase]" =
@@ -336,38 +339,34 @@ let%expect_test "[erase]" =
     erase ();
     print_s [%sexp (contents () : Text.t)];
     [%expect {|
-      "" |}]);
+      "" |}])
 ;;
 
 let%expect_test "[kill_region]" =
   set_temporarily_to_temp_buffer (fun () ->
     Point.insert "foobar";
-    kill_region
-      ~start:(2 |> Position.of_int_exn)
-      ~end_:( 4  |> Position.of_int_exn);
+    kill_region ~start:(2 |> Position.of_int_exn) ~end_:(4 |> Position.of_int_exn);
     print_s [%sexp (contents () : Text.t)];
     [%expect {|
-      fbar |}]);
+      fbar |}])
 ;;
 
 let%expect_test "[save_excursion]" =
   let i = save_excursion (fun () -> 13) in
   print_s [%sexp (i : int)];
   [%expect {|
-    13 |}];
+    13 |}]
 ;;
 
 let%expect_test "[save_excursion] preserves point" =
   set_temporarily_to_temp_buffer (fun () ->
     show_point ();
-    save_excursion (fun () ->
-      Point.insert "foo";
-      show_point ());
+    save_excursion (fun () -> Point.insert "foo"; show_point ());
     show_point ());
   [%expect {|
     (point 1)
     (point 4)
-    (point 1) |}];
+    (point 1) |}]
 ;;
 
 let%expect_test "[save_excursion] preserves current buffer" =
@@ -376,7 +375,7 @@ let%expect_test "[save_excursion] preserves current buffer" =
   show ();
   [%expect {|
     "#<buffer zzz>"
-    "#<buffer *scratch*>" |}];
+    "#<buffer *scratch*>" |}]
 ;;
 
 let%expect_test "[set_multibyte], [is_multibyte]" =
@@ -391,29 +390,29 @@ let%expect_test "[set_multibyte], [is_multibyte]" =
   set_multibyte true;
   show ();
   [%expect {|
-    (is_multibyte true) |}];
+    (is_multibyte true) |}]
 ;;
 
 let%expect_test "[rename_exn]" =
   let t = Buffer.create ~name:"foo" in
-  set_temporarily t ~f:(fun () ->
-    rename_exn () ~name:"bar";
-    show ());
+  set_temporarily t ~f:(fun () -> rename_exn () ~name:"bar"; show ());
   [%expect {|
     "#<buffer bar>" |}];
-  Buffer.kill t;
+  Buffer.kill t
 ;;
 
 let%expect_test "[rename_exn] raise" =
   let t1 = Buffer.create ~name:"foo" in
   let t2 = Buffer.create ~name:"bar" in
-  require_does_raise [%here] (fun () ->
-    set_temporarily t1 ~f:(fun () ->
-      rename_exn () ~name:(Buffer.name t2 |> Option.value_exn)));
+  require_does_raise
+    [%here]
+    (fun () ->
+       set_temporarily t1 ~f:(fun () ->
+         rename_exn () ~name:(Buffer.name t2 |> Option.value_exn)));
   [%expect {|
     ("Buffer name `bar' is in use") |}];
   Buffer.kill t1;
-  Buffer.kill t2;
+  Buffer.kill t2
 ;;
 
 let%expect_test "[rename_exn ~unique:true]" =
@@ -430,20 +429,23 @@ let%expect_test "[rename_exn ~unique:true]" =
   [%expect {|
     "#<buffer bar<2>>" |}];
   Buffer.kill t1;
-  Buffer.kill t2;
+  Buffer.kill t2
 ;;
 
 let%expect_test "[text_property_is_present]" =
   set_temporarily_to_temp_buffer (fun () ->
     let show () =
-      print_s [%sexp (text_property_is_present Text.Property_name.face : bool)] in
+      print_s [%sexp (text_property_is_present Text.Property_name.face : bool)]
+    in
     show ();
     [%expect {|
       false |}];
     let insert property_name =
       Point.insert_text
-        (Text.propertize (Text.of_utf8_bytes "foo")
-           [ T (property_name, background_red)]) in
+        (Text.propertize
+           (Text.of_utf8_bytes "foo")
+           [ T (property_name, background_red) ])
+    in
     insert Text.Property_name.font_lock_face;
     show ();
     [%expect {|
@@ -451,7 +453,7 @@ let%expect_test "[text_property_is_present]" =
     insert Text.Property_name.face;
     show ();
     [%expect {|
-      true |}]);
+      true |}])
 ;;
 
 let%expect_test "[is_read_only], [set_read_only]" =
@@ -467,10 +469,11 @@ let%expect_test "[is_read_only], [set_read_only]" =
     set_value read_only false;
     show ();
     [%expect {|
-      (is_read_only false) |}]);
+      (is_read_only false) |}])
 ;;
 
-let face           = Text.Property_name.face
+let face = Text.Property_name.face
+
 let font_lock_face = Text.Property_name.font_lock_face
 
 let show () = print_s [%sexp (contents ~text_properties:true () : Text.t)]
@@ -485,7 +488,7 @@ let%expect_test "[set_text_property]" =
     set_text_property face foreground_blue;
     show ();
     [%expect {|
-      (foo 0 3 (face (:foreground blue))) |}]);
+      (foo 0 3 (face (:foreground blue))) |}])
 ;;
 
 let%expect_test "[set_text_property_staged]" =
@@ -495,8 +498,9 @@ let%expect_test "[set_text_property_staged]" =
     set ~start:1 ~end_:2;
     set ~start:2 ~end_:3;
     show ();
-    [%expect {|
-      (foo 0 1 (face (:foreground red)) 1 2 (face (:foreground red))) |}]);
+    [%expect
+      {|
+      (foo 0 1 (face (:foreground red)) 1 2 (face (:foreground red))) |}])
 ;;
 
 let%expect_test "[set_text_properties]" =
@@ -509,7 +513,7 @@ let%expect_test "[set_text_properties]" =
     set_text_properties [ T (font_lock_face, foreground_red) ];
     show ();
     [%expect {|
-      (foo 0 3 (font-lock-face (:foreground red))) |}]);
+      (foo 0 3 (font-lock-face (:foreground red))) |}])
 ;;
 
 let%expect_test "[set_text_properties_staged]" =
@@ -520,12 +524,14 @@ let%expect_test "[set_text_properties_staged]" =
     set ~start:1 ~end_:2;
     set ~start:2 ~end_:3;
     show ();
-    [%expect {|
+    [%expect
+      {|
       (foo 0 1 (face (:foreground red)) 1 2 (face (:foreground red))) |}];
     set_text_property face foreground_blue;
     set ~start:2 ~end_:3;
     show ();
-    [%expect {|
+    [%expect
+      {|
       (foo 0 1
         (face (:foreground blue))
         1
@@ -533,7 +539,7 @@ let%expect_test "[set_text_properties_staged]" =
         (face (:foreground red))
         2
         3
-        (face (:foreground blue))) |}]);
+        (face (:foreground blue))) |}])
 ;;
 
 let%expect_test "[add_text_properties]" =
@@ -545,8 +551,9 @@ let%expect_test "[add_text_properties]" =
       (foo 0 3 (face (:foreground red))) |}];
     add_text_properties [ T (font_lock_face, foreground_red) ];
     show ();
-    [%expect {|
-      (foo 0 3 (face (:foreground red) font-lock-face (:foreground red))) |}]);
+    [%expect
+      {|
+      (foo 0 3 (face (:foreground red) font-lock-face (:foreground red))) |}])
 ;;
 
 let%expect_test "[add_text_properties_staged]" =
@@ -557,7 +564,8 @@ let%expect_test "[add_text_properties_staged]" =
     add ~start:1 ~end_:2;
     add ~start:2 ~end_:3;
     show ();
-    [%expect {|
+    [%expect
+      {|
       (foo 0 1
         (font-lock-face (:foreground blue) face (:foreground red))
         1
@@ -565,15 +573,12 @@ let%expect_test "[add_text_properties_staged]" =
         (font-lock-face (:foreground blue) face (:foreground red))
         2
         3
-        (font-lock-face (:foreground blue))) |}]);
+        (font-lock-face (:foreground blue))) |}])
 ;;
 
 let%expect_test "[is_undo_enabled] [set_undo_enabled]" =
   set_temporarily_to_temp_buffer (fun () ->
-    let show () =
-      print_s [%message
-        ""
-          ~is_undo_enabled:(is_undo_enabled () : bool)] in
+    let show () = print_s [%message "" ~is_undo_enabled:(is_undo_enabled () : bool)] in
     show ();
     [%expect {|
       (is_undo_enabled true) |}];
@@ -584,17 +589,17 @@ let%expect_test "[is_undo_enabled] [set_undo_enabled]" =
     set_undo_enabled true;
     show ();
     [%expect {|
-      (is_undo_enabled true) |}]);
+      (is_undo_enabled true) |}])
 ;;
 
 let%expect_test "[undo], [add_undo_boundary]" =
   let restore_stderr = unstage (ignore_stderr ()) in
   set_temporarily_to_temp_buffer (fun () ->
     let show () =
-      print_s [%message
-        ""
-          ~contents:(contents () : Text.t)
-          ~undo_list:(undo_list () : Value.t)] in
+      print_s
+        [%message
+          "" ~contents:(contents () : Text.t) ~undo_list:(undo_list () : Value.t)]
+    in
     show ();
     [%expect {|
       ((contents  "")
@@ -606,14 +611,16 @@ let%expect_test "[undo], [add_undo_boundary]" =
        (undo_list nil)) |}];
     Point.insert "foo";
     show ();
-    [%expect {|
+    [%expect
+      {|
       ((contents foo)
        (undo_list (
          (1 . 4)
          (t . 0)))) |}];
     add_undo_boundary ();
     show ();
-    [%expect {|
+    [%expect
+      {|
       ((contents foo)
        (undo_list (
          nil
@@ -621,7 +628,8 @@ let%expect_test "[undo], [add_undo_boundary]" =
          (t . 0)))) |}];
     undo 1;
     show ();
-    [%expect {|
+    [%expect
+      {|
       ((contents "")
        (undo_list (
          (foo . 1)
@@ -632,7 +640,8 @@ let%expect_test "[undo], [add_undo_boundary]" =
     add_undo_boundary ();
     Point.insert "baz";
     show ();
-    [%expect {|
+    [%expect
+      {|
       ((contents barbaz)
        (undo_list (
          (4 . 7)
@@ -645,7 +654,8 @@ let%expect_test "[undo], [add_undo_boundary]" =
          (t . 0)))) |}];
     undo 2;
     show ();
-    [%expect {|
+    [%expect
+      {|
       ((contents "")
        (undo_list (
          (foo . 1)
@@ -661,7 +671,7 @@ let%expect_test "[undo], [add_undo_boundary]" =
          nil
          (1 . 4)
          (t . 0)))) |}]);
-  restore_stderr ();
+  restore_stderr ()
 ;;
 
 let%expect_test "[mark], [set_mark]" =
@@ -673,7 +683,7 @@ let%expect_test "[mark], [set_mark]" =
     Point.insert "foo";
     set_mark (2 |> Position.of_int_exn);
     show ();
-    [%expect {| "#<marker at 2 in *temp-buffer*>" |}]);
+    [%expect {| "#<marker at 2 in *temp-buffer*>" |}])
 ;;
 
 let%expect_test "[mark_is_active], [deactivate_mark]" =
@@ -691,7 +701,7 @@ let%expect_test "[mark_is_active], [deactivate_mark]" =
     require [%here] (not (mark_is_active ()));
     show ();
     [%expect {|
-      false |}]);
+      false |}])
 ;;
 
 let%expect_test "[set_marker_position]" =
@@ -699,7 +709,8 @@ let%expect_test "[set_marker_position]" =
     let marker = Marker.create () in
     let set i =
       set_marker_position marker (i |> Position.of_int_exn);
-      print_s [%sexp (marker : Marker.t)] in
+      print_s [%sexp (marker : Marker.t)]
+    in
     set 1;
     [%expect {|
       "#<marker at 1 in *temp-buffer*>" |}];
@@ -709,15 +720,17 @@ let%expect_test "[set_marker_position]" =
     Point.insert "foo";
     set 2;
     [%expect {|
-      "#<marker at 2 in *temp-buffer*>" |}]);
+      "#<marker at 2 in *temp-buffer*>" |}])
 ;;
 
 let show_var var =
-  print_s [%message
-    ""
-      ~value:(Current_buffer.value { var with type_ = Value.Type.value } : Value.t option)
-      ~is_buffer_local:(is_buffer_local var : bool)
-      ~is_buffer_local_if_set:(is_buffer_local_if_set var : bool)]
+  print_s
+    [%message
+      ""
+        ~value:
+          (Current_buffer.value { var with type_ = Value.Type.value } : Value.t option)
+        ~is_buffer_local:(is_buffer_local var : bool)
+        ~is_buffer_local_if_set:(is_buffer_local_if_set var : bool)]
 ;;
 
 let%expect_test "[make_buffer_local], [is_buffer_local], [is_buffer_local_if_set]" =
@@ -726,15 +739,17 @@ let%expect_test "[make_buffer_local], [is_buffer_local], [is_buffer_local_if_set
     make_buffer_local var;
     Current_buffer.set_value var 13;
     show_var var;
-    [%expect {|
+    [%expect
+      {|
       ((value (13))
        (is_buffer_local        true)
        (is_buffer_local_if_set true)) |}]);
   show_var var;
-  [%expect {|
+  [%expect
+    {|
     ((value ())
      (is_buffer_local        false)
-     (is_buffer_local_if_set false)) |}];
+     (is_buffer_local_if_set false)) |}]
 ;;
 
 let%expect_test "[kill_buffer_local]" =
@@ -744,16 +759,18 @@ let%expect_test "[kill_buffer_local]" =
     make_buffer_local var;
     Current_buffer.set_value var 14;
     show_var var;
-    [%expect {|
+    [%expect
+      {|
       ((value (14))
        (is_buffer_local        true)
        (is_buffer_local_if_set true)) |}];
     kill_buffer_local var;
     show_var var;
-    [%expect {|
+    [%expect
+      {|
       ((value (13))
        (is_buffer_local        false)
-       (is_buffer_local_if_set false)) |}]);
+       (is_buffer_local_if_set false)) |}])
 ;;
 
 let%expect_test "[local_keymap], [set_local_keymap]" =
@@ -767,14 +784,15 @@ let%expect_test "[local_keymap], [set_local_keymap]" =
     set_local_keymap keymap;
     show_local_keymap ();
     [%expect {|
-      ((keymap (97 . undefined))) |}]);
+      ((keymap (97 . undefined))) |}])
 ;;
 
 let%expect_test "[minor_mode_keymaps]" =
   set_temporarily_to_temp_buffer (fun () ->
     Minor_mode.(enable view);
     print_s [%sexp (minor_mode_keymaps () : Keymap.t list)];
-    [%expect {|
+    [%expect
+      {|
       ((
         keymap
         (104      . describe-mode)
@@ -824,104 +842,80 @@ let%expect_test "[minor_mode_keymaps]" =
         (69       . View-exit-and-edit)
         (81       . View-quit-all)
         (99       . View-leave)
-        (67       . View-kill-and-leave))) |}]);
+        (67       . View-kill-and-leave))) |}])
 ;;
 
 let%expect_test "[delete_duplicate_lines]" =
   set_temporarily_to_temp_buffer (fun () ->
-    Point.insert "\
-a
-a
-b
-b
-c
-a
-";
+    Point.insert "a\na\nb\nb\nc\na\n";
     delete_duplicate_lines ();
     print_string (contents () |> Text.to_utf8_bytes);
     [%expect {|
       a
       b
-      c |}]);
+      c |}])
 ;;
 
 let%expect_test "[delete_lines_matching]" =
   set_temporarily_to_temp_buffer (fun () ->
-    Point.insert "\
-a
-a
-b
-b
-c
-a
-";
+    Point.insert "a\na\nb\nb\nc\na\n";
     delete_lines_matching ("b" |> Regexp.quote);
     print_string (contents () |> Text.to_utf8_bytes);
     [%expect {|
       a
       a
       c
-      a |}]);
+      a |}])
 ;;
 
 let%expect_test "[sort_lines]" =
   set_temporarily_to_temp_buffer (fun () ->
-    Point.insert "\
-a
-d
-b
-c
-";
+    Point.insert "a\nd\nb\nc\n";
     sort_lines ();
     print_string (contents () |> Text.to_utf8_bytes);
     [%expect {|
       a
       b
       c
-      d |}]);
+      d |}])
 ;;
 
 let%expect_test "[delete_region]" =
   set_temporarily_to_temp_buffer (fun () ->
     Point.insert "123456789";
-    delete_region
-      ~start:(3 |> Position.of_int_exn)
-      ~end_: (5 |> Position.of_int_exn);
+    delete_region ~start:(3 |> Position.of_int_exn) ~end_:(5 |> Position.of_int_exn);
     print_string (contents () |> Text.to_utf8_bytes);
     [%expect {|
-      1256789 |}]);
+      1256789 |}])
 ;;
 
 let%expect_test "[indent_region]" =
   set_temporarily_to_temp_buffer (fun () ->
     Symbol.funcall0_i ("c-mode" |> Symbol.intern);
-    Point.insert "\
-      void f () {
-      foo;
-      bar;
-      }";
+    Point.insert "void f () {\n      foo;\n      bar;\n      }";
     indent_region ();
     print_string (contents () |> Text.to_utf8_bytes);
     [%expect {|
       void f () {
         foo;
         bar;
-      } |}]);
+      } |}])
 ;;
 
 let%expect_test "[revert]" =
   let dir = "dir.tmp" in
   Directory.create dir ~parents:true;
   Selected_window.find_file (concat [ dir; "/file" ]);
-  ignore (Process.shell_command_exn "echo foo >file" ~working_directory:Of_current_buffer
-          : string);
+  ignore
+    ( Process.shell_command_exn "echo foo >file" ~working_directory:Of_current_buffer
+      : string );
   print_s [%sexp (contents () : Text.t)];
   [%expect {| "" |}];
   revert ();
   print_s [%sexp (contents () : Text.t)];
   [%expect {| "foo\n" |}];
   kill ();
-  Directory.delete dir ~recursive:true;
+  Directory.delete dir ~recursive:true
 ;;
 
 let%expect_test "[set_revert_buffer_function]" =
@@ -933,12 +927,13 @@ let%expect_test "[set_revert_buffer_function]" =
       (called (confirm false)) |}];
     revert () ~confirm:true;
     [%expect {|
-      (called (confirm true)) |}]);
+      (called (confirm true)) |}])
 ;;
 
 let%expect_test "[bury]" =
   print_s [%sexp (Buffer.all_live () : Buffer.t list)];
-  [%expect {|
+  [%expect
+    {|
     ("#<buffer *scratch*>"
      "#<buffer  *Minibuf-0*>"
      "#<buffer *Messages*>"
@@ -948,14 +943,15 @@ let%expect_test "[bury]" =
      "#<buffer zzz>") |}];
   bury ();
   print_s [%sexp (Buffer.all_live () : Buffer.t list)];
-  [%expect {|
+  [%expect
+    {|
     ("#<buffer  *Minibuf-0*>"
      "#<buffer *Messages*>"
      "#<buffer  *code-conversion-work*>"
      "#<buffer b1>"
      "#<buffer b2>"
      "#<buffer zzz>"
-     "#<buffer *scratch*>") |}];
+     "#<buffer *scratch*>") |}]
 ;;
 
 let%expect_test "[paragraph_start], [paragraph_separate]" =
@@ -965,5 +961,5 @@ let%expect_test "[paragraph_start], [paragraph_separate]" =
     "\012\\|[ \t]*$" |}];
   show paragraph_separate;
   [%expect {|
-    "[ \t\012]*$" |}];
+    "[ \t\012]*$" |}]
 ;;

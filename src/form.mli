@@ -7,7 +7,8 @@ open! Import0
 include Value.Subtype
 
 (** [(describe-function 'eval)] *)
-val eval   : t -> Value.t
+val eval : t -> Value.t
+
 val eval_i : t -> unit
 
 (** [(describe-function 'read)] *)
@@ -31,23 +32,18 @@ val progn : t list -> t
 val let_ : (Symbol.t * t) list -> t -> t
 
 val lambda
-  :  ?docstring     : string
-  -> ?interactive   : string
-  -> ?optional_args : Symbol.t list
-  -> ?rest_arg      : Symbol.t
+  :  ?docstring:string
+  -> ?interactive:string
+  -> ?optional_args:Symbol.t list
+  -> ?rest_arg:Symbol.t
   -> Source_code_position.t
-  -> args : Symbol.t list
-  -> body : t
+  -> args:Symbol.t list
+  -> body:t
   -> t
 
 (** [(describe-function 'defvar)]
     [(Info-goto-node "(elisp)Defining Variables")] *)
-val defvar
-  :  Source_code_position.t
-  -> Symbol.t
-  -> Value.t
-  -> docstring : string
-  -> unit
+val defvar : Source_code_position.t -> Symbol.t -> Value.t -> docstring:string -> unit
 
 (** A function call, macro application, or special form.
     [(Info-goto-node "(elisp)Classifying Lists")]. *)

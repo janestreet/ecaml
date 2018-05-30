@@ -10,11 +10,17 @@ open! Import
     they affect. [use_temp_file = true] can speed up coloring on large inputs but since it
     works by deleting and reinserting the region's text, it could drop existing text
     properties and markers in the region and maybe mess up the point. If [use_temp_file =
-    false] then the point is preserved. *)
+    false] then the point is preserved. If [preserve_state] is true, then the colorization
+    state is preserved between calls, which is useful when buffers contain partial output
+    (like in shell-mode), allowing colorization to continue where previous call left
+    off.
+*)
 val color_region_in_current_buffer
-  :  start : Position.t
-  -> end_  : Position.t
+  :  start:Position.t
+  -> end_:Position.t
   -> ?use_temp_file:bool (** default is false *)
+  -> ?preserve_state:bool (** default is false *)
+  -> ?drop_unsupported_escapes:bool (** default is false *)
   -> unit
   -> unit
 

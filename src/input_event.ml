@@ -3,46 +3,53 @@ open! Import
 
 module Q = struct
   include Input_event0.Q
-  let alt                              = "alt"                              |> Symbol.intern
-  let click                            = "click"                            |> Symbol.intern
-  let control                          = "control"                          |> Symbol.intern
-  let double                           = "double"                           |> Symbol.intern
-  let down                             = "down"                             |> Symbol.intern
-  let drag                             = "drag"                             |> Symbol.intern
-  let event_basic_type                 = "event-basic-type"                 |> Symbol.intern
-  let event_modifiers                  = "event-modifiers"                  |> Symbol.intern
-  let hyper                            = "hyper"                            |> Symbol.intern
-  let meta                             = "meta"                             |> Symbol.intern
-  let read_event                       = "read-event"                       |> Symbol.intern
-  let shift                            = "shift"                            |> Symbol.intern
-  let super                            = "super"                            |> Symbol.intern
-  let triple                           = "triple"                           |> Symbol.intern
-  let unread_command_events            = "unread-command-events"            |> Symbol.intern
+
+  let alt = "alt" |> Symbol.intern
+  and click = "click" |> Symbol.intern
+  and control = "control" |> Symbol.intern
+  and double = "double" |> Symbol.intern
+  and down = "down" |> Symbol.intern
+  and drag = "drag" |> Symbol.intern
+  and event_basic_type = "event-basic-type" |> Symbol.intern
+  and event_modifiers = "event-modifiers" |> Symbol.intern
+  and hyper = "hyper" |> Symbol.intern
+  and meta = "meta" |> Symbol.intern
+  and read_event = "read-event" |> Symbol.intern
+  and shift = "shift" |> Symbol.intern
+  and super = "super" |> Symbol.intern
+  and triple = "triple" |> Symbol.intern
+  and unread_command_events = "unread-command-events" |> Symbol.intern
+  ;;
 end
 
 module Current_buffer = Current_buffer0
-module Key_sequence   = Key_sequence0
+module Key_sequence = Key_sequence0
 
-include (Input_event0 : module type of struct include Input_event0 end
-         with module Q := Q)
+include (
+  Input_event0 :
+    module type of struct
+    include Input_event0
+  end
+  with module Q := Q)
 
 let read () = Symbol.funcall0 Q.read_event |> of_value_exn
 
 module Basic = struct
   type t =
     | Char_code of Char_code.t
-    | Symbol    of Symbol.t
+    | Symbol of Symbol.t
   [@@deriving sexp_of]
 
   let of_value_exn value =
     if Value.is_symbol value
     then Symbol (value |> Symbol.of_value_exn)
-    else (
+    else
       match Char_code.of_value_exn value with
       | char_code -> Char_code char_code
       | exception _ ->
-        raise_s [%message
-          "[Input_event.Basic.of_value_exn] got unexpected value" (value : Value.t)])
+        raise_s
+          [%message
+            "[Input_event.Basic.of_value_exn] got unexpected value" (value : Value.t)]
   ;;
 end
 
@@ -64,23 +71,22 @@ module Modifier = struct
   [@@deriving enumerate, sexp_of]
 
   let to_symbol = function
-    | Alt     -> Q.alt
-    | Click   -> Q.click
+    | Alt -> Q.alt
+    | Click -> Q.click
     | Control -> Q.control
-    | Double  -> Q.double
-    | Down    -> Q.down
-    | Drag    -> Q.drag
-    | Hyper   -> Q.hyper
-    | Meta    -> Q.meta
-    | Shift   -> Q.shift
-    | Super   -> Q.super
-    | Triple  -> Q.triple
+    | Double -> Q.double
+    | Down -> Q.down
+    | Drag -> Q.drag
+    | Hyper -> Q.hyper
+    | Meta -> Q.meta
+    | Shift -> Q.shift
+    | Super -> Q.super
+    | Triple -> Q.triple
   ;;
 
   let of_symbol_exn =
-    let assoc = List.map all ~f:(fun t -> (to_symbol t, t)) in
-    fun symbol ->
-      List.Assoc.find_exn assoc symbol ~equal:Symbol.equal
+    let assoc = List.map all ~f:(fun t -> to_symbol t, t) in
+    fun symbol -> List.Assoc.find_exn assoc symbol ~equal:Symbol.equal
   ;;
 
   let of_value_exn value = value |> Symbol.of_value_exn |> of_symbol_exn
@@ -94,10 +100,12 @@ let modifiers t =
 let create_exn input =
   let key_sequence = Key_sequence.create_exn input in
   if Key_sequence.length key_sequence <> 1
-  then raise_s [%message
-         "[Input_event.create_exn] got key sequence not of length one"
-           (input : string)
-           (key_sequence : Key_sequence.t)];
+  then
+    raise_s
+      [%message
+        "[Input_event.create_exn] got key sequence not of length one"
+          (input : string)
+          (key_sequence : Key_sequence.t)];
   Key_sequence.get key_sequence 0
 ;;
 

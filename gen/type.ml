@@ -7,4 +7,3 @@ type t =
   | Ignore
   | Int
   | Value
-;;

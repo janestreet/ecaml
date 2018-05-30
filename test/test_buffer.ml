@@ -10,16 +10,15 @@ let num_live_at_start = num_live ()
 
 let%expect_test "[all_live]" =
   print_s [%sexp (all_live () : t list)];
-  [%expect {|
+  [%expect
+    {|
     ("#<buffer *scratch*>"
      "#<buffer  *Minibuf-0*>"
      "#<buffer *Messages*>"
-     "#<buffer  *code-conversion-work*>") |}];
+     "#<buffer  *code-conversion-work*>") |}]
 ;;
 
-let require_clean () =
-  require [%here] (num_live () = num_live_at_start);
-;;
+let require_clean () = require [%here] (num_live () = num_live_at_start)
 
 let%expect_test "[create]" =
   let t1 = create ~name:"foo" in
@@ -32,7 +31,7 @@ let%expect_test "[create]" =
     "#<buffer foo<2>>" |}];
   kill t1;
   kill t2;
-  require_clean ();
+  require_clean ()
 ;;
 
 let%expect_test "[kill]" =
@@ -41,7 +40,7 @@ let%expect_test "[kill]" =
   show t;
   [%expect {|
     "#<killed buffer>" |}];
-  require_clean ();
+  require_clean ()
 ;;
 
 let%expect_test "[equal]" =
@@ -51,7 +50,7 @@ let%expect_test "[equal]" =
   require [%here] (not (equal t1 t2));
   kill t1;
   kill t2;
-  require_clean ();
+  require_clean ()
 ;;
 
 let%expect_test "[name]" =
@@ -63,7 +62,7 @@ let%expect_test "[name]" =
   print_s [%sexp (name t : string option)];
   [%expect {|
     () |}];
-  require_clean ();
+  require_clean ()
 ;;
 
 let%expect_test "[file_name]" =
@@ -75,7 +74,7 @@ let%expect_test "[file_name]" =
   print_s [%sexp (file_name t : string option)];
   [%expect {|
     () |}];
-  require_clean ();
+  require_clean ()
 ;;
 
 let%expect_test "[is_live]" =
@@ -88,7 +87,7 @@ let%expect_test "[is_live]" =
   show ();
   [%expect {|
     (is_live false) |}];
-  require_clean ();
+  require_clean ()
 ;;
 
 let%expect_test "[find] Some" =
@@ -97,14 +96,14 @@ let%expect_test "[find] Some" =
   [%expect {|
     ("#<buffer foo>") |}];
   kill t;
-  require_clean ();
+  require_clean ()
 ;;
 
 let%expect_test "[find] None" =
   print_s [%sexp (find ~name:"no buffer with this name" : t option)];
   [%expect {|
     () |}];
-  require_clean ();
+  require_clean ()
 ;;
 
 let%expect_test "[find_or_create]" =
@@ -115,7 +114,7 @@ let%expect_test "[find_or_create]" =
     "#<buffer test-buffer>" |}];
   require [%here] (equal t (f ()));
   kill t;
-  require_clean ();
+  require_clean ()
 ;;
 
 let%expect_test "[displayed_in]" =
@@ -131,8 +130,9 @@ let%expect_test "[displayed_in]" =
       ("#<window 1 on *temp-buffer*>") |}];
     Selected_window.split_vertically_exn ();
     show_displayed_in ();
-    [%expect {|
-      ("#<window 1 on *temp-buffer*>" "#<window 4 on *temp-buffer*>") |}]);
+    [%expect
+      {|
+      ("#<window 1 on *temp-buffer*>" "#<window 4 on *temp-buffer*>") |}])
 ;;
 
 let%expect_test "[display]" =
@@ -145,7 +145,7 @@ let%expect_test "[display]" =
     display t;
     show_displayed_in ();
     [%expect {|
-      ("#<window 4 on *temp-buffer*>") |}]);
+      ("#<window 4 on *temp-buffer*>") |}])
 ;;
 
 let%expect_test "[buffer_local_value]" =
@@ -153,14 +153,13 @@ let%expect_test "[buffer_local_value]" =
   let var = int_var "v" in
   Var.make_buffer_local_always var;
   Current_buffer.set_value var 13;
-  Current_buffer.set_temporarily t ~f:(fun () ->
-    Current_buffer.set_value var 14);
+  Current_buffer.set_temporarily t ~f:(fun () -> Current_buffer.set_value var 14);
   print_s [%sexp (buffer_local_value (Current_buffer.get ()) var : int)];
   [%expect {|
     13 |}];
   print_s [%sexp (buffer_local_value t var : int)];
   [%expect {|
-    14 |}];
+    14 |}]
 ;;
 
 let%expect_test "[buffer_local_variables]" =
@@ -168,7 +167,8 @@ let%expect_test "[buffer_local_variables]" =
   Var.make_buffer_local_always var;
   Current_buffer.set_temporarily_to_temp_buffer (fun () ->
     show_current_buffer_local_variables ();
-    [%expect {|
+    [%expect
+      {|
       ((buffer-auto-save-file-format (_))
        (buffer-auto-save-file-name   (_))
        (buffer-backed-up             (_))
@@ -188,7 +188,8 @@ let%expect_test "[buffer_local_variables]" =
        (point-before-scroll          (_))) |}];
     Current_buffer.set_value var 14;
     show_current_buffer_local_variables ();
-    [%expect {|
+    [%expect
+      {|
       ((buffer-auto-save-file-format (_))
        (buffer-auto-save-file-name   (_))
        (buffer-backed-up             (_))
@@ -206,7 +207,7 @@ let%expect_test "[buffer_local_variables]" =
        (mark-active                  (_))
        (mode-name                    (_))
        (point-before-scroll          (_))
-       (s                            (_))) |}]);
+       (s                            (_))) |}])
 ;;
 
 let%expect_test "[find_file_noselect] on a file that exists" =
@@ -214,7 +215,7 @@ let%expect_test "[find_file_noselect] on a file that exists" =
   show t;
   [%expect {|
     "#<buffer test_buffer.ml>" |}];
-  kill t;
+  kill t
 ;;
 
 let%expect_test "[find_file_noselect] on a non-existent file" =
@@ -222,7 +223,7 @@ let%expect_test "[find_file_noselect] on a non-existent file" =
   show t;
   [%expect {|
     "#<buffer zzz>" |}];
-  kill t;
+  kill t
 ;;
 
 let%expect_test "[save_some]" =
@@ -238,13 +239,17 @@ let%expect_test "[save_some]" =
   [%expect {|
     false |}];
   Current_buffer.erase ();
-  save_some () ~which_buffers:(These (fun b -> print_s [%sexp (b : Buffer.t)]; false));
+  let print_buffer_and_return bool b =
+    print_s [%sexp (b : Buffer.t)];
+    bool
+  in
+  save_some () ~which_buffers:(These (print_buffer_and_return false));
   [%expect {|
     "#<buffer z.tmp>" |}];
   is_modified ();
   [%expect {|
     true |}];
-  save_some () ~which_buffers:(These (fun b -> print_s [%sexp (b : Buffer.t)]; true));
+  save_some () ~which_buffers:(These (print_buffer_and_return true));
   [%expect {|
     "#<buffer z.tmp>" |}];
   is_modified ();
@@ -252,5 +257,5 @@ let%expect_test "[save_some]" =
     false |}];
   Current_buffer.kill ();
   File.delete file;
-  restore ();
+  restore ()
 ;;

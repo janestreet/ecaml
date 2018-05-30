@@ -15,6 +15,7 @@ module Raw_prefix_argument : sig
   [@@deriving sexp_of]
 
   val of_value_exn : Value.t -> t
+
   val to_value : t -> Value.t
 
   (** [(describe-variable 'current-prefix-arg)]

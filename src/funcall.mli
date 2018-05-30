@@ -22,10 +22,11 @@ type 'a t
 
 val return : 'a Value.Type.t -> 'a t
 
-val nil     : unit Value.Type.t
+val nil : unit Value.Type.t
+
 val nullary : unit Value.Type.t
 
 (** [Q.foo <: ...] types an Elisp function, like how [foo :> t] types an OCaml value. *)
-val (<:) : Symbol.t -> 'a t -> 'a
+val ( <: ) : Symbol.t -> 'a t -> 'a
 
-val (@->) : 'a Value.Type.t -> 'b t -> ('a -> 'b) t
+val ( @-> ) : 'a Value.Type.t -> 'b t -> ('a -> 'b) t

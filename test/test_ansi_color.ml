@@ -2,50 +2,64 @@ open! Core_kernel
 open! Import
 open! Ansi_color
 
-let color_text' ~use_temp_file text =
+let color_text' ?drop_unsupported_escapes ~use_temp_file text =
   Current_buffer.set_temporarily_to_temp_buffer (fun () ->
     Point.insert_text text;
     color_region_in_current_buffer
-      ~start:(Point.min ()) ~end_:(Point.max ()) ~use_temp_file ();
+      ~start:(Point.min ())
+      ~end_:(Point.max ())
+      ~use_temp_file
+      ?drop_unsupported_escapes
+      ();
     Current_buffer.contents ~text_properties:true ())
 ;;
 
-let color_text text =
-  let with_temp_file = color_text' ~use_temp_file:true text in
-  let without_temp_file = color_text' ~use_temp_file:false text in
-  (match [%compare.equal: Sexp.t]
-           (Text.sexp_of_t with_temp_file)
-           (Text.sexp_of_t without_temp_file) with
-  | true -> ()
-  | false ->
-    print_s [%message
-      "With temp file different from without temp file"
-        (with_temp_file : Text.t)
-        (without_temp_file : Text.t)
-    ]);
+let color_text ?drop_unsupported_escapes text =
+  let with_temp_file = color_text' ?drop_unsupported_escapes ~use_temp_file:true text in
+  let without_temp_file =
+    color_text' ?drop_unsupported_escapes ~use_temp_file:false text
+  in
+  (match
+     [%compare.equal: Sexp.t]
+       (Text.sexp_of_t with_temp_file)
+       (Text.sexp_of_t without_temp_file)
+   with
+   | true -> ()
+   | false ->
+     print_s
+       [%message
+         "With temp file different from without temp file"
+           (with_temp_file : Text.t)
+           (without_temp_file : Text.t)]);
   without_temp_file
 ;;
 
-let color_string s = color_text (s |> Text.of_utf8_bytes)
+let color_string ?drop_unsupported_escapes s =
+  color_text ?drop_unsupported_escapes (s |> Text.of_utf8_bytes)
+;;
 
 let escape' codes =
-  concat [ "\027["
-         ; concat (
-             codes |> List.map ~f:(Option.value_map ~f:Int.to_string ~default:"")
-             |> List.intersperse ~sep:";")
-         ; "m" ]
+  concat
+    [ "\027["
+    ; concat
+        (codes
+         |> List.map ~f:(Option.value_map ~f:Int.to_string ~default:"")
+         |> List.intersperse ~sep:";")
+    ; "m"
+    ]
 ;;
 
 let escape codes = escape' (List.map codes ~f:(fun code -> Some code))
 
 let print_state_machine string =
   Ref.set_temporarily Ansi_color.print_state_machine true ~f:(fun () ->
-    ignore (color_text' ~use_temp_file:false (string |> Text.of_utf8_bytes) : Text.t));
+    ignore (color_text' ~use_temp_file:false (string |> Text.of_utf8_bytes) : Text.t))
 ;;
 
 let%expect_test "empty state machine" =
   print_state_machine "";
-  [%expect {|
+  [%expect
+    {|
     (state_machine (
       (current_state (
         attributes_state (
@@ -82,12 +96,13 @@ let%expect_test "empty state machine" =
             (foreground ())
             (italic        false)
             (reverse_video false)
-            (underline     false)))))))) |}];
+            (underline     false)))))))) |}]
 ;;
 
 let%expect_test "simple state machine" =
   print_state_machine (escape [ 1; 31; 0 ]);
-  [%expect {|
+  [%expect
+    {|
     (state_machine (
       (current_state (
         (attributes_state (
@@ -218,15 +233,16 @@ let%expect_test "simple state machine" =
                (foreground ())
                (italic        false)
                (reverse_video false)
-               (underline     false))))))))))) |}];
+               (underline     false))))))))))) |}]
 ;;
 
-let test ?(show_input = true) input =
+let test ?(show_input=true) input =
   let output = try_with (fun () -> color_string input) in
-  print_s [%message.omit_nil
-    ""
-      ~_:(if show_input then [%message input] else [%message] : Sexp.t)
-      ~_:(output : Text.t Or_error.t)]
+  print_s
+    [%message.omit_nil
+      ""
+        ~_:(if show_input then [%message input] else [%message] : Sexp.t)
+        ~_:(output : Text.t Or_error.t)]
 ;;
 
 let test_codes codes = test (concat [ escape codes; "foo" ])
@@ -247,88 +263,77 @@ let%expect_test "reset escape sequence" =
   test_codes [];
   [%expect {|
     ("\027[mfoo" (Ok foo)) |}];
-  test (concat [ escape [31]; "foo"; escape [0]; "bar" ]);
-  [%expect {|
+  test (concat [ escape [ 31 ]; "foo"; escape [ 0 ]; "bar" ]);
+  [%expect
+    {|
     ("\027[31mfoo\027[0mbar" (
       Ok (foobar 0 3 (face (:foreground red3) font-lock-face (:foreground red3))))) |}];
-  test (concat [ escape [31]; "foo"; escape []; "bar" ]);
-  [%expect {|
+  test (concat [ escape [ 31 ]; "foo"; escape []; "bar" ]);
+  [%expect
+    {|
     ("\027[31mfoo\027[mbar" (
-      Ok (foobar 0 3 (face (:foreground red3) font-lock-face (:foreground red3))))) |}];
+      Ok (foobar 0 3 (face (:foreground red3) font-lock-face (:foreground red3))))) |}]
 ;;
 
 let%expect_test "zero can be skipped" =
-  test (concat [
-    escape' [Some 38; Some 2; Some 255; None; Some 255];
-    "foo";]);
-  [%expect {|
+  test (concat [ escape' [ Some 38; Some 2; Some 255; None; Some 255 ]; "foo" ]);
+  [%expect
+    {|
     ("\027[38;2;255;;255mfoo" (
       Ok (
         foo 0 3 (face (:foreground #FF00FF) font-lock-face (:foreground #FF00FF))))) |}]
 ;;
 
-let%expect_test
-  "invalid escapes don't crash the thing and they also don't prevent further processing" =
-  test (concat [
-    escape [38; 2; 800; 0; 255];
-    "foo";
-    escape [31];
-    "bar";
-  ]);
-  [%expect {|
+let%expect_test "invalid escapes don't crash the thing and they also don't prevent \
+                 further processing" =
+  test (concat [ escape [ 38; 2; 800; 0; 255 ]; "foo"; escape [ 31 ]; "bar" ]);
+  [%expect
+    {|
     ("\027[38;2;800;0;255mfoo\027[31mbar" (
       Ok (
-        "<invalid ANSI escape sequence \"\\027[38;2;800\">;0;255mfoobar"
-        56
-        59
+        "<invalid SGR ANSI escape sequence \"\\027[38;2;800;0;255m\">foobar"
+        60
+        63
         (face (:foreground red3) font-lock-face (:foreground red3))))) |}];
-  test (concat [
-    escape [38; 5; 800; ];
-    "foo";
-    escape [31];
-    "bar";
-  ]);
-  [%expect {|
+  test (concat [ escape [ 38; 5; 800 ]; "foo"; escape [ 31 ]; "bar" ]);
+  [%expect
+    {|
     ("\027[38;5;800mfoo\027[31mbar" (
       Ok (
-        "<invalid ANSI escape sequence \"\\027[38;5;800\">mfoobar"
-        50
-        53
+        "<invalid SGR ANSI escape sequence \"\\027[38;5;800m\">foobar"
+        54
+        57
         (face (:foreground red3) font-lock-face (:foreground red3))))) |}];
-  test (concat [
-    escape [38; 5; 800; 31 ];
-    "foo";
-    escape [31];
-    "bar";
-  ]);
-  [%expect {|
+  test (concat [ escape [ 38; 5; 800; 31 ]; "foo"; escape [ 31 ]; "bar" ]);
+  [%expect
+    {|
     ("\027[38;5;800;31mfoo\027[31mbar" (
       Ok (
-        "<invalid ANSI escape sequence \"\\027[38;5;800\">;31mfoobar"
-        53
-        56
+        "<invalid SGR ANSI escape sequence \"\\027[38;5;800;31m\">foobar"
+        57
+        60
         (face (:foreground red3) font-lock-face (:foreground red3))))) |}];
-  test (concat [
-    escape [38; 88 ];
-    "foo";
-    escape [31];
-    "bar";
-  ]);
-  [%expect {|
+  test (concat [ escape [ 38; 88 ]; "foo"; escape [ 31 ]; "bar" ]);
+  [%expect
+    {|
     ("\027[38;88mfoo\027[31mbar" (
       Ok (
-        "<invalid ANSI escape sequence \"\\027[38;88\">mfoobar"
-        47
-        50
+        "<invalid SGR ANSI escape sequence \"\\027[38;88m\">foobar"
+        51
+        54
         (face (:foreground red3) font-lock-face (:foreground red3))))) |}];
-  test (concat [ escape [31]; "foo"; "\027["; "bar" ]);
-  test (concat [ escape [31]; "foo"; "\027"; "bar" ]);
-  [%expect {|
+  test (concat [ escape [ 31 ]; "foo"; "\027["; "bar" ]);
+  test (concat [ escape [ 31 ]; "foo"; "\027"; "bar" ]);
+  [%expect
+    {|
     ("\027[31mfoo\027[bar" (
       Ok (
-        "foo<invalid ANSI escape sequence \"\\027[\">bar"
+        "foo<unsupported ANSI escape sequence \"\\027[b\">ar"
         0
         3
+        (face (:foreground red3) font-lock-face (:foreground red3))
+        46
+        48
         (face (:foreground red3) font-lock-face (:foreground red3)))))
     ("\027[31mfoo\027bar" (
       Ok (
@@ -339,11 +344,33 @@ let%expect_test
 ;;
 
 let%expect_test "256-indexed color" =
-  List.iter [
-    0; 1; 7; 8; 15; 16; 17; 22; 52; 100; 110; 115; 120; 127; 128; 150; 200; 230; 231; 232; 233; 254; 255]
-    ~f:(fun code ->
-      test_codes [ 38; 5; code ]);
-  [%expect {|
+  List.iter
+    [ 0
+    ; 1
+    ; 7
+    ; 8
+    ; 15
+    ; 16
+    ; 17
+    ; 22
+    ; 52
+    ; 100
+    ; 110
+    ; 115
+    ; 120
+    ; 127
+    ; 128
+    ; 150
+    ; 200
+    ; 230
+    ; 231
+    ; 232
+    ; 233
+    ; 254
+    ; 255
+    ] ~f:(fun code -> test_codes [ 38; 5; code ]);
+  [%expect
+    {|
     ("\027[38;5;0mfoo" (
       Ok (foo 0 3 (face (:foreground black) font-lock-face (:foreground black)))))
     ("\027[38;5;1mfoo" (
@@ -411,15 +438,11 @@ let%expect_test "256-indexed color" =
 ;;
 
 let%expect_test "rgb color" =
-  List.iter [ 0; 10; 255 ]
-    ~f:(fun r ->
-      List.iter [ 0; 10; 255 ]
-        ~f:(fun g ->
-          List.iter [ 0; 10; 255 ]
-            ~f:(fun b ->
-              test_codes [ 38; 2; r; g; b ])
-        ));
-  [%expect {|
+  List.iter [ 0; 10; 255 ] ~f:(fun r ->
+    List.iter [ 0; 10; 255 ] ~f:(fun g ->
+      List.iter [ 0; 10; 255 ] ~f:(fun b -> test_codes [ 38; 2; r; g; b ])));
+  [%expect
+    {|
     ("\027[38;2;0;0;0mfoo" (
       Ok (
         foo 0 3 (face (:foreground #000000) font-lock-face (:foreground #000000)))))
@@ -504,10 +527,9 @@ let%expect_test "rgb color" =
 ;;
 
 let%expect_test "single code" =
-  for code = 0 to max_supported_code do
-    test_codes [ code ];
-  done;
-  [%expect {|
+  for code = 0 to max_supported_code do test_codes [ code ] done;
+  [%expect
+    {|
     ("\027[0mfoo" (Ok foo))
     ("\027[1mfoo" (
       Ok (foo 0 3 (face (:weight bold) font-lock-face (:weight bold)))))
@@ -561,7 +583,7 @@ let%expect_test "single code" =
       Ok (foo 0 3 (face (:foreground cyan3) font-lock-face (:foreground cyan3)))))
     ("\027[37mfoo" (
       Ok (foo 0 3 (face (:foreground gray90) font-lock-face (:foreground gray90)))))
-    ("\027[38mfoo" (Ok "<invalid ANSI escape sequence \"\\027[38\">mfoo"))
+    ("\027[38mfoo" (Ok "<invalid SGR ANSI escape sequence \"\\027[38m\">foo"))
     ("\027[39mfoo" (Ok foo))
     ("\027[40mfoo" (
       Ok (foo 0 3 (face (:background black) font-lock-face (:background black)))))
@@ -582,7 +604,7 @@ let%expect_test "single code" =
       Ok (foo 0 3 (face (:background cyan3) font-lock-face (:background cyan3)))))
     ("\027[47mfoo" (
       Ok (foo 0 3 (face (:background gray90) font-lock-face (:background gray90)))))
-    ("\027[48mfoo" (Ok "<invalid ANSI escape sequence \"\\027[48\">mfoo"))
+    ("\027[48mfoo" (Ok "<invalid SGR ANSI escape sequence \"\\027[48m\">foo"))
     ("\027[49mfoo" (Ok foo))
     ("\027[50mfoo" (Ok foo))
     ("\027[51mfoo" (Ok foo))
@@ -685,65 +707,229 @@ let%expect_test "large code" =
 ;;
 
 let%expect_test "rendering invalid escape sequences" =
-  List.iter
-    [ "\027"
-    ; "\027["
-    ; "\027[foo"
-    ; "\027[31foo" ]
-    ~f:(fun input ->
-      print_s [%message "" input ~_:(color_string input : Text.t)]);
-  [%expect {|
-    ("\027" "<invalid ANSI escape sequence \"\\027\">")
-    ("\027[" "<invalid ANSI escape sequence \"\\027\">[")
-    ("\027[foo" "<invalid ANSI escape sequence \"\\027[\">foo")
-    ("\027[31foo" "<invalid ANSI escape sequence \"\\027[31\">foo") |}];
+  List.iter [ "\027"; "\027["; "\027[foo"; "\027[31foo"; "\027[Ж0m"; "\027[K" ] ~f:
+    (fun input -> print_s [%message "" input ~_:(color_string input : Text.t)]);
+  [%expect
+    {|
+    ("\027" "<incomplete ANSI escape sequence \"\\027\">")
+    ("\027[" "<incomplete ANSI escape sequence \"\\027[\">")
+    ("\027[foo" "<unsupported ANSI escape sequence \"\\027[f\">oo")
+    ("\027[31foo" "<unsupported ANSI escape sequence \"\\027[31f\">oo")
+    ("\027[\208\1500m" "<invalid ANSI escape sequence \"\\027[\">\208\1500m")
+    ("\027[K" "") |}]
 ;;
 
 let%expect_test "customization to disable rendering invalid escape sequences" =
-  Current_buffer.set_value_temporarily Ansi_color.show_invalid_escapes false
-    ~f:(fun () ->
-      List.iter
-        [ "\027"
-        ; "\027["
-        ; "\027[foo"
-        ; "\027[31foo" ]
-        ~f:(fun input ->
-          print_s [%message "" input ~_:(color_string input : Text.t)]));
-  [%expect {|
+  Current_buffer.set_value_temporarily Ansi_color.show_invalid_escapes false ~f:
+    (fun () ->
+       List.iter [ "\027"; "\027["; "\027[foo"; "\027[31foo"; "\027Жm"; "\027[K" ] ~f:
+         (fun input -> print_s [%message "" input ~_:(color_string input : Text.t)]));
+  [%expect
+    {|
     ("\027" "\027")
     ("\027[" "\027[")
     ("\027[foo" "\027[foo")
-    ("\027[31foo" "\027[31foo") |}];
+    ("\027[31foo" "\027[31foo")
+    ("\027\208\150m" "\027\208\150m")
+    ("\027[K" "") |}]
+;;
+
+let%expect_test "drop unsupported escape sequences" =
+  List.iter [ "\027"; "\027["; "\027[foo"; "\027[31foo"; "\027Жm"; "\027[K" ] ~f:
+    (fun input ->
+       print_s
+         [%message
+           "" input ~_:(color_string ~drop_unsupported_escapes:true input : Text.t)]);
+  [%expect
+    {|
+    ("\027" "<incomplete ANSI escape sequence \"\\027\">")
+    ("\027[" "<incomplete ANSI escape sequence \"\\027[\">")
+    ("\027[foo" oo)
+    ("\027[31foo" oo)
+    ("\027\208\150m" "<invalid ANSI escape sequence \"\\027\">\208\150m")
+    ("\027[K" "") |}]
+;;
+
+let%expect_test "color region incrementally" =
+  let show text = print_s [%sexp (text : Text.t)] in
+  let color_incrementally input_string ~preserve_state ~chunk_size =
+    Current_buffer.set_temporarily_to_temp_buffer (fun () ->
+      Current_buffer.set_value_temporarily Ansi_color.show_invalid_escapes false ~f:
+        (fun () ->
+           let rec loop s =
+             if String.length s > 0
+             then (
+               let prefix = String.prefix s chunk_size in
+               let rest = String.drop_prefix s chunk_size in
+               let start = Point.get () in
+               Point.insert prefix;
+               let end_ = Point.get () in
+               color_region_in_current_buffer ~start ~end_ ~preserve_state ();
+               loop rest)
+           in
+           loop input_string;
+           Current_buffer.contents ~text_properties:true ()))
+  in
+  let input = concat [ escape [ 31; 42 ]; "foo"; escape [ 0 ]; "bar" ] in
+  show (color_incrementally input ~preserve_state:false ~chunk_size:1);
+  [%expect {|
+    "\027[31;42mfoo\027[0mbar" |}];
+  show (color_incrementally input ~preserve_state:true ~chunk_size:1);
+  [%expect
+    {|
+    (foobar 0 1
+      (face
+        (:background green3 :foreground red3)
+        font-lock-face
+        (:background green3 :foreground red3))
+      1
+      2
+      (face
+        (:background green3 :foreground red3)
+        font-lock-face
+        (:background green3 :foreground red3))
+      2
+      3
+      (face
+        (:background green3 :foreground red3)
+        font-lock-face
+        (:background green3 :foreground red3))) |}];
+  show (color_incrementally input ~preserve_state:true ~chunk_size:4);
+  [%expect
+    {|
+    (foobar 0 3 (
+      face
+      (:background green3 :foreground red3)
+      font-lock-face
+      (:background green3 :foreground red3))) |}];
+  (* Check that any chunk size will be able to color the string. We can't compare full
+     text properties since they would be applied to different ranges and emacs doesn't
+     collate them. *)
+  let outputs input =
+    List.range ~start:`inclusive 1 ~stop:`inclusive (String.length input)
+    |> List.map ~f:(fun chunk_size ->
+      color_incrementally input ~preserve_state:true ~chunk_size
+      |> Text.to_utf8_bytes)
+    |> List.dedup_and_sort ~compare:String.compare
+    |> fun o -> print_s [%sexp (o : string list)]
+  in
+  outputs input;
+  [%expect {| (foobar) |}];
+  (* this line was causing issues while testing *)
+  let input = "\027[0;1;42m \027[0m\027[0;92m  val region_start : t -> int\027[0m" in
+  show (color_incrementally input ~preserve_state:true ~chunk_size:5);
+  outputs input;
+  [%expect
+    {|
+    ("   val region_start : t -> int" 0 1
+      (face
+        (:background green3 :weight bold)
+        font-lock-face
+        (:background green3 :weight bold))
+      1
+      5
+      (face (:foreground green1) font-lock-face (:foreground green1))
+      5
+      10
+      (face (:foreground green1) font-lock-face (:foreground green1))
+      10
+      15
+      (face (:foreground green1) font-lock-face (:foreground green1))
+      15
+      20
+      (face (:foreground green1) font-lock-face (:foreground green1))
+      20
+      25
+      (face (:foreground green1) font-lock-face (:foreground green1))
+      25
+      30
+      (face (:foreground green1) font-lock-face (:foreground green1)))
+    ("   val region_start : t -> int") |}];
+  (* another one *)
+  let input =
+    "\027[48;5;0m  0\027[0m \027[48;5;1m  1\027[0m \027[48;5;2m  2\027[0m \027[48;5;3m  \
+     3\027[0m \027[48;5;4m  4\027[0m"
+  in
+  show (color_incrementally input ~preserve_state:true ~chunk_size:6);
+  outputs input;
+  [%expect
+    {|
+    ("  0   1   2   3   4" 0 3
+      (face (:background black) font-lock-face (:background black))
+      4
+      7
+      (face (:background red3) font-lock-face (:background red3))
+      8
+      11
+      (face (:background green3) font-lock-face (:background green3))
+      12
+      15
+      (face (:background yellow3) font-lock-face (:background yellow3))
+      16
+      17
+      (face (:background blue2) font-lock-face (:background blue2))
+      17
+      19
+      (face (:background blue2) font-lock-face (:background blue2)))
+    ("  0   1   2   3   4") |}];
+  let input = concat [ escape [ 31 ]; "foo"; escape [ 42 ]; "bar" ] in
+  show (color_incrementally input ~preserve_state:true ~chunk_size:3);
+  outputs input;
+  [%expect
+    {|
+    (foobar 0 1
+      (face (:foreground red3) font-lock-face (:foreground red3))
+      1
+      3
+      (face (:foreground red3) font-lock-face (:foreground red3))
+      3
+      5
+      (face
+        (:background green3 :foreground red3)
+        font-lock-face
+        (:background green3 :foreground red3))
+      5
+      6
+      (face
+        (:background green3 :foreground red3)
+        font-lock-face
+        (:background green3 :foreground red3)))
+    (foobar) |}]
 ;;
 
 let%expect_test "color region twice" =
   Current_buffer.set_temporarily_to_temp_buffer (fun () ->
     Point.insert (concat [ escape [ 31 ]; "foo" ]);
     let show () =
-      print_s [%sexp (
-        Current_buffer.contents ~text_properties:true () : Text.t)] in
+      print_s [%sexp (Current_buffer.contents ~text_properties:true () : Text.t)]
+    in
     color_region_in_current_buffer () ~start:(Point.min ()) ~end_:(Point.max ());
     show ();
-    [%expect {|
+    [%expect
+      {|
       (foo 0 3 (face (:foreground red3) font-lock-face (:foreground red3))) |}];
     color_region_in_current_buffer () ~start:(Point.min ()) ~end_:(Point.max ());
     show ();
-    [%expect {|
-      (foo 0 3 (face (:foreground red3) font-lock-face (:foreground red3))) |}]);
+    [%expect
+      {|
+      (foo 0 3 (face (:foreground red3) font-lock-face (:foreground red3))) |}])
 ;;
 
 let%expect_test "color buffer twice" =
   Current_buffer.set_temporarily_to_temp_buffer (fun () ->
     Point.insert (concat [ escape [ 31 ]; "foo" ]);
     let show () =
-      print_s [%sexp (
-        Current_buffer.contents ~text_properties:true () : Text.t)] in
+      print_s [%sexp (Current_buffer.contents ~text_properties:true () : Text.t)]
+    in
     color_current_buffer ();
     show ();
-    [%expect {| (foo 0 3 (face (:foreground red3) font-lock-face (:foreground red3))) |}];
+    [%expect
+      {|
+      (foo 0 3 (face (:foreground red3) font-lock-face (:foreground red3))) |}];
     color_current_buffer ();
     show ();
-    [%expect {| (foo 0 3 (face (:foreground red3) font-lock-face (:foreground red3))) |}])
+    [%expect
+      {| (foo 0 3 (face (:foreground red3) font-lock-face (:foreground red3))) |}])
 ;;
 
 let test_point_preservation ~left ~right ~colorize =
@@ -754,20 +940,15 @@ let test_point_preservation ~left ~right ~colorize =
     Point.goto_char middle;
     let show_point () =
       Text.concat
-        [(Current_buffer.contents ~text_properties:true ~end_:(Point.get ()) ());
-         Text.of_utf8_bytes "<point>";
-         (Current_buffer.contents ~text_properties:true ~start:(Point.get ()) ());
+        [ Current_buffer.contents ~text_properties:true ~end_:(Point.get ()) ()
+        ; Text.of_utf8_bytes "<point>"
+        ; Current_buffer.contents ~text_properties:true ~start:(Point.get ()) ()
         ]
     in
     let before = show_point () in
     colorize ();
     let after = show_point () in
-    print_s [%sexp
-      {
-        before = (before : Text.t);
-        after = (after : Text.t);
-      }
-    ])
+    print_s [%sexp { before : Text.t; after : Text.t }])
 ;;
 
 let%expect_test "[color_current_buffer] and point" =
@@ -775,7 +956,8 @@ let%expect_test "[color_current_buffer] and point" =
     ~left:(concat [ escape [ 31 ]; "red"; escape [ 32 ]; "gr" ])
     ~right:(concat [ "een"; escape [ 34 ]; "blue"; escape [ 0 ] ])
     ~colorize:(fun () -> color_current_buffer ());
-  [%expect {|
+  [%expect
+    {|
     ((before "\027[31mred\027[32mgr<point>een\027[34mblue\027[0m")
      (after (
        <point>redgreenblue 7 10
@@ -793,8 +975,9 @@ let%expect_test "[color_region_in_current_buffer] and point" =
     ~left:(concat [ escape [ 31 ]; "red"; escape [ 32 ]; "gr" ])
     ~right:(concat [ "een"; escape [ 34 ]; "blue"; escape [ 0 ] ])
     ~colorize:(fun () ->
-      color_region_in_current_buffer ~start:(Point.min ()) ~end_:(Point.max ())  ());
-  [%expect {|
+      color_region_in_current_buffer ~start:(Point.min ()) ~end_:(Point.max ()) ());
+  [%expect
+    {|
     ((before "\027[31mred\027[32mgr<point>een\027[34mblue\027[0m")
      (after (
        redgr<point>eenblue 0 3
@@ -814,19 +997,24 @@ let%expect_test "multibyte character handling" =
   Current_buffer.set_temporarily_to_temp_buffer (fun () ->
     Point.insert "Ж";
     let middle = Point.get () in
-    Point.insert (concat [ escape [ 31 ]; "x"; escape [ 0 ];  ]);
+    Point.insert (concat [ escape [ 31 ]; "x"; escape [ 0 ] ]);
     color_region_in_current_buffer
-      ~start:middle ~end_:(Point.max ())
-      ~use_temp_file:false ();
-    print_s [%sexp
-      (Current_buffer.contents ~text_properties:true ~end_:(Point.get ()) () : Text.t)
-    ]);
-  [%expect {|
+      ~start:middle
+      ~end_:(Point.max ())
+      ~use_temp_file:false
+      ();
+    print_s
+      [%sexp
+        (Current_buffer.contents ~text_properties:true ~end_:(Point.get ()) () : Text.t)]);
+  [%expect
+    {|
     ("\208\150x" 1 2 (face (:foreground red3) font-lock-face (:foreground red3))) |}]
 ;;
 
 let%expect_test "patdiff output" =
-  test ~show_input:false {|
+  test
+    ~show_input:false
+    {|
 [1;34m@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@[0m
 [1;34m@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ .hgignore @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@[0m
 scrutiny scrutiny
@@ -857,7 +1045,8 @@ base 7dcf98789cff | tip 164054e60e6e
 │  glob:app/emacs/test/ocaml/2/big/a???.ml
 │  glob:app/emacs/test/ocaml/2/big/jbuild
 └ |};
-  [%expect {|
+  [%expect
+    {|
     (Ok (
       "\n@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ .hgignore @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\nscrutiny scrutiny\nbase 7dcf98789cff | tip 164054e60e6e\n\226\148\140\n\226\148\130@@@@@@@@ Hunk 1/2913 @@@@@@@@\n\226\148\130@@@@@@@@ base 202,227 tip 202,226 @@@@@@@@\n\226\148\130  glob:app/emacs/elisp/contrib/auctex/preview/latex/prtightpage.def\n\226\148\130  glob:app/emacs/elisp/contrib/auctex/preview/latex/prtracingall.def\n\226\148\130  glob:app/emacs/elisp/contrib/auctex/preview/preview-latex.el\n\226\148\130  glob:app/emacs/elisp/contrib/auctex/tex-site.el\n\226\148\130  glob:app/emacs/elisp/contrib/auctex/tex-site.el.out\n\226\148\130  glob:app/emacs/elisp/contrib/helm/helm-autoloads.el\n\226\148\130  glob:app/emacs/elisp/contrib/image+.el\n\226\148\130  glob:app/emacs/elisp/contrib/org-tests.foo.png\n\226\148\130  glob:app/emacs/elisp/contrib/org-tests.html\n\226\148\130  glob:app/emacs/elisp/contrib/org/doc/org\n\226\148\130  glob:app/emacs/elisp/contrib/org/doc/org-version.inc\n\226\148\130  glob:app/emacs/elisp/contrib/org/doc/org.html\n\226\148\130-|glob:app/emacs/elisp/contrib/org/doc/org.pdf\n\226\148\130  glob:app/emacs/elisp/contrib/org/doc/org.t2d\n\226\148\130  glob:app/emacs/elisp/contrib/org/doc/orgcard.pdf\n\226\148\130  glob:app/emacs/elisp/contrib/org/doc/orgcard_letter.pdf\n\226\148\130  glob:app/emacs/elisp/contrib/org/doc/orgguide.pdf\n\226\148\130  glob:app/emacs/elisp/contrib/org/lisp/org-loaddefs.el\n\226\148\130  glob:app/emacs/elisp/contrib/org/lisp/org-version.el\n\226\148\130  glob:app/emacs/elisp/contrib/org/local.mk\n\226\148\130  glob:app/emacs/test/ocaml/2/big/a???.ml\n\226\148\130  glob:app/emacs/test/ocaml/2/big/jbuild\n\226\148\148 "
       1
@@ -924,28 +1113,28 @@ base 7dcf98789cff | tip 164054e60e6e
 
 let%expect_test "[Ansi_color.Colors.get]" =
   print_s [%sexp (Colors.get () : Colors.t)];
-  [%expect {|
+  [%expect
+    {|
     ((regular (black red3 green3 yellow3 blue2 magenta3 cyan3 gray90))
      (bright (grey50 red1 green1 yellow1 "deep sky blue" magenta1 cyan1 white))
      (faint (
        black "dark red" "dark green" yellow4 "dark blue" magenta4 cyan4 grey50))
-     (faint_default_color grey50)) |}];
+     (faint_default_color grey50)) |}]
 ;;
 
 let%expect_test "colors" =
-  List.iter (List.range 0 8)
-    ~f:(fun i ->
-      let color = 30 + i in
-      let bright_color = color + 60 in
-      let background_color = color + 10 in
-      let bright_background_color = background_color + 60 in
-      List.iter [color; bright_color; background_color; bright_background_color]
-        ~f:(fun color ->
-          test ~show_input:false (sprintf "%scolor %d" (escape [color]) color);
-          test ~show_input:false (sprintf "%scolor %d with faint" (escape [color; 2]) color)
-        );
-    );
-  [%expect {|
+  List.iter (List.range 0 8) ~f:(fun i ->
+    let color = 30 + i in
+    let bright_color = color + 60 in
+    let background_color = color + 10 in
+    let bright_background_color = background_color + 60 in
+    List.iter [ color; bright_color; background_color; bright_background_color ] ~f:
+      (fun color ->
+         test ~show_input:false (sprintf "%scolor %d" (escape [ color ]) color);
+         test ~show_input:false
+           (sprintf "%scolor %d with faint" (escape [ color; 2 ]) color)));
+  [%expect
+    {|
     (Ok (
       "color 30" 0 8 (face (:foreground black) font-lock-face (:foreground black))))
     (Ok (

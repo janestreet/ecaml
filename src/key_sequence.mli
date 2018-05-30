@@ -37,10 +37,7 @@ val execute : t -> unit
 
 (** [(describe-function 'read-key-sequence-vector)]
     [(Info-goto-node "(elisp)Key Sequence Input")] *)
-val read
-  :  unit
-  -> prompt : string
-  -> t
+val read : unit -> prompt:string -> t
 
 (** [(describe-variable 'unread-command-events)]
     [(Info-goto-node "(elisp)Event Input Misc")] *)

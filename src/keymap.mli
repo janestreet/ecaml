@@ -33,11 +33,7 @@ end
 (** [(describe-function 'make-sparse-keymap)]
     [(describe-function 'make-keymap)]
     [(Info-goto-node "(elisp) Creating Keymaps")] *)
-val create
-  :  ?kind      : Kind.t  (** default is [Sparse] *)
-  -> ?menu_name : string
-  -> unit
-  -> t
+val create : ?kind:Kind.t (** default is [Sparse] *) -> ?menu_name:string -> unit -> t
 
 (** [(describe-function 'copy-keymap)]
     [(Info-goto-node "(elisp) Creating Keymaps")] *)
@@ -57,12 +53,12 @@ val set_transient : t -> unit
 module Entry : sig
   type t =
     | Absent
-    | Command        of  Command.t
-    | Keyboard_macro of  Key_sequence.t
-    | Keymap         of  keymap
-    | Symbol         of  Symbol.t
-    | Undefined                          (** [(describe-function 'undefined)] *)
-    | Value          of  Value.t
+    | Command of Command.t
+    | Keyboard_macro of Key_sequence.t
+    | Keymap of keymap
+    | Symbol of Symbol.t
+    | Undefined  (** [(describe-function 'undefined)] *)
+    | Value of Value.t
   [@@deriving sexp_of]
 
   include Valueable.S with type t := t
@@ -71,7 +67,7 @@ end
 (** [(describe-function 'lookup-key)]
     [(Info-goto-node "(elisp)Functions for Key Lookup")] *)
 val lookup_key_exn
-  :  ?accept_defaults : bool  (** default is [false] *)
+  :  ?accept_defaults:bool (** default is [false] *)
   -> t
   -> Key_sequence.t
   -> Entry.t

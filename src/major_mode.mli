@@ -12,9 +12,12 @@ include Equal.S with type t := t
 
 (** Accessors *)
 val change_command : t -> Symbol.t
-val keymap         : t -> Keymap.t
-val keymap_var     : t -> Keymap.t Var.t
-val syntax_table   : t -> Syntax_table.t
+
+val keymap : t -> Keymap.t
+
+val keymap_var : t -> Keymap.t Var.t
+
+val syntax_table : t -> Syntax_table.t
 
 val create : change_command:Symbol.t -> t
 
@@ -35,12 +38,21 @@ val special : t
 val text : t
 
 (** [(describe-function 'define-derived-mode)]
-    [(Info-goto-node "(elisp)Derived Modes")] *)
+    [(Info-goto-node "(elisp)Derived Modes")]
+
+    Additionally, each [key_sequence, symbol] in [define_keys] is added to the new major
+    mode's keymap. *)
 val define_derived_mode
-  :  ?parent : t
+  :  ?define_keys:(string * Symbol.t) list
+  -> ?parent:t
   -> Source_code_position.t
-  -> change_command : Symbol.t
-  -> docstring      : string
-  -> initialize     : (unit -> unit)
-  -> mode_line      : string
+  -> change_command:Symbol.t
+  -> docstring:string
+  -> initialize:(unit -> unit)
+  -> mode_line:string
   -> t
+
+module For_testing : sig
+  (** After this lazy is forced, [define_derived_mode] will raise. *)
+  val finish_deriving_modes : t list Lazy.t
+end

@@ -9,34 +9,60 @@ module Column : sig
   (** A column of data to be displayed on screen. *)
   type 'record t
 
+  (** Each time we [draw] the buffer, the column is resized to fit the widest value (or
+      the header), within the range [min_width, max_width] inclusive. *)
   val create
-    :  ?align_right : bool
-    -> ?pad_right   : int
-    -> ?sortable    : bool
-    -> header       : string
-    -> width        : int
+    :  ?align_right:bool
+    -> ?max_width:int
+    -> ?min_width:int
+    -> ?pad_right:int
+    -> ?sortable:bool
+    -> header:string
     -> ('record -> string)
     -> 'record t
 
+  (** Shows only stripped first line of possibly multiline string *)
+  val first_line
+    :  ?align_right:bool
+    -> ?max_width:int
+    -> ?min_width:int
+    -> ?pad_right:int
+    -> ?sortable:bool
+    -> header:string
+    -> ('record -> string)
+    -> 'record t
+
+  (** [YYYY-MM-DD HH:mm:ss] *)
+  val time
+    :  ?align_right:bool
+    -> ?pad_right:int
+    -> ?sortable:bool
+    -> header:string
+    -> zone:Time.Zone.t
+    -> ('record -> Time.t)
+    -> 'record t
 end
 
 type ('record, 'id) t
 
 val create
-  :  Source_code_position.t
+  :  ?define_keys:(string * Symbol.t) list
+  -> Source_code_position.t
   -> 'record Column.t list
-  -> docstring           : string
-  -> id_type             : 'id Value.Type.t
-  -> id_of_record        : ('record -> 'id)
-  -> initialize          : (unit -> unit)
-  -> mode_change_command : Symbol.t
-  -> mode_line           : string
+  -> docstring:string
+  -> id_type:'id Value.Type.t
+  -> id_of_record:('record -> 'id)
+  -> initialize:(unit -> unit)
+  -> mode_change_command:Symbol.t
+  -> mode_line:string
   -> ('record, 'id) t
+
+val keymap : _ t -> Keymap.t
 
 val major_mode : _ t -> Major_mode.t
 
 val draw
-  :  ?sort_by:(string * [`Ascending | `Descending])
+  :  ?sort_by:string * [`Ascending | `Descending]
   -> ('record, 'id) t
   -> 'record list
   -> unit

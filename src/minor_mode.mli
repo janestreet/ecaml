@@ -9,13 +9,16 @@ open! Import
 
 type t =
   { function_name : Symbol.t
-  ; variable_name : Symbol.t }
+  ; variable_name : Symbol.t
+  }
 [@@deriving sexp_of]
 
+(** Returns true if [t] is defined and enabled, and false otherwise. *)
 val is_enabled : t -> bool
 
 val disable : t -> unit
-val enable  : t -> unit
+
+val enable : t -> unit
 
 (** [(describe-variable 'abbrev-mode)]
     [(describe-function 'abbrev-mode)] *)

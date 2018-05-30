@@ -2,30 +2,26 @@ open! Core_kernel
 open! Import
 open! Directory
 
-let%expect_test "" =
-  try delete "zzz" ~recursive:true with _ -> ();
-;;
+let%expect_test "" = try delete "zzz" ~recursive:true with _ -> ()
 
-let%expect_test "[create], [delete]" =
-  create "zzz";
-  delete "zzz";
-;;
+let%expect_test "[create], [delete]" = create "zzz"; delete "zzz"
 
 let%expect_test "[create ~parents:true], [delete ~recursive:true]" =
-  create "a/b/c" ~parents:true;
-  delete "a" ~recursive:true;
+  create "a/b/c" ~parents:true; delete "a" ~recursive:true
 ;;
 
 let%expect_test "[create] raise" =
   show_raise (fun () -> create "/zzz");
-  [%expect {|
-    (raised (file-error ("Creating directory" "Permission denied" /zzz))) |}];
+  [%expect
+    {|
+    (raised (file-error ("Creating directory" "Permission denied" /zzz))) |}]
 ;;
 
 let%expect_test "[delete] raise" =
   print_s ~templatize_current_directory:true
     [%sexp (try_with (fun () -> delete "zzz") : _ Or_error.t)];
-  [%expect {|
+  [%expect
+    {|
     (Error (
       file-error (
         "Removing directory"
@@ -44,7 +40,7 @@ let%expect_test "[files]" =
   show_files ();
   [%expect {|
     (a b) |}];
-  delete "zzz" ~recursive:true;
+  delete "zzz" ~recursive:true
 ;;
 
 let%expect_test "[files_recursively]" =
@@ -52,9 +48,10 @@ let%expect_test "[files_recursively]" =
   List.iter ~f:touch [ "a/z1"; "a/b/z2"; "a/b/c/z3" ];
   print_s ~templatize_current_directory:true
     [%sexp (files_recursively "a" ~matching:("" |> Regexp.of_pattern) : Filename.t list)];
-  [%expect {|
+  [%expect
+    {|
     (<current-directory>/a/b/c/z3
      <current-directory>/a/b/z2
      <current-directory>/a/z1) |}];
-  delete "a" ~recursive:true;
+  delete "a" ~recursive:true
 ;;

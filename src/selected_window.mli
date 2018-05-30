@@ -10,10 +10,7 @@ open! Import
 val get : unit -> Window.t
 
 (** [(describe-function 'select-window)] *)
-val set
-  :  ?move_to_front_of_buffer_list : bool
-  -> Window.t
-  -> unit
+val set : ?move_to_front_of_buffer_list:bool -> Window.t -> unit
 
 (** [(describe-function 'switch-to-buffer)] *)
 val switch_to_buffer : Buffer.t -> unit
