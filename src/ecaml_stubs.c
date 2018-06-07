@@ -575,7 +575,7 @@ ecaml_intern(value symbol_name)
   CAMLlocal1(ret);
   emacs_env* env = ecaml_active_env_or_die();
   /* ok because we don't trigger CAML gc below */
-  char *the_symbol_name = String_val(symbol_name);
+  const char *the_symbol_name = String_val(symbol_name);
   emacs_value ret_val = env->intern(env, the_symbol_name);
   ret = ocaml_of_emacs(env, ret_val);
   CAMLreturn(ret);
@@ -652,7 +652,7 @@ ecaml_to_string(value val)
      pass [size - 1] to [caml_alloc_string] and it is safe to allow [copy_string_contents]
      to blit into this buffer (since the last byte is NUL). */
   ret = caml_alloc_string(size - 1);
-  env->copy_string_contents(env, the_val, String_val(ret), &size);
+  env->copy_string_contents(env, the_val, (char *) Bytes_val(ret), &size);
   CAMLreturn(ret);
 }
 
@@ -662,7 +662,7 @@ ecaml_of_string(value val)
   CAMLparam1(val);
   CAMLlocal1(ret);
   emacs_env* env = ecaml_active_env_or_die();
-  char *buf = String_val(val);
+  const char *buf = String_val(val);
   int len = caml_string_length(val);
   emacs_value ret_val = env->make_string(env, buf, len);
   ret = ocaml_of_emacs(env, ret_val);
