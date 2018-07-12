@@ -53,9 +53,9 @@ let%expect_test "[is_below]" =
         print_s
           [%sexp
             (result : bool)
-          , ~~ (Ecaml.File.truename file : string)
-          , ~~ (Ecaml.File.truename dir : string)
-          , ~~ (Ecaml.File.exists dir : bool)]
+          , ~~(Ecaml.File.truename file : string)
+          , ~~(Ecaml.File.truename dir : string)
+          , ~~(Ecaml.File.exists dir : bool)]
   in
   is_below "foo" ~dir;
   [%expect {|
@@ -105,7 +105,8 @@ let%expect_test "[locate_dominating_file]" =
   let basename = "foo" in
   touch (concat [ "a.tmp/"; basename ]);
   let test ~above =
-    print_s ~templatize_current_directory:true
+    print_s
+      ~templatize_current_directory:true
       [%sexp
         ( locate_dominating_file ~above ~basename |> Option.map ~f:File.truename
           : string option )]

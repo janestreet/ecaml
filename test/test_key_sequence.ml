@@ -12,7 +12,8 @@ let%expect_test "[create_exn]" =
     ; "C-<right>"
     ; "<mouse-2>"
     ; "C-<down-mouse-3>"
-    ] ~f:(fun string ->
+    ]
+    ~f:(fun string ->
       print_s [%message "" ~_:(string : string) ~_:(create_exn string : t)]);
   [%expect
     {|
@@ -45,7 +46,9 @@ let%expect_test "[length]" =
 
 let%expect_test "[get]" =
   let t = create_exn "abc" in
-  for i = 0 to length t - 1 do print_s [%sexp (get t i : Input_event.t)] done;
+  for i = 0 to length t - 1 do
+    print_s [%sexp (get t i : Input_event.t)]
+  done;
   [%expect {|
     a
     b

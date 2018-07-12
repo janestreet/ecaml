@@ -65,7 +65,10 @@ let delete file = Symbol.funcall1_i Q.delete_file (file |> to_value)
 let copy ~src ~dst = Symbol.funcall2_i Q.copy_file (src |> to_value) (dst |> to_value)
 
 let rename ~src ~dst ~replace_dst_if_exists =
-  Symbol.funcall3_i Q.rename_file (src |> to_value) (dst |> to_value)
+  Symbol.funcall3_i
+    Q.rename_file
+    (src |> to_value)
+    (dst |> to_value)
     (replace_dst_if_exists |> Value.of_bool)
 ;;
 
@@ -75,7 +78,8 @@ let locate ?suffixes ?predicate ~filename ~path () =
 
 let locate_dominating_file ~above ~basename =
   let result =
-    Symbol.funcall2 Q.locate_dominating_file
+    Symbol.funcall2
+      Q.locate_dominating_file
       (above |> Value.of_utf8_bytes)
       (basename |> Value.of_utf8_bytes)
   in
@@ -105,7 +109,8 @@ let write ?(append=false) filename data =
 (* squelch the [Wrote file] message *)
 
 let make_temp_file ~prefix ~suffix =
-  Symbol.funcall3 Q.make_temp_file
+  Symbol.funcall3
+    Q.make_temp_file
     (prefix |> Value.of_utf8_bytes)
     Value.nil
     (suffix |> Value.of_utf8_bytes)

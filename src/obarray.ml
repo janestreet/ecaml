@@ -20,14 +20,11 @@ let standard = Current_buffer.value_exn { symbol = Q.obarray; type_ }
 
 let iter t ~f =
   let f =
-    Function.create
-      [%here]
-      ~args:[ Q.symbol ]
-      (function
-        | [| symbol |] ->
-          f (symbol |> Symbol.of_value_exn);
-          Value.nil
-        | _ -> assert false)
+    Function.create [%here] ~args:[ Q.symbol ] (function
+      | [| symbol |] ->
+        f (symbol |> Symbol.of_value_exn);
+        Value.nil
+      | _ -> assert false)
   in
   Symbol.funcall2_i Q.mapatoms (f |> Function.to_value) (t |> to_value)
 ;;

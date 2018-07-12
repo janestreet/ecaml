@@ -75,9 +75,8 @@ let%expect_test "sort" =
       a    2   z
       b    1   y
       c    3   x |}];
-    require_does_raise
-      [%here]
-      (fun () -> draw_and_print ~sort_by:("i2", `Ascending) entries);
+    require_does_raise [%here] (fun () ->
+      draw_and_print ~sort_by:("i2", `Ascending) entries);
     [%expect {|
       ("Column is not sortable" i2) |}])
 ;;

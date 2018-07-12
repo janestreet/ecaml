@@ -232,9 +232,8 @@ let%expect_test "[to_list_exn]" =
 ;;
 
 let%expect_test "[to_list_exn] raise" =
-  require_does_raise
-    [%here]
-    (fun () -> to_list_exn (13 |> of_int_exn) ~f:(fun _ -> assert false));
+  require_does_raise [%here] (fun () ->
+    to_list_exn (13 |> of_int_exn) ~f:(fun _ -> assert false));
   [%expect {|
     ("[Value.to_list] got strange value" 13) |}]
 ;;
@@ -303,17 +302,16 @@ module Make_subtype = struct
 end
 
 let print_args =
-  Function.create
-    [%here]
-    ~args:[] ~rest_arg:("args" |> Symbol.intern)
-    (fun args ->
-       print_s [%message (args : t array)];
-       list (args |> Array.to_list))
+  Function.create [%here] ~args:[] ~rest_arg:("args" |> Symbol.intern) (fun args ->
+    print_s [%message (args : t array)];
+    list (args |> Array.to_list))
   |> Function.to_value
 ;;
 
 let%expect_test "[funcallN_i]" =
-  for i = 0 to 5 do funcallN_i print_args (List.init i ~f:of_int_exn) done;
+  for i = 0 to 5 do
+    funcallN_i print_args (List.init i ~f:of_int_exn)
+  done;
   [%expect
     {|
     (args ())
@@ -395,12 +393,9 @@ let%expect_test "[funcall_int_int_value_value_unit]" =
 ;;
 
 let print_num_args =
-  Function.create
-    [%here]
-    ~args:[] ~rest_arg:("args" |> Symbol.intern)
-    (fun args ->
-       print_s [%message "" ~num_args:(Array.length args : int)];
-       list (args |> Array.to_list))
+  Function.create [%here] ~args:[] ~rest_arg:("args" |> Symbol.intern) (fun args ->
+    print_s [%message "" ~num_args:(Array.length args : int)];
+    list (args |> Array.to_list))
   |> Function.to_value
 ;;
 

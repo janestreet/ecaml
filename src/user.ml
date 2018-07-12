@@ -46,7 +46,8 @@ let initialize () =
   Function.defun
     [%here]
     ("ecaml-test-user-module" |> Symbol.intern)
-    ~interactive:"" ~args:[]
+    ~interactive:""
+    ~args:[]
     (fun _ ->
        Echo_area.message_s
          [%message

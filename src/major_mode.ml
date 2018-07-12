@@ -64,8 +64,15 @@ module For_testing = struct
   ;;
 end
 
-let define_derived_mode ?(define_keys=[]) ?parent here ~change_command ~docstring
-      ~initialize ~mode_line =
+let define_derived_mode
+      ?(define_keys=[])
+      ?parent
+      here
+      ~change_command
+      ~docstring
+      ~initialize
+      ~mode_line
+  =
   Form.eval_i
     (Form.list
        [ Q.define_derived_mode |> Form.symbol
@@ -78,13 +85,16 @@ let define_derived_mode ?(define_keys=[]) ?parent here ~change_command ~docstrin
        ; Form.list
            [ Q.funcall |> Form.symbol
            ; Form.quote
-               (Function.create here ~args:[] (fun _ -> initialize (); Value.nil)
+               (Function.create here ~args:[] (fun _ ->
+                  initialize ();
+                  Value.nil)
                 |> Function.to_value)
            ]
        ]);
   Load_history.add_entry here (Fun change_command);
   List.iter [ "abbrev-table"; "hook"; "map"; "syntax-table" ] ~f:(fun suffix ->
-    Load_history.add_entry here
+    Load_history.add_entry
+      here
       (Var (concat [ change_command |> Symbol.name; "-"; suffix ] |> Symbol.intern)));
   let t = create ~change_command in
   let the_keymap = keymap t in

@@ -55,7 +55,7 @@ let ocaml ?ocaml_name symbol t_input t_return =
   let param_types, param_names =
     if List.is_empty t_input
     then "unit -> ", " ()"
-    else
+    else (
       let param_types =
         t_input |> List.map ~f:(fun t -> ocaml_type_name t ^ " -> ") |> String.concat
       in
@@ -63,7 +63,7 @@ let ocaml ?ocaml_name symbol t_input t_return =
         List.init (List.length t_input) ~f:(fun i -> " a" ^ Int.to_string i)
         |> String.concat
       in
-      param_types, param_names
+      param_types, param_names)
   in
   [ [ "external "; ocaml_name; " : "; param_types; t_return; " = \""; stub_name; "\"\n" ]
   ; [ "let "; ocaml_name; ""; param_names; " =\n" ]
@@ -105,7 +105,8 @@ let c () =
         else List.mapi t_input ~f:(fun i _ -> sprintf "a%d" i)
       in
       List.mapi (List.chunks_of params ~length:5) ~f:(fun i group ->
-        sprintf "  CAML%sparam%d(%s);\n"
+        sprintf
+          "  CAML%sparam%d(%s);\n"
           (if i = 0 then "" else "x")
           (List.length group)
           (String.concat ~sep:", " group))
@@ -119,7 +120,9 @@ let c () =
         [ [ "  emacs_value emacs_args["; nargs; "];\n" ]
         ; t_input
           |> List.mapi ~f:(fun index t ->
-            sprintf "  emacs_args[%d] = %s;\n" index
+            sprintf
+              "  emacs_args[%d] = %s;\n"
+              index
               (emacs_of_ocaml t (concat [ "a"; index |> Int.to_string ])))
         ]
         |> List.concat

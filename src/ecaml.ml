@@ -107,7 +107,9 @@ let () =
   let symbol = "ecaml-test-raise" |> Symbol.intern in
   defun
     [%here]
-    Value.Type.unit symbol ~interactive:""
+    Value.Type.unit
+    symbol
+    ~interactive:""
     (let open Defun.Let_syntax in
      let%map_open n = optional Q.number Value.Type.int in
      let n = Option.value n ~default:0 in
@@ -138,8 +140,14 @@ let () =
       ("ecaml-test-minibuffer" |> Symbol.intern)
       ~interactive:""
       (fun () ->
-         let test ?default_value ?history_list ?history_list_pos ?initial_contents ()
-               ~prompt =
+         let test
+               ?default_value
+               ?history_list
+               ?history_list_pos
+               ?initial_contents
+               ()
+               ~prompt
+           =
            let result =
              Minibuffer.read_from
                ()

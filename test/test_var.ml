@@ -66,7 +66,8 @@ let%expect_test "sexpable value in a var" =
       ; b : int
       }
     [@@deriving sexp]
-  end in
+  end
+  in
   let a_type = Value.Type.sexpable ~name:(Sexp.of_string "A") (module A) in
   let t =
     create (Symbol.create ~name:"a-and-marker") (Value.Type.tuple a_type Marker.type_)
@@ -124,7 +125,8 @@ let%expect_test "caml_embed value" =
     [@@deriving sexp_of]
 
     let type_id = Type_equal.Id.create ~name:"A" sexp_of_t
-  end in
+  end
+  in
   let a_type = Value.Type.caml_embed A.type_id in
   let var_name = "embedded-var-a" in
   let t = create (Symbol.create ~name:var_name) a_type in

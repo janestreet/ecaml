@@ -68,7 +68,8 @@ module Window_display_state = struct
 
       let is_in_subtype =
         let open Value in
-        is_cons ~car:Position.is_in_subtype
+        is_cons
+          ~car:Position.is_in_subtype
           ~cdr:(is_cons ~car:Position.is_in_subtype ~cdr:Position.is_in_subtype)
       ;;
     end)
@@ -226,7 +227,8 @@ let or_point_min option =
 
 let contents ?start ?end_ ?(text_properties=false) () =
   (if text_properties then F.buffer_substring else F.buffer_substring_no_properties)
-    (or_point_min start) (or_point_max end_)
+    (or_point_min start)
+    (or_point_max end_)
 ;;
 
 let kill = F.kill_buffer
@@ -266,7 +268,9 @@ let is_multibyte () = value_exn enable_multibyte_characters
 let rename_exn ?(unique=false) () ~name = F.rename_buffer name unique
 
 let set_text_property ?start ?end_ property_name property_value =
-  F.put_text_property (or_point_min start) (or_point_max end_)
+  F.put_text_property
+    (or_point_min start)
+    (or_point_max end_)
     (property_name |> Text.Property_name.name)
     (property_value |> Text.Property_name.to_value property_name)
 ;;
@@ -286,7 +290,9 @@ let set_text_property_staged property_name property_value =
 ;;
 
 let set_text_properties ?start ?end_ properties =
-  F.set_text_properties (or_point_min start) (or_point_max end_)
+  F.set_text_properties
+    (or_point_min start)
+    (or_point_max end_)
     (properties |> Text.Property.to_property_list)
 ;;
 
@@ -297,7 +303,9 @@ let set_text_properties_staged properties =
 ;;
 
 let add_text_properties ?start ?end_ properties =
-  F.add_text_properties (or_point_min start) (or_point_max end_)
+  F.add_text_properties
+    (or_point_min start)
+    (or_point_max end_)
     (properties |> Text.Property.to_property_list)
 ;;
 
@@ -309,7 +317,9 @@ let add_text_properties_staged properties =
 
 let text_property_is_present ?start ?end_ property_name =
   Value.is_not_nil
-    (F.text_property_not_all (or_point_min start) (or_point_max end_)
+    (F.text_property_not_all
+       (or_point_min start)
+       (or_point_max end_)
        (property_name |> Text.Property_name.name)
        Value.nil)
 ;;
@@ -381,12 +391,9 @@ let revert ?(confirm=false) () = F.revert_buffer Value.nil (not confirm)
 let set_revert_buffer_function f =
   set_value
     (Var.create Q.revert_buffer_function Function.type_)
-    (Function.create
-       [%here]
-       ~args:[ Q.ignore_auto; Q.noconfirm ]
-       (function
-         | [| _; noconfirm |] ->
-           f ~confirm:(noconfirm |> Value.to_bool |> not);
-           Value.nil
-         | _ -> assert false))
+    (Function.create [%here] ~args:[ Q.ignore_auto; Q.noconfirm ] (function
+       | [| _; noconfirm |] ->
+         f ~confirm:(noconfirm |> Value.to_bool |> not);
+         Value.nil
+       | _ -> assert false))
 ;;

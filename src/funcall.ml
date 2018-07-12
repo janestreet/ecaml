@@ -19,15 +19,15 @@ let nil = Value.Type.ignored
 
 let ( @-> ) (type a b) (type_ : a Value.Type.t) (t : b t) =
   match t with
-  | Cons _ -> (
-      match Sexp.( = ) type_.name nullary.name with
-      | true -> raise_s [%message "Function already has arguments, cannot be nullary."]
-      | false -> Cons (type_, t) )
+  | Cons _ ->
+    (match Sexp.( = ) type_.name nullary.name with
+     | true -> raise_s [%message "Function already has arguments, cannot be nullary."]
+     | false -> Cons (type_, t))
   | Nullary _ -> raise_s [%message "Cannot add arguments to nullary function."]
   | Return return_type ->
-    match Sexp.( = ) type_.name nullary.name with
-    | true -> Nullary return_type
-    | false -> Cons (type_, t)
+    (match Sexp.( = ) type_.name nullary.name with
+     | true -> Nullary return_type
+     | false -> Cons (type_, t))
 ;;
 
 let return_type_of_value symbol (type_ : 'a Value.Type.t) value =

@@ -28,7 +28,8 @@ end
 
 let y_or_n_with_timeout ~prompt ~timeout:(span, a) : _ Y_or_n_with_timeout.t =
   let result =
-    Symbol.funcall3 Q.y_or_n_p_with_timeout
+    Symbol.funcall3
+      Q.y_or_n_p_with_timeout
       (prompt |> Value.of_utf8_bytes)
       (span |> Time_ns.Span.to_sec |> Value.of_float)
       (Q.default_value |> Symbol.to_value)
@@ -40,9 +41,16 @@ let yes_or_no ~prompt =
   Symbol.funcall1 Q.yes_or_no_p (prompt |> Value.of_utf8_bytes) |> Value.to_bool
 ;;
 
-let read_from ?default_value ?(history_list=Q.minibuffer_history) ?history_list_pos
-      ?initial_contents () ~prompt =
-  Symbol.funcallN Q.read_from_minibuffer
+let read_from
+      ?default_value
+      ?(history_list=Q.minibuffer_history)
+      ?history_list_pos
+      ?initial_contents
+      ()
+      ~prompt
+  =
+  Symbol.funcallN
+    Q.read_from_minibuffer
     [ prompt |> Value.of_utf8_bytes
     ; (match initial_contents with
        | None -> Value.nil

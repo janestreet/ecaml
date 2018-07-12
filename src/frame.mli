@@ -10,16 +10,17 @@ open! Import0
 include Value.Subtype
 
 (** Accessors *)
-val num_cols : t -> int
-(** [(describe-function 'frame-width)       ] *)
 
-(** [(describe-function 'frame-height)      ] *)
+(** [(describe-function 'frame-width)] *)
+val num_cols : t -> int
+
+(** [(describe-function 'frame-height)] *)
 val num_rows : t -> int
 
 (** [(describe-function 'frame-pixel-height)] *)
 val pixel_height : t -> int
 
-(** [(describe-function 'frame-pixel-width) ] *)
+(** [(describe-function 'frame-pixel-width)] *)
 val pixel_width : t -> int
 
 (** [(describe-function 'frame-parameters)] *)

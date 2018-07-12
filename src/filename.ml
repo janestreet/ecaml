@@ -21,7 +21,9 @@ include (
   sig
     type t = string [@@deriving sexp_of]
 
-    include Comparable.S with type t := t
+    include
+      Comparable.S
+      with type t := t
       with type comparator_witness = String.comparator_witness
   end)
 

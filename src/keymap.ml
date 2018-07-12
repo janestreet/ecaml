@@ -36,7 +36,9 @@ let parent t =
 ;;
 
 let set_parent t parent =
-  Symbol.funcall2_i Q.set_keymap_parent (t |> to_value)
+  Symbol.funcall2_i
+    Q.set_keymap_parent
+    (t |> to_value)
     (match parent with
      | None -> Value.nil
      | Some parent -> parent |> to_value)
@@ -100,10 +102,10 @@ module Entry = struct
     then Undefined
     else if Value.is_symbol value
     then Symbol (value |> Symbol.of_value_exn)
-    else
+    else (
       match Key_sequence.of_value_exn value with
       | k -> Keyboard_macro k
-      | exception _ -> Value value
+      | exception _ -> Value value)
   ;;
 
   let type_ = { Value.Type.name = [%sexp "Keymap.Entry"]; to_value; of_value_exn }
@@ -111,7 +113,9 @@ end
 
 let lookup_key_exn ?(accept_defaults=false) t key_sequence =
   let result =
-    Symbol.funcall3 Q.lookup_key (t |> to_value)
+    Symbol.funcall3
+      Q.lookup_key
+      (t |> to_value)
       (key_sequence |> Key_sequence.to_value)
       (accept_defaults |> Value.of_bool)
   in
@@ -125,7 +129,9 @@ let lookup_key_exn ?(accept_defaults=false) t key_sequence =
 ;;
 
 let define_key t key_sequence entry =
-  Symbol.funcall3_i Q.define_key (t |> to_value)
+  Symbol.funcall3_i
+    Q.define_key
+    (t |> to_value)
     (key_sequence |> Key_sequence.to_value)
     (entry |> Entry.to_value)
 ;;

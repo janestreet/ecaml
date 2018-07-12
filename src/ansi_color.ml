@@ -183,9 +183,13 @@ end = struct
       |> Vector.of_list
       |> Vector.to_value
     in
-    Customization.defcustom here symbol
+    Customization.defcustom
+      here
+      symbol
       (Vector (List.init 8 ~f:(fun _ -> Customization.Type.Color)))
-      ~docstring ~group:customization_group ~standard_value
+      ~docstring
+      ~group:customization_group
+      ~standard_value
   ;;
 
   let () =
@@ -265,22 +269,24 @@ end = struct
     in
     match (color_spec : Color_spec.t) with
     | Standard { brightness; color_index } -> standard_color ~brightness ~color_index
-    | Indexed_256 color_index -> (
-        let color_index = Color_index_256.to_int color_index in
-        match color_index with
-        | 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 ->
-          standard_color ~brightness:Regular
-            ~color_index:(Color_index_standard.of_int_exn color_index)
-        | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15 ->
-          standard_color ~brightness:Bright
-            ~color_index:(Color_index_standard.of_int_exn (color_index - 8))
-        | color_index ->
-          let color_index = color_index - 16 in
-          if color_index < 6 * 6 * 6
-          then rgb6 color_index
-          else
-            let color_index = color_index - (6 * 6 * 6) in
-            grayscale24 color_index )
+    | Indexed_256 color_index ->
+      let color_index = Color_index_256.to_int color_index in
+      (match color_index with
+       | 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 ->
+         standard_color
+           ~brightness:Regular
+           ~color_index:(Color_index_standard.of_int_exn color_index)
+       | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15 ->
+         standard_color
+           ~brightness:Bright
+           ~color_index:(Color_index_standard.of_int_exn (color_index - 8))
+       | color_index ->
+         let color_index = color_index - 16 in
+         if color_index < 6 * 6 * 6
+         then rgb6 color_index
+         else (
+           let color_index = color_index - (6 * 6 * 6) in
+           grayscale24 color_index))
     | Rgb { r; g; b } ->
       let r = Color_value_8bit.to_int r in
       let g = Color_value_8bit.to_int g in
@@ -298,7 +304,8 @@ end = struct
       try
         Current_buffer.value_exn (Var.create symbol (Vector.type_ Color.type_))
         |> By_color_index.create_exn
-      with exn ->
+      with
+      | exn ->
         raise_s
           [%message
             "[Colors.get] unable to load color vector"
@@ -375,34 +382,33 @@ end = struct
 
   let feed incomplete code =
     match (incomplete : Incomplete_param.t) with
-    | None -> (
-        match code with
-        | 38 -> Incomplete (Complex_color `foreground)
-        | 48 -> Incomplete (Complex_color `background)
-        | code -> Done (Single_code code) )
-    | Complex_color subject -> (
-        match code with
-        | 5 -> Incomplete (Indexed_256_color subject)
-        | 2 -> Incomplete (Incomplete_param.Rgb_color { subject; components = [] })
-        | _ ->
-          Invalid
-            (Error.create_s
-               [%message
-                 "invalid 8-bit or 24-bit color escape code: should start with '2' or '5'"])
-      )
-    | Rgb_color { subject; components } -> (
-        match Color_value_8bit.of_int_exn code with
-        | exception exn -> Invalid (Error.of_exn exn)
-        | value ->
-          let components = components @ [ value ] in
-          match components with
+    | None ->
+      (match code with
+       | 38 -> Incomplete (Complex_color `foreground)
+       | 48 -> Incomplete (Complex_color `background)
+       | code -> Done (Single_code code))
+    | Complex_color subject ->
+      (match code with
+       | 5 -> Incomplete (Indexed_256_color subject)
+       | 2 -> Incomplete (Incomplete_param.Rgb_color { subject; components = [] })
+       | _ ->
+         Invalid
+           (Error.create_s
+              [%message
+                "invalid 8-bit or 24-bit color escape code: should start with '2' or '5'"]))
+    | Rgb_color { subject; components } ->
+      (match Color_value_8bit.of_int_exn code with
+       | exception exn -> Invalid (Error.of_exn exn)
+       | value ->
+         let components = components @ [ value ] in
+         (match components with
           | [ r; g; b ] -> Done (Set_color { subject; color = Rgb { r; g; b } })
           | _ :: _ :: _ :: _ :: _ -> failwith "impossible: too many rgb components"
-          | [] | [ _ ] | [ _; _ ] -> Incomplete (Rgb_color { subject; components }) )
+          | [] | [ _ ] | [ _; _ ] -> Incomplete (Rgb_color { subject; components })))
     | Indexed_256_color subject ->
-      match Color_index_256.of_int_exn code with
-      | exception exn -> Invalid (Error.of_exn exn)
-      | color -> Done (Set_color { subject; color = Indexed_256 color })
+      (match Color_index_256.of_int_exn code with
+       | exception exn -> Invalid (Error.of_exn exn)
+       | color -> Done (Set_color { subject; color = Indexed_256 color }))
   ;;
 end
 
@@ -450,10 +456,10 @@ end = struct
     let t, init =
       if not t.faint
       then t, []
-      else
+      else (
         match t.foreground with
         | None -> t, [ attr_val Foreground (Color (Colors.faint_default_color colors)) ]
-        | Some c -> { t with foreground = Some (Color_spec.make_fainter c) }, []
+        | Some c -> { t with foreground = Some (Color_spec.make_fainter c) }, [])
     in
     let t =
       if not t.reverse_video
@@ -474,14 +480,16 @@ end = struct
            color_attribute, f (Colors.color colors color_spec)))
     in
     let skip acc _ = acc in
-    Fields.fold ~init
+    Fields.fold
+      ~init
       ~background:(add_color Background (fun c -> Color c))
       ~blink_rapid:skip
       ~blink_slow:skip
       ~bold:(add_if_true Weight Bold)
       ~faint:skip (* handled above *)
       ~foreground:(add_color Foreground (fun c -> Color c))
-      ~italic:(add_if_true Slant Italic) ~reverse_video:skip (* handled above *)
+      ~italic:(add_if_true Slant Italic)
+      ~reverse_video:skip (* handled above *)
       ~underline:(add_if_true Underline Foreground)
     |> function
     | [] -> []
@@ -523,34 +531,34 @@ end = struct
     match code with
     | Set_color { subject; color } -> set_color ~subject t color
     | Single_code code ->
-      match code with
-      | 0 -> empty
-      | 1 -> { t with bold = true }
-      | 2 -> { t with faint = true }
-      | 3 -> { t with italic = true }
-      | 4 -> { t with underline = true }
-      | 5 -> { t with blink_slow = true }
-      | 6 -> { t with blink_rapid = true }
-      | 7 -> { t with reverse_video = true }
-      | 21 -> { t with bold = false }
-      | 22 -> { t with bold = false }
-      | 23 -> { t with italic = false }
-      | 24 -> { t with underline = false }
-      | 25 -> { t with blink_slow = false; blink_rapid = false }
-      | 27 -> { t with reverse_video = false }
-      | 30 | 31 | 32 | 33 | 34 | 35 | 36 | 37 ->
-        foreground_standard t ~brightness:Regular ~code ~offset:30
-      | 38 -> assert false (* not single-code: handled by [Set_color] *)
-      | 39 -> { t with foreground = None }
-      | 40 | 41 | 42 | 43 | 44 | 45 | 46 | 47 ->
-        background_standard t ~brightness:Regular ~code ~offset:40
-      | 48 -> assert false (* not single-code: handled by [Set_color] *)
-      | 49 -> { t with background = None }
-      | 90 | 91 | 92 | 93 | 94 | 95 | 96 | 97 ->
-        foreground_standard t ~brightness:Bright ~code ~offset:90
-      | 100 | 101 | 102 | 103 | 104 | 105 | 106 | 107 ->
-        background_standard t ~brightness:Bright ~code ~offset:100
-      | _ -> empty
+      (match code with
+       | 0 -> empty
+       | 1 -> { t with bold = true }
+       | 2 -> { t with faint = true }
+       | 3 -> { t with italic = true }
+       | 4 -> { t with underline = true }
+       | 5 -> { t with blink_slow = true }
+       | 6 -> { t with blink_rapid = true }
+       | 7 -> { t with reverse_video = true }
+       | 21 -> { t with bold = false }
+       | 22 -> { t with bold = false }
+       | 23 -> { t with italic = false }
+       | 24 -> { t with underline = false }
+       | 25 -> { t with blink_slow = false; blink_rapid = false }
+       | 27 -> { t with reverse_video = false }
+       | 30 | 31 | 32 | 33 | 34 | 35 | 36 | 37 ->
+         foreground_standard t ~brightness:Regular ~code ~offset:30
+       | 38 -> assert false (* not single-code: handled by [Set_color] *)
+       | 39 -> { t with foreground = None }
+       | 40 | 41 | 42 | 43 | 44 | 45 | 46 | 47 ->
+         background_standard t ~brightness:Regular ~code ~offset:40
+       | 48 -> assert false (* not single-code: handled by [Set_color] *)
+       | 49 -> { t with background = None }
+       | 90 | 91 | 92 | 93 | 94 | 95 | 96 | 97 ->
+         foreground_standard t ~brightness:Bright ~code ~offset:90
+       | 100 | 101 | 102 | 103 | 104 | 105 | 106 | 107 ->
+         background_standard t ~brightness:Bright ~code ~offset:100
+       | _ -> empty)
   ;;
 end
 
@@ -653,11 +661,8 @@ end = struct
     ;;
 
     let sexp_of_t
-          { attributes_state
-          ; next_state_by_code
-          ; text_properties
-          ; add_text_properties = _
-          } =
+          { attributes_state; next_state_by_code; text_properties; add_text_properties = _ }
+      =
       [%message.omit_nil
         ""
           (attributes_state : Attributes_state.t)
@@ -740,7 +745,8 @@ end = struct
         in
         let next_state =
           Hashtbl.find_or_add t.all_states next_attributes_state ~default:(fun () ->
-            State.create next_attributes_state
+            State.create
+              next_attributes_state
               (State.Attributes_state.text_properties next_attributes_state t.colors))
         in
         Hashtbl.set current_state.next_state_by_code ~key:raw_code ~data:next_state;
@@ -863,7 +869,7 @@ end = struct
   let[@inline always] get_char_exn t =
     if t.input_length = t.input_pos
     then raise End_of_input
-    else
+    else (
       match t.state with
       | Use_temp_file { input; _ } ->
         let c = input.[t.input_pos] in
@@ -877,7 +883,7 @@ end = struct
         else
           (* it doesn't matter what to return here as long as it's not one of the
              characters recognized in escape codes *)
-          Char.of_int_exn 200
+          Char.of_int_exn 200)
   ;;
 
   let end_of_input t = t.input_length = t.input_pos
@@ -915,10 +921,10 @@ end = struct
            ~pos:t.region_start
            ~len;
          if not (Add_text_properties.is_empty add_text_properties)
-         then
+         then (
            let region = { Region.pos = start; len } in
            temp_file_state.regions
-           <- (region, add_text_properties) :: temp_file_state.regions);
+           <- (region, add_text_properties) :: temp_file_state.regions));
       t.region_start <- t.region_start + len;
       t.output_pos <- end_)
   ;;
@@ -931,35 +937,35 @@ end = struct
     match drop_unsupported_escapes, why with
     | true, `unsupported -> drop t
     | _ ->
-      match verbose with
-      | false -> keep_verbatim t ~except_for_last:0 Add_text_properties.empty
-      | true ->
-        let len = t.input_pos - t.region_start in
-        let invalid_escape_string =
-          match t.state with
-          | Use_temp_file { input; _ } -> String.sub input ~pos:t.region_start ~len
-          | In_place_colorization { input; _ } ->
-            Array.sub input ~pos:t.region_start ~len
-            |> Text.of_char_array
-            |> Text.to_utf8_bytes
-        in
-        let why =
-          match why with
-          | `incomplete -> "incomplete"
-          | `invalid -> "invalid"
-          | `invalid_sgr -> "invalid SGR"
-          | `unsupported -> "unsupported"
-          | `too_long -> "too long"
-        in
-        let message = sprintf "<%s ANSI escape sequence %S>" why invalid_escape_string in
-        drop t;
-        (match t.state with
-         | Use_temp_file temp_file_state ->
-           Out_channel.output_string temp_file_state.out_channel message
-         | In_place_colorization { start_pos; _ } ->
-           Point.goto_char (Position.of_int_exn (t.output_pos + start_pos));
-           Point.insert message);
-        t.output_pos <- t.output_pos + String.length message
+      (match verbose with
+       | false -> keep_verbatim t ~except_for_last:0 Add_text_properties.empty
+       | true ->
+         let len = t.input_pos - t.region_start in
+         let invalid_escape_string =
+           match t.state with
+           | Use_temp_file { input; _ } -> String.sub input ~pos:t.region_start ~len
+           | In_place_colorization { input; _ } ->
+             Array.sub input ~pos:t.region_start ~len
+             |> Text.of_char_array
+             |> Text.to_utf8_bytes
+         in
+         let why =
+           match why with
+           | `incomplete -> "incomplete"
+           | `invalid -> "invalid"
+           | `invalid_sgr -> "invalid SGR"
+           | `unsupported -> "unsupported"
+           | `too_long -> "too long"
+         in
+         let message = sprintf "<%s ANSI escape sequence %S>" why invalid_escape_string in
+         drop t;
+         (match t.state with
+          | Use_temp_file temp_file_state ->
+            Out_channel.output_string temp_file_state.out_channel message
+          | In_place_colorization { start_pos; _ } ->
+            Point.goto_char (Position.of_int_exn (t.output_pos + start_pos));
+            Point.insert message);
+         t.output_pos <- t.output_pos + String.length message)
   ;;
 
   let last_output t =
@@ -981,8 +987,13 @@ type t =
   ; drop_unsupported_escapes : bool
   }
 
-let create ~mode ~allow_partial_trailing_escape ~drop_unsupported_escapes
-      ?(state_machine= State_machine.create ()) () =
+let create
+      ~mode
+      ~allow_partial_trailing_escape
+      ~drop_unsupported_escapes
+      ?(state_machine = State_machine.create ())
+      ()
+  =
   { backend = Colorization_backend.create ~mode
   ; saw_escape = false
   ; state_machine
@@ -1038,7 +1049,8 @@ let () =
 ;;
 
 let keep_verbatim t ~except_for_last =
-  Colorization_backend.keep_verbatim t.backend
+  Colorization_backend.keep_verbatim
+    t.backend
     (State_machine.current_text_properties t.state_machine)
     ~except_for_last;
   t.last_output_state <- State_machine.current_state t.state_machine
@@ -1055,15 +1067,15 @@ let rec normal t =
   | exception End_of_input ->
     keep_verbatim t ~except_for_last:0;
     Colorization_backend.last_output t.backend
-  | '\027' -> (
-      t.saw_escape <- true;
-      keep_verbatim t ~except_for_last:1;
-      match get_char_exn t with
-      | exception End_of_input -> invalid_escape t ~why:`incomplete
-      | '[' -> escape t
-      | _ ->
-        rewind_input t;
-        invalid_escape t ~why:`invalid )
+  | '\027' ->
+    t.saw_escape <- true;
+    keep_verbatim t ~except_for_last:1;
+    (match get_char_exn t with
+     | exception End_of_input -> invalid_escape t ~why:`incomplete
+     | '[' -> escape t
+     | _ ->
+       rewind_input t;
+       invalid_escape t ~why:`invalid)
   | _ -> normal t
 and finish_reading_csi_sequence_and_fail t =
   (* Wikipedia: The ESC [ is followed by any number (including none) of "parameter bytes"
@@ -1078,18 +1090,22 @@ and finish_reading_csi_sequence_and_fail t =
   let rec loop ~at_most ~(state : [`parameters | `intermediates]) =
     if Int.( = ) at_most 0
     then `too_long
-    else
+    else (
       match get_char_exn t with
       | exception End_of_input -> `incomplete
       | c ->
         let at_most = at_most - 1 in
-        match classify_byte c, state with
-        | `final `sgr, _ -> `invalid_sgr
-        | `final `non_sgr, _ -> `unsupported
-        | `other, _ -> rewind_input t; `invalid
-        | `parameter, `intermediates -> rewind_input t; `invalid
-        | `parameter, `parameters -> loop ~at_most ~state:`parameters
-        | `intermediate, _ -> loop ~at_most ~state:`intermediates
+        (match classify_byte c, state with
+         | `final `sgr, _ -> `invalid_sgr
+         | `final `non_sgr, _ -> `unsupported
+         | `other, _ ->
+           rewind_input t;
+           `invalid
+         | `parameter, `intermediates ->
+           rewind_input t;
+           `invalid
+         | `parameter, `parameters -> loop ~at_most ~state:`parameters
+         | `intermediate, _ -> loop ~at_most ~state:`intermediates))
   in
   let why = loop ~at_most:200 ~state:`parameters in
   invalid_escape t ~why
@@ -1098,16 +1114,16 @@ and code t ac =
   match get_char_exn t with
   | exception End_of_input -> invalid_escape t ~why:`incomplete
   | '0'..'9' as c -> code t ((ac * 10) + digit c)
-  | ';' -> (
-      match transition t ~raw_code:ac with
-      | `Ok | `Incomplete_escape -> escape t
-      | `Invalid_escape -> finish_reading_csi_sequence_and_fail t )
-  | 'm' -> (
-      match transition t ~raw_code:ac with
-      | `Ok ->
-        Colorization_backend.drop t.backend;
-        normal t
-      | `Invalid_escape | `Incomplete_escape -> invalid_escape t ~why:`invalid_sgr )
+  | ';' ->
+    (match transition t ~raw_code:ac with
+     | `Ok | `Incomplete_escape -> escape t
+     | `Invalid_escape -> finish_reading_csi_sequence_and_fail t)
+  | 'm' ->
+    (match transition t ~raw_code:ac with
+     | `Ok ->
+       Colorization_backend.drop t.backend;
+       normal t
+     | `Invalid_escape | `Incomplete_escape -> invalid_escape t ~why:`invalid_sgr)
   | 'K' ->
     (* grep and ag output this, just ignore it *)
     Colorization_backend.drop t.backend;
@@ -1150,7 +1166,7 @@ let color_region ~start ~end_ ~use_temp_file ~preserve_state ~drop_unsupported_e
   let start, colorization_state =
     if not preserve_state
     then start, None
-    else
+    else (
       match Current_buffer.value_exn Colorization_state.var with
       | None -> start, None
       | Some { last_end; last_colorized; state_machine = _ } as colorization_state ->
@@ -1158,7 +1174,7 @@ let color_region ~start ~end_ ~use_temp_file ~preserve_state ~drop_unsupported_e
         let last_colorized = Option.value_exn (Marker.position last_colorized) in
         if Position.equal start last_end
         then last_colorized, colorization_state
-        else start, None
+        else start, None)
   in
   let show_messages = Position.diff end_ start > 1_000_000 in
   let buffer_contents = Current_buffer.contents () ~start ~end_ in
@@ -1173,10 +1189,13 @@ let color_region ~start ~end_ ~use_temp_file ~preserve_state ~drop_unsupported_e
         ()
     | false ->
       let input = buffer_contents |> Text.to_char_array in
-      create ~mode:(`In_place_colorization (input, Position.to_int start))
+      create
+        ~mode:(`In_place_colorization (input, Position.to_int start))
         ?state_machine:
           (Option.map colorization_state ~f:Colorization_state.state_machine)
-        ~allow_partial_trailing_escape:preserve_state ~drop_unsupported_escapes ()
+        ~allow_partial_trailing_escape:preserve_state
+        ~drop_unsupported_escapes
+        ()
   in
   if preserve_state
   then (
@@ -1191,7 +1210,8 @@ let color_region ~start ~end_ ~use_temp_file ~preserve_state ~drop_unsupported_e
     in
     let current_buffer = Current_buffer.get () in
     let update_marker m p = Marker.set m current_buffer (Position.of_int_exn p) in
-    update_marker colorization_state.last_end
+    update_marker
+      colorization_state.last_end
       (Colorization_backend.last_output t.backend);
     update_marker colorization_state.last_colorized last_colorized)
   else ignore (normal t : int);
@@ -1212,21 +1232,29 @@ let color_region ~start ~end_ ~use_temp_file ~preserve_state ~drop_unsupported_e
        let start = Point.get () |> Position.to_int in
        Point.insert_file_contents_exn temp_file_state.temp_file;
        List.iter temp_file_state.regions ~f:(fun (region, add_text_properties) ->
-         Add_text_properties.apply add_text_properties ~start:(start + region.pos)
+         Add_text_properties.apply
+           add_text_properties
+           ~start:(start + region.pos)
            ~end_:(start + region.pos + region.len));
        Current_buffer.set_multibyte is_multibyte);
      Sys.remove temp_file_state.temp_file);
-  (if show_messages && t.saw_escape && not am_running_inline_test
-   then
-     let took = Time_ns.diff (Time_ns.now ()) before in
-     Echo_area.message
-       (concat
-          [ message; " done (took "; took |> Time_ns.Span.to_sec |> sprintf "%.3f"; "s)" ]));
+  if show_messages && t.saw_escape && not am_running_inline_test
+  then (
+    let took = Time_ns.diff (Time_ns.now ()) before in
+    Echo_area.message
+      (concat
+         [ message; " done (took "; took |> Time_ns.Span.to_sec |> sprintf "%.3f"; "s)" ]));
   t.saw_escape
 ;;
 
-let color_region_in_current_buffer ~start ~end_ ?(use_temp_file=false)
-      ?(preserve_state=false) ?(drop_unsupported_escapes=false) () =
+let color_region_in_current_buffer
+      ~start
+      ~end_
+      ?(use_temp_file=false)
+      ?(preserve_state=false)
+      ?(drop_unsupported_escapes=false)
+      ()
+  =
   Current_buffer.save_excursion (fun () ->
     ignore
       ( color_region

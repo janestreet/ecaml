@@ -28,24 +28,24 @@ let advise_for_ocaml () =
        match args with
        (* [find-function-search-for-symbol] is used by both [find-function] and
           [find-variable], so [symbol] can be a function or a variable. *)
-       | [ symbol; type_; library ] -> (
-           match Value.to_utf8_bytes_exn library with
-           | exception _ -> inner args
-           | library ->
-             if not (String.is_suffix library ~suffix:".ml")
-             then inner args
-             else
-               let type_ : Load_history.Type.t =
-                 if Value.is_nil type_
-                 then Fun
-                 else if Value.eq type_ (Q.defvar :> Value.t)
-                 then Var
-                 else raise_s [%message "unrecognized type" ~_:(type_ : Value.t)]
-               in
-               let buffer, position =
-                 find_ocaml ~library ~symbol:(symbol |> Symbol.of_value_exn) ~type_
-               in
-               Value.cons (buffer |> Buffer.to_value) (position |> Position.to_value) )
+       | [ symbol; type_; library ] ->
+         (match Value.to_utf8_bytes_exn library with
+          | exception _ -> inner args
+          | library ->
+            if not (String.is_suffix library ~suffix:".ml")
+            then inner args
+            else (
+              let type_ : Load_history.Type.t =
+                if Value.is_nil type_
+                then Fun
+                else if Value.eq type_ (Q.defvar :> Value.t)
+                then Var
+                else raise_s [%message "unrecognized type" ~_:(type_ : Value.t)]
+              in
+              let buffer, position =
+                find_ocaml ~library ~symbol:(symbol |> Symbol.of_value_exn) ~type_
+              in
+              Value.cons (buffer |> Buffer.to_value) (position |> Position.to_value)))
        | _ ->
          raise_s [%message "unexpected number of arguments" (for_function : Symbol.t)])
 ;;

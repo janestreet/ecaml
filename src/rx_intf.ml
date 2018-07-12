@@ -60,10 +60,12 @@ end
 
 module type Rx = sig
   module Char_class : module type of struct
-    include Char_class end
+    include Char_class
+  end
 
   module Start_or_end : module type of struct
-    include Start_or_end end
+    include Start_or_end
+  end
 
   include module type of T with type t = T.t
 

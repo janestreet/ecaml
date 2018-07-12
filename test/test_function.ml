@@ -7,23 +7,20 @@ let%expect_test "mutual recursion between Emacs and OCaml" =
   let loop i =
     if i = 0
     then 0 |> Value.of_int_exn
-    else
+    else (
       match !r with
       | None -> assert false
       | Some v ->
         print_s [%message (i : int)];
         Value.of_int_exn
-          (1 + Value.to_int_exn (Value.funcall1 v (i - 1 |> Value.of_int_exn)))
+          (1 + Value.to_int_exn (Value.funcall1 v (i - 1 |> Value.of_int_exn))))
   in
   r :=
     Some
       (Function.to_value
-         (Function.create
-            [%here]
-            ~args:[ "int" |> Symbol.intern ]
-            (function
-              | [| v |] -> loop (v |> Value.to_int_exn)
-              | _ -> assert false)));
+         (Function.create [%here] ~args:[ "int" |> Symbol.intern ] (function
+            | [| v |] -> loop (v |> Value.to_int_exn)
+            | _ -> assert false)));
   print_s [%message "result" ~_:(loop 5 : Value.t)];
   [%expect {|
     (i 5)
@@ -37,7 +34,8 @@ let%expect_test "mutual recursion between Emacs and OCaml" =
 let eval_string s = s |> Form.read |> Form.eval
 
 let emacs_raise () =
-  Symbol.funcall2_i ("signal" |> Symbol.intern)
+  Symbol.funcall2_i
+    ("signal" |> Symbol.intern)
     ("error" |> Symbol.intern |> Symbol.to_value)
     (13 |> Value.of_int_exn)
 ;;
@@ -66,8 +64,11 @@ let%expect_test "raising from OCaml to Emacs" =
 
 let%expect_test "raising from Emacs to Emacs with OCaml in between" =
   let value =
-    Value.funcall1 emacs_try_with
-      (Function.create [%here] ~args:[] (fun _ -> emacs_raise (); Value.nil)
+    Value.funcall1
+      emacs_try_with
+      (Function.create [%here] ~args:[] (fun _ ->
+         emacs_raise ();
+         Value.nil)
        |> Function.to_value)
   in
   print_s [%sexp (value : Value.t)];
@@ -81,13 +82,11 @@ let%expect_test "error-symbol preservation when Emacs signal crosses OCaml" =
       ("(lambda (f) (condition-case error (funcall f) (arith-error `(emacs-caught-it \
         ,error))))"
        |> eval_string)
-      (Function.create
-         [%here]
-         ~args:[]
-         (fun _ ->
-            Symbol.funcall2 ("signal" |> Symbol.intern)
-              ("arith-error" |> Value.intern)
-              Value.nil)
+      (Function.create [%here] ~args:[] (fun _ ->
+         Symbol.funcall2
+           ("signal" |> Symbol.intern)
+           ("arith-error" |> Value.intern)
+           Value.nil)
        |> Function.to_value)
   in
   print_s [%sexp (value : Value.t)];
@@ -113,12 +112,12 @@ let%expect_test "raising from OCaml to OCaml through many layers of Emacs" =
       | () -> []
       | exception _ ->
         let backtrace = Caml.Printexc.get_raw_backtrace () in
-        match Caml.Printexc.backtrace_slots backtrace with
-        | None -> []
-        | Some slots ->
-          Array.filter_map slots ~f:Caml.Printexc.Slot.location
-          |> Array.map ~f:(fun slot -> slot.filename)
-          |> Array.to_list)
+        (match Caml.Printexc.backtrace_slots backtrace with
+         | None -> []
+         | Some slots ->
+           Array.filter_map slots ~f:Caml.Printexc.Slot.location
+           |> Array.map ~f:(fun slot -> slot.filename)
+           |> Array.to_list))
   in
   let files = files_in_backtrace (fun () -> loop 1) in
   (match List.mem files Test_function_file1.filename ~equal:String.( = ) with
@@ -164,7 +163,8 @@ let%expect_test "function descriptions" =
   let y = "y" |> Symbol.intern in
   let z = "z" |> Symbol.intern in
   let describe ?docstring ?optional_args ?rest_arg () ~args =
-    Symbol.set_function function_name
+    Symbol.set_function
+      function_name
       (Function.create [%here] do_nothing ?docstring ?optional_args ?rest_arg ~args
        |> Function.to_value);
     print_endline (describe_function function_name |> hide_positions_in_string)
@@ -252,12 +252,9 @@ let%expect_test "function arguments" =
   let arguments ?optional_args ?rest_arg ~args applied_to =
     match
       Value.funcallN_i
-        (Function.create
-           [%here]
-           ?optional_args ?rest_arg ~args
-           (fun arguments ->
-              print_s [%message (arguments : Value.t array)];
-              Value.nil)
+        (Function.create [%here] ?optional_args ?rest_arg ~args (fun arguments ->
+           print_s [%message (arguments : Value.t array)];
+           Value.nil)
          |> Function.to_value)
         applied_to
     with

@@ -8,7 +8,9 @@ let%expect_test "[Raw_prefix_argument]" =
   let f = Symbol.gensym () in
   defun
     [%here]
-    Value.Type.unit f ~interactive:"P"
+    Value.Type.unit
+    f
+    ~interactive:"P"
     (let open Defun.Let_syntax in
      let%map_open arg = required ("arg" |> Symbol.intern) Value.Type.value in
      print_s
@@ -31,7 +33,8 @@ let%expect_test "[Raw_prefix_argument]" =
     ]
     ~f:(fun prefix_arg ->
       print_s [%message (prefix_arg : Value.t)];
-      Command.call_interactively (f |> Symbol.to_value)
+      Command.call_interactively
+        (f |> Symbol.to_value)
         (prefix_arg |> Raw_prefix_argument.of_value_exn));
   [%expect
     {|

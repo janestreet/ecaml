@@ -154,7 +154,8 @@ let match_ ?start ?(update_last_match=false) t text =
   let result =
     Symbol.funcall3
       (if update_last_match then Q.string_match else Q.string_match_p)
-      (t |> to_value) (text |> Text.to_value)
+      (t |> to_value)
+      (text |> Text.to_value)
       (start
        |> function
        | None -> Value.nil

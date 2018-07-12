@@ -41,7 +41,8 @@ let%expect_test "[Value.of_int]" =
     ; most_positive_fixnum + 1
     ; Int.max_value - 1
     ; Int.max_value
-    ] ~f:(fun i ->
+    ]
+    ~f:(fun i ->
       let v =
         Or_error.try_with (fun () ->
           require_no_allocation [%here] (fun () -> Value.of_int_exn i))

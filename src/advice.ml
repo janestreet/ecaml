@@ -26,7 +26,12 @@ let add_predefined_function advice_name ~for_function =
 ;;
 
 let add ?docstring ?interactive here type_ advice_name f ~for_function =
-  Defun.defun ?docstring ?interactive here type_ advice_name
+  Defun.defun
+    ?docstring
+    ?interactive
+    here
+    type_
+    advice_name
     (let open Defun.Let_syntax in
      let%map_open () = return ()
      and inner = required Q.inner Value.Type.value

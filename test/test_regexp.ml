@@ -3,17 +3,18 @@ open! Import
 open! Regexp
 
 let%expect_test "[quote], [match_], [does_match]" =
-  List.iter [ "", ""; "", "a"; "a", ""; "a", "b"; "a", "ba"; {|\|}, {|\|} ] ~f:
-    (fun (pattern, input) ->
-       let pattern = quote pattern in
-       let input = Text.of_utf8_bytes input in
-       print_s
-         [%message
-           ""
-             (pattern : t)
-             (input : Text.t)
-             ~match_:(match_ pattern input : int option)
-             ~does_match:(does_match pattern input : bool)]);
+  List.iter
+    [ "", ""; "", "a"; "a", ""; "a", "b"; "a", "ba"; {|\|}, {|\|} ]
+    ~f:(fun (pattern, input) ->
+      let pattern = quote pattern in
+      let input = Text.of_utf8_bytes input in
+      print_s
+        [%message
+          ""
+            (pattern : t)
+            (input : Text.t)
+            ~match_:(match_ pattern input : int option)
+            ~does_match:(does_match pattern input : bool)]);
   [%expect
     {|
     ((pattern "")
@@ -130,14 +131,15 @@ let%expect_test "[Last_match] with nonexistent [subexp]" =
 ;;
 
 let%expect_test "[Last_match] success" =
-  List.iter [ "", ""; "", "a"; "a", "a"; "b", "ab"; "foo", "xfoox" ] ~f:
-    (fun (pattern, input) ->
-       let match_result =
-         match_ ~update_last_match:true (pattern |> quote) (input |> Text.of_utf8_bytes)
-       in
-       print_s
-         [%message "" (pattern : string) (input : string) (match_result : int option)];
-       show_last_match ());
+  List.iter
+    [ "", ""; "", "a"; "a", "a"; "b", "ab"; "foo", "xfoox" ]
+    ~f:(fun (pattern, input) ->
+      let match_result =
+        match_ ~update_last_match:true (pattern |> quote) (input |> Text.of_utf8_bytes)
+      in
+      print_s
+        [%message "" (pattern : string) (input : string) (match_result : int option)];
+      show_last_match ());
   [%expect
     {|
     ((pattern "")
@@ -176,7 +178,9 @@ let%expect_test "[Last_match ~subexp] success" =
   require
     [%here]
     (is_some
-       (match_ ~update_last_match:true ({|\(foo\)|} |> of_pattern)
+       (match_
+          ~update_last_match:true
+          ({|\(foo\)|} |> of_pattern)
           ("xfoox" |> Text.of_utf8_bytes)));
   show_last_match () ~subexp:1;
   [%expect {|
@@ -189,7 +193,9 @@ let%expect_test "[Last_match.get_exn]" =
   require
     [%here]
     (is_some
-       (match_ ~update_last_match:true ({|\(foo\)|} |> of_pattern)
+       (match_
+          ~update_last_match:true
+          ({|\(foo\)|} |> of_pattern)
           ("xfoox" |> Text.of_utf8_bytes)));
   let match_data = Last_match.get_exn () in
   print_s [%sexp (match_data : Last_match.t)];

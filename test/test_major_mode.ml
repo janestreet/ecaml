@@ -7,7 +7,8 @@ let test_mode = "test-mode" |> Symbol.intern
 let t =
   define_derived_mode
     [%here]
-    ~change_command:test_mode ~docstring:"docstring"
+    ~change_command:test_mode
+    ~docstring:"docstring"
     ~initialize:(fun () -> print_s [%message "initialized"])
     ~mode_line:"<test-mode mode line>"
 ;;

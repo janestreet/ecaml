@@ -94,8 +94,14 @@ let%expect_test "[query_on_exit], [set_query_on_exit]" =
   kill t
 ;;
 
-let test_call_result_exn ?input ?(output=Call.Output.Before_point_in_current_buffer)
-      ?working_directory () ~args ~prog =
+let test_call_result_exn
+      ?input
+      ?(output=Call.Output.Before_point_in_current_buffer)
+      ?working_directory
+      ()
+      ~args
+      ~prog
+  =
   Current_buffer.set_temporarily_to_temp_buffer (fun () ->
     let result = call_result_exn prog args ?input ~output ?working_directory in
     print_s

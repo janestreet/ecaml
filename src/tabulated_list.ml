@@ -74,7 +74,8 @@ module Column = struct
 
         let type_ =
           let open Value.Type in
-          map (list value)
+          map
+            (list value)
             ~name:[%sexp "tabulated-list-column-format-property-list"]
             ~of_:(fun x -> List.map (pairs x) ~f:Property.of_values)
             ~to_:(List.concat_map ~f:Property.to_values)
@@ -122,8 +123,15 @@ module Column = struct
     }
   [@@deriving fields]
 
-  let create ?align_right ?max_width ?min_width ?pad_right ?sortable ~header
-        field_of_record =
+  let create
+        ?align_right
+        ?max_width
+        ?min_width
+        ?pad_right
+        ?sortable
+        ~header
+        field_of_record
+    =
     { field_of_record
     ; format =
         (let min_width = Option.fold min_width ~init:(String.length header) ~f:Int.max in
@@ -140,8 +148,15 @@ module Column = struct
     }
   ;;
 
-  let first_line ?align_right ?max_width ?min_width ?pad_right ?sortable ~header
-        field_of_record =
+  let first_line
+        ?align_right
+        ?max_width
+        ?min_width
+        ?pad_right
+        ?sortable
+        ~header
+        field_of_record
+    =
     create ?align_right ?max_width ?min_width ?pad_right ?sortable ~header (fun record ->
       let str = field_of_record record in
       (match String.split_lines str with
@@ -189,14 +204,17 @@ let draw ?sort_by t rows =
     | Some column ->
       if not column.format.sortable
       then raise_s [%sexp "Column is not sortable", (sort_header : string)]);
-  Current_buffer.set_value tabulated_list_sort_key_var
-    (Option.map sort_by
+  Current_buffer.set_value
+    tabulated_list_sort_key_var
+    (Option.map
+       sort_by
        ~f:
          (Tuple2.map_snd ~f:(function
             | `Ascending -> false
             | `Descending -> true)));
   Current_buffer.set_value t.entries_var rows;
-  Current_buffer.set_value tabulated_list_format_var
+  Current_buffer.set_value
+    tabulated_list_format_var
     (Array.of_list
        (List.map t.columns ~f:(fun column -> Column.fixed_width_format column rows)));
   F.tabulated_list_init_header ();
@@ -205,8 +223,17 @@ let draw ?sort_by t rows =
 
 let tabulated_list_mode = Major_mode.create ~change_command:Q.tabulated_list_mode
 
-let create ?define_keys here columns ~docstring ~id_type ~id_of_record ~initialize
-      ~mode_change_command ~mode_line =
+let create
+      ?define_keys
+      here
+      columns
+      ~docstring
+      ~id_type
+      ~id_of_record
+      ~initialize
+      ~mode_change_command
+      ~mode_line
+  =
   let major_mode =
     Major_mode.define_derived_mode
       here

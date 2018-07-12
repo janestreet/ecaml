@@ -119,11 +119,11 @@ let update_last_match_default = false
 let handle_last_match ?(update_last_match=update_last_match_default) f =
   if not update_last_match
   then Regexp.Last_match.save f
-  else
+  else (
     let result = f () in
     Regexp.Last_match.Private.Location.last :=
       if result then Buffer (Current_buffer.get ()) else No_match;
-    result
+    result)
 ;;
 
 let search q ?bound ?update_last_match string =

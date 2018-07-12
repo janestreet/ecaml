@@ -12,7 +12,11 @@ let print_funcallN symbol args =
 
 let%expect_test "[defun]" =
   let symbol = Symbol.gensym () in
-  defun here return_type symbol ~docstring:"Returns its own arguments as a sexp."
+  defun
+    here
+    return_type
+    symbol
+    ~docstring:"Returns its own arguments as a sexp."
     (let open Let_syntax in
      let%map_open () = return ()
      and i = required ("int" |> Symbol.intern) Value.Type.int
@@ -21,7 +25,8 @@ let%expect_test "[defun]" =
      and rest = rest ("rest" |> Symbol.intern) Value.Type.string in
      [%message
        "Got args." (i : int) (s : string) (s_o : string option) (rest : string list)]);
-  print_funcallN symbol
+  print_funcallN
+    symbol
     [ 1 |> Value.Type.int.to_value
     ; "two" |> Value.Type.string.to_value
     ; "three" |> Value.Type.string.to_value
@@ -47,7 +52,11 @@ Returns its own arguments as a sexp. |}]
 
 let%expect_test "[defun] tuple ordering" =
   let symbol = Symbol.gensym () in
-  defun here return_type symbol ~docstring:""
+  defun
+    here
+    return_type
+    symbol
+    ~docstring:""
     (let open Let_syntax in
      let%map_open () = return ()
      and difference =
@@ -68,7 +77,11 @@ let%expect_test "[defun] tuple ordering" =
 
 let%expect_test "[defun] wrong number of arguments" =
   let symbol = Symbol.gensym () in
-  defun here return_type symbol ~docstring:""
+  defun
+    here
+    return_type
+    symbol
+    ~docstring:""
     (let open Defun.Let_syntax in
      let%map_open () = return ()
      and arg = required ("arg" |> Symbol.intern) Value.Type.int in
@@ -89,7 +102,11 @@ let%expect_test "[defun] wrong number of arguments" =
 
 let%expect_test "[defun] omitted optional arguments" =
   let symbol = Symbol.gensym () in
-  defun here return_type symbol ~docstring:""
+  defun
+    here
+    return_type
+    symbol
+    ~docstring:""
     (let open Let_syntax in
      let%map_open () = return ()
      and optional = optional ("optional" |> Symbol.intern) Value.Type.int in

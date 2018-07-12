@@ -11,7 +11,9 @@ let%expect_test "[create] raise" =
 ;;
 
 let%expect_test "[create]" =
-  for len = 0 to 3 do show (create ~len Value.nil) done;
+  for len = 0 to 3 do
+    show (create ~len Value.nil)
+  done;
   [%expect {|
     []
     [nil]
@@ -20,7 +22,9 @@ let%expect_test "[create]" =
 ;;
 
 let%expect_test "[of_list]" =
-  for len = 0 to 3 do show (of_list (List.init len ~f:Value.of_int_exn)) done;
+  for len = 0 to 3 do
+    show (of_list (List.init len ~f:Value.of_int_exn))
+  done;
   [%expect {|
     []
     [0]
@@ -106,7 +110,10 @@ let%expect_test "[set] raise on non-empty vector" =
 let%expect_test "[set]" =
   let len = 4 in
   let t = create ~len (13 |> Value.of_int_exn) in
-  for i = 0 to len - 1 do set t i Value.nil; show t done;
+  for i = 0 to len - 1 do
+    set t i Value.nil;
+    show t
+  done;
   [%expect
     {|
     "[nil 13 13 13]"

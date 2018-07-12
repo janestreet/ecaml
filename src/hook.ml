@@ -50,16 +50,18 @@ module Type = struct
           [%message "Error in hook" ~_:(symbol : Symbol.t) ~_:(err : Error.t)]
     in
     match t with
-    | Normal -> (
-        function
-        | [|  |] -> wrap f; Value.nil
-        | _ -> assert false )
+    | Normal ->
+      (function
+        | [|  |] ->
+          wrap f;
+          Value.nil
+        | _ -> assert false)
     | File ->
-      function
-      | [| file |] ->
-        wrap (fun () -> f ~file:(file |> Value.to_utf8_bytes_exn));
-        Value.nil
-      | _ -> assert false
+      (function
+        | [| file |] ->
+          wrap (fun () -> f ~file:(file |> Value.to_utf8_bytes_exn));
+          Value.nil
+        | _ -> assert false)
   ;;
 end
 
@@ -104,7 +106,11 @@ module Function = struct
 
   let create_with_self ?docstring here type_ symbol f =
     let self = { symbol; type_ } in
-    Function.defun ?docstring here symbol ~args:(Type.args type_)
+    Function.defun
+      ?docstring
+      here
+      symbol
+      ~args:(Type.args type_)
       (Type.fn ~symbol type_ (f self));
     self
   ;;
@@ -120,7 +126,9 @@ module Where = struct
 end
 
 let add ?(buffer_local=false) ?(where=Where.Start) t function_ =
-  F.add_hook (t |> symbol) (Function.symbol function_)
+  F.add_hook
+    (t |> symbol)
+    (Function.symbol function_)
     (match where with
      | End -> true
      | Start -> false)

@@ -32,6 +32,7 @@ let function_ ?(obscure_symbol=false) symbol =
   then
     String.Search_pattern.replace_all
       (String.Search_pattern.create (Symbol.name symbol))
-      ~in_:s ~with_:"<SYMBOL>"
+      ~in_:s
+      ~with_:"<SYMBOL>"
   else s
 ;;

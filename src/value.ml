@@ -50,17 +50,20 @@ let raise_if_emacs_signaled () =
 
 let wrap_raise1 f a =
   let r = f a in
-  raise_if_emacs_signaled (); r
+  raise_if_emacs_signaled ();
+  r
 ;;
 
 let wrap_raise2 f a1 a2 =
   let r = f a1 a2 in
-  raise_if_emacs_signaled (); r
+  raise_if_emacs_signaled ();
+  r
 ;;
 
 let wrap_raise3 f a1 a2 a3 =
   let r = f a1 a2 a3 in
-  raise_if_emacs_signaled (); r
+  raise_if_emacs_signaled ();
+  r
 ;;
 
 external intern : string -> t = "ecaml_intern"
@@ -111,7 +114,8 @@ let funcall_array t ts ~should_return_result = funcall_array t ts should_return_
 
 let funcallN_array t ts =
   let r = funcall_array t ts ~should_return_result:true in
-  raise_if_emacs_signaled (); r
+  raise_if_emacs_signaled ();
+  r
 ;;
 
 let funcallN_array_i t ts =
@@ -175,7 +179,8 @@ let funcall0_i f =
 
 let funcall0 f =
   let r = funcall0 f ~should_return_result:true in
-  raise_if_emacs_signaled (); r
+  raise_if_emacs_signaled ();
+  r
 ;;
 
 let funcall1_i f a =
@@ -185,7 +190,8 @@ let funcall1_i f a =
 
 let funcall1 f a =
   let r = funcall1 f a ~should_return_result:true in
-  raise_if_emacs_signaled (); r
+  raise_if_emacs_signaled ();
+  r
 ;;
 
 let funcall2_i f a1 a2 =
@@ -195,7 +201,8 @@ let funcall2_i f a1 a2 =
 
 let funcall2 f a1 a2 =
   let r = funcall2 f a1 a2 ~should_return_result:true in
-  raise_if_emacs_signaled (); r
+  raise_if_emacs_signaled ();
+  r
 ;;
 
 let funcall3_i f a1 a2 a3 =
@@ -205,7 +212,8 @@ let funcall3_i f a1 a2 a3 =
 
 let funcall3 f a1 a2 a3 =
   let r = funcall3 f a1 a2 a3 ~should_return_result:true in
-  raise_if_emacs_signaled (); r
+  raise_if_emacs_signaled ();
+  r
 ;;
 
 let funcall4_i f a1 a2 a3 a4 =
@@ -215,7 +223,8 @@ let funcall4_i f a1 a2 a3 a4 =
 
 let funcall4 f a1 a2 a3 a4 =
   let r = funcall4 f a1 a2 a3 a4 ~should_return_result:true in
-  raise_if_emacs_signaled (); r
+  raise_if_emacs_signaled ();
+  r
 ;;
 
 let funcall5_i f a1 a2 a3 a4 a5 =
@@ -225,7 +234,8 @@ let funcall5_i f a1 a2 a3 a4 a5 =
 
 let funcall5 f a1 a2 a3 a4 a5 =
   let r = funcall5 f a1 a2 a3 a4 a5 ~should_return_result:true in
-  raise_if_emacs_signaled (); r
+  raise_if_emacs_signaled ();
+  r
 ;;
 
 external funcall_int_int_value_unit
@@ -431,7 +441,8 @@ let non_local_exit_signal exn =
         causes it to, after our C code returns to it, signal instead of returning a
         value. *)
     external non_local_exit_signal : t -> t -> unit = "ecaml_non_local_exit_signal"
-  end in
+  end
+  in
   let symbol, data =
     let append_backtrace_if_debugging rest =
       match debug_on_error () with
@@ -463,17 +474,15 @@ let non_local_exit_signal exn =
 
 let initialize_module =
   initialize_module;
-  Sexplib.Conv.Exn_converter.add
-    [%extension_constructor Elisp_signal]
-    (function
-      | Elisp_signal { symbol; data } ->
-        if eq symbol Q.error
-        then [%sexp (data : t)]
-        else if is_nil data
-        then [%sexp (symbol : t)]
-        else [%message "" ~_:(symbol : t) ~_:(data : t)]
-      | _ -> (* Reaching this branch indicates a bug in sexplib. *)
-        assert false);
+  Sexplib.Conv.Exn_converter.add [%extension_constructor Elisp_signal] (function
+    | Elisp_signal { symbol; data } ->
+      if eq symbol Q.error
+      then [%sexp (data : t)]
+      else if is_nil data
+      then [%sexp (symbol : t)]
+      else [%message "" ~_:(symbol : t) ~_:(data : t)]
+    | _ -> (* Reaching this branch indicates a bug in sexplib. *)
+      assert false);
   sexp_of_t_ref :=
     fun t ->
       let sexp_string = funcall1 Q.prin1_to_string t |> to_utf8_bytes_exn in
@@ -605,7 +614,8 @@ module Type = struct
     option string
     |> map
          ~name:[%message "path-list-element"]
-         ~of_:(Option.value ~default:".") ~to_:Option.return
+         ~of_:(Option.value ~default:".")
+         ~to_:Option.return
     |> list
   ;;
 end

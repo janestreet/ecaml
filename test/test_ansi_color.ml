@@ -285,7 +285,8 @@ let%expect_test "zero can be skipped" =
 ;;
 
 let%expect_test "invalid escapes don't crash the thing and they also don't prevent \
-                 further processing" =
+                 further processing"
+  =
   test (concat [ escape [ 38; 2; 800; 0; 255 ]; "foo"; escape [ 31 ]; "bar" ]);
   [%expect
     {|
@@ -368,7 +369,8 @@ let%expect_test "256-indexed color" =
     ; 233
     ; 254
     ; 255
-    ] ~f:(fun code -> test_codes [ 38; 5; code ]);
+    ]
+    ~f:(fun code -> test_codes [ 38; 5; code ]);
   [%expect
     {|
     ("\027[38;5;0mfoo" (
@@ -527,7 +529,9 @@ let%expect_test "rgb color" =
 ;;
 
 let%expect_test "single code" =
-  for code = 0 to max_supported_code do test_codes [ code ] done;
+  for code = 0 to max_supported_code do
+    test_codes [ code ]
+  done;
   [%expect
     {|
     ("\027[0mfoo" (Ok foo))
@@ -707,8 +711,9 @@ let%expect_test "large code" =
 ;;
 
 let%expect_test "rendering invalid escape sequences" =
-  List.iter [ "\027"; "\027["; "\027[foo"; "\027[31foo"; "\027[Ж0m"; "\027[K" ] ~f:
-    (fun input -> print_s [%message "" input ~_:(color_string input : Text.t)]);
+  List.iter
+    [ "\027"; "\027["; "\027[foo"; "\027[31foo"; "\027[Ж0m"; "\027[K" ]
+    ~f:(fun input -> print_s [%message "" input ~_:(color_string input : Text.t)]);
   [%expect
     {|
     ("\027" "<incomplete ANSI escape sequence \"\\027\">")
@@ -720,10 +725,13 @@ let%expect_test "rendering invalid escape sequences" =
 ;;
 
 let%expect_test "customization to disable rendering invalid escape sequences" =
-  Current_buffer.set_value_temporarily Ansi_color.show_invalid_escapes false ~f:
-    (fun () ->
-       List.iter [ "\027"; "\027["; "\027[foo"; "\027[31foo"; "\027Жm"; "\027[K" ] ~f:
-         (fun input -> print_s [%message "" input ~_:(color_string input : Text.t)]));
+  Current_buffer.set_value_temporarily
+    Ansi_color.show_invalid_escapes
+    false
+    ~f:(fun () ->
+      List.iter
+        [ "\027"; "\027["; "\027[foo"; "\027[31foo"; "\027Жm"; "\027[K" ]
+        ~f:(fun input -> print_s [%message "" input ~_:(color_string input : Text.t)]));
   [%expect
     {|
     ("\027" "\027")
@@ -735,11 +743,12 @@ let%expect_test "customization to disable rendering invalid escape sequences" =
 ;;
 
 let%expect_test "drop unsupported escape sequences" =
-  List.iter [ "\027"; "\027["; "\027[foo"; "\027[31foo"; "\027Жm"; "\027[K" ] ~f:
-    (fun input ->
-       print_s
-         [%message
-           "" input ~_:(color_string ~drop_unsupported_escapes:true input : Text.t)]);
+  List.iter
+    [ "\027"; "\027["; "\027[foo"; "\027[31foo"; "\027Жm"; "\027[K" ]
+    ~f:(fun input ->
+      print_s
+        [%message
+          "" input ~_:(color_string ~drop_unsupported_escapes:true input : Text.t)]);
   [%expect
     {|
     ("\027" "<incomplete ANSI escape sequence \"\\027\">")
@@ -754,21 +763,23 @@ let%expect_test "color region incrementally" =
   let show text = print_s [%sexp (text : Text.t)] in
   let color_incrementally input_string ~preserve_state ~chunk_size =
     Current_buffer.set_temporarily_to_temp_buffer (fun () ->
-      Current_buffer.set_value_temporarily Ansi_color.show_invalid_escapes false ~f:
-        (fun () ->
-           let rec loop s =
-             if String.length s > 0
-             then (
-               let prefix = String.prefix s chunk_size in
-               let rest = String.drop_prefix s chunk_size in
-               let start = Point.get () in
-               Point.insert prefix;
-               let end_ = Point.get () in
-               color_region_in_current_buffer ~start ~end_ ~preserve_state ();
-               loop rest)
-           in
-           loop input_string;
-           Current_buffer.contents ~text_properties:true ()))
+      Current_buffer.set_value_temporarily
+        Ansi_color.show_invalid_escapes
+        false
+        ~f:(fun () ->
+          let rec loop s =
+            if String.length s > 0
+            then (
+              let prefix = String.prefix s chunk_size in
+              let rest = String.drop_prefix s chunk_size in
+              let start = Point.get () in
+              Point.insert prefix;
+              let end_ = Point.get () in
+              color_region_in_current_buffer ~start ~end_ ~preserve_state ();
+              loop rest)
+          in
+          loop input_string;
+          Current_buffer.contents ~text_properties:true ()))
   in
   let input = concat [ escape [ 31; 42 ]; "foo"; escape [ 0 ]; "bar" ] in
   show (color_incrementally input ~preserve_state:false ~chunk_size:1);
@@ -1128,11 +1139,13 @@ let%expect_test "colors" =
     let bright_color = color + 60 in
     let background_color = color + 10 in
     let bright_background_color = background_color + 60 in
-    List.iter [ color; bright_color; background_color; bright_background_color ] ~f:
-      (fun color ->
-         test ~show_input:false (sprintf "%scolor %d" (escape [ color ]) color);
-         test ~show_input:false
-           (sprintf "%scolor %d with faint" (escape [ color; 2 ]) color)));
+    List.iter
+      [ color; bright_color; background_color; bright_background_color ]
+      ~f:(fun color ->
+        test ~show_input:false (sprintf "%scolor %d" (escape [ color ]) color);
+        test
+          ~show_input:false
+          (sprintf "%scolor %d with faint" (escape [ color; 2 ]) color)));
   [%expect
     {|
     (Ok (

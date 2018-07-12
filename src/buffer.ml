@@ -97,16 +97,15 @@ module Which_buffers = struct
   let to_value = function
     | File_visiting -> Value.nil
     | These f ->
-      Function.create
-        [%here]
-        ~args:[]
-        (fun _ -> f (Current_buffer0.get ()) |> Value.of_bool)
+      Function.create [%here] ~args:[] (fun _ ->
+        f (Current_buffer0.get ()) |> Value.of_bool)
       |> Function.to_value
   ;;
 end
 
 let save_some ?(query=true) ?(which_buffers=Which_buffers.File_visiting) () =
-  Symbol.funcall2_i Q.save_some_buffers
+  Symbol.funcall2_i
+    Q.save_some_buffers
     (not query |> Value.of_bool)
     (which_buffers |> Which_buffers.to_value)
 ;;

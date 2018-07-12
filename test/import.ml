@@ -49,7 +49,8 @@ let print_s ?(templatize_current_directory=false) sexp =
        String.Search_pattern.replace_all
          (String.Search_pattern.create
             (File.truename Current_buffer.(value_exn directory)))
-         ~in_:string ~with_:"<current-directory>/")
+         ~in_:string
+         ~with_:"<current-directory>/")
 ;;
 
 let touch filename =
@@ -75,7 +76,8 @@ let with_input_macro string f =
     String.concat ~sep:" " [ start_sequence; string ] |> Key_sequence.create_exn
   in
   let keymap = Keymap.create () in
-  Keymap.define_key keymap
+  Keymap.define_key
+    keymap
     (Key_sequence.create_exn start_sequence)
     (Value (lambda_nullary_nil [%here] f ~interactive:"" |> Function.to_value));
   Keymap.set_transient keymap;
@@ -92,7 +94,8 @@ let with_input string f =
   (try
      Out_channel.output_string out string;
      Out_channel.close out
-   with Sys_blocked_io ->
+   with
+   | Sys_blocked_io ->
      (* The channel is in a state where it cannot be flushed.
         Close the channel explicitly instead of waiting for the
         finalizer as it would attempt to flush. *)

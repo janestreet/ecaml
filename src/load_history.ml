@@ -106,6 +106,7 @@ let update_emacs_with_entries ~chop_prefix ~in_dir =
     |> Value.list
   in
   entries := [];
-  Current_buffer.set_value load_history
+  Current_buffer.set_value
+    load_history
     (Symbol.funcall2 Q.append addition (Current_buffer.value_exn load_history))
 ;;

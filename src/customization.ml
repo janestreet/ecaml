@@ -135,7 +135,8 @@ let defcustom here option customization_type ~docstring ~group ~standard_value =
            |> Value.list
            |> Form.of_value_exn)
         : Value.t )
-  with exn ->
+  with
+  | exn ->
     raise_s
       [%message
         "[defcustom] failed"

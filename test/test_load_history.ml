@@ -3,13 +3,16 @@ open! Import
 open! Load_history
 
 let%expect_test "[defcustom], [defvar], [defun], [update_emacs_with_entries], \
-                 [defining_file]" =
+                 [defining_file]"
+  =
   let custom = "custom" |> Symbol.intern in
   let var = "var" |> Symbol.intern in
   let fun_ = "fun" |> Symbol.intern in
   defcustom
     [%here]
-    custom Boolean ~docstring:"custom docstring"
+    custom
+    Boolean
+    ~docstring:"custom docstring"
     ~group:("custom-group" |> Customization.Group.of_string)
     ~standard_value:Value.nil;
   defvar [%here] var Value.nil ~docstring:"foo";

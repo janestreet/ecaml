@@ -80,18 +80,14 @@ let%expect_test "[setup_hook]" =
 let%expect_test "[setup_hook] [exit_hook] don't run in batch mode" =
   (* These hooks do work in an interactive Emacs.  But in batch mode, they appear to be
      ignored. *)
-  Hook.add setup_hook
-    (Hook.Function.create
-       [%here]
-       Normal
-       ("test-setup" |> Symbol.intern)
-       (fun () -> print_s [%message "running setup hook"]));
-  Hook.add exit_hook
-    (Hook.Function.create
-       [%here]
-       Normal
-       ("test-exit" |> Symbol.intern)
-       (fun () -> print_s [%message "running exit hook"]));
+  Hook.add
+    setup_hook
+    (Hook.Function.create [%here] Normal ("test-setup" |> Symbol.intern) (fun () ->
+       print_s [%message "running setup hook"]));
+  Hook.add
+    exit_hook
+    (Hook.Function.create [%here] Normal ("test-exit" |> Symbol.intern) (fun () ->
+       print_s [%message "running exit hook"]));
   with_input "foo" (fun () -> print_s [%sexp (read_from () ~prompt:"" : string)]);
   [%expect {|
     foo |}]

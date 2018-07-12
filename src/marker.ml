@@ -47,7 +47,9 @@ let insertion_type t =
 ;;
 
 let set_insertion_type t insertion_type =
-  Symbol.funcall2_i Q.set_marker_insertion_type (t |> to_value)
+  Symbol.funcall2_i
+    Q.set_marker_insertion_type
+    (t |> to_value)
     (insertion_type |> Insertion_type.to_value)
 ;;
 
@@ -61,7 +63,9 @@ let create () = Symbol.funcall0 Q.make_marker |> of_value_exn
 let copy t = Symbol.funcall1 Q.copy_marker (t |> to_value) |> of_value_exn
 
 let set t buffer position =
-  Symbol.funcall3_i Q.set_marker (t |> to_value)
+  Symbol.funcall3_i
+    Q.set_marker
+    (t |> to_value)
     (position |> Position.to_value)
     (buffer |> Buffer.to_value)
 ;;

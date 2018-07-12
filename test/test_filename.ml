@@ -53,7 +53,8 @@ let%expect_test "[of_directory], [to_directory]" =
       [%message
         ""
           (filename : string)
-          ~of_directory:(of_directory filename) ~to_directory:(to_directory filename)]);
+          ~of_directory:(of_directory filename)
+          ~to_directory:(to_directory filename)]);
   [%expect
     {|
     ((filename     /)
@@ -90,14 +91,15 @@ let%expect_test "[is_absolute]" =
 ;;
 
 let%expect_test "[make_relative]" =
-  List.iter [ "/a/b/c", "/a/b/c"; "/a/b/c", "/a/b"; "/a/b/c", "/a"; "/a/b/c", "/" ] ~f:
-    (fun (filename, relative_to) ->
-       print_s
-         [%message
-           ""
-             (filename : string)
-             (relative_to : string)
-             ~relative:(make_relative filename ~relative_to)]);
+  List.iter
+    [ "/a/b/c", "/a/b/c"; "/a/b/c", "/a/b"; "/a/b/c", "/a"; "/a/b/c", "/" ]
+    ~f:(fun (filename, relative_to) ->
+      print_s
+        [%message
+          ""
+            (filename : string)
+            (relative_to : string)
+            ~relative:(make_relative filename ~relative_to)]);
   [%expect
     {|
     ((filename    /a/b/c)

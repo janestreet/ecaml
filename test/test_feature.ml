@@ -11,7 +11,10 @@ let%expect_test "[require] raise" =
     (raised (file-error ("Cannot open load file" "No such file or directory" foo))) |}]
 ;;
 
-let%expect_test "[provide], [require]" = provide foo; require foo
+let%expect_test "[provide], [require]" =
+  provide foo;
+  require foo
+;;
 
 let%expect_test "[require] uses [Symbol.equal]" =
   show_raise (fun () -> require (Symbol.create ~name:"foo"));

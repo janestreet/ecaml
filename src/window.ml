@@ -51,7 +51,10 @@ let point_exn t = Symbol.funcall1 Q.window_point (t |> to_value) |> Position.of_
 let width_exn t = Symbol.funcall1 Q.window_width (t |> to_value) |> Value.to_int_exn
 
 let set_buffer_exn ?(keep_margins=false) t buffer =
-  Symbol.funcall3_i Q.set_window_buffer (t |> to_value) (buffer |> Buffer.to_value)
+  Symbol.funcall3_i
+    Q.set_window_buffer
+    (t |> to_value)
+    (buffer |> Buffer.to_value)
     (keep_margins |> Value.of_bool)
 ;;
 

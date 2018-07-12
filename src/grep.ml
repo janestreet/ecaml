@@ -15,5 +15,6 @@ let grep ~command =
   Current_buffer.set_value_temporarily
     (* Prevent [grep] from appending [/dev/null] to the command. *)
     use_null_device
-    false ~f:(fun () -> Symbol.funcall1_i Q.grep (command |> Value.of_utf8_bytes))
+    false
+    ~f:(fun () -> Symbol.funcall1_i Q.grep (command |> Value.of_utf8_bytes))
 ;;

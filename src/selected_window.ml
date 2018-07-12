@@ -17,7 +17,9 @@ end
 let get () = Symbol.funcall0 Q.selected_window |> Window.of_value_exn
 
 let set ?(move_to_front_of_buffer_list=true) window =
-  Symbol.funcall2_i Q.select_window (window |> Window.to_value)
+  Symbol.funcall2_i
+    Q.select_window
+    (window |> Window.to_value)
     (not move_to_front_of_buffer_list |> Value.of_bool)
 ;;
 

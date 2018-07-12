@@ -89,16 +89,16 @@ and to_form t =
   | Or ts -> label Q.or_ (to_forms ts)
   | Pattern pattern -> label Q.regexp [ Form.string pattern ]
   | Point -> Form.symbol Q.point
-  | Repeat { min; max; t } -> (
-      match min, max with
-      | 0, None -> label Q.zero_or_more [ to_form t ]
-      | 0, Some 1 -> label Q.zero_or_one [ to_form t ]
-      | 1, None -> label Q.one_or_more [ to_form t ]
-      | n, None -> label Q.sym_ge [ Form.int n; to_form t ]
-      | n, Some m ->
-        match Int.( = ) n m with
+  | Repeat { min; max; t } ->
+    (match min, max with
+     | 0, None -> label Q.zero_or_more [ to_form t ]
+     | 0, Some 1 -> label Q.zero_or_one [ to_form t ]
+     | 1, None -> label Q.one_or_more [ to_form t ]
+     | n, None -> label Q.sym_ge [ Form.int n; to_form t ]
+     | n, Some m ->
+       (match Int.( = ) n m with
         | true -> label Q.sym_eq [ Form.int n; to_form t ]
-        | false -> label Q.sym_star_star [ Form.int n; Form.int m; to_form t ] )
+        | false -> label Q.sym_star_star [ Form.int n; Form.int m; to_form t ]))
   | Seq ts -> label Q.seq (to_forms ts)
   | Submatch t -> label Q.submatch [ to_form t ]
   | Submatch_n { index; t } -> label Q.submatch_n [ Form.int index; to_form t ]

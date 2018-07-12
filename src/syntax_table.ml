@@ -24,7 +24,8 @@ let equal = eq
 let standard = Symbol.funcall0 Q.standard_syntax_table |> of_value_exn
 
 let create ?parent () =
-  Symbol.funcall1 Q.make_syntax_table
+  Symbol.funcall1
+    Q.make_syntax_table
     (match parent with
      | None -> Value.nil
      | Some t -> t |> to_value)
@@ -137,7 +138,8 @@ module Descriptor = struct
 end
 
 let set t char_code class_ flags =
-  Symbol.funcall3_i Q.modify_syntax_entry
+  Symbol.funcall3_i
+    Q.modify_syntax_entry
     (char_code |> Char_code.to_value)
     ((class_, flags) |> Descriptor.to_value)
     (t |> to_value)

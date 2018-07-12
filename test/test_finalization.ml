@@ -38,7 +38,8 @@ let%expect_test "finalization of embedded ocaml values" =
     [@@deriving sexp_of]
 
     let type_id = Type_equal.Id.create ~name:"A" sexp_of_t
-  end in
+  end
+  in
   let a_type = Value.Type.caml_embed A.type_id in
   let var_name = "embedded-var-a" in
   let var = Var.create (Symbol.create ~name:var_name) a_type in

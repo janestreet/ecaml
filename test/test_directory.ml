@@ -4,10 +4,14 @@ open! Directory
 
 let%expect_test "" = try delete "zzz" ~recursive:true with _ -> ()
 
-let%expect_test "[create], [delete]" = create "zzz"; delete "zzz"
+let%expect_test "[create], [delete]" =
+  create "zzz";
+  delete "zzz"
+;;
 
 let%expect_test "[create ~parents:true], [delete ~recursive:true]" =
-  create "a/b/c" ~parents:true; delete "a" ~recursive:true
+  create "a/b/c" ~parents:true;
+  delete "a" ~recursive:true
 ;;
 
 let%expect_test "[create] raise" =
@@ -18,7 +22,8 @@ let%expect_test "[create] raise" =
 ;;
 
 let%expect_test "[delete] raise" =
-  print_s ~templatize_current_directory:true
+  print_s
+    ~templatize_current_directory:true
     [%sexp (try_with (fun () -> delete "zzz") : _ Or_error.t)];
   [%expect
     {|
@@ -46,7 +51,8 @@ let%expect_test "[files]" =
 let%expect_test "[files_recursively]" =
   create "a/b/c" ~parents:true;
   List.iter ~f:touch [ "a/z1"; "a/b/z2"; "a/b/c/z3" ];
-  print_s ~templatize_current_directory:true
+  print_s
+    ~templatize_current_directory:true
     [%sexp (files_recursively "a" ~matching:("" |> Regexp.of_pattern) : Filename.t list)];
   [%expect
     {|

@@ -17,14 +17,11 @@ end
 let save_ save_function f =
   let r = ref None in
   let f =
-    Function.create
-      [%here]
-      ~args:[]
-      (function
-        | [|  |] ->
-          r := Some (f ());
-          Value.nil
-        | _ -> assert false)
+    Function.create [%here] ~args:[] (function
+      | [|  |] ->
+        r := Some (f ());
+        Value.nil
+      | _ -> assert false)
   in
   ignore
     ( Form.eval

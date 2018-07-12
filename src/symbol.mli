@@ -66,5 +66,4 @@ module Make_subtype (Arg : sig
     val module_name : string
 
     val to_symbol : t -> symbol
-  end) :
-  Subtype with type t := Arg.t
+  end) : Subtype with type t := Arg.t

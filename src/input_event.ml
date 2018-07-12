@@ -43,13 +43,13 @@ module Basic = struct
   let of_value_exn value =
     if Value.is_symbol value
     then Symbol (value |> Symbol.of_value_exn)
-    else
+    else (
       match Char_code.of_value_exn value with
       | char_code -> Char_code char_code
       | exception _ ->
         raise_s
           [%message
-            "[Input_event.Basic.of_value_exn] got unexpected value" (value : Value.t)]
+            "[Input_event.Basic.of_value_exn] got unexpected value" (value : Value.t)])
   ;;
 end
 
@@ -113,8 +113,10 @@ let unread_command_input = Var.create Q.unread_command_events Value.Type.(list t
 
 let enqueue_unread_command_input ts =
   let unread_command_events = Var.create Q.unread_command_events Value.Type.value in
-  Current_buffer.set_value unread_command_events
-    (Symbol.funcall2 Q.append
+  Current_buffer.set_value
+    unread_command_events
+    (Symbol.funcall2
+       Q.append
        (unread_command_events |> Current_buffer.value_exn)
        ((ts : t list :> Value.t list) |> Value.list))
 ;;

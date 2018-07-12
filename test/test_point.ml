@@ -75,8 +75,14 @@ let%expect_test "[forward_char_exn], [backward_char_exn]" =
 
 let%expect_test "[backward_line], [forward_line], [line_number]" =
   let show_line_num () = print_s [%message "" ~line_number:(line_number () : int)] in
-  let backward_line n = backward_line n; show_line_num () in
-  let forward_line n = forward_line n; show_line_num () in
+  let backward_line n =
+    backward_line n;
+    show_line_num ()
+  in
+  let forward_line n =
+    forward_line n;
+    show_line_num ()
+  in
   Current_buffer.set_temporarily_to_temp_buffer (fun () ->
     backward_line 1;
     [%expect {|
@@ -84,7 +90,9 @@ let%expect_test "[backward_line], [forward_line], [line_number]" =
     forward_line 1;
     [%expect {|
       (line_number 1) |}];
-    for _ = 1 to 10 do insert "foo\n" done;
+    for _ = 1 to 10 do
+      insert "foo\n"
+    done;
     show_line_num ();
     [%expect {|
       (line_number 11) |}];
@@ -105,8 +113,14 @@ let%expect_test "[backward_line], [forward_line], [line_number]" =
 let%expect_test "[forward_sexp_exn], [backward_sexp_exn]" =
   Current_buffer.set_temporarily_to_temp_buffer (fun () ->
     insert "(a b c) d (ef)";
-    let backward_sexp_exn i = backward_sexp_exn i; show () in
-    let forward_sexp_exn i = forward_sexp_exn i; show () in
+    let backward_sexp_exn i =
+      backward_sexp_exn i;
+      show ()
+    in
+    let forward_sexp_exn i =
+      forward_sexp_exn i;
+      show ()
+    in
     backward_sexp_exn 1;
     [%expect {|
       (point 11) |}];
@@ -124,8 +138,14 @@ let%expect_test "[forward_sexp_exn], [backward_sexp_exn]" =
 let%expect_test "[forward_sexp_exn], [backward_sexp_exn] raise" =
   Current_buffer.set_temporarily_to_temp_buffer (fun () ->
     insert "a b c) d (ef)";
-    let backward_sexp_exn i = backward_sexp_exn i; show () in
-    let forward_sexp_exn i = forward_sexp_exn i; show () in
+    let backward_sexp_exn i =
+      backward_sexp_exn i;
+      show ()
+    in
+    let forward_sexp_exn i =
+      forward_sexp_exn i;
+      show ()
+    in
     backward_sexp_exn 2;
     [%expect {|
       (point 8) |}];
@@ -145,8 +165,14 @@ let%expect_test "[forward_sexp_exn], [backward_sexp_exn] raise" =
 let%expect_test "[forward_word], [backward_word]" =
   Current_buffer.set_temporarily_to_temp_buffer (fun () ->
     insert "word1 word2 word3";
-    let backward_word i = backward_word i; show () in
-    let forward_word i = forward_word i; show () in
+    let backward_word i =
+      backward_word i;
+      show ()
+    in
+    let forward_word i =
+      forward_word i;
+      show ()
+    in
     backward_word 1;
     [%expect {|
       (point 13) |}];

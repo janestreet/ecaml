@@ -34,7 +34,10 @@ let char_code t i =
 ;;
 
 let set_char_code t i char_code =
-  Symbol.funcall3_i Q.aset (t |> to_value) (i |> Value.of_int_exn)
+  Symbol.funcall3_i
+    Q.aset
+    (t |> to_value)
+    (i |> Value.of_int_exn)
     (char_code |> Char_code.to_value)
 ;;
 
@@ -93,11 +96,13 @@ module Face_spec = struct
       match t with
       | Attributes attributes ->
         Value.list
-          (List.fold (List.rev attributes) ~init:[] ~f:
-             (fun ac (Face.Attribute_and_value.T (attribute, value)) ->
-                (attribute |> Face.Attribute.to_symbol |> Symbol.to_value)
-                :: (value |> Face.Attribute.to_value attribute)
-                :: ac))
+          (List.fold
+             (List.rev attributes)
+             ~init:[]
+             ~f:(fun ac (Face.Attribute_and_value.T (attribute, value)) ->
+               (attribute |> Face.Attribute.to_symbol |> Symbol.to_value)
+               :: (value |> Face.Attribute.to_value attribute)
+               :: ac))
       | Face face -> face |> Face.to_value
     ;;
 
@@ -113,7 +118,7 @@ module Face_spec = struct
         let car = Value.car_exn value in
         let cdr = Value.cdr_exn value in
         if not (Value.is_cons cdr)
-        then
+        then (
           (* Old style specs: [(background-color . color)] [(foreground-color . color)] *)
           let symbol = car |> Symbol.of_value_exn in
           let color = cdr |> Color.of_value_exn in
@@ -121,8 +126,8 @@ module Face_spec = struct
           then Attributes [ T (Foreground, Color color) ]
           else if Symbol.equal symbol Q.background_color
           then Attributes [ T (Background, Color color) ]
-          else raise_unexpected value
-        else
+          else raise_unexpected value)
+        else (
           let rec loop value ac =
             if Value.is_nil value
             then Attributes (List.rev ac)
@@ -142,7 +147,7 @@ module Face_spec = struct
                      , Value.car_exn cdr |> Face.Attribute.of_value_exn attribute )
                    :: ac))
           in
-          loop value []
+          loop value [])
     ;;
   end
 
@@ -160,19 +165,18 @@ module Face_spec = struct
   let of_value_exn value =
     if Value.is_nil value
     then []
-    else
+    else (
       match One.of_value_exn value with
       | one -> [ one ]
-      | exception _ -> Value.to_list_exn value ~f:One.of_value_exn
+      | exception _ -> Value.to_list_exn value ~f:One.of_value_exn)
   ;;
 
   let of_value_exn value =
-    try of_value_exn value with exn ->
+    try of_value_exn value with
+    | exn ->
       raise_s
         [%message
-          "[Text.Face_spec.of_value_exn] got unexpected value"
-            (value : Value.t)
-            (exn : exn)]
+          "[Text.Face_spec.of_value_exn] got unexpected value" (value : Value.t) (exn : exn)]
   ;;
 end
 
@@ -241,17 +245,17 @@ module Property_name = struct
             "[Text.Property.Packed.of_name_as_value_exn] got unexpected value"
               (value : Value.t)]
       | symbol ->
-        match
-          List.find !all_except_unknown ~f:(fun t -> Symbol.equal symbol (name t))
-        with
-        | Some t -> t
-        | None ->
-          T
-            ( module struct
-              include Unknown
+        (match
+           List.find !all_except_unknown ~f:(fun t -> Symbol.equal symbol (name t))
+         with
+         | Some t -> t
+         | None ->
+           T
+             ( module struct
+               include Unknown
 
-              let name = symbol
-            end )
+               let name = symbol
+             end ))
     ;;
   end
 
@@ -308,8 +312,8 @@ module Property = struct
       let property_value_and_rest = Value.cdr_exn value in
       T
         ( property_name
-        , Value.car_exn property_value_and_rest
-          |> Property_name.of_value_exn property_name )
+        , Value.car_exn property_value_and_rest |> Property_name.of_value_exn property_name
+        )
       :: of_property_list_exn (Value.cdr_exn property_value_and_rest)
   ;;
 
@@ -321,14 +325,17 @@ module Property = struct
 end
 
 let propertize t properties =
-  Symbol.funcallN Q.propertize
+  Symbol.funcallN
+    Q.propertize
     ((t |> to_value) :: (properties |> Property.to_property_list))
   |> of_value_exn
 ;;
 
 let property_value t ~at property_name =
   let value =
-    Symbol.funcall3 Q.get_text_property (at |> Value.of_int_exn)
+    Symbol.funcall3
+      Q.get_text_property
+      (at |> Value.of_int_exn)
       (property_name |> Property_name.name |> Symbol.to_value)
       (t |> to_value)
   in
@@ -357,7 +364,9 @@ let get_end t end_ =
 ;;
 
 let set_property ?start ?end_ t property_name property_value =
-  Symbol.funcall5_i Q.put_text_property (start |> get_start)
+  Symbol.funcall5_i
+    Q.put_text_property
+    (start |> get_start)
     (end_ |> get_end t)
     (property_name |> Property_name.name_as_value)
     (property_value |> Property_name.to_value property_name)
@@ -365,21 +374,27 @@ let set_property ?start ?end_ t property_name property_value =
 ;;
 
 let add_properties ?start ?end_ t properties =
-  Symbol.funcall4_i Q.add_text_properties (start |> get_start)
+  Symbol.funcall4_i
+    Q.add_text_properties
+    (start |> get_start)
     (end_ |> get_end t)
     (properties |> Property.to_property_list |> Value.list)
     (t |> to_value)
 ;;
 
 let set_properties ?start ?end_ t properties =
-  Symbol.funcall4_i Q.set_text_properties (start |> get_start)
+  Symbol.funcall4_i
+    Q.set_text_properties
+    (start |> get_start)
     (end_ |> get_end t)
     (properties |> Property.to_property_list |> Value.list)
     (t |> to_value)
 ;;
 
 let remove_properties ?start ?end_ t property_names =
-  Symbol.funcall4_i Q.remove_list_of_text_properties (start |> get_start)
+  Symbol.funcall4_i
+    Q.remove_list_of_text_properties
+    (start |> get_start)
     (end_ |> get_end t)
     (property_names |> List.map ~f:Property_name.Packed.name_as_value |> Value.list)
     (t |> to_value)

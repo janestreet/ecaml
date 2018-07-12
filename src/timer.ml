@@ -26,7 +26,9 @@ let timer_list = Var.create Q.timer_list Value.Type.(list type_)
 let all_scheduled () = Current_buffer.value_exn timer_list
 
 let is_scheduled t =
-  Symbol.funcall2 Q.memq (t |> to_value)
+  Symbol.funcall2
+    Q.memq
+    (t |> to_value)
     (Current_buffer.value_exn { symbol = Q.timer_list; type_ = Value.Type.value })
   |> Value.to_bool
 ;;
@@ -34,11 +36,16 @@ let is_scheduled t =
 let to_seconds span = span |> Time_ns.Span.to_sec |> Value.of_float
 
 let run_after ?repeat span f =
-  Symbol.funcall3 Q.run_at_time (span |> to_seconds)
+  Symbol.funcall3
+    Q.run_at_time
+    (span |> to_seconds)
     (match repeat with
      | None -> Value.nil
      | Some span -> span |> to_seconds)
-    (Function.create [%here] ~args:[] (fun _ -> f (); Value.nil) |> Function.to_value)
+    (Function.create [%here] ~args:[] (fun _ ->
+       f ();
+       Value.nil)
+     |> Function.to_value)
   |> of_value_exn
 ;;
 

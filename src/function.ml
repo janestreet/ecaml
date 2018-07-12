@@ -43,7 +43,8 @@ let create =
         This is the only emacs function that we create using emacs module C API. All other
         functions are lambdas that call this function. *)
     external make_dispatch_function : string -> Value.t = "ecaml_make_dispatch_function"
-  end in
+  end
+  in
   let open M in
   (* [dispatch_function] is registered and emacs [dispatch] function is created before any
      callback is created and can be called *)
@@ -52,7 +53,8 @@ let create =
     try
       let callback = Caml_embed.lookup_by_id_exn callback_id Fn.type_id in
       callback args
-    with exn ->
+    with
+    | exn ->
       Value.Expert.non_local_exit_signal exn;
       Value.nil);
   let dispatch =
@@ -78,12 +80,19 @@ let create =
        OCaml value runs, that will decrement the Emacs refcount, but will still leave it
        to Emacs to run [callback]'s finalizer once the lambda is not referenced anymore. *)
     let module F = Form in
-    F.lambda ?docstring ?interactive ?optional_args ?rest_arg here ~args
+    F.lambda
+      ?docstring
+      ?interactive
+      ?optional_args
+      ?rest_arg
+      here
+      ~args
       ~body:
         F.(
           list
             ([ symbol Q.apply; of_value_exn dispatch; of_value_exn callback ]
-             @ List.map ~f:symbol
+             @ List.map
+                 ~f:symbol
                  (args
                   @ (optional_args |> Option.value ~default:[])
                   @ [ rest_arg |> Option.value ~default:Q.nil ])))
@@ -98,6 +107,7 @@ end
 let defun ?docstring ?interactive ?optional_args ?rest_arg here ~args symbol f =
   Load_history.add_entry here (Fun symbol);
   For_testing.defun_symbols := symbol :: !For_testing.defun_symbols;
-  Symbol.set_function symbol
+  Symbol.set_function
+    symbol
     (create ?docstring ?interactive ?optional_args ?rest_arg here ~args f |> to_value)
 ;;

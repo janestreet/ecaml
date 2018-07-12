@@ -8,8 +8,8 @@ open! Import0
 
 type t = string [@@deriving compare, sexp_of]
 
-include Comparable.S with type t := t
-  with type comparator_witness = String.comparator_witness
+include
+  Comparable.S with type t := t with type comparator_witness = String.comparator_witness
 
 include Valueable.S with type t := t
 

@@ -111,17 +111,18 @@ let beginning_exn thing =
 
 let beginning = did_not_raise beginning_exn
 
-let end_exn thing =
-  with_settings thing ~f:(fun () -> F.end_of_thing (thing |> to_symbol))
-;;
+let end_exn thing = with_settings thing ~f:(fun () -> F.end_of_thing (thing |> to_symbol))
 
 let end_ = did_not_raise end_exn
 
 let bounds_prop = Symbol.Property.create Q.bounds_of_thing_at_point Function.type_
 
 let defthing ~(bounds : unit -> (Position.t * Position.t) option) loc symbol =
-  Symbol.Property.put bounds_prop symbol
-    (Defun.lambda_nullary loc
+  Symbol.Property.put
+    bounds_prop
+    symbol
+    (Defun.lambda_nullary
+       loc
        Value.Type.(option (tuple Position.type_ Position.type_))
        bounds)
 ;;

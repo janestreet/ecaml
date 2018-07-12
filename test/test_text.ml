@@ -17,7 +17,8 @@ let face = Property_name.face
 let font_lock_face = Property_name.font_lock_face
 
 let%expect_test "[length]" =
-  for i = 0 to 3 do print_s [%sexp (length (of_utf8_bytes (String.make i 'a')) : int)]
+  for i = 0 to 3 do
+    print_s [%sexp (length (of_utf8_bytes (String.make i 'a')) : int)]
   done;
   [%expect {|
     0
@@ -107,7 +108,9 @@ let%expect_test "malformed UTF-8" =
 let show_string_bytes string =
   let n = String.length string in
   printf "length s = %d\n" n;
-  for i = 0 to n - 1 do printf "s.[ %2d ] = %C\n" i string.[i] done
+  for i = 0 to n - 1 do
+    printf "s.[ %2d ] = %C\n" i string.[i]
+  done
 ;;
 
 let%expect_test "show steps in the rendering of [text] in the malformed UTF-8 test" =

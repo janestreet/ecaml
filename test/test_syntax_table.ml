@@ -10,7 +10,8 @@ let show t =
       let char = i |> Char.of_int_exn in
       if Char.is_print char
       then
-        Hashtbl.add_multi by_class
+        Hashtbl.add_multi
+          by_class
           ~key:(Current_buffer.syntax_class (char |> Char_code.of_char_exn))
           ~data:char
     done;

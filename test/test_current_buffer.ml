@@ -218,9 +218,11 @@ let%expect_test "[set_values_temporarily]" =
   show ();
   [%expect {|
     (13 14) |}];
-  set_values_temporarily [ T (v1, 15); T (v2, 16) ] ~f:(fun () ->
-    show ();
-    [%expect {|
+  set_values_temporarily
+    [ T (v1, 15); T (v2, 16) ]
+    ~f:(fun () ->
+      show ();
+      [%expect {|
       (15 16) |}]);
   show ();
   [%expect {|
@@ -361,7 +363,9 @@ let%expect_test "[save_excursion]" =
 let%expect_test "[save_excursion] preserves point" =
   set_temporarily_to_temp_buffer (fun () ->
     show_point ();
-    save_excursion (fun () -> Point.insert "foo"; show_point ());
+    save_excursion (fun () ->
+      Point.insert "foo";
+      show_point ());
     show_point ());
   [%expect {|
     (point 1)
@@ -371,7 +375,9 @@ let%expect_test "[save_excursion] preserves point" =
 
 let%expect_test "[save_excursion] preserves current buffer" =
   let t = Buffer.find_or_create ~name:"zzz" in
-  save_excursion (fun () -> set t; show ());
+  save_excursion (fun () ->
+    set t;
+    show ());
   show ();
   [%expect {|
     "#<buffer zzz>"
@@ -395,7 +401,9 @@ let%expect_test "[set_multibyte], [is_multibyte]" =
 
 let%expect_test "[rename_exn]" =
   let t = Buffer.create ~name:"foo" in
-  set_temporarily t ~f:(fun () -> rename_exn () ~name:"bar"; show ());
+  set_temporarily t ~f:(fun () ->
+    rename_exn () ~name:"bar";
+    show ());
   [%expect {|
     "#<buffer bar>" |}];
   Buffer.kill t
@@ -404,11 +412,9 @@ let%expect_test "[rename_exn]" =
 let%expect_test "[rename_exn] raise" =
   let t1 = Buffer.create ~name:"foo" in
   let t2 = Buffer.create ~name:"bar" in
-  require_does_raise
-    [%here]
-    (fun () ->
-       set_temporarily t1 ~f:(fun () ->
-         rename_exn () ~name:(Buffer.name t2 |> Option.value_exn)));
+  require_does_raise [%here] (fun () ->
+    set_temporarily t1 ~f:(fun () ->
+      rename_exn () ~name:(Buffer.name t2 |> Option.value_exn)));
   [%expect {|
     ("Buffer name `bar' is in use") |}];
   Buffer.kill t1;

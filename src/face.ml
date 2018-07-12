@@ -183,16 +183,16 @@ module Height = struct
   let of_value_exn value =
     if Value.eq value Value.unspecified
     then Unspecified
-    else
+    else (
       match Value.to_int_exn value with
       | i -> Tenths_of_point i
       | exception _ ->
-        match Value.to_float_exn value with
-        | f -> Scale_underlying_face f
-        | exception _ ->
-          raise_s
-            [%message
-              "[Face.Height.of_value_exn] got unexpected value" (value : Value.t)]
+        (match Value.to_float_exn value with
+         | f -> Scale_underlying_face f
+         | exception _ ->
+           raise_s
+             [%message
+               "[Face.Height.of_value_exn] got unexpected value" (value : Value.t)]))
   ;;
 
   let to_value = function
@@ -274,12 +274,12 @@ module Line = struct
     then Absent
     else if Value.eq value Value.t
     then Foreground
-    else
+    else (
       match Color.of_value_exn value with
       | c -> Color c
       | exception _ ->
         raise_s
-          [%message "[Face.Line.of_value_exn] got unexpected value" (value : Value.t)]
+          [%message "[Face.Line.of_value_exn] got unexpected value" (value : Value.t)])
   ;;
 
   let to_value = function
@@ -528,14 +528,16 @@ module Attribute = struct
   ;;
 
   let is_relative t a =
-    Symbol.funcall2 Q.face_attribute_relative_p
+    Symbol.funcall2
+      Q.face_attribute_relative_p
       (t |> to_symbol |> Symbol.to_value)
       (a |> to_value t)
     |> Value.to_bool
   ;;
 
   let merge t a1 a2 =
-    Symbol.funcall3 Q.merge_face_attribute
+    Symbol.funcall3
+      Q.merge_face_attribute
       (t |> to_symbol |> Symbol.to_value)
       (a1 |> to_value t)
       (a2 |> to_value t)
@@ -592,14 +594,19 @@ let font_family_list ?on () =
 ;;
 
 let attribute_value ?on t attribute =
-  Symbol.funcall3 Q.face_attribute (t |> to_value)
+  Symbol.funcall3
+    Q.face_attribute
+    (t |> to_value)
     (attribute |> Attribute.to_symbol |> Symbol.to_value)
     (frame on)
   |> Attribute.of_value_exn attribute
 ;;
 
 let set_attribute ?on t attribute value =
-  Symbol.funcall4_i Q.set_face_attribute (t |> to_value) (frame on)
+  Symbol.funcall4_i
+    Q.set_face_attribute
+    (t |> to_value)
+    (frame on)
     (attribute |> Attribute.to_symbol |> Symbol.to_value)
     (Attribute.to_value attribute value)
 ;;
@@ -610,7 +617,9 @@ let attributes ?on t =
 ;;
 
 let spec_set face specs =
-  Symbol.funcall2_i Q.face_spec_set (to_value face)
+  Symbol.funcall2_i
+    Q.face_spec_set
+    (to_value face)
     Value.(
       list [ cons t (list (List.concat_map specs ~f:Attribute_and_value.to_value_list)) ])
 ;;

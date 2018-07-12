@@ -67,7 +67,10 @@ let auto_mode_alist = Var.create Q.auto_mode_alist type_
 let auto_mode_alist_value = Var.create Q.auto_mode_alist Value.Type.value
 
 let add entries =
-  Current_buffer.set_value auto_mode_alist_value
-    (Symbol.funcall2 Q.append (type_.to_value entries)
+  Current_buffer.set_value
+    auto_mode_alist_value
+    (Symbol.funcall2
+       Q.append
+       (type_.to_value entries)
        (Current_buffer.value_exn auto_mode_alist_value))
 ;;

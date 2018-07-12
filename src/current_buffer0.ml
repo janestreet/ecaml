@@ -50,8 +50,7 @@ let set_values_temporarily vars_and_values ~f =
     List.map vars_and_values ~f:(fun (Var.And_value.T (var, _)) ->
       Var.And_value_option.T (var, value var))
   in
-  List.iter vars_and_values ~f:(fun (Var.And_value.T (var, value)) ->
-    set_value var value);
+  List.iter vars_and_values ~f:(fun (Var.And_value.T (var, value)) -> set_value var value);
   protect ~f ~finally:(fun () ->
     let new_buffer = get () in
     let buffer_changed = not (Buffer.equal old_buffer new_buffer) in

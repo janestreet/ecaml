@@ -3,10 +3,11 @@ open! Import
 open! Form
 
 let%expect_test "[eval]" =
-  List.iter [ "13"; "(+ 1 4)"; "((lambda (x) (+ x 1)) 13)"; "(+ \"foo\")" ] ~f:
-    (fun (string : string) ->
-       let value = Or_error.try_with (fun () -> eval (string |> read)) in
-       print_s [%message "" ~_:(string : string) "-->" ~_:(value : Value.t Or_error.t)]);
+  List.iter
+    [ "13"; "(+ 1 4)"; "((lambda (x) (+ x 1)) 13)"; "(+ \"foo\")" ]
+    ~f:(fun (string : string) ->
+      let value = Or_error.try_with (fun () -> eval (string |> read)) in
+      print_s [%message "" ~_:(string : string) "-->" ~_:(value : Value.t Or_error.t)]);
   [%expect
     {|
     (13 --> (Ok 13))
@@ -48,7 +49,9 @@ let%expect_test "[defcustom]" =
   let x = "x" |> Symbol.intern in
   defcustom
     [%here]
-    x Integer ~docstring:"some text"
+    x
+    Integer
+    ~docstring:"some text"
     ~group:("test" |> Customization.Group.of_string)
     ~standard_value:(13 |> Value.of_int_exn);
   print_s [%sexp (symbol_plist x : Value.t)];

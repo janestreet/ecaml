@@ -22,9 +22,8 @@ let%expect_test "[find], [bounds]" =
     let bounded_text =
       Option.map bounds ~f:(fun (start, end_) -> Current_buffer.contents ~start ~end_ ())
     in
-    require_does_not_raise
-      [%here]
-      (fun () -> [%test_eq: Text.Compare_as_string.t option] found bounded_text);
+    require_does_not_raise [%here] (fun () ->
+      [%test_eq: Text.Compare_as_string.t option] found bounded_text);
     print_s [%sexp (found : Text.t option)]
   in
   in_test_buffer (fun () ->
@@ -44,7 +43,8 @@ let%expect_test "[find], [bounds]" =
 let%expect_test "[forward], [beginning], [beginning_exn], [end_], [end_exn]" =
   let show_point () =
     let point = Point.get () in
-    printf "%s│%s"
+    printf
+      "%s│%s"
       (Current_buffer.contents ~end_:point () |> Text.to_utf8_bytes)
       (Current_buffer.contents ~start:point () |> Text.to_utf8_bytes)
   in

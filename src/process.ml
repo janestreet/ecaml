@@ -69,7 +69,8 @@ let all_emacs_children () =
 ;;
 
 let create ?buffer () ~args ~name ~prog =
-  Symbol.funcallN Q.start_process
+  Symbol.funcallN
+    Q.start_process
     ([ name |> Value.of_utf8_bytes
      ; (match buffer with
         | None -> Value.nil
@@ -84,7 +85,8 @@ let kill t = Symbol.funcall1_i Q.delete_process (t |> to_value)
 
 let create_unix_network_process () ~filter ~name ~socket_path =
   of_value_exn
-    (Symbol.funcallN Q.make_network_process
+    (Symbol.funcallN
+       Q.make_network_process
        [ Q.K.name |> Symbol.to_value
        ; name |> Value.of_utf8_bytes
        ; Q.K.family |> Symbol.to_value
@@ -95,10 +97,8 @@ let create_unix_network_process () ~filter ~name ~socket_path =
        ; socket_path |> Value.of_utf8_bytes
        ; Q.K.filter |> Symbol.to_value
        ; Function.to_value
-           (Function.create
-              [%here]
-              ~docstring:"Network process filter." ~args:[ Q.process; Q.output ]
-              (function
+           (Function.create [%here] ~docstring:"Network process filter."
+              ~args:[ Q.process; Q.output ] (function
                 | [| process; output |] ->
                   filter (process |> of_value_exn) (output |> Text.of_value_exn);
                   Value.nil
@@ -187,10 +187,17 @@ module Call = struct
   end
 end
 
-let call_result_exn ?(input=Call.Input.Dev_null) ?(output=Call.Output.Dev_null)
-      ?(redisplay_on_output=false) ?(working_directory=Working_directory.Root) prog args =
+let call_result_exn
+      ?(input=Call.Input.Dev_null)
+      ?(output=Call.Output.Dev_null)
+      ?(redisplay_on_output=false)
+      ?(working_directory=Working_directory.Root)
+      prog
+      args
+  =
   Working_directory.within working_directory ~f:(fun () ->
-    Symbol.funcallN Q.call_process
+    Symbol.funcallN
+      Q.call_process
       ([ prog |> Value.of_utf8_bytes
        ; input |> Call.Input.to_value
        ; output |> Call.Output.to_value
@@ -223,8 +230,13 @@ let call_exn ?input ?working_directory ?(strip_whitespace=true) prog args =
             ~output:(Current_buffer.contents () : Text.t)])
 ;;
 
-let call_expect_no_output_exn ?input ?working_directory ?(strip_whitespace=false) prog
-      args =
+let call_expect_no_output_exn
+      ?input
+      ?working_directory
+      ?(strip_whitespace=false)
+      prog
+      args
+  =
   let result = call_exn ?input ?working_directory ~strip_whitespace prog args in
   if String.is_empty result
   then ()
