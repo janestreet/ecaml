@@ -80,7 +80,7 @@ end
 (** [(Info-goto-node "(elisp)Face Attributes")] *)
 module Inherit : sig
   type nonrec t =
-    | Face of t
+    | Face of t list
     | Unspecified
   [@@deriving sexp_of]
 end

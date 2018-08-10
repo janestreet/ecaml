@@ -10,6 +10,8 @@ open! Import
 
 (** [(describe-function 'provide)] *)
 val provide : Symbol.t -> unit
+[@@deprecated
+  "[since 2018-06] Requires additional initialization.  Use [Ecaml.provide] instead."]
 
 (** [(describe-function 'require)] *)
 val require : Symbol.t -> unit

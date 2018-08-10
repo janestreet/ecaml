@@ -52,7 +52,9 @@ module Raw_prefix_argument = struct
           "[Raw_prefix_argument.of_value] got unexpected value" (value : Value.t)]
   ;;
 
-  let type_ = { Value.Type.name = [%message "raw_prefix_arg"]; of_value_exn; to_value }
+  let type_ =
+    Value.Type.create [%message "raw_prefix_arg"] [%sexp_of: t] of_value_exn to_value
+  ;;
 
   let for_current_command = Var.create Q.current_prefix_arg type_
 

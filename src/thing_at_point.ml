@@ -22,7 +22,6 @@ module Q = struct
 end
 
 module F = struct
-  open Value.Type
   open Funcall
 
   let beginning_of_thing = Q.beginning_of_thing <: Symbol.type_ @-> return nil
@@ -124,5 +123,6 @@ let defthing ~(bounds : unit -> (Position.t * Position.t) option) loc symbol =
     (Defun.lambda_nullary
        loc
        Value.Type.(option (tuple Position.type_ Position.type_))
-       bounds)
+       bounds);
+  Other symbol
 ;;

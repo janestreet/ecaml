@@ -9,7 +9,7 @@ let%expect_test "" =
     Value.Type.int
     for_function
     (let open Defun.Let_syntax in
-     let%map_open args = rest ("rest" |> Symbol.intern) Value.Type.value in
+     let%map_open args = rest ("rest" |> Symbol.intern) value in
      print_s [%message "test-function" (args : Value.t list)];
      13);
   let call_test_function () =
@@ -19,16 +19,11 @@ let%expect_test "" =
     print_s [%message "call" (result : Value.t)]
   in
   let advice_name = "test-advice" |> Symbol.intern in
-  Advice.add
-    [%here]
-    Value.Type.int
-    advice_name
-    ~for_function
-    (fun ~inner ~inner_args:rest ->
-       print_s [%message "advice" (rest : Value.t list)];
-       let inner_result = inner ((0 |> Value.of_int_exn) :: rest) in
-       print_s [%message "advice" (inner_result : Value.t)];
-       1 + (inner_result |> Value.to_int_exn));
+  Advice.around_values [%here] advice_name ~for_function (fun inner rest ->
+    print_s [%message "advice" (rest : Value.t list)];
+    let inner_result = inner ((0 |> Value.of_int_exn) :: rest) in
+    print_s [%message "advice" (inner_result : Value.t)];
+    Value.Type.int.to_value (1 + (inner_result |> Value.to_int_exn)));
   call_test_function ();
   [%expect
     {|

@@ -2,7 +2,7 @@ open! Core_kernel
 open! Import
 open! Tabulated_list
 
-let test_mode = "test-mode" |> Symbol.intern
+let test_mode = "test-tabulated-list-mode" |> Symbol.intern
 
 type entry =
   { id : string
@@ -11,6 +11,8 @@ type entry =
   ; s3 : string
   }
 [@@deriving fields]
+
+type Major_mode.Name.t += Major_mode
 
 let t =
   let format =
@@ -21,7 +23,9 @@ let t =
   in
   create
     [%here]
+    Major_mode
     ~docstring:"for testing"
+    ~id_equal:String.equal
     ~id_of_record:id
     ~id_type:Value.Type.string
     ~initialize:ident
@@ -97,4 +101,22 @@ let%expect_test "id at point" =
     Point.goto_max ();
     print_s [%sexp (get_id_at_point_exn t : string option)];
     [%expect {| () |}])
+;;
+
+let%expect_test "move_point_to_id" =
+  Current_buffer.set_temporarily_to_temp_buffer (fun () ->
+    draw_and_print entries;
+    [%expect {|
+      b    1   y
+      a    2   z
+      c    3   x |}];
+    Tabulated_list.move_point_to_id t "a";
+    print_s [%sexp (get_id_at_point_exn t : string option)];
+    [%expect {| (a) |}];
+    Tabulated_list.move_point_to_id t "b";
+    print_s [%sexp (get_id_at_point_exn t : string option)];
+    [%expect {| (b) |}];
+    Tabulated_list.move_point_to_id t "c";
+    print_s [%sexp (get_id_at_point_exn t : string option)];
+    [%expect {| (c) |}])
 ;;

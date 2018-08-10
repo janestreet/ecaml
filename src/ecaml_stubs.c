@@ -773,11 +773,23 @@ CAMLprim value ecaml_inject(value caml_embedded_id)
   CAMLreturn(ret);
 }
 
+bool user_ptrp(emacs_env* env, emacs_value val)
+{
+  static emacs_value cache = NULL;
+  emacs_value function = ecaml_cache_symbol_and_keep_alive (env, &cache, "user-ptrp");
+  emacs_value result = env->funcall(env, function, 1, &val);
+  return !(result == emacs_nil);
+}
+
 CAMLprim value ecaml_project(value val)
 {
   CAMLparam1(val);
   emacs_env* env = ecaml_active_env_or_die();
   emacs_value user_ptr = emacs_of_ocaml(env, val);
+  if (!user_ptrp(env, user_ptr))
+    caml_failwith("Tried to ecaml_project something that's not a user pointer.");
   void* data = env->get_user_ptr(env, user_ptr);
+  if (!data)
+    caml_failwith("Tried to ecaml_project a NULL user pointer.");
   CAMLreturn(*((value *)data));
 }

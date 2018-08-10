@@ -21,6 +21,8 @@ module type S = sig
   val rest : Symbol.t -> 'a Value.Type.t -> 'a list t
 
   val optional_with_default : Symbol.t -> 'a -> 'a Value.Type.t -> 'a t
+
+  include Value.Type.S
 end
 
 module type Defun = sig
@@ -41,6 +43,7 @@ module type Defun = sig
     :  ?define_keys:(Keymap.t * string) list
     -> ?docstring:string
     -> ?interactive:string
+    -> ?obsoletes:Symbol.t
     -> Source_code_position.t
     -> 'a Value.Type.t
     -> Symbol.t
@@ -51,6 +54,7 @@ module type Defun = sig
     :  ?define_keys:(Keymap.t * string) list
     -> ?docstring:string
     -> ?interactive:string
+    -> ?obsoletes:Symbol.t
     -> Source_code_position.t
     -> 'a Value.Type.t
     -> Symbol.t
@@ -61,6 +65,7 @@ module type Defun = sig
     :  ?define_keys:(Keymap.t * string) list
     -> ?docstring:string
     -> ?interactive:string
+    -> ?obsoletes:Symbol.t
     -> Source_code_position.t
     -> Symbol.t
     -> (unit -> unit)

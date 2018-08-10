@@ -12,16 +12,30 @@
 open! Core_kernel
 open! Import
 
-(** [add ?docstring ?interactive here return_type advice_name f ~for_function ]
+(** [around_values ?docstring ?interactive here return_type advice_name f ~for_function ]
     defines function [advice_name] with body [f] and adds it as advice on [for_function].
+
+    Compared to [around_funcall], [around_values] provides looser coupling when the advice
+    doesn't need to interact with the arguments or return value of [for_function].
 *)
-val add
+val around_values
   :  ?docstring:string
   -> ?interactive:string
   -> Source_code_position.t
-  -> 'a Value.Type.t
   -> Symbol.t
-  -> (inner:(Value.t list -> Value.t) -> inner_args:Value.t list -> 'a)
+  -> ((Value.t list -> Value.t) -> Value.t list -> Value.t)
+  -> for_function:Symbol.t
+  -> unit
+
+(** [around_funcall] provides typeful access to the arguments and return value of
+    [for_function]. *)
+val around_funcall
+  :  ?docstring:string
+  -> ?interactive:string
+  -> Source_code_position.t
+  -> Symbol.t
+  -> 'a Funcall.t
+  -> ('a -> 'a)
   -> for_function:Symbol.t
   -> unit
 

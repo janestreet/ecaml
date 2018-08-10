@@ -13,28 +13,50 @@ include Equal.S with type t := t
 (** Accessors *)
 val change_command : t -> Symbol.t
 
+module Name : sig
+  (** Names let us pattern-match on major modes. *)
+  type t = ..
+
+  (** Dummy value for modes we don't care about matching. *)type t += Undistinguished
+end
+
+val name : t -> Name.t
+
 val keymap : t -> Keymap.t
 
 val keymap_var : t -> Keymap.t Var.t
 
 val syntax_table : t -> Syntax_table.t
 
-val create : change_command:Symbol.t -> t
+(** If a name is provided, [create] associates [change_command] with this name. It is an
+    error to associate a [change_command] more than once.
+
+    If no name is provided, [create] looks up the name associated with this
+    [change_command] by a previous call to [create], or uses [Undistinguished]. *)
+val create : Source_code_position.t -> Name.t option -> change_command:Symbol.t -> t
 
 (** [(describe-function 'fundamental-mode)]
     [(Info-goto-node "(elisp)Major Modes")] *)
+type Name.t += Fundamental
+
 val fundamental : t
 
 (** [(describe-function 'prog-mode)]
     [(Info-goto-node "(elisp)Basic Major Modes")] *)
+type Name.t += Prog
+
 val prog : t
 
 (** [(describe-function 'special-mode)]
     [(Info-goto-node "(elisp)Basic Major Modes")] *)
+type Name.t += Special
+
 val special : t
 
 (** [(describe-function 'text-mode)]
     [(Info-goto-node "(elisp)Basic Major Modes")] *)
+type Name.t += Text
+
 val text : t
 
 (** [(describe-function 'define-derived-mode)]
@@ -46,6 +68,7 @@ val define_derived_mode
   :  ?define_keys:(string * Symbol.t) list
   -> ?parent:t
   -> Source_code_position.t
+  -> Name.t
   -> change_command:Symbol.t
   -> docstring:string
   -> initialize:(unit -> unit)

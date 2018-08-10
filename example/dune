@@ -1,0 +1,5 @@
+(executable
+ (name hello_world)
+ (libraries ecaml)
+ (preprocess (pps ppx_jane))
+ (modes (native shared_object)))

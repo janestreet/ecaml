@@ -32,7 +32,7 @@ let%expect_test "wrong return type" =
     {|
     (Error (
       "funcall failed to convert return value."
-      (symbol     locate-file)
-      (type_.name string)
+      (symbol locate-file)
+      (type_  string)
       (exn (wrong-type-argument (stringp nil))))) |}]
 ;;

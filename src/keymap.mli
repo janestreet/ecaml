@@ -75,3 +75,16 @@ val lookup_key_exn
 (** [(describe-function 'define-key)]
     [(Info-goto-node "(elisp)Functions for Key Lookup")] *)
 val define_key : t -> Key_sequence.t -> Entry.t -> unit
+
+(** [override_minor_mode_map minor_mode ~f] overrides the bindings for [minor_mode] in the
+    current buffer with the result of calling [f] on the keymap for [minor_mode].
+
+    If no such map exists, an empty sparse map is created.
+
+    [(describe-variable 'minor-mode-map-alist)]
+    [(describe-variable 'minor-mode-overriding-map-alist)]
+    [(Info-goto-node "(elisp)Controlling Active Maps")] *)
+val override_minor_mode_map : Symbol.t -> f:(t -> unit) -> unit
+
+(** [(describe-variable 'special-event-map)] *)
+val special_event_map : t Var.t

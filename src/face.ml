@@ -51,6 +51,8 @@ include Value.Make_subtype (struct
     let is_in_subtype = Value.is_symbol
   end)
 
+let list_type = Value.Type.list type_
+
 let of_name s = s |> Value.intern |> of_value_exn
 
 let default = "default" |> of_name
@@ -206,15 +208,16 @@ module Inherit = struct
   let symbol = Q.K.inherit_
 
   type nonrec t =
-    | Face of t
+    | Face of t list
     | Unspecified
   [@@deriving sexp_of]
 
   let unspecified = Unspecified
 
   let to_value = function
-    | Face face -> to_value face
-    | Unspecified -> Value.unspecified
+    | Face [] | Unspecified -> Value.unspecified
+    | Face [ face ] -> to_value face
+    | Face faces -> list_type.to_value faces
   ;;
 
   let of_value_exn value =
@@ -222,7 +225,9 @@ module Inherit = struct
        the nil face and inheriting from the nil face have no effect. *)
     if Value.eq value Value.unspecified || Value.eq value Value.nil
     then Unspecified
-    else Face (of_value_exn value)
+    else if Value.is_cons value
+    then Face (list_type.of_value_exn value)
+    else Face [ of_value_exn value ]
   ;;
 end
 

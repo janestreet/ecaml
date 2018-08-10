@@ -80,6 +80,62 @@ module type Subtype = sig
   include Valueable0.S with type t := t
 end
 
+module type Type = sig
+  type value
+
+  type 'a t
+
+  val create : Sexp.t -> ('a -> Sexp.t) -> (value -> 'a) -> ('a -> value) -> 'a t
+
+  val to_sexp : 'a t -> 'a -> Sexp.t
+
+  val bool : bool t
+
+  val ignored : unit t
+
+  val int : int t
+
+  val string : string t
+
+  val unit : unit t
+
+  val value : value t
+
+  val list : 'a t -> 'a list t
+
+  val vector : 'a t -> 'a array t
+
+  val option : 'a t -> 'a option t
+
+  val alist : 'a t -> 'b t -> ('a * 'b) list t
+
+  (** Represent a tuple (a,b) as the elisp cons cell (a . b) *)
+  val tuple : 'a t -> 'b t -> ('a * 'b) t
+
+  (** Represent a tuple (a,b) as the elisp list '(a b) *)
+  val tuple2_as_list : 'a t -> 'b t -> ('a * 'b) t
+
+  (** Embed a sexpable ocaml type, so we can save values of the type in emacs, e.g. as
+      buffer local variables *)
+  val sexpable : (module Sexpable with type t = 'a) -> name:Sexp.t -> 'a t
+
+  (** Embed values of type ['a]. Note that unlike other functions above, the values are
+      not transformed, so this can be used to preserve state in emacs. More precisely,
+      this following returns [true]:
+      {[
+        let var = Var.create (Value.Type.caml_embed type_id) in
+        Current_buffer.set_value var v;
+        phys_equal v (Current_buffer.value_exn var)
+      ]}
+  *)
+  val caml_embed : 'a Type_equal.Id.t -> 'a t
+
+  (** A list of directories. Each element is a string (directory name) or nil (try
+      default directory). nil values are converted to ".", which has the same meaning.
+  *)
+  val path_list : string list t
+end
+
 module type Value = sig
   type t = Value0.t [@@deriving sexp_of]
 
@@ -233,59 +289,21 @@ module type Value = sig
     type value
 
     type 'a t =
-      { name : Sexp.t
+      { id : 'a Type_equal.Id.t
       ; of_value_exn : value -> 'a
       ; to_value : 'a -> value
       }
     [@@deriving sexp_of]
 
-    val bool : bool t
+    module type S = Type with type 'a t := 'a t with type value := value
 
-    val ignored : unit t
-
-    val int : int t
-
-    val string : string t
-
-    val unit : unit t
-
-    val value : value t
-
-    val list : 'a t -> 'a list t
-
-    val vector : 'a t -> 'a array t
-
-    val option : 'a t -> 'a option t
-
-    val alist : 'a t -> 'b t -> ('a * 'b) list t
-
-    (** Represent a tuple (a,b) as the elisp cons cell (a . b) *)
-    val tuple : 'a t -> 'b t -> ('a * 'b) t
-
-    (** Represent a tuple (a,b) as the elisp list '(a b) *)
-    val tuple2_as_list : 'a t -> 'b t -> ('a * 'b) t
-
-    (** Embed a sexpable ocaml type, so we can save values of the type in emacs, e.g. as
-        buffer local variables *)
-    val sexpable : (module Sexpable with type t = 'a) -> name:Sexp.t -> 'a t
-
-    (** Embed values of type ['a]. Note that unlike other functions above, the values are
-        not transformed, so this can be used to preserve state in emacs. More precisely,
-        this following returns [true]:
-        {[
-          let var = Var.create (Value.Type.caml_embed type_id) in
-          Current_buffer.set_value var v;
-          phys_equal v (Current_buffer.value_exn var)
-        ]}
-    *)
-    val caml_embed : 'a Type_equal.Id.t -> 'a t
-
-    (** A list of directories. Each element is a string (directory name) or nil (try
-        default directory). nil values are converted to ".", which has the same meaning.
-    *)
-    val path_list : string list t
+    include S
 
     val map : 'a t -> name:Sexp.t -> of_:('a -> 'b) -> to_:('b -> 'a) -> 'b t
+
+    (** [map_id type_ name] is short for [map type_ ~name ~of_:Fn.id ~to_:Fn.id].
+        It is not interchangeable with [type_] itself. *)
+    val map_id : 'a t -> Sexp.t -> 'a t
   end
   with type value := t
 

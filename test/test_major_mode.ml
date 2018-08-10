@@ -2,15 +2,48 @@ open! Core_kernel
 open! Import
 open! Major_mode
 
-let test_mode = "test-mode" |> Symbol.intern
+let test_mode = "test-major-mode" |> Symbol.intern
+
+type Major_mode.Name.t += Major_mode
 
 let t =
   define_derived_mode
     [%here]
+    Major_mode
     ~change_command:test_mode
     ~docstring:"docstring"
     ~initialize:(fun () -> print_s [%message "initialized"])
     ~mode_line:"<test-mode mode line>"
+;;
+
+let%expect_test "duplicate [define_derived_mode]" =
+  show_raise ~hide_positions:true (fun () ->
+    define_derived_mode
+      [%here]
+      Major_mode
+      ~change_command:test_mode
+      ~docstring:"docstring"
+      ~initialize:(fun () -> print_s [%message "initialized"])
+      ~mode_line:"<test-mode mode line>");
+  [%expect
+    {|
+    (raised (
+      "Already associated with a name."
+      (change_command test-major-mode)
+      (here app/emacs/lib/ecaml/test/test_major_mode.ml:LINE:COL)
+      (previous_def app/emacs/lib/ecaml/test/test_major_mode.ml:LINE:COL))) |}]
+;;
+
+let%expect_test "duplicate name is NOT caught" =
+  show_raise (fun () ->
+    define_derived_mode
+      [%here]
+      Major_mode
+      ~change_command:("other-mode" |> Symbol.intern)
+      ~docstring:""
+      ~initialize:Fn.id
+      ~mode_line:"");
+  [%expect {| "did not raise" |}]
 ;;
 
 let%expect_test "[define_derived_mode]" =
@@ -21,6 +54,7 @@ let%expect_test "[define_derived_mode]" =
       {|
       ((change_command fundamental-mode)
        (keymap_var (fundamental-mode-map keymap))
+       (name <opaque>)
        (syntax_table_var (fundamental-mode-syntax-table syntax-table))) |}];
     Current_buffer.change_major_mode t;
     [%expect {|
@@ -28,9 +62,10 @@ let%expect_test "[define_derived_mode]" =
     show_major_mode ();
     [%expect
       {|
-      ((change_command test-mode)
-       (keymap_var       (test-mode-map          keymap))
-       (syntax_table_var (test-mode-syntax-table syntax-table))) |}])
+      ((change_command test-major-mode)
+       (keymap_var (test-major-mode-map keymap))
+       (name <opaque>)
+       (syntax_table_var (test-major-mode-syntax-table syntax-table))) |}])
 ;;
 
 let%expect_test "[keymap]" =

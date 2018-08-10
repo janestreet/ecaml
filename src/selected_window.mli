@@ -32,3 +32,6 @@ val save_selected_window : (unit -> 'a) -> 'a
 
 (** [(describe-function 'save-window-excursion)] *)
 val save_window_excursion : (unit -> 'a) -> 'a
+
+(** [(describe-function 'quit-window)] *)
+val quit : unit -> unit

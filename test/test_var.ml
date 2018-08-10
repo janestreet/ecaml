@@ -131,6 +131,12 @@ let%expect_test "caml_embed value" =
   let var_name = "embedded-var-a" in
   let t = create (Symbol.create ~name:var_name) a_type in
   make_buffer_local_always t;
+  (* Trying to read [nil] as a caml_embedded value raises, but doesn't segfault. *)
+  show_raise (fun () -> Current_buffer.value_exn t);
+  [%expect
+    {|
+    (raised (
+      Failure "Tried to ecaml_project something that's not a user pointer.")) |}];
   let orig : A.t = { a = "Foo"; b = 100 } in
   Current_buffer.set_value t orig;
   let from_emacs = Current_buffer.value_exn t in

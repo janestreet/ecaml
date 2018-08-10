@@ -3,8 +3,6 @@ open! Import0
 open Value_intf
 include Value0
 
-type value = t
-
 module type Funcall = Funcall with type value := t
 
 module type Make_subtype_arg = Make_subtype_arg with type value := t
@@ -16,6 +14,8 @@ end
 let sexp_of_t_ref = ref (fun _ -> [%message [%here] "sexp_of_t not yet defined"])
 
 let sexp_of_t t = !sexp_of_t_ref t
+
+type value = t [@@deriving sexp_of]
 
 (* [Funcall_exit.t] values are only constructed by [ecaml_non_local_exit_get_and_clear]
    in [ecaml_stubs.c]. *)
@@ -500,122 +500,140 @@ let initialize_module =
 
 let initialize_module =
   initialize_module;
-  Ecaml_callback.(register no_active_env) ~f:(fun () ->
-    eprint_s
-      [%message
-        "Ecaml called with no active env" ~backtrace:(Backtrace.get () : Backtrace.t)])
+  Ecaml_callback.(register no_active_env)
+    ~f:(fun () ->
+      eprint_s
+        [%message
+          "Ecaml called with no active env" ~backtrace:(Backtrace.get () : Backtrace.t)])
+    ~should_run_holding_async_lock:true
 ;;
 
 module Type = struct
   type 'a t =
-    { name : Sexp.t
+    { id : 'a Type_equal.Id.t
     ; of_value_exn : value -> 'a
     ; to_value : 'a -> value
     }
 
-  let sexp_of_t _ { name; of_value_exn = _; to_value = _ } = name
+  module type S = Type with type 'a t := 'a t with type value := value
 
-  let bool = { name = [%message "bool"]; of_value_exn = to_bool; to_value = of_bool }
+  let name t = Sexp.of_string (Type_equal.Id.name t.id)
 
-  let ignored =
-    { name = [%message "ignored"]; of_value_exn = ignore; to_value = const nil }
+  let to_sexp t = Type_equal.Id.to_sexp t.id
+
+  let sexp_of_t _ t = name t
+
+  let create name sexp_of_t of_value_exn to_value =
+    { id = Type_equal.Id.create ~name:(Sexp.to_string name) sexp_of_t
+    ; of_value_exn
+    ; to_value
+    }
   ;;
 
-  let int = { name = [%message "int"]; of_value_exn = to_int_exn; to_value = of_int_exn }
+  let bool = create [%message "bool"] [%sexp_of: bool] to_bool of_bool
+
+  let ignored = create [%message "ignored"] [%sexp_of: unit] ignore (const nil)
+
+  let int = create [%message "int"] [%sexp_of: int] to_int_exn of_int_exn
 
   let string =
-    { name = [%message "string"]
-    ; of_value_exn = to_utf8_bytes_exn
-    ; to_value = of_utf8_bytes
-    }
+    create [%message "string"] [%sexp_of: string] to_utf8_bytes_exn of_utf8_bytes
   ;;
 
   let unit =
-    { name = [%message "unit"]
-    ; of_value_exn = (fun value -> assert (is_nil value))
-    ; to_value = const nil
-    }
+    create
+      [%message "unit"]
+      [%sexp_of: unit]
+      (fun value -> assert (is_nil value))
+      (const nil)
   ;;
 
-  let value = { name = [%message "value"]; of_value_exn = Fn.id; to_value = Fn.id }
+  let value = create [%message "value"] [%sexp_of: value] Fn.id Fn.id
 
   let alist t1 t2 =
-    { name = [%message "alist" ~_:(t1.name : Sexp.t) ~_:(t2.name : Sexp.t)]
-    ; of_value_exn =
-        to_list_exn ~f:(fun cons_cell ->
-          t1.of_value_exn (car_exn cons_cell), t2.of_value_exn (cdr_exn cons_cell))
-    ; to_value =
-        (fun l ->
-           list (List.map l ~f:(fun (a, b) -> cons (t1.to_value a) (t2.to_value b))))
-    }
+    create
+      [%message "alist" ~_:(name t1 : Sexp.t) ~_:(name t2 : Sexp.t)]
+      (sexp_of_list (Tuple2.sexp_of_t (to_sexp t1) (to_sexp t2)))
+      (to_list_exn ~f:(fun cons_cell ->
+         t1.of_value_exn (car_exn cons_cell), t2.of_value_exn (cdr_exn cons_cell)))
+      (fun l -> list (List.map l ~f:(fun (a, b) -> cons (t1.to_value a) (t2.to_value b))))
   ;;
 
   let list t =
-    { name = [%message "list" ~_:(t.name : Sexp.t)]
-    ; of_value_exn = to_list_exn ~f:t.of_value_exn
-    ; to_value = (fun l -> list (List.map l ~f:t.to_value))
-    }
+    create
+      [%message "list" ~_:(name t : Sexp.t)]
+      (sexp_of_list (to_sexp t))
+      (to_list_exn ~f:t.of_value_exn)
+      (fun l -> list (List.map l ~f:t.to_value))
   ;;
 
   let vector t =
-    { name = [%message "vector" ~_:(t.name : Sexp.t)]
-    ; of_value_exn = to_array_exn ~f:t.of_value_exn
-    ; to_value = (fun a -> vector (Array.map a ~f:t.to_value))
-    }
+    create
+      [%message "vector" ~_:(name t : Sexp.t)]
+      (sexp_of_array (to_sexp t))
+      (to_array_exn ~f:t.of_value_exn)
+      (fun a -> vector (Array.map a ~f:t.to_value))
   ;;
 
   let tuple t1 t2 =
-    { name = Sexp.List [ t1.name; t2.name ]
-    ; of_value_exn = (fun v -> t1.of_value_exn (car_exn v), t2.of_value_exn (cdr_exn v))
-    ; to_value = (fun (a1, a2) -> cons (t1.to_value a1) (t2.to_value a2))
-    }
+    create
+      [%sexp (name t1 : Sexp.t), (name t2 : Sexp.t)]
+      (Tuple2.sexp_of_t (to_sexp t1) (to_sexp t2))
+      (fun v -> t1.of_value_exn (car_exn v), t2.of_value_exn (cdr_exn v))
+      (fun (a1, a2) -> cons (t1.to_value a1) (t2.to_value a2))
   ;;
 
   let tuple2_as_list t1 t2 =
-    { name = Sexp.List [ t1.name; t2.name ]
-    ; of_value_exn = (fun v -> t1.of_value_exn (car_exn v), t2.of_value_exn (cadr_exn v))
-    ; to_value = (fun (a1, a2) -> cons (t1.to_value a1) (cons (t2.to_value a2) nil))
-    }
+    create
+      [%sexp (name t1 : Sexp.t), (name t2 : Sexp.t)]
+      (Tuple2.sexp_of_t (to_sexp t1) (to_sexp t2))
+      (fun v -> t1.of_value_exn (car_exn v), t2.of_value_exn (cadr_exn v))
+      (fun (a1, a2) -> cons (t1.to_value a1) (cons (t2.to_value a2) nil))
   ;;
 
   let option t =
-    { name = [%message "option" ~_:(t.name : Sexp.t)]
-    ; of_value_exn = (fun v -> if is_nil v then None else Some (v |> t.of_value_exn))
-    ; to_value = option t.to_value
-    }
+    create
+      [%message "option" ~_:(name t : Sexp.t)]
+      (sexp_of_option (to_sexp t))
+      (fun v -> if is_nil v then None else Some (v |> t.of_value_exn))
+      (option t.to_value)
   ;;
 
   (* embed ocaml values as strings which are sexp representations *)
   let sexpable (type a) (module A : Sexpable with type t = a) ~name =
-    { name = [%message "sexpable" ~_:(name : Sexp.t)]
-    ; of_value_exn = (fun v -> A.t_of_sexp (Sexp.of_string (string.of_value_exn v)))
-    ; to_value = (fun a -> A.sexp_of_t a |> Sexp.to_string_mach |> string.to_value)
-    }
+    create
+      [%message "sexpable" ~_:(name : Sexp.t)]
+      [%sexp_of: A.t]
+      (fun v -> A.t_of_sexp (Sexp.of_string (string.of_value_exn v)))
+      (fun a -> A.sexp_of_t a |> Sexp.to_string_mach |> string.to_value)
   ;;
 
   let caml_embed (type_id : _ Type_equal.Id.t) =
-    { name = [%message "caml_embed" (type_id : _ Type_equal.Id.t)]
-    ; of_value_exn =
-        (fun v ->
-           let embed = Caml_embed.of_value_exn v in
-           Caml_embed.extract_exn embed type_id)
-    ; to_value = (fun a -> Caml_embed.create type_id a |> Caml_embed.to_value)
-    }
+    create
+      [%message "caml_embed" (type_id : _ Type_equal.Id.t)]
+      (Type_equal.Id.to_sexp type_id)
+      (fun v ->
+         let embed = Caml_embed.of_value_exn v in
+         Caml_embed.extract_exn embed type_id)
+      (fun a -> Caml_embed.create type_id a |> Caml_embed.to_value)
   ;;
 
   let map t ~name ~of_ ~to_ =
-    { name
-    ; of_value_exn = Fn.compose of_ t.of_value_exn
-    ; to_value = Fn.compose t.to_value to_
-    }
+    create
+      name
+      (Fn.compose (to_sexp t) to_)
+      (Fn.compose of_ t.of_value_exn)
+      (Fn.compose t.to_value to_)
   ;;
 
+  let map_id t name = map t ~name ~of_:Fn.id ~to_:Fn.id
+
   let path_list =
-    option string
-    |> map
-         ~name:[%message "path-list-element"]
-         ~of_:(Option.value ~default:".")
-         ~to_:Option.return
+    map
+      (option string)
+      ~name:[%message "path-list-element"]
+      ~of_:(Option.value ~default:".")
+      ~to_:Option.return
     |> list
   ;;
 end
@@ -640,7 +658,7 @@ module Make_subtype (M : Make_subtype_arg) = struct
     t
   ;;
 
-  let type_ : t Type.t = { of_value_exn; name = [%message name]; to_value }
+  let type_ = Type.create [%message name] [%sexp_of: t] of_value_exn to_value
 
   let eq (t1 : t) t2 = eq t1 t2
 end

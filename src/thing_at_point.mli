@@ -61,4 +61,4 @@ val defthing
   (** An implementation of [bounds]. *)
   -> Source_code_position.t
   -> Symbol.t
-  -> unit
+  -> t

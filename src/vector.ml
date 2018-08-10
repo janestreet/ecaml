@@ -51,10 +51,10 @@ let concat ts = Symbol.funcallN Q.vconcat (ts : t list :> Value.t list) |> of_va
 
 let to_array t ~f = Array.init (length t) ~f:(fun i -> get t i |> f)
 
-let type_ (type a) (type_ : a Value.Type.t) : a array Value.Type.t =
-  { name = [%message "vector" ~_:(type_.name : Sexp.t)]
-  ; of_value_exn = (fun v -> v |> of_value_exn |> to_array ~f:type_.of_value_exn)
-  ; to_value =
-      (fun a -> a |> Array.map ~f:type_.to_value |> Array.to_list |> of_list |> to_value)
-  }
+let type_ (type a) (type_ : a Value.Type.t) =
+  Value.Type.create
+    [%message "vector" ~_:(type_ : _ Value.Type.t)]
+    (sexp_of_array (Value.Type.to_sexp type_))
+    (fun v -> v |> of_value_exn |> to_array ~f:type_.of_value_exn)
+    (fun a -> a |> Array.map ~f:type_.to_value |> Array.to_list |> of_list |> to_value)
 ;;

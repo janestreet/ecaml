@@ -15,6 +15,9 @@ val name : t -> string
 (** [(describe-function 'symbol-function)] *)
 val function_exn : t -> Value.t
 
+(** [(describe-function 'fboundp)] *)
+val function_is_defined : t -> bool
+
 val compare_name : t -> t -> int
 
 (** [(describe-function 'make-symbol)]. *)

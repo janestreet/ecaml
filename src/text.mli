@@ -76,6 +76,8 @@ module Property_name : sig
 
   val to_value : 'a t -> 'a -> Value.t
 
+  val of_value_exn : 'a t -> Value.t -> 'a
+
   module type S = sig
     module Property_value : sig
       type t [@@deriving sexp_of]

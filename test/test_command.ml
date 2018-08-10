@@ -12,7 +12,7 @@ let%expect_test "[Raw_prefix_argument]" =
     f
     ~interactive:"P"
     (let open Defun.Let_syntax in
-     let%map_open arg = required ("arg" |> Symbol.intern) Value.Type.value in
+     let%map_open arg = required ("arg" |> Symbol.intern) value in
      print_s
        [%message
          ""

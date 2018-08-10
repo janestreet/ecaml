@@ -5,6 +5,7 @@ module Q = struct
   include Q
 
   let find_file = "find-file" |> Symbol.intern
+  and quit_window = "quit-window" |> Symbol.intern
   and select_window = "select-window" |> Symbol.intern
   and selected_window = "selected-window" |> Symbol.intern
   and split_window_horizontally = "split-window-horizontally" |> Symbol.intern
@@ -12,6 +13,12 @@ module Q = struct
   and switch_to_buffer = "switch-to-buffer" |> Symbol.intern
   and view_file = "view-file" |> Symbol.intern
   ;;
+end
+
+module F = struct
+  open Funcall
+
+  let quit_window = Q.quit_window <: nullary @-> return nil
 end
 
 let get () = Symbol.funcall0 Q.selected_window |> Window.of_value_exn
@@ -34,6 +41,8 @@ let split_vertically_exn () = Symbol.funcall0_i Q.split_window_vertically
 let find_file path = Symbol.funcall1_i Q.find_file (path |> Value.of_utf8_bytes)
 
 let view_file path = Symbol.funcall1_i Q.view_file (path |> Value.of_utf8_bytes)
+
+let quit = F.quit_window
 
 let save_window_excursion f = Save_wrappers.save_window_excursion f
 

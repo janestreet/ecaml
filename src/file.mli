@@ -65,6 +65,8 @@ val locate_dominating_file_exn : above:Filename.t -> basename:string -> Filename
     [(Info-goto-node "(elisp)Writing to Files")] *)
 val write : ?append:bool (** default is [false] *) -> Filename.t -> string -> unit
 
+val ensure_exists : Filename.t -> unit
+
 (** [(describe-function 'make-temp-file)]
     [(Info-goto-node "(elisp)Unique File Names")] *)
 val make_temp_file : prefix:string -> suffix:string -> Filename.t

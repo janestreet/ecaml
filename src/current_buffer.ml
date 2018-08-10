@@ -55,6 +55,7 @@ module Q = struct
   and undo_boundary = "undo-boundary" |> Symbol.intern
   and use_local_map = "use-local-map" |> Symbol.intern
   and widen = "widen" |> Symbol.intern
+  and replace_buffer_contents = "replace-buffer-contents" |> Symbol.intern
   ;;
 end
 
@@ -76,7 +77,6 @@ module Window_display_state = struct
 end
 
 module F = struct
-  open Value.Type
   open Funcall
 
   let buffer_disable_undo = Q.buffer_disable_undo <: nullary @-> return nil
@@ -141,6 +141,7 @@ module F = struct
   and text_property_not_all =
     Q.text_property_not_all
     <: Position.type_ @-> Position.type_ @-> Symbol.type_ @-> value @-> return value
+  and replace_buffer_contents = Q.replace_buffer_contents <: Buffer.type_ @-> return nil
   ;;
 end
 
@@ -156,7 +157,10 @@ let set_temporarily_to_temp_buffer f =
 ;;
 
 let major_mode () =
-  Major_mode.create ~change_command:(value_exn (Var.create Q.major_mode Symbol.type_))
+  Major_mode.create
+    [%here]
+    None
+    ~change_command:(value_exn (Var.create Q.major_mode Symbol.type_))
 ;;
 
 let change_major_mode major_mode =
@@ -396,4 +400,12 @@ let set_revert_buffer_function f =
          f ~confirm:(noconfirm |> Value.to_bool |> not);
          Value.nil
        | _ -> assert false))
+;;
+
+let replace_buffer_contents =
+  if not (Symbol.function_is_defined Q.replace_buffer_contents)
+  then
+    Or_error.error_s
+      [%message "function not defined" ~symbol:(Q.replace_buffer_contents : Symbol.t)]
+  else Ok F.replace_buffer_contents
 ;;

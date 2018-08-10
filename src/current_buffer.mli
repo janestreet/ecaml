@@ -308,3 +308,8 @@ val revert : ?confirm:bool (** default is [false] *) -> unit -> unit
 
 (** [(describe-variable 'revert-buffer-function)] *)
 val set_revert_buffer_function : (confirm:bool -> unit) -> unit
+
+(** [(describe-function 'replace-buffer-contents)]
+    This function was introduced in Emacs 26 and the value is an error if an earlier
+    version of emacs is used. *)
+val replace_buffer_contents : (Buffer.t -> unit) Or_error.t

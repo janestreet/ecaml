@@ -27,8 +27,8 @@ include (
       with type comparator_witness = String.comparator_witness
   end)
 
-let ({ Value.Type.name = _; of_value_exn; to_value } as type_) =
-  { Value.Type.string with name = [%message "filename"] }
+let ({ Value.Type.id = _; of_value_exn; to_value } as type_) =
+  Value.Type.(map_id string) [%message "filename"]
 ;;
 
 let is_absolute t =

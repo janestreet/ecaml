@@ -36,12 +36,27 @@ let value_exn var =
   value_internal var
 ;;
 
+let value_opt_exn var =
+  match value_exn var with
+  | Some x -> x
+  | None ->
+    raise_s
+      [%message
+        "buffer unexpectedly does not give a value to variable"
+          (var : _ Var.t)
+          ~buffer:(get () : Buffer.t)]
+;;
+
 let clear_value (var : _ Var.t) =
   Symbol.funcall1_i Q.makunbound (var.symbol |> Symbol.to_value)
 ;;
 
 let set_value (var : _ Var.t) a =
   Symbol.funcall2_i Q.set (var.symbol |> Symbol.to_value) (a |> var.type_.to_value)
+;;
+
+let set_values vars_and_values =
+  List.iter vars_and_values ~f:(fun (Var.And_value.T (var, value)) -> set_value var value)
 ;;
 
 let set_values_temporarily vars_and_values ~f =

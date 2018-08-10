@@ -36,8 +36,9 @@ let of_value_exn v =
 ;;
 
 let initialize =
-  Ecaml_callback.(register free_embedded_caml_values) ~f:(fun ids ->
-    Array.iter ids ~f:(fun id -> Hashtbl.remove embedded_values id))
+  Ecaml_callback.(register free_embedded_caml_values)
+    ~f:(fun ids -> Array.iter ids ~f:(fun id -> Hashtbl.remove embedded_values id))
+    ~should_run_holding_async_lock:true
 ;;
 
 let debug_sexp () = [%sexp_of: Univ.t Id.Table.t] embedded_values

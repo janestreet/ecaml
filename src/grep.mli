@@ -10,3 +10,14 @@ open! Import
 (** [(describe-function 'grep))]
     [(Info-goto-node "(emacs)Grep Searching")] *)
 val grep : command:string -> unit
+
+module Save_buffers : sig
+  type t =
+    | Ask
+    | False
+    | True
+  [@@deriving sexp_of]
+end
+
+(** [(describe-variable 'grep-save-buffers)] *)
+val save_buffers : Save_buffers.t Var.t

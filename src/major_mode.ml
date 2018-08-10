@@ -12,23 +12,56 @@ module Q = struct
   ;;
 end
 
+module Name = struct
+  type t = ..
+
+  type t += Undistinguished
+
+  let distinguished_values : (t * Source_code_position.t) String.Table.t =
+    String.Table.create ()
+  ;;
+
+  let add_or_get_distinguished_value t here ~change_command =
+    let key = Symbol.name change_command in
+    match t with
+    | None ->
+      (match Hashtbl.find distinguished_values key with
+       | Some (t, _) -> t
+       | None -> Undistinguished)
+    | Some t ->
+      (match Hashtbl.find distinguished_values key with
+       | Some (_, previous_def) ->
+         raise_s
+           [%message
+             "Already associated with a name."
+               (change_command : Symbol.t)
+               (here : Source_code_position.t)
+               (previous_def : Source_code_position.t)]
+       | None ->
+         Hashtbl.set distinguished_values ~key ~data:(t, here);
+         t)
+  ;;
+end
+
 module Current_buffer = Current_buffer0
 
 type t =
   { change_command : Symbol.t
   ; keymap_var : Keymap.t Var.t
+  ; name : Name.t sexp_opaque
   ; syntax_table_var : Syntax_table.t Var.t
   }
 [@@deriving fields, sexp_of]
 
 let equal t1 t2 = Symbol.equal t1.change_command t2.change_command
 
-let create ~change_command =
+let create here name ~change_command =
   { change_command
   ; keymap_var =
       Var.create
         (Symbol.intern (concat [ change_command |> Symbol.name; "-map" ]))
         Keymap.type_
+  ; name = Name.add_or_get_distinguished_value name here ~change_command
   ; syntax_table_var =
       Var.create
         (Symbol.intern (concat [ change_command |> Symbol.name; "-syntax-table" ]))
@@ -42,13 +75,21 @@ let keymap_var t = t.keymap_var
 
 let syntax_table t = Current_buffer.value_exn t.syntax_table_var
 
-let fundamental = create ~change_command:Q.fundamental_mode
+type Name.t += Fundamental
 
-let prog = create ~change_command:Q.prog_mode
+let fundamental = create [%here] (Some Fundamental) ~change_command:Q.fundamental_mode
 
-let special = create ~change_command:Q.special_mode
+type Name.t += Prog
 
-let text = create ~change_command:Q.text_mode
+let prog = create [%here] (Some Prog) ~change_command:Q.prog_mode
+
+type Name.t += Special
+
+let special = create [%here] (Some Special) ~change_command:Q.special_mode
+
+type Name.t += Text
+
+let text = create [%here] (Some Text) ~change_command:Q.text_mode
 
 module For_testing = struct
   let derived_modes = ref []
@@ -68,6 +109,7 @@ let define_derived_mode
       ?(define_keys=[])
       ?parent
       here
+      name
       ~change_command
       ~docstring
       ~initialize
@@ -96,7 +138,7 @@ let define_derived_mode
     Load_history.add_entry
       here
       (Var (concat [ change_command |> Symbol.name; "-"; suffix ] |> Symbol.intern)));
-  let t = create ~change_command in
+  let t = create here (Some name) ~change_command in
   let the_keymap = keymap t in
   List.iter define_keys ~f:(fun (keys, symbol) ->
     Keymap.define_key the_keymap (Key_sequence.create_exn keys) (Symbol symbol));

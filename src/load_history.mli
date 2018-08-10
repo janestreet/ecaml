@@ -39,11 +39,15 @@ val add_entry : Source_code_position.t -> Entry.t -> unit
     ]} *)
 val update_emacs_with_entries : chop_prefix:string -> in_dir:string -> unit
 
+(** [Type] represents the type of symbol being searched for, corresponding to the [TYPE]
+    argument of [find-function-search-for-symbol]. *)
 module Type : sig
   type t =
     | Fun
     | Var
   [@@deriving sexp_of]
+
+  include Valueable.S with type t := t
 end
 
 val location_exn : Symbol.t -> Type.t -> Source_code_position.t

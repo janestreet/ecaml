@@ -83,12 +83,13 @@ module Column = struct
       end
 
       let type_ =
+        let format = create in
         let open Value.Type in
         map
           (tuple string (tuple int (tuple bool Properties.type_)))
           ~name:[%sexp "Column.Format"]
           ~of_:(fun (header, (width, (sortable, props))) ->
-            let t = create ~header ~sortable ~width () in
+            let t = format ~header ~sortable ~width () in
             List.fold props ~init:t ~f:(fun t -> function
               | Align_right align_right -> { t with align_right }
               | Pad_right pad_right -> { t with pad_right }))
@@ -176,6 +177,7 @@ end
 type ('record, 'id) t =
   { columns : 'record Column.t list
   ; entries_var : 'record list Var.t
+  ; id_equal : 'id -> 'id -> bool
   ; id_of_record : 'record -> 'id
   ; id_type : 'id Value.Type.t
   ; major_mode : Major_mode.t
@@ -221,13 +223,19 @@ let draw ?sort_by t rows =
   F.tabulated_list_print false false
 ;;
 
-let tabulated_list_mode = Major_mode.create ~change_command:Q.tabulated_list_mode
+type Major_mode.Name.t += Major_mode
+
+let tabulated_list_mode =
+  Major_mode.create [%here] (Some Major_mode) ~change_command:Q.tabulated_list_mode
+;;
 
 let create
       ?define_keys
       here
+      name
       columns
       ~docstring
+      ~id_equal
       ~id_type
       ~id_of_record
       ~initialize
@@ -237,6 +245,7 @@ let create
   let major_mode =
     Major_mode.define_derived_mode
       here
+      name
       ?define_keys
       ~change_command:mode_change_command
       ~docstring
@@ -249,7 +258,7 @@ let create
       let open Value.Type in
       map
         (tuple id_type (tuple (vector string) unit))
-        ~name:[%message "tabulated-list-entries" (id_type.name : Sexp.t)]
+        ~name:[%message "tabulated-list-entries" (id_type : _ Value.Type.t)]
         ~of_:(fun _ -> raise_s [%sexp "reading tabulated-list-entries is not supported"])
         ~to_:(fun record ->
           ( id_of_record record
@@ -260,9 +269,32 @@ let create
     in
     Var.create Q.tabulated_list_entries (Value.Type.list entry_type)
   in
-  { columns; entries_var; id_of_record; id_type; major_mode }
+  { columns; entries_var; id_equal; id_of_record; id_type; major_mode }
 ;;
 
 let get_id_at_point_exn t =
   Option.map (F.tabulated_list_get_id ()) ~f:t.id_type.of_value_exn
+;;
+
+let move_point_to_id t id =
+  Point.goto_min ();
+  let rec loop () =
+    match get_id_at_point_exn t with
+    | None ->
+      (* This only happens after we go past the last row. *)
+      raise_s [%sexp "Could not find row with given id"]
+    | Some id_at_point ->
+      (match t.id_equal id id_at_point with
+       | false ->
+         Point.forward_line 1;
+         loop ()
+       | true -> ())
+  in
+  loop ()
+;;
+
+let current_buffer_has_entries () =
+  not
+    (Value.is_nil
+       (Current_buffer.value_exn (Var.create Q.tabulated_list_entries Value.Type.value)))
 ;;

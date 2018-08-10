@@ -54,7 +54,11 @@ module Entry = struct
   ;;
 
   let type_ =
-    { Value.Type.name = [%message "Auto_mode_alist.Entry"]; of_value_exn; to_value }
+    Value.Type.create
+      [%message "Auto_mode_alist.Entry"]
+      [%sexp_of: t]
+      of_value_exn
+      to_value
   ;;
 end
 

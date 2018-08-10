@@ -39,6 +39,9 @@ val query_on_exit : t -> bool
 (** [(describe-function 'process-status)] *)
 val status : t -> Symbol.t
 
+(** [(describe-function 'process-live-p)] *)
+val is_alive : t -> bool
+
 (** [(describe-function 'process-mark)] *)
 val mark : t -> Marker.t
 
@@ -123,6 +126,7 @@ val call_exn
   :  ?input:Call.Input.t (** default is [Dev_null] *)
   -> ?working_directory:Working_directory.t (** default is [Root] *)
   -> ?strip_whitespace:bool (** default is [true] *)
+  -> ?verbose_exn:bool (** default is [true] *)
   -> string
   -> string list
   -> string
@@ -133,6 +137,7 @@ val call_expect_no_output_exn
   :  ?input:Call.Input.t (** default is [Dev_null] *)
   -> ?working_directory:Working_directory.t (** default is [Root] *)
   -> ?strip_whitespace:bool (** default is [false] *)
+  -> ?verbose_exn:bool (** default is [true] *)
   -> string
   -> string list
   -> unit
@@ -150,12 +155,14 @@ val shell_command_result
 val shell_command_exn
   :  ?input:Call.Input.t (** default is [Dev_null] *)
   -> ?working_directory:Working_directory.t (** default is [Root] *)
+  -> ?verbose_exn:bool (** default is [true] *)
   -> string
   -> string
 
 val shell_command_expect_no_output_exn
   :  ?input:Call.Input.t (** default is [Dev_null] *)
   -> ?working_directory:Working_directory.t (** default is [Root] *)
+  -> ?verbose_exn:bool (** default is [true] *)
   -> string
   -> unit
 

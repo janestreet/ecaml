@@ -35,6 +35,8 @@ module T = struct
   let optional_with_default name default type_ =
     Map (optional name type_, Option.value ~default)
   ;;
+
+  include (Value.Type : Value.Type.S)
 end
 
 include T
@@ -148,7 +150,7 @@ let get_fn t return_type args =
           (args : Value.t array)]
 ;;
 
-let defun ?(define_keys=[]) ?docstring ?interactive here return_type symbol t =
+let defun ?(define_keys=[]) ?docstring ?interactive ?obsoletes here return_type symbol t =
   Function.defun
     ?docstring
     ?interactive
@@ -159,14 +161,25 @@ let defun ?(define_keys=[]) ?docstring ?interactive here return_type symbol t =
     (get_fn t return_type)
     ~args:(get_required t);
   List.iter define_keys ~f:(fun (keymap, keys) ->
-    Keymap.define_key keymap (Key_sequence.create_exn keys) (Symbol symbol))
+    Keymap.define_key keymap (Key_sequence.create_exn keys) (Symbol symbol));
+  Option.iter obsoletes ~f:(Obsolete.alias ~current:symbol)
 ;;
 
-let defun_nullary ?define_keys ?docstring ?interactive here return_type symbol f =
+let defun_nullary
+      ?define_keys
+      ?docstring
+      ?interactive
+      ?obsoletes
+      here
+      return_type
+      symbol
+      f
+  =
   defun
     ?define_keys
     ?docstring
     ?interactive
+    ?obsoletes
     here
     return_type
     symbol
@@ -175,8 +188,16 @@ let defun_nullary ?define_keys ?docstring ?interactive here return_type symbol f
      f ())
 ;;
 
-let defun_nullary_nil ?define_keys ?docstring ?interactive here symbol f =
-  defun_nullary ?define_keys ?docstring ?interactive here Value.Type.unit symbol f
+let defun_nullary_nil ?define_keys ?docstring ?interactive ?obsoletes here symbol f =
+  defun_nullary
+    ?define_keys
+    ?docstring
+    ?interactive
+    ?obsoletes
+    here
+    Value.Type.unit
+    symbol
+    f
 ;;
 
 let lambda ?docstring ?interactive here return_type t =

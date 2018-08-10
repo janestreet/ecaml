@@ -48,15 +48,17 @@ let create =
   let open M in
   (* [dispatch_function] is registered and emacs [dispatch] function is created before any
      callback is created and can be called *)
-  Ecaml_callback.(register dispatch_function) ~f:(fun callback_id args ->
-    if !Expert.raise_in_dispatch then raise_s [%message "dispatch"];
-    try
-      let callback = Caml_embed.lookup_by_id_exn callback_id Fn.type_id in
-      callback args
-    with
-    | exn ->
-      Value.Expert.non_local_exit_signal exn;
-      Value.nil);
+  Ecaml_callback.(register dispatch_function)
+    ~should_run_holding_async_lock:true
+    ~f:(fun callback_id args ->
+      if !Expert.raise_in_dispatch then raise_s [%message "dispatch"];
+      try
+        let callback = Caml_embed.lookup_by_id_exn callback_id Fn.type_id in
+        callback args
+      with
+      | exn ->
+        Value.Expert.non_local_exit_signal exn;
+        Value.nil);
   let dispatch =
     make_dispatch_function
       ([%message

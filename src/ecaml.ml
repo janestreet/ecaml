@@ -3,6 +3,7 @@
 
 module Advice = Advice
 module Ansi_color = Ansi_color
+module Async_ecaml = Async_ecaml
 module Auto_mode_alist = Auto_mode_alist
 module Backup = Backup
 module Browse_url = Browse_url
@@ -43,6 +44,7 @@ module Minor_mode = Minor_mode
 module Obarray = Obarray
 module Obsolete = Obsolete
 module Org_table = Org_table
+module Overlay = Overlay
 module Point = Point
 module Position = Position
 module Process = Process
@@ -89,14 +91,16 @@ and message_s = Echo_area.message_s
 ;;
 
 let provide =
-  Ecaml_callback.(register end_of_module_initialization) ~f:(fun () ->
-    message_s [%message "Loaded Ecaml."]);
+  Ecaml_callback.(register end_of_module_initialization)
+    ~should_run_holding_async_lock:true
+    ~f:(fun () -> message_s [%message "Loaded Ecaml."]);
+  Async_ecaml.initialize ();
   Caml_embed.initialize;
   Import.initialize_module;
   Find_function.initialize ();
   User.initialize ();
   Value.initialize_module;
-  Feature.provide
+  (Feature.provide [@warning "-3"])
 ;;
 
 let inhibit_read_only = Var.create Q.inhibit_read_only Value.Type.bool
@@ -111,14 +115,11 @@ let () =
     symbol
     ~interactive:""
     (let open Defun.Let_syntax in
-     let%map_open n = optional Q.number Value.Type.int in
+     let%map_open n = optional Q.number int in
      let n = Option.value n ~default:0 in
      if n <= 0
      then raise_s [%message "foo" "bar" "baz"]
-     else
-       (let open Value.Type in
-        Funcall.(symbol <: option int @-> return nil))
-         (Some (n - 1));
+     else Funcall.(symbol <: option int @-> return nil) (Some (n - 1));
      ());
   (* Replace [false] with [true] to define a function for testing
      [Minibuffer.read_from]. *)

@@ -9,6 +9,9 @@ build: [
   ["jbuilder" "build" "-p" name "-j" jobs]
 ]
 depends: [
+  "async"
+  "async_unix"
+  "core"
   "core_kernel"
   "expect_test_helpers_kernel"
   "ppx_jane"

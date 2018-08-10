@@ -11,8 +11,12 @@ module Q = struct
   and lookup_key = "lookup-key" |> Symbol.intern
   and make_keymap = "make-keymap" |> Symbol.intern
   and make_sparse_keymap = "make-sparse-keymap" |> Symbol.intern
+  and minor_mode_map_alist = "minor-mode-map-alist" |> Symbol.intern
+  and minor_mode_overriding_map_alist =
+    "minor-mode-overriding-map-alist" |> Symbol.intern
   and set_keymap_parent = "set-keymap-parent" |> Symbol.intern
   and set_transient_map = "set-transient-map" |> Symbol.intern
+  and special_event_map = "special-event-map" |> Symbol.intern
   and undefined = "undefined" |> Symbol.intern
   and use_global_map = "use-global-map" |> Symbol.intern
   ;;
@@ -108,7 +112,9 @@ module Entry = struct
       | exception _ -> Value value)
   ;;
 
-  let type_ = { Value.Type.name = [%sexp "Keymap.Entry"]; to_value; of_value_exn }
+  let type_ =
+    Value.Type.create [%sexp "Keymap.Entry"] [%sexp_of: t] of_value_exn to_value
+  ;;
 end
 
 let lookup_key_exn ?(accept_defaults=false) t key_sequence =
@@ -135,3 +141,34 @@ let define_key t key_sequence entry =
     (key_sequence |> Key_sequence.to_value)
     (entry |> Entry.to_value)
 ;;
+
+let minor_mode_map_alist =
+  Var.create Q.minor_mode_map_alist Value.Type.(list (tuple Symbol.type_ type_))
+;;
+
+let minor_mode_overriding_map_alist =
+  Var.create
+    Q.minor_mode_overriding_map_alist
+    Value.Type.(list (tuple Symbol.type_ type_))
+;;
+
+let find_minor_mode_map var symbol =
+  List.Assoc.find (Current_buffer0.value_exn var) symbol ~equal:Symbol.equal
+;;
+
+let override_minor_mode_map symbol ~f =
+  match find_minor_mode_map minor_mode_overriding_map_alist symbol with
+  | Some t -> f t
+  | None ->
+    let t =
+      match find_minor_mode_map minor_mode_map_alist symbol with
+      | Some t -> deep_copy t
+      | None -> create ()
+    in
+    f t;
+    Current_buffer0.set_value
+      minor_mode_overriding_map_alist
+      ((symbol, t) :: Current_buffer0.value_exn minor_mode_overriding_map_alist)
+;;
+
+let special_event_map = Var.create Q.special_event_map type_

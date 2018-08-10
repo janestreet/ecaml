@@ -30,7 +30,7 @@ include (
     module type of struct
     include Input_event0
   end
-  with module Q := Q)
+  with module Q := Input_event0.Q)
 
 let read () = Symbol.funcall0 Q.read_event |> of_value_exn
 

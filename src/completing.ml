@@ -16,6 +16,7 @@ module Initial_input = struct
     | Empty
     | Point_at_end of string
     | Point_at_pos of string * int
+  [@@deriving sexp_of]
 
   let to_value = function
     | Empty -> Symbol.to_value Q.nil
@@ -43,7 +44,11 @@ module Initial_input = struct
   ;;
 
   let type_ =
-    { Value.Type.name = [%sexp "completing", "initial-input"]; of_value_exn; to_value }
+    Value.Type.create
+      [%sexp "completing", "initial-input"]
+      [%sexp_of: t]
+      of_value_exn
+      to_value
   ;;
 end
 

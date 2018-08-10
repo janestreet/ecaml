@@ -15,6 +15,7 @@ module Q = struct
   and process_command = "process-command" |> Symbol.intern
   and process_id = "process-id" |> Symbol.intern
   and process_list = "process-list" |> Symbol.intern
+  and process_live_p = "process-live-p" |> Symbol.intern
   and process_name = "process-name" |> Symbol.intern
   and process_query_on_exit_flag = "process-query-on-exit-flag" |> Symbol.intern
   and process_status = "process-status" |> Symbol.intern
@@ -26,7 +27,15 @@ end
 
 include Process0
 
+module F = struct
+  open Funcall
+
+  let is_alive = Q.process_live_p <: type_ @-> return bool
+end
+
 let equal = eq
+
+let is_alive = F.is_alive
 
 let buffer t =
   let v = Symbol.funcall1 Q.process_buffer (t |> to_value) in
@@ -207,7 +216,14 @@ let call_result_exn
     |> Call.Result.of_value_exn)
 ;;
 
-let call_exn ?input ?working_directory ?(strip_whitespace=true) prog args =
+let call_exn
+      ?input
+      ?working_directory
+      ?(strip_whitespace=true)
+      ?(verbose_exn=true)
+      prog
+      args
+  =
   Current_buffer.set_temporarily_to_temp_buffer (fun () ->
     match
       call_result_exn
@@ -221,23 +237,30 @@ let call_exn ?input ?working_directory ?(strip_whitespace=true) prog args =
       let buffer_contents = Current_buffer.contents () |> Text.to_utf8_bytes in
       if strip_whitespace then String.strip buffer_contents else buffer_contents
     | result ->
-      raise_s
-        [%message
-          "[Process.call_exn] failed"
-            (prog : string)
-            (args : string list)
-            (result : Call.Result.t)
-            ~output:(Current_buffer.contents () : Text.t)])
+      let output = Current_buffer.contents () in
+      (match verbose_exn with
+       | true ->
+         raise_s
+           [%message
+             "[Process.call_exn] failed"
+               (prog : string)
+               (args : string list)
+               (result : Call.Result.t)
+               (output : Text.t)]
+       | false -> raise_s [%sexp (Text.to_utf8_bytes output |> String.strip : string)]))
 ;;
 
 let call_expect_no_output_exn
       ?input
       ?working_directory
       ?(strip_whitespace=false)
+      ?verbose_exn
       prog
       args
   =
-  let result = call_exn ?input ?working_directory ~strip_whitespace prog args in
+  let result =
+    call_exn ?input ?working_directory ?verbose_exn ~strip_whitespace prog args
+  in
   if String.is_empty result
   then ()
   else
@@ -262,10 +285,10 @@ let shell_command_result ?input ?output ?redisplay_on_output ?working_directory 
     ?working_directory
 ;;
 
-let shell_command_exn ?input ?working_directory command =
-  call_exn bash [ "-c"; command ] ?input ?working_directory
+let shell_command_exn ?input ?working_directory ?verbose_exn command =
+  call_exn bash [ "-c"; command ] ?input ?working_directory ?verbose_exn
 ;;
 
-let shell_command_expect_no_output_exn ?input ?working_directory command =
-  call_expect_no_output_exn bash [ "-c"; command ] ?input ?working_directory
+let shell_command_expect_no_output_exn ?input ?working_directory ?verbose_exn command =
+  call_expect_no_output_exn bash [ "-c"; command ] ?input ?working_directory ?verbose_exn
 ;;

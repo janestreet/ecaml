@@ -25,7 +25,6 @@ module Q = struct
 end
 
 module F = struct
-  open Value.Type
   open Funcall
 
   let locate_file =
@@ -105,6 +104,8 @@ let write ?(append=false) filename data =
     (append |> Value.of_bool)
     (Q.no_message |> Symbol.to_value)
 ;;
+
+let ensure_exists filename = write filename "" ~append:true
 
 (* squelch the [Wrote file] message *)
 

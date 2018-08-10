@@ -30,3 +30,10 @@ val nullary : unit Value.Type.t
 val ( <: ) : Symbol.t -> 'a t -> 'a
 
 val ( @-> ) : 'a Value.Type.t -> 'b t -> ('a -> 'b) t
+
+include Value.Type.S
+
+module Private : sig
+  (** Exposed for the implementation of [Advice.add'] *)
+  val advice : 'a t -> ('a -> 'a) -> Value.t -> Value.t list -> Value.t
+end

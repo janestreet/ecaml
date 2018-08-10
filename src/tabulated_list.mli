@@ -48,8 +48,10 @@ type ('record, 'id) t
 val create
   :  ?define_keys:(string * Symbol.t) list
   -> Source_code_position.t
+  -> Major_mode.Name.t
   -> 'record Column.t list
   -> docstring:string
+  -> id_equal:('id -> 'id -> bool)
   -> id_type:'id Value.Type.t
   -> id_of_record:('record -> 'id)
   -> initialize:(unit -> unit)
@@ -70,3 +72,7 @@ val draw
 (** [get_id_at_point_exn] returns [None] if there is no id at point, and raises if the id
     at point cannot be [of_value_exn]'ed. *)
 val get_id_at_point_exn : ('record, 'id) t -> 'id option
+
+val move_point_to_id : ('record, 'id) t -> 'id -> unit
+
+val current_buffer_has_entries : unit -> bool

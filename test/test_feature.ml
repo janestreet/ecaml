@@ -12,7 +12,7 @@ let%expect_test "[require] raise" =
 ;;
 
 let%expect_test "[provide], [require]" =
-  provide foo;
+  Ecaml.provide foo;
   require foo
 ;;
 

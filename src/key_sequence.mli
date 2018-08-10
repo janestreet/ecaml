@@ -42,3 +42,5 @@ val read : unit -> prompt:string -> t
 (** [(describe-variable 'unread-command-events)]
     [(Info-goto-node "(elisp)Event Input Misc")] *)
 val enqueue_unread_command_input : t -> unit
+
+val sigusr1 : t

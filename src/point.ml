@@ -4,9 +4,11 @@ open! Import
 module Q = struct
   include Q
 
-  let backward_sexp = "backward-sexp" |> Symbol.intern
+  let back_to_indentation = "back-to-indentation" |> Symbol.intern
+  and backward_sexp = "backward-sexp" |> Symbol.intern
   and beginning_of_line = "beginning-of-line" |> Symbol.intern
   and current_column = "current-column" |> Symbol.intern
+  and delete_char = "delete-char" |> Symbol.intern
   and end_of_line = "end-of-line" |> Symbol.intern
   and forward_char = "forward-char" |> Symbol.intern
   and forward_line = "forward-line" |> Symbol.intern
@@ -36,6 +38,12 @@ module F = struct
   open! Funcall
   open! Value.Type
 
+  let back_to_indentation = Q.back_to_indentation <: nullary @-> return nil
+
+  let forward_line = Q.forward_line <: int @-> return int
+
+  let delete_char = Q.delete_char <: int @-> return unit
+
   let recenter = Q.recenter <: option int @-> return nil
 end
 
@@ -44,6 +52,8 @@ module Current_buffer = Current_buffer0
 let get () = Symbol.funcall0 Q.point |> Position.of_value_exn
 
 let goto_char t = Symbol.funcall1_i Q.goto_char (Position.to_value t)
+
+let goto_first_non_blank () = F.back_to_indentation ()
 
 let min () = Generated_bindings.point_min () |> Position.of_int_exn
 
@@ -57,7 +67,13 @@ let beginning_of_line () = Symbol.funcall0_i Q.beginning_of_line
 
 let end_of_line () = Symbol.funcall0_i Q.end_of_line
 
-let forward_line n = Symbol.funcall1_i Q.forward_line (n |> Value.of_int_exn)
+let forward_line n = ignore (F.forward_line n : int)
+
+let forward_line_exn n =
+  match F.forward_line n with
+  | 0 -> ()
+  | _ -> raise_s [%sexp "Reached end of buffer"]
+;;
 
 let backward_line n = forward_line (-n)
 
@@ -69,6 +85,10 @@ let goto_line l =
 let forward_char_exn n = Symbol.funcall1_i Q.forward_char (n |> Value.of_int_exn)
 
 let backward_char_exn n = forward_char_exn (-n)
+
+let delete_forward_char_exn = F.delete_char
+
+let delete_backward_char_exn n = delete_forward_char_exn (-n)
 
 let forward_sexp_exn n = Symbol.funcall1_i Q.forward_sexp (n |> Value.of_int_exn)
 

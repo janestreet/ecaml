@@ -83,8 +83,7 @@ let%expect_test "[defun] wrong number of arguments" =
     symbol
     ~docstring:""
     (let open Defun.Let_syntax in
-     let%map_open () = return ()
-     and arg = required ("arg" |> Symbol.intern) Value.Type.int in
+     let%map_open () = return () and arg = required ("arg" |> Symbol.intern) int in
      [%message (arg : int)]);
   print_funcallN symbol (List.init 1 ~f:Value.Type.int.to_value);
   [%expect {| (arg 0) |}];
@@ -123,8 +122,7 @@ let%expect_test "[lambda]" =
       [%here]
       Value.Type.int
       (let open Defun.Let_syntax in
-       let%map_open () = return ()
-       and i = required ("int" |> Symbol.intern) Value.Type.int in
+       let%map_open () = return () and i = required ("int" |> Symbol.intern) int in
        i + 1)
   in
   let retval =

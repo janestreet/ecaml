@@ -51,6 +51,23 @@ module Type = struct
     | Fun
     | Var
   [@@deriving compare, hash, sexp_of]
+
+  let of_value_exn value =
+    if Value.is_nil value
+    then Fun
+    else if Value.eq value (Q.defvar |> Symbol.to_value)
+    then Var
+    else raise_s [%message "unrecognized type" ~_:(value : Value.t)]
+  ;;
+
+  let to_value = function
+    | Fun -> Value.nil
+    | Var -> Q.defvar |> Symbol.to_value
+  ;;
+
+  let type_ =
+    Value.Type.create [%sexp "load-history type"] [%sexp_of: t] of_value_exn to_value
+  ;;
 end
 
 module Key = struct

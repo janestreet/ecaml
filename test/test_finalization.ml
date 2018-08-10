@@ -25,11 +25,16 @@ let emacs_garbage_collect =
 
 let%expect_test "finalization of embedded ocaml values" =
   print_s (Ecaml.debug_embedded_caml_values ());
-  [%expect {|
+  [%expect
+    {|
     ((0 <fun>)
      (1 <fun>)
      (2 <fun>)
-     (3 <fun>)) |}];
+     (3 <fun>)
+     (4 <fun>)
+     (5 <fun>)
+     (6 <fun>)
+     (7 <fun>)) |}];
   let module A = struct
     type t =
       { a : string
@@ -56,17 +61,26 @@ let%expect_test "finalization of embedded ocaml values" =
      (1 <fun>)
      (2 <fun>)
      (3 <fun>)
-     (4 ((a V1) (b 1)))
-     (5 ((a V2) (b 2)))) |}];
+     (4 <fun>)
+     (5 <fun>)
+     (6 <fun>)
+     (7 <fun>)
+     (8 ((a V1) (b 1)))
+     (9 ((a V2) (b 2)))) |}];
   make_ocaml_garbage_not_keep_emacs_values_alive ();
   emacs_garbage_collect ();
   make_ocaml_garbage_not_keep_emacs_values_alive ();
   print_s (Ecaml.debug_embedded_caml_values ());
-  [%expect {|
+  [%expect
+    {|
     ((0 <fun>)
      (1 <fun>)
      (2 <fun>)
-     (3 <fun>)) |}]
+     (3 <fun>)
+     (4 <fun>)
+     (5 <fun>)
+     (6 <fun>)
+     (7 <fun>)) |}]
 ;;
 
 let%expect_test "Emacs objects no longer referenced from OCaml can be gc'ed by Emacs" =

@@ -7,6 +7,11 @@ Ecaml is a library for writing Emacs plugins in OCaml. It uses Emacs
 Building a plugin
 -----------------
 
+### Using Dune
+
+Compile your plugin using `(modes (native shared_object))` in the executable
+stanza of your dune file. See `example/dune` for an example.
+
 ### Using Jane Street jenga rules
 
 Simply add `(only_shared_object true)` to the `executables` stanza in

@@ -6,7 +6,7 @@ module Value = Value0
 
 type 'a t
 
-val register : 'a t -> f:'a -> unit
+val register : 'a t -> f:'a -> should_run_holding_async_lock:bool -> unit
 
 (** [dispatch_function] is how Emacs calls from C to OCaml. *)
 val dispatch_function : (Caml_embedded_id.t -> Value.t array -> Value.t) t

@@ -14,7 +14,7 @@ include (
     module type of struct
     include Key_sequence0
   end
-  with module Q := Q)
+  with module Q := Key_sequence0.Q)
 
 let execute t = Symbol.funcall1_i Q.execute_kbd_macro (t |> to_value)
 
@@ -24,3 +24,5 @@ let read () ~prompt =
 ;;
 
 let enqueue_unread_command_input t = Input_event.enqueue_unread_command_input (to_list t)
+
+let sigusr1 = Value.vector [|Symbol.intern "sigusr1" |> Symbol.to_value|] |> of_value_exn

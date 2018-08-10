@@ -39,6 +39,9 @@ val beginning_of_line : unit -> unit
 (** [(describe-function 'end-of-line)]. *)
 val end_of_line : unit -> unit
 
+(** [(describe-function 'back-to-indentation)]. *)
+val goto_first_non_blank : unit -> unit
+
 (** [forward_char_exn n] moves point [n] characters forward (backward if [n] is negative).
     [forward_char_exn] raises on reaching end or beginning of buffer.  [(describe-function
     'forward-char)]. *)
@@ -47,12 +50,22 @@ val forward_char_exn : int -> unit
 (** [backward_char_exn n = forward_char_exn (- n)]. *)
 val backward_char_exn : int -> unit
 
+(** [(describe-function 'delete-char)]. *)
+val delete_forward_char_exn : int -> unit
+
+(** [delete_backward_char_exn n = delete_forward_char_exn (- n)]. *)
+val delete_backward_char_exn : int -> unit
+
 (** [forward_line n] moves [n] lines forward (backward if [n] is negative).  Precisely, if
     point is on line [i], move to the start of line [i + n] ("start of line" in the
     logical order).  If there isn’t room, go as far as possible (no error).
     [(describe-function 'forward-line)].
     [(Info-goto-node "(elisp)Text Lines")] *)
 val forward_line : int -> unit
+
+(** [forward_line_exn n] is like [forward_line n], but it raises if it could not move the
+    full [n] lines. *)
+val forward_line_exn : int -> unit
 
 (** [backward_line n = forward_line (- n)]. *)
 val backward_line : int -> unit
