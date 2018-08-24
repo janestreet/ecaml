@@ -10,6 +10,7 @@
 
 open! Core_kernel
 open! Import
+open! Ecaml_filename
 
 include Current_buffer0_intf.Current_buffer0_public
 

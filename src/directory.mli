@@ -1,5 +1,6 @@
 open! Core_kernel
 open! Import
+open! Ecaml_filename
 
 (** [(describe-function 'make-directory)]
     [(Info-goto-node "(elisp)Create/Delete Dirs")] *)

@@ -1,5 +1,6 @@
 open! Core_kernel
 open! Import
+open! Ecaml_filename
 
 module Q = struct
   include Q

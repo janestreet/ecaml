@@ -2,6 +2,7 @@
 
 open! Core_kernel
 open! Import
+open! Ecaml_filename
 
 (** [(Info-goto-node "(elisp)Information about Files")] *)
 

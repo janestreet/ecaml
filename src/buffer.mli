@@ -5,6 +5,7 @@
 
 open! Core_kernel
 open! Import0
+open! Ecaml_filename
 
 include Value.Subtype with type t = Buffer0.t
 
