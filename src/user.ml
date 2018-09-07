@@ -13,7 +13,6 @@ module Q = struct
   and user_real_login_name = "user-real-login-name" |> Symbol.intern
   and user_real_uid = "user-real-uid" |> Symbol.intern
   and user_uid = "user-uid" |> Symbol.intern
-  ;;
 end
 
 let login_name () = Symbol.funcall0 Q.user_login_name |> Value.to_utf8_bytes_exn
@@ -31,15 +30,10 @@ let system_group_names () =
 ;;
 
 let full_name () = Symbol.funcall0 Q.user_full_name |> Value.to_utf8_bytes_exn
-
 let nullary_int q () = Symbol.funcall0 q |> Value.to_int_exn
-
 let uid = nullary_int Q.user_uid
-
 let real_uid = nullary_int Q.user_real_uid
-
 let gid = nullary_int Q.group_gid
-
 let real_gid = nullary_int Q.group_real_gid
 
 let initialize () =

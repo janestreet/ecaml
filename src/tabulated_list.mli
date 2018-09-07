@@ -60,7 +60,6 @@ val create
   -> ('record, 'id) t
 
 val keymap : _ t -> Keymap.t
-
 val major_mode : _ t -> Major_mode.t
 
 val draw
@@ -74,5 +73,4 @@ val draw
 val get_id_at_point_exn : ('record, 'id) t -> 'id option
 
 val move_point_to_id : ('record, 'id) t -> 'id -> unit
-
 val current_buffer_has_entries : unit -> bool

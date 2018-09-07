@@ -11,7 +11,6 @@ module Q = struct
   and tabulated_list_mode = "tabulated-list-mode" |> Symbol.intern
   and tabulated_list_print = "tabulated-list-print" |> Symbol.intern
   and tabulated_list_sort_key = "tabulated-list-sort-key" |> Symbol.intern
-  ;;
 end
 
 module F = struct
@@ -22,7 +21,6 @@ module F = struct
     Q.tabulated_list_get_id <: nullary @-> return (option value)
   and tabulated_list_init_header = Q.tabulated_list_init_header <: nullary @-> return nil
   and tabulated_list_print = Q.tabulated_list_print <: bool @-> bool @-> return nil
-  ;;
 end
 
 module Column = struct
@@ -36,7 +34,14 @@ module Column = struct
       }
     [@@deriving sexp_of]
 
-    let create ?(align_right=false) ?(pad_right=1) ?(sortable=true) ~header ~width () =
+    let create
+          ?(align_right = false)
+          ?(pad_right = 1)
+          ?(sortable = true)
+          ~header
+          ~width
+          ()
+      =
       { align_right; pad_right; sortable; header; width }
     ;;
 
@@ -162,7 +167,8 @@ module Column = struct
       let str = field_of_record record in
       (match String.split_lines str with
        | line :: _ :: _ -> sprintf "%s..." (String.rstrip line)
-       | [] | [ _ ] -> str)
+       | []
+       | [ _ ] -> str)
       |> String.strip)
   ;;
 

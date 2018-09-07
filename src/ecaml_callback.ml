@@ -47,5 +47,4 @@ let end_of_module_initialization =
 ;;
 
 let no_active_env = { arity = Arity1; name = "no_active_env" }
-
 let free_embedded_caml_values = { arity = Arity1; name = "free_embedded_caml_values" }

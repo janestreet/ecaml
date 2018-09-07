@@ -31,7 +31,6 @@ module Q = struct
   and search_forward = "search-forward" |> Symbol.intern
   and search_forward_regexp = "search-forward-regexp" |> Symbol.intern
   and simple = "simple" |> Symbol.intern
-  ;;
 end
 
 module F = struct
@@ -39,34 +38,22 @@ module F = struct
   open! Value.Type
 
   let back_to_indentation = Q.back_to_indentation <: nullary @-> return nil
-
   let forward_line = Q.forward_line <: int @-> return int
-
   let delete_char = Q.delete_char <: int @-> return unit
-
   let recenter = Q.recenter <: option int @-> return nil
 end
 
 module Current_buffer = Current_buffer0
 
 let get () = Symbol.funcall0 Q.point |> Position.of_value_exn
-
 let goto_char t = Symbol.funcall1_i Q.goto_char (Position.to_value t)
-
 let goto_first_non_blank () = F.back_to_indentation ()
-
 let min () = Generated_bindings.point_min () |> Position.of_int_exn
-
 let max () = Generated_bindings.point_max () |> Position.of_int_exn
-
 let goto_max () = goto_char (max ())
-
 let goto_min () = goto_char (min ())
-
 let beginning_of_line () = Symbol.funcall0_i Q.beginning_of_line
-
 let end_of_line () = Symbol.funcall0_i Q.end_of_line
-
 let forward_line n = ignore (F.forward_line n : int)
 
 let forward_line_exn n =
@@ -83,19 +70,12 @@ let goto_line l =
 ;;
 
 let forward_char_exn n = Symbol.funcall1_i Q.forward_char (n |> Value.of_int_exn)
-
 let backward_char_exn n = forward_char_exn (-n)
-
 let delete_forward_char_exn = F.delete_char
-
 let delete_backward_char_exn n = delete_forward_char_exn (-n)
-
 let forward_sexp_exn n = Symbol.funcall1_i Q.forward_sexp (n |> Value.of_int_exn)
-
 let backward_sexp_exn n = Symbol.funcall1_i Q.backward_sexp (n |> Value.of_int_exn)
-
 let forward_word n = ignore (Generated_bindings.forward_word n : bool)
-
 let backward_word n = ignore (Generated_bindings.backward_word n : bool)
 
 let line_number =
@@ -104,7 +84,6 @@ let line_number =
 ;;
 
 let column_number () = Symbol.funcall0 Q.current_column |> Value.to_int_exn
-
 let goto_column n = Symbol.funcall1_i Q.move_to_column (n |> Value.of_int_exn)
 
 let indent_line_to ~column =
@@ -112,7 +91,6 @@ let indent_line_to ~column =
 ;;
 
 let insert string = Symbol.funcall1_i Q.insert (string |> Value.of_utf8_bytes)
-
 let insert_text text = Symbol.funcall1_i Q.insert (text |> Text.to_value)
 
 let insert_file_contents_exn path =
@@ -120,11 +98,8 @@ let insert_file_contents_exn path =
 ;;
 
 let kill_word count = Symbol.funcall1_i Q.kill_word (count |> Value.of_int_exn)
-
 let marker_at () = Symbol.funcall0 Q.point_marker |> Marker.of_value_exn
-
 let marker_at_min () = Symbol.funcall0 Q.point_min_marker |> Marker.of_value_exn
-
 let marker_at_max () = Symbol.funcall0 Q.point_max_marker |> Marker.of_value_exn
 
 let bound_value = function
@@ -136,7 +111,7 @@ type 'a with_search_options = ?bound:Position.t -> ?update_last_match:bool -> 'a
 
 let update_last_match_default = false
 
-let handle_last_match ?(update_last_match=update_last_match_default) f =
+let handle_last_match ?(update_last_match = update_last_match_default) f =
   if not update_last_match
   then Regexp.Last_match.save f
   else (
@@ -153,7 +128,6 @@ let search q ?bound ?update_last_match string =
 ;;
 
 let search_backward = search Q.search_backward
-
 let search_forward = search Q.search_forward
 
 let search_exn q ?bound ?update_last_match string =
@@ -162,7 +136,6 @@ let search_exn q ?bound ?update_last_match string =
 ;;
 
 let search_backward_exn = search_exn Q.search_backward
-
 let search_forward_exn = search_exn Q.search_forward
 
 let search_regexp q ?bound ?update_last_match regexp =
@@ -172,7 +145,6 @@ let search_regexp q ?bound ?update_last_match regexp =
 ;;
 
 let search_backward_regexp = search_regexp Q.search_backward_regexp
-
 let search_forward_regexp = search_regexp Q.search_forward_regexp
 
 let search_regexp_exn q ?bound ?update_last_match regexp =
@@ -181,10 +153,9 @@ let search_regexp_exn q ?bound ?update_last_match regexp =
 ;;
 
 let search_backward_regexp_exn = search_regexp_exn Q.search_backward_regexp
-
 let search_forward_regexp_exn = search_regexp_exn Q.search_forward_regexp
 
-let looking_at ?(update_last_match=update_last_match_default) regexp =
+let looking_at ?(update_last_match = update_last_match_default) regexp =
   handle_last_match ~update_last_match (fun () ->
     Symbol.funcall1
       (if update_last_match then Q.looking_at else Q.looking_at_p)

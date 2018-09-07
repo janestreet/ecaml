@@ -19,9 +19,7 @@ type 'a with_spec =
   -> 'a
 
 val create : (Fn.t -> t) with_spec
-
 val defun : (Symbol.t -> Fn.t -> unit) with_spec
-
 val to_value : t -> Value.t
 
 module Expert : sig

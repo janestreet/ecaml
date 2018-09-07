@@ -5,7 +5,6 @@ module Id = Caml_embedded_id
 type t = Value0.t
 
 external ecaml_inject : Id.t -> t = "ecaml_inject"
-
 external ecaml_project : t -> Id.t = "ecaml_project"
 
 let embedded_values = Id.Table.create ()

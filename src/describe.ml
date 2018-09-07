@@ -10,7 +10,7 @@ module F = struct
   ;;
 end
 
-let function_ ?(obscure_symbol=false) symbol =
+let function_ ?(obscure_symbol = false) symbol =
   Echo_area.inhibit_messages (fun () -> F.describe_function symbol);
   let s =
     Buffer.find ~name:"*Help*"
@@ -20,9 +20,9 @@ let function_ ?(obscure_symbol=false) symbol =
       |> Text.to_utf8_bytes
       |> String.split_lines
       |> List.filter_map ~f:(fun line ->
-        if am_running_inline_test
-        && String.is_prefix line ~prefix:"Implemented at"
-     || String.( = ) "[back]" (String.strip line)
+        if (am_running_inline_test
+            && String.is_prefix line ~prefix:"Implemented at")
+        || String.( = ) "[back]" (String.strip line)
         then None
         else Some line)
       |> concat ~sep:"\n"

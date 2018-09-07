@@ -28,11 +28,9 @@ module Q = struct
   and ansi_color_bright_vector = "ansi-color-bright-names-vector" |> Symbol.intern
   and ansi_color_faint_vector = "ansi-color-faint-names-vector" |> Symbol.intern
   and ansi_color_names_vector = "ansi-color-names-vector" |> Symbol.intern
-  ;;
 end
 
 let max_supported_code = 109
-
 let customization_group = "ansi-colors" |> Customization.Group.of_string
 
 module Brightness = struct
@@ -51,22 +49,17 @@ end
 
 module Bounded_int (Config : sig
     val max_value : int
-
     val name : string
   end)
     () : sig
   type t [@@deriving compare, hash, sexp]
 
   val _min_value : t
-
   val max_value : t
-
   val of_int_exn : int -> t
-
   val to_int : t -> int
 end = struct
   let min_value = 0
-
   let max_value = Config.max_value
 
   include Validated.Make_bin_io_compare_hash_sexp (struct
@@ -87,20 +80,15 @@ end = struct
     end)
 
   let to_int = raw
-
   let of_int_exn = create_exn
-
   let compare t1 t2 = Int.compare (t1 |> to_int) (t2 |> to_int)
-
   let _min_value = create_exn min_value
-
   let max_value = create_exn max_value
 end
 
 module Color_index_standard =
   Bounded_int (struct
     let max_value = 7
-
     let name = "color index"
   end)
     ()
@@ -109,7 +97,6 @@ module Color_index_standard =
 module Color_value_8bit =
   Bounded_int (struct
     let max_value = 255
-
     let name = "color value"
   end)
     ()
@@ -117,7 +104,6 @@ module Color_value_8bit =
 module Color_index_256 =
   Bounded_int (struct
     let max_value = 255
-
     let name = "color index"
   end)
     ()
@@ -126,7 +112,6 @@ module By_color_index : sig
   type 'a t [@@deriving sexp_of]
 
   val create_exn : 'a array -> 'a t
-
   val get : 'a t -> Color_index_standard.t -> 'a
 end = struct
   type 'a t = 'a array [@@deriving sexp_of]
@@ -171,9 +156,7 @@ module Colors : sig
   type t [@@deriving sexp_of]
 
   val get : unit -> t
-
   val color : t -> Color_spec.t -> Color.t
-
   val faint_default_color : t -> Color.t
 end = struct
   let defcustom_color_var here symbol ~standard_value ~docstring =
@@ -295,7 +278,6 @@ end = struct
   ;;
 
   let transform c ~f = Color.rgb_exn c |> Color.RGB.map ~f |> Color.of_rgb
-
   let make_faint = transform ~f:(fun v -> v / 2)
 
   let get () =
@@ -404,7 +386,9 @@ end = struct
          (match components with
           | [ r; g; b ] -> Done (Set_color { subject; color = Rgb { r; g; b } })
           | _ :: _ :: _ :: _ :: _ -> failwith "impossible: too many rgb components"
-          | [] | [ _ ] | [ _; _ ] -> Incomplete (Rgb_color { subject; components })))
+          | []
+          | [ _ ]
+          | [ _; _ ] -> Incomplete (Rgb_color { subject; components })))
     | Indexed_256_color subject ->
       (match Color_index_256.of_int_exn code with
        | exception exn -> Invalid (Error.of_exn exn)
@@ -418,9 +402,7 @@ module Attributes : sig
   include Equal.S with type t := t
 
   val empty : t
-
   val transition : t -> code:Code.t -> t
-
   val text_properties : t -> Colors.t -> Text.Property.t list
 end = struct
   type t =
@@ -574,11 +556,8 @@ module Add_text_properties : sig
   type t
 
   val empty : t
-
   val create : Text.Property.t list -> t
-
   val apply : t -> start:int -> end_:int -> unit
-
   val is_empty : t -> bool
 end = struct
   type t =
@@ -613,15 +592,10 @@ module State_machine : sig
   end
 
   val create : unit -> t
-
   val transition : t -> raw_code:int -> [`Ok | `Invalid_escape | `Incomplete_escape]
-
   val reset : t -> unit
-
   val reset_to_state : t -> State.t -> unit
-
   val current_text_properties : t -> Add_text_properties.t
-
   val current_state : t -> State.t
 end = struct
   module State = struct
@@ -702,7 +676,6 @@ end = struct
   ;;
 
   let current_state t = t.current_state
-
   let current_text_properties t = (current_state t).add_text_properties
 
   let create () =
@@ -718,7 +691,6 @@ end = struct
   ;;
 
   let reset t = t.current_state <- t.empty_state
-
   let reset_to_state t state = t.current_state <- state
 
   let transition t ~raw_code =
@@ -817,9 +789,7 @@ module Colorization_backend : sig
     -> t
 
   val finished : t -> [`Use_temp_file of Temp_file_state.t | `In_place_colorization]
-
   val last_output : t -> int
-
   val rewind_input : t -> unit
 end = struct
   module In_place_colorization = struct
@@ -1012,9 +982,7 @@ module Colorization_state = struct
   [@@deriving sexp_of, fields]
 
   let type_id = Type_equal.Id.create ~name:"colorization-state" sexp_of_t
-
   let type_ = Value.Type.(caml_embed type_id |> option)
-
   let var = Var.create ("ansi-color-state" |> Symbol.intern) type_
 
   let () =
@@ -1057,7 +1025,6 @@ let keep_verbatim t ~except_for_last =
 ;;
 
 let get_char_exn t = Colorization_backend.get_char_exn t.backend
-
 let rewind_input t = Colorization_backend.rewind_input t.backend
 
 (* [normal], [escape], and [code], are a custom DFA for processing text
@@ -1077,14 +1044,15 @@ let rec normal t =
        rewind_input t;
        invalid_escape t ~why:`invalid)
   | _ -> normal t
+
 and finish_reading_csi_sequence_and_fail t =
   (* Wikipedia: The ESC [ is followed by any number (including none) of "parameter bytes"
      in the range 0x30–0x3F, then by any number of "intermediate bytes" in the range
      0x20–0x2F, then finally by a single "final byte" in the range 0x40–0x7E. *)
   let classify_byte = function
-    | '0'..'?' -> `parameter
-    | ' '..'/' -> `intermediate
-    | '@'..'~' as c -> `final (if Char.(c = 'm') then `sgr else `non_sgr)
+    | '0' .. '?' -> `parameter
+    | ' ' .. '/' -> `intermediate
+    | '@' .. '~' as c -> `final (if Char.(c = 'm') then `sgr else `non_sgr)
     | _ -> `other
   in
   let rec loop ~at_most ~(state : [`parameters | `intermediates]) =
@@ -1109,11 +1077,13 @@ and finish_reading_csi_sequence_and_fail t =
   in
   let why = loop ~at_most:200 ~state:`parameters in
   invalid_escape t ~why
+
 and escape t = code t 0
+
 and code t ac =
   match get_char_exn t with
   | exception End_of_input -> invalid_escape t ~why:`incomplete
-  | '0'..'9' as c -> code t ((ac * 10) + digit c)
+  | '0' .. '9' as c -> code t ((ac * 10) + digit c)
   | ';' ->
     (match transition t ~raw_code:ac with
      | `Ok | `Incomplete_escape -> escape t
@@ -1132,6 +1102,7 @@ and code t ac =
   | _c ->
     rewind_input t;
     finish_reading_csi_sequence_and_fail t
+
 and invalid_escape t ~why =
   let last_colorized = Colorization_backend.last_output t.backend in
   Colorization_backend.print_invalid_escape
@@ -1250,9 +1221,9 @@ let color_region ~start ~end_ ~use_temp_file ~preserve_state ~drop_unsupported_e
 let color_region_in_current_buffer
       ~start
       ~end_
-      ?(use_temp_file=false)
-      ?(preserve_state=false)
-      ?(drop_unsupported_escapes=false)
+      ?(use_temp_file = false)
+      ?(preserve_state = false)
+      ?(drop_unsupported_escapes = false)
       ()
   =
   Current_buffer.save_excursion (fun () ->

@@ -7,16 +7,13 @@ module Q = struct
   let call_interactively = "call-interactively" |> Symbol.intern
   and current_prefix_arg = "current-prefix-arg" |> Symbol.intern
   and prefix_numeric_value = "prefix-numeric-value" |> Symbol.intern
-  ;;
 end
 
 module Current_buffer = Current_buffer0
 
 include Value.Make_subtype (struct
     let name = "command"
-
     let here = [%here]
-
     let is_in_subtype = Value.is_command
   end)
 

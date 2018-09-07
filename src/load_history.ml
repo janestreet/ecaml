@@ -8,7 +8,6 @@ module Q = struct
   and defface = "defface" |> Symbol.intern
   and load_history = "load-history" |> Symbol.intern
   and symbol_file = "symbol-file" |> Symbol.intern
-  ;;
 end
 
 module Current_buffer = Current_buffer0

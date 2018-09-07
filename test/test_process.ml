@@ -96,7 +96,7 @@ let%expect_test "[query_on_exit], [set_query_on_exit]" =
 
 let test_call_result_exn
       ?input
-      ?(output=Call.Output.Before_point_in_current_buffer)
+      ?(output = Call.Output.Before_point_in_current_buffer)
       ?working_directory
       ()
       ~args

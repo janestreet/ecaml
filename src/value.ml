@@ -4,7 +4,6 @@ open Value_intf
 include Value0
 
 module type Funcall = Funcall with type value := t
-
 module type Make_subtype_arg = Make_subtype_arg with type value := t
 
 module Emacs_value = struct
@@ -12,7 +11,6 @@ module Emacs_value = struct
 end
 
 let sexp_of_t_ref = ref (fun _ -> [%message [%here] "sexp_of_t not yet defined"])
-
 let sexp_of_t t = !sexp_of_t_ref t
 
 type value = t [@@deriving sexp_of]
@@ -45,7 +43,8 @@ exception Elisp_signal of { symbol : t; data : t }
 let raise_if_emacs_signaled () =
   match non_local_exit_get_and_clear () with
   | Return -> ()
-  | Signal (symbol, data) | Throw (symbol, data) -> raise (Elisp_signal { symbol; data })
+  | Signal (symbol, data)
+  | Throw (symbol, data) -> raise (Elisp_signal { symbol; data })
 ;;
 
 let wrap_raise1 f a =
@@ -105,7 +104,6 @@ module Q = struct
   and vectorp = "vectorp" |> intern
   and window_configuration_p = "window-configuration-p" |> intern
   and windowp = "windowp" |> intern
-  ;;
 end
 
 external funcall_array : t -> t array -> bool -> t = "ecaml_funcall_array"
@@ -124,15 +122,11 @@ let funcallN_array_i t ts =
 ;;
 
 let funcallN t ts = funcallN_array t (ts |> Array.of_list)
-
 let funcallN_i t ts = funcallN_array_i t (ts |> Array.of_list)
 
 external funcall0 : t -> bool -> t = "ecaml_funcall0"
-
 external funcall1 : t -> t -> bool -> t = "ecaml_funcall1"
-
 external funcall2 : t -> t -> t -> bool -> t = "ecaml_funcall2"
-
 external funcall3 : t -> t -> t -> t -> bool -> t = "ecaml_funcall3"
 
 external funcall4
@@ -157,11 +151,8 @@ external funcall5
   = "ecaml_funcall5_byte" "ecaml_funcall5"
 
 let funcall0 f ~should_return_result = funcall0 f should_return_result
-
 let funcall1 f a1 ~should_return_result = funcall1 f a1 should_return_result
-
 let funcall2 f a1 a2 ~should_return_result = funcall2 f a1 a2 should_return_result
-
 let funcall3 f a1 a2 a3 ~should_return_result = funcall3 f a1 a2 a3 should_return_result
 
 let funcall4 f a1 a2 a3 a4 ~should_return_result =
@@ -276,7 +267,6 @@ let is_not_nil = wrap_raise1 is_not_nil
 external eq : t -> t -> bool = "ecaml_eq"
 
 let eq = wrap_raise2 eq
-
 let[@inline always] is_integer (t : t) = Obj.is_int (Obj.repr t)
 
 let[@inline always] to_int_exn (t : t) =
@@ -286,11 +276,8 @@ let[@inline always] to_int_exn (t : t) =
 ;;
 
 let get_int_var string = funcall1 Q.symbol_value (string |> intern) |> to_int_exn
-
 let debug_on_error () = is_not_nil (funcall1 Q.symbol_value Q.debug_on_error)
-
 let emacs_min_int = get_int_var "most-negative-fixnum"
-
 let emacs_max_int = get_int_var "most-positive-fixnum"
 
 let of_int_exn : int -> t =
@@ -329,67 +316,36 @@ let vec_set = wrap_raise3 vec_set
 external vec_size : t -> int = "ecaml_vec_size"
 
 let vec_size = wrap_raise1 vec_size
-
 let nil = Q.nil
-
 let t = Q.t
-
 let option to_value = Option.value_map ~default:nil ~f:to_value
-
 let to_bool = is_not_nil
-
 let of_bool b = if b then t else nil
-
 let list ts = funcallN Q.list ts
-
 let is_nil t = eq t nil
-
 let is_array t = funcall1 Q.arrayp t |> to_bool
-
 let is_buffer t = funcall1 Q.bufferp t |> to_bool
-
 let is_command t = funcall1 Q.commandp t |> to_bool
-
 let is_event t = funcall1 Q.eventp t |> to_bool
-
 let is_float t = funcall1 Q.floatp t |> to_bool
-
 let is_font t = funcall1 Q.fontp t |> to_bool
-
 let is_frame t = funcall1 Q.framep t |> to_bool
-
 let is_function t = funcall1 Q.functionp t |> to_bool
-
 let is_hash_table t = funcall1 Q.hash_table_p t |> to_bool
-
 let is_keymap t = funcall1 Q.keymapp t |> to_bool
-
 let is_marker t = funcall1 Q.markerp t |> to_bool
-
 let is_process t = funcall1 Q.processp t |> to_bool
-
 let is_string t = funcall1 Q.stringp t |> to_bool
-
 let is_symbol t = funcall1 Q.symbolp t |> to_bool
-
 let is_syntax_table t = funcall1 Q.syntax_table_p t |> to_bool
-
 let is_timer t = funcall1 Q.timerp t |> to_bool
-
 let is_vector t = funcall1 Q.vectorp t |> to_bool
-
 let is_window t = funcall1 Q.windowp t |> to_bool
-
 let is_window_configuration t = funcall1 Q.window_configuration_p t |> to_bool
-
 let equal t1 t2 = funcall2 Q.equal t1 t2 |> to_bool
-
 let cons t1 t2 = funcall2 Q.cons t1 t2
-
 let car_exn t = funcall1 Q.car t
-
 let cdr_exn t = funcall1 Q.cdr t
-
 let cadr_exn t = funcall1 Q.cadr t
 
 let is_cons ?car ?cdr t =
@@ -422,9 +378,9 @@ let to_array_exn (t : t) ~f =
 let vector arr = funcallN_array Q.vector arr
 
 let looks_nice_in_symbol = function
-  | 'a'..'z'
-  | 'A'..'Z'
-  | '0'..'9'
+  | 'a' .. 'z'
+  | 'A' .. 'Z'
+  | '0' .. '9'
   | '_' | '-' | '!' | '*' | '+' | '/' | ':' | '<' | '=' | '>' | '@' | '|' -> true
   | _ -> false
 ;;
@@ -518,9 +474,7 @@ module Type = struct
   module type S = Type with type 'a t := 'a t with type value := value
 
   let name t = Sexp.of_string (Type_equal.Id.name t.id)
-
   let to_sexp t = Type_equal.Id.to_sexp t.id
-
   let sexp_of_t _ t = name t
 
   let create name sexp_of_t of_value_exn to_value =
@@ -531,9 +485,7 @@ module Type = struct
   ;;
 
   let bool = create [%message "bool"] [%sexp_of: bool] to_bool of_bool
-
   let ignored = create [%message "ignored"] [%sexp_of: unit] ignore (const nil)
-
   let int = create [%message "int"] [%sexp_of: int] to_int_exn of_int_exn
 
   let string =
@@ -646,7 +598,6 @@ module Make_subtype (M : Make_subtype_arg) = struct
   type nonrec t = t [@@deriving sexp_of]
 
   let is_in_subtype = is_in_subtype
-
   let to_value t = t
 
   let of_value_exn t =
@@ -659,7 +610,6 @@ module Make_subtype (M : Make_subtype_arg) = struct
   ;;
 
   let type_ = Type.create [%message name] [%sexp_of: t] of_value_exn to_value
-
   let eq (t1 : t) t2 = eq t1 t2
 end
 
@@ -671,7 +621,6 @@ module Stat = struct
   [@@deriving sexp_of]
 
   external num_emacs_free_performed : unit -> int = "ecaml_num_emacs_free_performed"
-
   external num_emacs_free_scheduled : unit -> int = "ecaml_num_emacs_free_scheduled"
 
   let now () =
@@ -689,7 +638,6 @@ end
 
 module Expert = struct
   let non_local_exit_signal = non_local_exit_signal
-
   let raise_if_emacs_signaled = raise_if_emacs_signaled
 end
 

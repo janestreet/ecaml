@@ -3,7 +3,6 @@ open! Import
 open! Current_buffer
 
 let show () = print_s [%sexp (get () : Buffer.t)]
-
 let show_point () = print_s [%message "" ~point:(Point.get () : Position.t)]
 
 let%expect_test "[set_transient_mark_mode], [transient_mark_mode_is_enabled]" =
@@ -479,9 +478,7 @@ let%expect_test "[is_read_only], [set_read_only]" =
 ;;
 
 let face = Text.Property_name.face
-
 let font_lock_face = Text.Property_name.font_lock_face
-
 let show () = print_s [%sexp (contents ~text_properties:true () : Text.t)]
 
 let%expect_test "[set_text_property]" =

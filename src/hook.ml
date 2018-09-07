@@ -11,7 +11,6 @@ module Q = struct
   and kill_buffer_hook = "kill-buffer-hook" |> Symbol.intern
   and remove_hook = "remove-hook" |> Symbol.intern
   and run_hooks = "run-hooks" |> Symbol.intern
-  ;;
 end
 
 module F = struct
@@ -23,11 +22,9 @@ module F = struct
   and remove_hook =
     Q.remove_hook <: Symbol.type_ @-> Symbol.type_ @-> bool @-> return nil
   and run_hooks = Q.run_hooks <: Symbol.type_ @-> return nil
-  ;;
 end
 
 type file = file:string -> unit [@@deriving sexp_of]
-
 type normal = unit -> unit [@@deriving sexp_of]
 
 module Type = struct
@@ -72,7 +69,6 @@ type 'a t =
 [@@deriving fields]
 
 let symbol t = t.var.symbol
-
 let value_exn t = Current_buffer.value_exn t.var
 
 let sexp_of_t _ t =
@@ -125,7 +121,7 @@ module Where = struct
   [@@deriving sexp_of]
 end
 
-let add ?(buffer_local=false) ?(where=Where.Start) t function_ =
+let add ?(buffer_local = false) ?(where = Where.Start) t function_ =
   F.add_hook
     (t |> symbol)
     (Function.symbol function_)
@@ -135,20 +131,15 @@ let add ?(buffer_local=false) ?(where=Where.Start) t function_ =
     buffer_local
 ;;
 
-let remove ?(buffer_local=false) t function_ =
+let remove ?(buffer_local = false) t function_ =
   F.remove_hook (t |> symbol) (Function.symbol function_) buffer_local
 ;;
 
 let clear t = Current_buffer.set_value t.var []
-
 let run t = F.run_hooks (t |> symbol)
-
 let after_load = create File Q.after_load_functions
-
 let after_save = create Normal Q.after_save_hook
-
 let before_save = create Normal Q.before_save_hook
-
 let kill_buffer = create Normal Q.kill_buffer_hook
 
 let after_load_once =

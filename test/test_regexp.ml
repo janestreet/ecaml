@@ -359,10 +359,7 @@ let%expect_test "[of_rx]" =
       test
         [ "cr"; "car"; "cdr"; "cadr"; "caddr" ]
         (Seq
-           [ Exactly "c"
-           ; Repeat { min; max; t = Any_in [ Chars_in "ad" ] }
-           ; Exactly "r"
-           ]))
+           [ Exactly "c"; Repeat { min; max; t = Any_in [ Chars_in "ad" ] }; Exactly "r" ]))
     [ 0, None; 0, Some 1; 1, None; 2, None; 1, Some 2 ];
   [%expect
     {|

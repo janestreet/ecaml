@@ -22,7 +22,6 @@ module Q = struct
   and set_process_query_on_exit_flag = "set-process-query-on-exit-flag" |> Symbol.intern
   and start_process = "start-process" |> Symbol.intern
   and process_mark = "process-mark" |> Symbol.intern
-  ;;
 end
 
 include Process0
@@ -34,7 +33,6 @@ module F = struct
 end
 
 let equal = eq
-
 let is_alive = F.is_alive
 
 let buffer t =
@@ -106,8 +104,11 @@ let create_unix_network_process () ~filter ~name ~socket_path =
        ; socket_path |> Value.of_utf8_bytes
        ; Q.K.filter |> Symbol.to_value
        ; Function.to_value
-           (Function.create [%here] ~docstring:"Network process filter."
-              ~args:[ Q.process; Q.output ] (function
+           (Function.create
+              [%here]
+              ~docstring:"Network process filter."
+              ~args:[ Q.process; Q.output ]
+              (function
                 | [| process; output |] ->
                   filter (process |> of_value_exn) (output |> Text.of_value_exn);
                   Value.nil
@@ -197,10 +198,10 @@ module Call = struct
 end
 
 let call_result_exn
-      ?(input=Call.Input.Dev_null)
-      ?(output=Call.Output.Dev_null)
-      ?(redisplay_on_output=false)
-      ?(working_directory=Working_directory.Root)
+      ?(input = Call.Input.Dev_null)
+      ?(output = Call.Output.Dev_null)
+      ?(redisplay_on_output = false)
+      ?(working_directory = Working_directory.Root)
       prog
       args
   =
@@ -219,8 +220,8 @@ let call_result_exn
 let call_exn
       ?input
       ?working_directory
-      ?(strip_whitespace=true)
-      ?(verbose_exn=true)
+      ?(strip_whitespace = true)
+      ?(verbose_exn = true)
       prog
       args
   =
@@ -253,7 +254,7 @@ let call_exn
 let call_expect_no_output_exn
       ?input
       ?working_directory
-      ?(strip_whitespace=false)
+      ?(strip_whitespace = false)
       ?verbose_exn
       prog
       args

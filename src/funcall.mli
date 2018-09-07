@@ -21,9 +21,7 @@ open! Import
 type 'a t
 
 val return : 'a Value.Type.t -> 'a t
-
 val nil : unit Value.Type.t
-
 val nullary : unit Value.Type.t
 
 (** [Q.foo <: ...] types an Elisp function, like how [foo :> t] types an OCaml value. *)

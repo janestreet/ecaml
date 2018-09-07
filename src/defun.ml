@@ -12,13 +12,9 @@ module T0 = struct
     | Rest : Symbol.t * 'a Value.Type.t -> 'a list t
 
   let return x = Return x
-
   let map t ~f = Map (t, f)
-
   let both t t' = Both (t, t')
-
   let apply f x = both f x |> map ~f:(fun (f, x) -> f x)
-
   let map = `Custom map
 end
 
@@ -27,9 +23,7 @@ module T = struct
   include Applicative.Make (T0)
 
   let required name type_ = Required (name, type_)
-
   let optional name type_ = Optional (name, Value.Type.option type_)
-
   let rest name type_ = Rest (name, type_)
 
   let optional_with_default name default type_ =
@@ -84,8 +78,11 @@ let rec apply : type a. a t -> Value.t array -> len:int -> pos:int ref -> a =
 class ['a] collect_names =
   object (self)
     method required _ acc = acc
+
     method optional _ acc = acc
+
     method rest _ acc = acc
+
     method go : 'a. 'a t -> Symbol.t list =
       fun t ->
         let rec aux : type a. a t -> Symbol.t list -> Symbol.t list =
@@ -104,11 +101,13 @@ class ['a] collect_names =
         aux t [] |> List.rev
   end
 
+let get_optional =
+  object
+    inherit ['a] collect_names
 
-let get_optional = object
-  inherit ['a] collect_names
-  method! optional = List.cons
-end
+    method! optional = List.cons
+  end
+;;
 
 let get_optional t =
   match get_optional#go t with
@@ -116,17 +115,23 @@ let get_optional t =
   | _ :: _ as names -> Some names
 ;;
 
-let get_required = object
-  inherit ['a] collect_names
-  method! required = List.cons
-end
+let get_required =
+  object
+    inherit ['a] collect_names
+
+    method! required = List.cons
+  end
+;;
 
 let get_required t = get_required#go t
 
-let get_rest = object
-  inherit ['a] collect_names
-  method! rest = List.cons
-end
+let get_rest =
+  object
+    inherit ['a] collect_names
+
+    method! rest = List.cons
+  end
+;;
 
 let get_rest t =
   match get_rest#go t with
@@ -150,7 +155,16 @@ let get_fn t return_type args =
           (args : Value.t array)]
 ;;
 
-let defun ?(define_keys=[]) ?docstring ?interactive ?obsoletes here return_type symbol t =
+let defun
+      ?(define_keys = [])
+      ?docstring
+      ?interactive
+      ?obsoletes
+      here
+      return_type
+      symbol
+      t
+  =
   Function.defun
     ?docstring
     ?interactive

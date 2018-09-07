@@ -9,7 +9,6 @@ module Q = struct
   and read_only_mode = "read-only-mode" |> Symbol.intern
   and view_mode = "view-mode" |> Symbol.intern
   and visual_line_mode = "visual-line-mode" |> Symbol.intern
-  ;;
 end
 
 
@@ -26,7 +25,6 @@ let goto_address =
 ;;
 
 let read_only = { function_name = Q.read_only_mode; variable_name = Q.buffer_read_only }
-
 let view = { function_name = Q.view_mode; variable_name = Q.view_mode }
 
 let visual_line =
@@ -39,5 +37,4 @@ let is_enabled t =
 ;;
 
 let disable t = Symbol.funcall1_i t.function_name (0 |> Value.of_int_exn)
-
 let enable t = Symbol.funcall1_i t.function_name (1 |> Value.of_int_exn)

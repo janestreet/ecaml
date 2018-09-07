@@ -6,7 +6,6 @@
 
 open! Core_kernel
 open! Import
-
 include Value.Subtype
 
 (** When you insert text directly at the place where a marker points, there are two

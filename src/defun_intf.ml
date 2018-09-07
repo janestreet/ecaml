@@ -9,17 +9,11 @@ module type S = sig
   type 'a t
 
   val return : 'a -> 'a t
-
   val map : 'a t -> f:('a -> 'b) -> 'b t
-
   val both : 'a t -> 'b t -> ('a * 'b) t
-
   val required : Symbol.t -> 'a Value.Type.t -> 'a t
-
   val optional : Symbol.t -> 'a Value.Type.t -> 'a option t
-
   val rest : Symbol.t -> 'a Value.Type.t -> 'a list t
-
   val optional_with_default : Symbol.t -> 'a -> 'a Value.Type.t -> 'a t
 
   include Value.Type.S

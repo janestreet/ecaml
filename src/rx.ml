@@ -21,7 +21,6 @@ module Q = struct
   and sym_star_star = "**" |> Symbol.intern
   and zero_or_more = "zero-or-more" |> Symbol.intern
   and zero_or_one = "zero-or-one" |> Symbol.intern
-  ;;
 end
 
 module F = struct
@@ -77,6 +76,7 @@ include T
 let label symbol args = Form.list (Form.symbol symbol :: args)
 
 let rec to_forms ts = List.map ts ~f:to_form
+
 and to_form t =
   match (t : t) with
   | Any_char -> Form.symbol Q.anything

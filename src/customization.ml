@@ -23,7 +23,6 @@ module Q = struct
   and repeat = "repeat" |> Symbol.intern
   and string = "string" |> Symbol.intern
   and variable = "variable" |> Symbol.intern
-  ;;
 end
 
 let q value = Value.list [ Symbol.to_value Q.quote; value ]
@@ -32,7 +31,6 @@ module Group = struct
   type t = Symbol.t [@@deriving sexp_of]
 
   let of_string = Symbol.intern
-
   let to_string = Symbol.name
 end
 
@@ -75,6 +73,7 @@ module Type = struct
 
   let rec vs ts = List.map ts ~f:v
   and composite s ts = Value.list (Symbol.to_value s :: vs ts)
+
   and v = function
     | Alist (t1, t2) ->
       Value.list [ s Q.alist; s Q.K.key_type; v t1; s Q.K.value_type; v t2 ]

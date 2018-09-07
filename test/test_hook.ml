@@ -3,9 +3,7 @@ open! Import
 open! Hook
 
 let t = create Normal ("some-hook" |> Symbol.intern)
-
 let () = clear t
-
 let show t = print_s [%sexp (t : _ t)]
 
 let create_function s =
@@ -13,9 +11,7 @@ let create_function s =
 ;;
 
 let f1 = create_function "f1"
-
 let f2 = create_function "f2"
-
 let f3 = create_function "f3"
 
 let%expect_test "[add]" =

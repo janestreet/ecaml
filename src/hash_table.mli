@@ -2,7 +2,6 @@
 
 open! Core_kernel
 open! Import
-
 include Value.Subtype
 
 (** [(describe-function 'make-hash-table)]

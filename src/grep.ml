@@ -8,7 +8,6 @@ module Q = struct
   and grep = "grep" |> Symbol.intern
   and grep_save_buffers = "grep-save-buffers" |> Symbol.intern
   and grep_use_null_device = "grep-use-null-device" |> Symbol.intern
-  ;;
 end
 
 module Save_buffers = struct
@@ -49,7 +48,6 @@ module Save_buffers = struct
 end
 
 let save_buffers = Var.create Q.grep_save_buffers Save_buffers.type_
-
 let use_null_device = Var.create Q.grep_use_null_device Value.Type.bool
 
 let grep ~command =

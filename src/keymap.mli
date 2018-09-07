@@ -8,7 +8,6 @@
 
 open! Core_kernel
 open! Import
-
 include Value.Subtype
 
 type keymap = t

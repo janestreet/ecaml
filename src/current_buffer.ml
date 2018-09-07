@@ -56,7 +56,6 @@ module Q = struct
   and use_local_map = "use-local-map" |> Symbol.intern
   and widen = "widen" |> Symbol.intern
   and replace_buffer_contents = "replace-buffer-contents" |> Symbol.intern
-  ;;
 end
 
 include (Current_buffer0 : Current_buffer0_intf.Current_buffer0 with module Q := Q)
@@ -64,7 +63,6 @@ include (Current_buffer0 : Current_buffer0_intf.Current_buffer0 with module Q :=
 module Window_display_state = struct
   include Value.Make_subtype (struct
       let here = [%here]
-
       let name = "Buffer.window-display-state"
 
       let is_in_subtype =
@@ -118,31 +116,39 @@ module F = struct
     Q.buffer_window_display_state <: nullary @-> return Window_display_state.type_
   and buffer_restore_window_display_state =
     Q.buffer_restore_window_display_state <: Window_display_state.type_ @-> return nil
+
   and add_text_properties =
     Q.add_text_properties
     <: Position.type_ @-> Position.type_ @-> list value @-> return nil
+
   and buffer_substring =
     Q.buffer_substring <: Position.type_ @-> Position.type_ @-> return Text.type_
+
   and buffer_substring_no_properties =
     Q.buffer_substring_no_properties
     <: Position.type_ @-> Position.type_ @-> return Text.type_
+
   and delete_duplicate_lines =
     Q.delete_duplicate_lines <: Position.type_ @-> Position.type_ @-> return nil
   and flush_lines =
     Q.flush_lines <: Regexp.type_ @-> Position.type_ @-> Position.type_ @-> return nil
+
   and put_text_property =
     Q.put_text_property
     <: Position.type_ @-> Position.type_ @-> Symbol.type_ @-> value @-> return nil
+
   and set_text_properties =
     Q.set_text_properties
     <: Position.type_ @-> Position.type_ @-> list value @-> return nil
+
   and sort_lines =
     Q.sort_lines <: value @-> Position.type_ @-> Position.type_ @-> return nil
+
   and text_property_not_all =
     Q.text_property_not_all
     <: Position.type_ @-> Position.type_ @-> Symbol.type_ @-> value @-> return value
+
   and replace_buffer_contents = Q.replace_buffer_contents <: Buffer.type_ @-> return nil
-  ;;
 end
 
 let set_temporarily t ~f =
@@ -168,23 +174,14 @@ let change_major_mode major_mode =
 ;;
 
 let set_auto_mode ?keep_mode_if_same () = F.set_auto_mode keep_mode_if_same
-
 let bury = F.bury_buffer
-
 let directory = Var.create Q.default_directory Value.Type.string
-
 let is_modified = F.buffer_modified_p
-
 let set_modified = F.set_buffer_modified_p
-
 let fill_column = Var.create Q.fill_column Value.Type.int
-
 let paragraph_start = Var.create Q.paragraph_start Regexp.type_
-
 let paragraph_separate = Var.create Q.paragraph_separate Regexp.type_
-
 let read_only = Var.create Q.buffer_read_only Value.Type.bool
-
 let file_name () = Buffer.file_name (get ())
 
 let file_name_exn () =
@@ -200,11 +197,8 @@ let name () =
 ;;
 
 let file_name_var = Var.create Q.buffer_file_name Value.Type.(option string)
-
 let transient_mark_mode = Var.create Q.transient_mark_mode Value.Type.bool
-
 let buffer_undo_list = Var.create Q.buffer_undo_list Value.Type.value
-
 let is_undo_enabled () = not (Value.eq (value_exn buffer_undo_list) Value.t)
 
 let set_undo_enabled bool =
@@ -212,9 +206,7 @@ let set_undo_enabled bool =
 ;;
 
 let undo_list () = value_exn buffer_undo_list
-
 let undo = F.undo
-
 let add_undo_boundary = F.undo_boundary
 
 let or_point_max option =
@@ -229,30 +221,21 @@ let or_point_min option =
   | None -> Point.min ()
 ;;
 
-let contents ?start ?end_ ?(text_properties=false) () =
+let contents ?start ?end_ ?(text_properties = false) () =
   (if text_properties then F.buffer_substring else F.buffer_substring_no_properties)
     (or_point_min start)
     (or_point_max end_)
 ;;
 
 let kill = F.kill_buffer
-
 let save = F.save_buffer
-
 let erase = F.erase_buffer
-
 let delete_region ~start ~end_ = F.delete_region start end_
-
 let kill_region ~start ~end_ = F.kill_region start end_
-
 let widen = F.widen
-
 let save_current_buffer f = Save_wrappers.save_current_buffer f
-
 let save_excursion f = Save_wrappers.save_excursion f
-
 let save_mark_and_excursion f = Save_wrappers.save_mark_and_excursion f
-
 let save_restriction f = Save_wrappers.save_restriction f
 
 let save_window_display_state f =
@@ -268,8 +251,7 @@ let enable_multibyte_characters =
 ;;
 
 let is_multibyte () = value_exn enable_multibyte_characters
-
-let rename_exn ?(unique=false) () ~name = F.rename_buffer name unique
+let rename_exn ?(unique = false) () ~name = F.rename_buffer name unique
 
 let set_text_property ?start ?end_ property_name property_value =
   F.put_text_property
@@ -329,15 +311,10 @@ let text_property_is_present ?start ?end_ property_name =
 ;;
 
 let set_marker_position = F.set_marker
-
 let mark = F.mark_marker
-
 let set_mark = F.set_mark
-
 let mark_active = Var.create Q.mark_active Value.Type.bool
-
 let mark_is_active () = value_exn mark_active
-
 let deactivate_mark = F.deactivate_mark
 
 let make_buffer_local var =
@@ -346,7 +323,6 @@ let make_buffer_local var =
 ;;
 
 let is_buffer_local var = F.local_variable_p (var |> Var.symbol)
-
 let is_buffer_local_if_set var = F.local_variable_if_set_p (var |> Var.symbol)
 
 let buffer_local_variables () =
@@ -364,13 +340,9 @@ let syntax_class char_code =
 ;;
 
 let syntax_table = F.syntax_table
-
 let set_syntax_table = F.set_syntax_table
-
 let local_keymap = F.current_local_map
-
 let set_local_keymap = F.use_local_map
-
 let minor_mode_keymaps = F.current_minor_mode_maps
 
 let delete_lines_matching ?start ?end_ regexp =
@@ -390,7 +362,7 @@ let indent_region ?start ?end_ () =
     F.indent_region (or_point_min start) (or_point_max end_))
 ;;
 
-let revert ?(confirm=false) () = F.revert_buffer Value.nil (not confirm)
+let revert ?(confirm = false) () = F.revert_buffer Value.nil (not confirm)
 
 let set_revert_buffer_function f =
   set_value

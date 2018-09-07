@@ -11,9 +11,7 @@ open! Core_kernel
 open! Import
 
 type 'a t [@@deriving sexp_of]
-
 type file = file:string -> unit
-
 type normal = unit -> unit
 
 module Type : sig
@@ -24,7 +22,6 @@ module Type : sig
 end
 
 val create : 'a Type.t -> Symbol.t -> 'a t
-
 val var : _ t -> Function.t list Var.t
 
 module Where : sig

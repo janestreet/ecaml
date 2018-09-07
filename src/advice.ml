@@ -8,7 +8,6 @@ module Q = struct
   and advice_remove = "advice-remove" |> Symbol.intern
   and inner = "inner" |> Symbol.intern
   and rest = "rest" |> Symbol.intern
-  ;;
 end
 
 module F = struct
@@ -18,7 +17,6 @@ module F = struct
   let advice_add =
     Q.advice_add <: Symbol.type_ @-> Symbol.type_ @-> Symbol.type_ @-> return nil
   and advice_remove = Q.advice_remove <: Symbol.type_ @-> Symbol.type_ @-> return nil
-  ;;
 end
 
 let add_predefined_function advice_name ~for_function =

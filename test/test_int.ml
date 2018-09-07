@@ -2,13 +2,9 @@ open! Core_kernel
 open! Import
 
 let eval_int_var string = Form.eval (string |> Symbol.intern |> Form.symbol)
-
 let most_negative_fixnum_value = eval_int_var "most-negative-fixnum"
-
 let most_positive_fixnum_value = eval_int_var "most-positive-fixnum"
-
 let most_negative_fixnum = Value.emacs_min_int
-
 let most_positive_fixnum = Value.emacs_max_int
 
 let%expect_test "most-{neg,pos}itive-fixnum" =

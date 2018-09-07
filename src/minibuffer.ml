@@ -11,7 +11,6 @@ module Q = struct
   and y_or_n_p = "y-or-n-p" |> Symbol.intern
   and y_or_n_p_with_timeout = "y-or-n-p-with-timeout" |> Symbol.intern
   and yes_or_no_p = "yes-or-no-p" |> Symbol.intern
-  ;;
 end
 
 let y_or_n ~prompt =
@@ -43,7 +42,7 @@ let yes_or_no ~prompt =
 
 let read_from
       ?default_value
-      ?(history_list=Q.minibuffer_history)
+      ?(history_list = Q.minibuffer_history)
       ?history_list_pos
       ?initial_contents
       ()
@@ -68,5 +67,4 @@ let read_from
 ;;
 
 let exit_hook = Hook.create Normal Q.minibuffer_exit_hook
-
 let setup_hook = Hook.create Normal Q.minibuffer_setup_hook

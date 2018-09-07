@@ -19,14 +19,11 @@ module Q = struct
   and special_event_map = "special-event-map" |> Symbol.intern
   and undefined = "undefined" |> Symbol.intern
   and use_global_map = "use-global-map" |> Symbol.intern
-  ;;
 end
 
 include Value.Make_subtype (struct
     let name = "keymap"
-
     let here = [%here]
-
     let is_in_subtype = Value.is_keymap
   end)
 
@@ -57,7 +54,7 @@ module Kind = struct
   [@@deriving sexp_of]
 end
 
-let create ?(kind=Kind.Sparse) ?menu_name () =
+let create ?(kind = Kind.Sparse) ?menu_name () =
   Symbol.funcall1
     (match kind with
      | Full -> Q.make_keymap
@@ -69,9 +66,7 @@ let create ?(kind=Kind.Sparse) ?menu_name () =
 ;;
 
 let deep_copy t = Symbol.funcall1 Q.copy_keymap (t |> to_value) |> of_value_exn
-
 let global () = Symbol.funcall0 Q.current_global_map |> of_value_exn
-
 let set_global t = Symbol.funcall1_i Q.use_global_map (t |> to_value)
 
 module Entry = struct
@@ -117,7 +112,7 @@ module Entry = struct
   ;;
 end
 
-let lookup_key_exn ?(accept_defaults=false) t key_sequence =
+let lookup_key_exn ?(accept_defaults = false) t key_sequence =
   let result =
     Symbol.funcall3
       Q.lookup_key

@@ -6,14 +6,11 @@ module Q = struct
 
   let make_vector = "make-vector" |> Symbol.intern
   and vconcat = "vconcat" |> Symbol.intern
-  ;;
 end
 
 include Value.Make_subtype (struct
     let name = "vector"
-
     let here = [%here]
-
     let is_in_subtype = Value.is_vector
   end)
 
@@ -46,9 +43,7 @@ let set t i v =
 ;;
 
 let of_list vs = Symbol.funcallN Q.vector vs |> of_value_exn
-
 let concat ts = Symbol.funcallN Q.vconcat (ts : t list :> Value.t list) |> of_value_exn
-
 let to_array t ~f = Array.init (length t) ~f:(fun i -> get t i |> f)
 
 let type_ (type a) (type_ : a Value.Type.t) =

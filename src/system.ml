@@ -9,7 +9,6 @@ module Q = struct
   and process_environment = "process-environment" |> Symbol.intern
   and setenv = "setenv" |> Symbol.intern
   and system_name = "system-name" |> Symbol.intern
-  ;;
 end
 
 let string_option = Value.Type.(option string)
@@ -26,7 +25,6 @@ let setenv ~var ~value =
 ;;
 
 let process_environment = Var.create Q.process_environment Value.Type.(list string)
-
 let exec_path = Var.create Q.exec_path Value.Type.path_list
 
 module Var_and_value = struct

@@ -3,7 +3,6 @@ open! Import
 open! Frame
 
 let show t = print_s [%sexp (t : t)]
-
 let shows ts = List.iter ts ~f:show
 
 let%expect_test "[all_live]" =

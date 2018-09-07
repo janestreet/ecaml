@@ -28,7 +28,6 @@ module type Current_buffer0_public = sig
   val clear_value : 'a Var.t -> unit
 
   val set_value_temporarily : 'a Var.t -> 'a -> f:(unit -> 'b) -> 'b
-
   val set_values_temporarily : Var.And_value.t list -> f:(unit -> 'a) -> 'a
 
   (** [(describe-function 'bound-and-true-p]. *)
@@ -42,11 +41,8 @@ module type Current_buffer0 = sig
     include module type of Q
 
     val boundp : Symbol.t
-
     val current_buffer : Symbol.t
-
     val makunbound : Symbol.t
-
     val set_buffer : Symbol.t
   end
 end

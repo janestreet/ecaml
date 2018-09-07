@@ -9,17 +9,16 @@ module Q = struct
   and directory_files = "directory-files" |> Symbol.intern
   and directory_files_recursively = "directory-files-recursively" |> Symbol.intern
   and make_directory = "make-directory" |> Symbol.intern
-  ;;
 end
 
-let create ?(parents=false) dirname =
+let create ?(parents = false) dirname =
   Symbol.funcall2_i
     Q.make_directory
     (dirname |> Filename.to_value)
     (parents |> Value.of_bool)
 ;;
 
-let delete ?(recursive=false) dirname =
+let delete ?(recursive = false) dirname =
   Symbol.funcall2_i
     Q.delete_directory
     (dirname |> Filename.to_value)
@@ -27,10 +26,10 @@ let delete ?(recursive=false) dirname =
 ;;
 
 let files
-      ?(absolute=false)
-      ?(include_dot_and_dotdot=false)
+      ?(absolute = false)
+      ?(include_dot_and_dotdot = false)
       ?matching
-      ?(sort=true)
+      ?(sort = true)
       dirname
   =
   let files =
@@ -52,8 +51,8 @@ let files
 ;;
 
 let files_recursively
-      ?(include_directories=false)
-      ?(matching=Regexp.match_anything)
+      ?(include_directories = false)
+      ?(matching = Regexp.match_anything)
       dirname
   =
   Symbol.funcall3

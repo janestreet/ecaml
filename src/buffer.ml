@@ -16,7 +16,6 @@ module Q = struct
   and get_buffer_window_list = "get-buffer-window-list" |> Symbol.intern
   and get_file_buffer = "get-file-buffer" |> Symbol.intern
   and save_some_buffers = "save-some-buffers" |> Symbol.intern
-  ;;
 end
 
 module Process = Process0
@@ -103,7 +102,7 @@ module Which_buffers = struct
   ;;
 end
 
-let save_some ?(query=true) ?(which_buffers=Which_buffers.File_visiting) () =
+let save_some ?(query = true) ?(which_buffers = Which_buffers.File_visiting) () =
   Symbol.funcall2_i
     Q.save_some_buffers
     (not query |> Value.of_bool)

@@ -8,7 +8,6 @@ module Q = struct
   and completing_read_multiple = "completing-read-multiple" |> Symbol.intern
   and confirm = "confirm" |> Symbol.intern
   and confirm_after_completion = "confirm-after-completion" |> Symbol.intern
-  ;;
 end
 
 module Initial_input = struct
@@ -88,8 +87,8 @@ end
 let read
       ?default
       ?history
-      ?(initial_input=Initial_input.Empty)
-      ?(require_match=Require_match.default)
+      ?(initial_input = Initial_input.Empty)
+      ?(require_match = Require_match.default)
       ()
       ~collection
       ~prompt
@@ -118,9 +117,9 @@ let crm_separator = Var.create ("crm-separator" |> Symbol.intern) Value.Type.str
 let read_multiple
       ?default
       ?history
-      ?(initial_input=Initial_input.Empty)
-      ?(require_match=Require_match.False)
-      ?(separator_regexp="[ \t]*,[ \t]*")
+      ?(initial_input = Initial_input.Empty)
+      ?(require_match = Require_match.False)
+      ?(separator_regexp = "[ \t]*,[ \t]*")
       ()
       ~collection
       ~prompt

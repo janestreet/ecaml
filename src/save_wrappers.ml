@@ -11,7 +11,6 @@ module Q = struct
   and save_restriction = "save-restriction" |> Symbol.intern
   and save_selected_window = "save-selected-window" |> Symbol.intern
   and save_window_excursion = "save-window-excursion" |> Symbol.intern
-  ;;
 end
 
 let save_ save_function f =
@@ -36,15 +35,9 @@ let save_ save_function f =
 ;;
 
 let save_current_buffer f = save_ Q.save_current_buffer f
-
 let save_excursion f = save_ Q.save_excursion f
-
 let save_mark_and_excursion f = save_ Q.save_mark_and_excursion f
-
 let save_match_data f = save_ Q.save_match_data f
-
 let save_restriction f = save_ Q.save_restriction f
-
 let save_window_excursion f = save_ Q.save_window_excursion f
-
 let save_selected_window f = save_ Q.save_selected_window f

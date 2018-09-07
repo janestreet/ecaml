@@ -3,9 +3,7 @@ open! Import
 
 include Value.Make_subtype (struct
     let here = [%here]
-
     let name = "overlay"
-
     let is_in_subtype = Funcall.("overlayp" |> Symbol.intern <: value @-> return bool)
   end)
 
@@ -13,23 +11,14 @@ module Q = struct
   include Q
 
   let delete_overlay = "delete-overlay" |> Symbol.intern
-
   let make_overlay = "make-overlay" |> Symbol.intern
-
   let move_overlay = "move-overlay" |> Symbol.intern
-
   let overlay_buffer = "overlay-buffer" |> Symbol.intern
-
   let overlay_end = "overlay-end" |> Symbol.intern
-
   let overlay_get = "overlay-get" |> Symbol.intern
-
   let overlay_put = "overlay-put" |> Symbol.intern
-
   let overlay_start = "overlay-start" |> Symbol.intern
-
   let overlays_at = "overlays-at" |> Symbol.intern
-
   let overlays_in = "overlays-in" |> Symbol.intern
 end
 
@@ -49,9 +38,7 @@ module F = struct
   ;;
 
   let overlay_buffer = Q.overlay_buffer <: type_ @-> return Buffer.type_
-
   let overlay_end = Q.overlay_end <: type_ @-> return Position.type_
-
   let overlay_start = Q.overlay_start <: type_ @-> return Position.type_
 
   let overlays_at =
@@ -64,15 +51,10 @@ module F = struct
 end
 
 let create ?buffer () ~start ~end_ = F.make_overlay start end_ buffer
-
 let start = F.overlay_start
-
 let end_ = F.overlay_end
-
 let buffer = F.overlay_buffer
-
 let delete = F.delete_overlay
-
 let move ?buffer t ~start ~end_ = F.move_overlay t start end_ buffer
 
 let get_property t property_name =
@@ -92,5 +74,4 @@ let put_property t property_name property_value =
 ;;
 
 let at position = F.overlays_at position None
-
 let in_ ~start ~end_ = F.overlays_in start end_

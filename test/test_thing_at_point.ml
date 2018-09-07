@@ -10,9 +10,7 @@ let in_test_buffer f =
 ;;
 
 let alpha_or_bang = String_of { chars = "[:alpha:]!" }
-
 let number = String_of { chars = "[0-9]" }
-
 let _ = number
 
 let%expect_test "[find], [bounds]" =

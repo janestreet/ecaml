@@ -236,7 +236,7 @@ let%expect_test "simple state machine" =
                (underline     false))))))))))) |}]
 ;;
 
-let test ?(show_input=true) input =
+let test ?(show_input = true) input =
   let output = try_with (fun () -> color_string input) in
   print_s
     [%message.omit_nil

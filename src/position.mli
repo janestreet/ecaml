@@ -12,17 +12,11 @@
 
 open! Core_kernel
 open! Import
-
 include Value.Subtype
-
 include Comparable.S_plain with type t := t
 
 val of_int_exn : int -> t
-
 val to_int : t -> int
-
 val add : t -> int -> t
-
 val sub : t -> int -> t
-
 val diff : t -> t -> int

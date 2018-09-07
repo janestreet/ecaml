@@ -19,7 +19,6 @@ module Q = struct
   and super = "super" |> Symbol.intern
   and triple = "triple" |> Symbol.intern
   and unread_command_events = "unread-command-events" |> Symbol.intern
-  ;;
 end
 
 module Current_buffer = Current_buffer0

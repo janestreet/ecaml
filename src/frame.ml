@@ -13,19 +13,15 @@ module Q = struct
   and select_frame = "select-frame" |> Symbol.intern
   and selected_frame = "selected-frame" |> Symbol.intern
   and visible_frame_list = "visible-frame-list" |> Symbol.intern
-  ;;
 end
 
 include Value.Make_subtype (struct
     let name = "frame"
-
     let here = [%here]
-
     let is_in_subtype = Value.is_frame
   end)
 
 let num_cols t = Symbol.funcall1 Q.frame_width (t |> to_value) |> Value.to_int_exn
-
 let num_rows t = Symbol.funcall1 Q.frame_height (t |> to_value) |> Value.to_int_exn
 
 let pixel_height t =
@@ -50,7 +46,5 @@ let all_visible () =
 ;;
 
 let all_live () = Symbol.funcall0 Q.frame_list |> Value.to_list_exn ~f:of_value_exn
-
 let selected () = Symbol.funcall0 Q.selected_frame |> of_value_exn
-
 let set_selected t = Symbol.funcall1_i Q.select_frame (t |> to_value)

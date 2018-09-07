@@ -11,25 +11,18 @@ module Q = struct
   and progn = "progn" |> Symbol.intern
   and read_from_whole_string = "read-from-whole-string" |> Symbol.intern
   and thingatpt = "thingatpt" |> Symbol.intern
-  ;;
 end
 
 include Value.Make_subtype (struct
     let name = "form"
-
     let here = [%here]
-
     let is_in_subtype _ = true
   end)
 
 let string s = s |> Value.of_utf8_bytes |> of_value_exn
-
 let symbol s = s |> Symbol.to_value |> of_value_exn
-
 let int i = i |> Value.of_int_exn |> of_value_exn
-
 let eval t = Symbol.funcall1 Q.eval (t |> to_value)
-
 let eval_i t = ignore (eval t : Value.t)
 
 let read =
@@ -40,15 +33,10 @@ let read =
 ;;
 
 let eval_string string = eval (read string)
-
 let list ts = Value.list (ts : t list :> Value.t list) |> of_value_exn
-
 let nil = list []
-
 let q value = Value.list [ Symbol.to_value Q.quote; value ]
-
 let quote value = q value |> of_value_exn
-
 let progn ts = list (symbol Q.progn :: ts)
 
 let let_ bindings body =

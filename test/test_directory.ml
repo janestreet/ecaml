@@ -2,7 +2,10 @@ open! Core_kernel
 open! Import
 open! Directory
 
-let%expect_test "" = try delete "zzz" ~recursive:true with _ -> ()
+let%expect_test "" =
+  try delete "zzz" ~recursive:true with
+  | _ -> ()
+;;
 
 let%expect_test "[create], [delete]" =
   create "zzz";

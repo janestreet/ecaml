@@ -6,11 +6,8 @@ let initialize_module =
 ;;
 
 let concat = String.concat
-
 let debug = false
-
 let print_s = Expect_test_helpers_kernel.print_s
-
 let eprint_s = Core_kernel.Debug.eprint_s
 
 (* Buffer local variables can cause emacs to segfault when gc'ed. So we use these

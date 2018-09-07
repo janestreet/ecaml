@@ -4,29 +4,18 @@
 
 open! Core_kernel
 open! Import0
-
 include Value.Subtype
 
 val of_name : string -> t
-
 val to_name : t -> string
-
 val black : t
-
 val blue : t
-
 val cyan : t
-
 val green : t
-
 val magenta : t
-
 val orange : t
-
 val red : t
-
 val white : t
-
 val yellow : t
 
 (** [(describe-function 'color-gray-p)] *)
@@ -51,9 +40,7 @@ module RGB : sig
   [@@deriving sexp_of]
 
   val max_value : int
-
   val min_value : int
-
   val map : t -> f:(int -> int) -> t
 end
 
@@ -61,5 +48,4 @@ end
 val rgb_exn : ?on:Frame.t (** default is selected frame *) -> t -> RGB.t
 
 val of_rgb : RGB.t -> t
-
 val of_rgb8 : r:int -> g:int -> b:int -> t

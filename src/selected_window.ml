@@ -12,7 +12,6 @@ module Q = struct
   and split_window_vertically = "split-window-vertically" |> Symbol.intern
   and switch_to_buffer = "switch-to-buffer" |> Symbol.intern
   and view_file = "view-file" |> Symbol.intern
-  ;;
 end
 
 module F = struct
@@ -23,7 +22,7 @@ end
 
 let get () = Symbol.funcall0 Q.selected_window |> Window.of_value_exn
 
-let set ?(move_to_front_of_buffer_list=true) window =
+let set ?(move_to_front_of_buffer_list = true) window =
   Symbol.funcall2_i
     Q.select_window
     (window |> Window.to_value)
@@ -35,15 +34,9 @@ let switch_to_buffer buffer =
 ;;
 
 let split_horizontally_exn () = Symbol.funcall0_i Q.split_window_horizontally
-
 let split_vertically_exn () = Symbol.funcall0_i Q.split_window_vertically
-
 let find_file path = Symbol.funcall1_i Q.find_file (path |> Value.of_utf8_bytes)
-
 let view_file path = Symbol.funcall1_i Q.view_file (path |> Value.of_utf8_bytes)
-
 let quit = F.quit_window
-
 let save_window_excursion f = Save_wrappers.save_window_excursion f
-
 let save_selected_window f = Save_wrappers.save_selected_window f

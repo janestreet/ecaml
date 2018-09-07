@@ -8,7 +8,6 @@ module Q = struct
   and key_description = "key-description" |> Symbol.intern
   and listify_key_sequence = "listify-key-sequence" |> Symbol.intern
   and read_kbd_macro = "read-kbd-macro" |> Symbol.intern
-  ;;
 end
 
 module Z = struct
@@ -19,9 +18,7 @@ open Z
 
 include Value.Make_subtype (struct
     let name = "key-sequence"
-
     let here = [%here]
-
     let is_in_subtype t = Value.is_string t || Value.is_vector t
   end)
 

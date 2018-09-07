@@ -8,13 +8,11 @@ module Q = struct
   and current_buffer = "current-buffer" |> Symbol.intern
   and makunbound = "makunbound" |> Symbol.intern
   and set_buffer = "set-buffer" |> Symbol.intern
-  ;;
 end
 
 module Buffer = Buffer0
 
 let get () = Symbol.funcall0 Q.current_buffer |> Buffer.of_value_exn
-
 let set t = Symbol.funcall1_i Q.set_buffer (t |> Buffer.to_value)
 
 let value_is_defined (var : _ Var.t) =

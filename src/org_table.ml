@@ -6,7 +6,6 @@ module Q = struct
   let org_table = "org-table" |> Symbol.intern
   and orgtbl_mode = "orgtbl-mode" |> Symbol.intern
   and turn_on_orgtbl = "turn-on-orgtbl" |> Symbol.intern
-  ;;
 end
 
 let feature = Q.org_table

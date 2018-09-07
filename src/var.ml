@@ -7,7 +7,6 @@ module Q = struct
   let default_boundp = "default-boundp" |> Symbol.intern
   and make_variable_buffer_local = "make-variable-buffer-local" |> Symbol.intern
   and set_default = "set-default" |> Symbol.intern
-  ;;
 end
 
 type 'a t =
@@ -23,7 +22,6 @@ let sexp_of_t _ { symbol; type_ } =
 type 'a var = 'a t [@@deriving sexp_of]
 
 let create symbol type_ = { symbol; type_ }
-
 let symbol_as_value t = t.symbol |> Symbol.to_value
 
 let default_value_exn t =

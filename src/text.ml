@@ -17,14 +17,11 @@ module Q = struct
   and string_to_multibyte = "string-to-multibyte" |> Symbol.intern
   and string_to_unibyte = "string-to-unibyte" |> Symbol.intern
   and text_properties_at = "text-properties-at" |> Symbol.intern
-  ;;
 end
 
 include Value.Make_subtype (struct
     let name = "text"
-
     let here = [%here]
-
     let is_in_subtype = Value.is_string
   end)
 
@@ -42,7 +39,6 @@ let set_char_code t i char_code =
 ;;
 
 let of_utf8_bytes string = string |> Value.of_utf8_bytes |> of_value_exn
-
 let to_utf8_bytes t = t |> to_value |> Value.to_utf8_bytes_exn
 
 module Compare_as_string = struct
@@ -50,9 +46,7 @@ module Compare_as_string = struct
     type nonrec t = t
 
     let compare = Comparable.lift [%compare: string] ~f:to_utf8_bytes
-
     let of_string = of_utf8_bytes
-
     let to_string = to_utf8_bytes
   end
 
@@ -66,7 +60,6 @@ module Compare_as_string = struct
 end
 
 let length t = Symbol.funcall1 Q.length (t |> to_value) |> Value.to_int_exn
-
 let concat ts = Symbol.funcallN Q.concat (ts : t list :> Value.t list) |> of_value_exn
 
 module Face_spec = struct
@@ -176,7 +169,9 @@ module Face_spec = struct
     | exn ->
       raise_s
         [%message
-          "[Text.Face_spec.of_value_exn] got unexpected value" (value : Value.t) (exn : exn)]
+          "[Text.Face_spec.of_value_exn] got unexpected value"
+            (value : Value.t)
+            (exn : exn)]
   ;;
 end
 
@@ -186,7 +181,6 @@ module Property_name = struct
       type t [@@deriving sexp_of]
 
       val of_value_exn : Value.t -> t
-
       val to_value : t -> Value.t
     end
 
@@ -201,7 +195,6 @@ module Property_name = struct
   ;;
 
   let name_as_value t = t |> name |> Symbol.to_value
-
   let sexp_of_t _ t = [%sexp (name t : Symbol.t)]
 
   let of_value_exn (type a) (t : a t) =
@@ -219,22 +212,17 @@ module Property_name = struct
       include Value
 
       let of_value_exn = Fn.id
-
       let to_value = Fn.id
     end
   end
 
   module Packed = struct
     type 'a property_name = 'a t
-
     type t = T : _ property_name -> t
 
     let sexp_of_t (T p) = [%sexp (p : _ t)]
-
     let name (T p) = name p
-
     let name_as_value (T p) = name_as_value p
-
     let all_except_unknown = ref []
 
     let of_name_as_value_exn value =
@@ -251,11 +239,11 @@ module Property_name = struct
          | Some t -> t
          | None ->
            T
-             ( module struct
+             (module struct
                include Unknown
 
                let name = symbol
-             end ))
+             end))
     ;;
   end
 
@@ -270,20 +258,20 @@ module Property_name = struct
 
   let face : _ t =
     create_and_register
-      ( module struct
+      (module struct
         include Face_name
 
         let name = Q.face
-      end )
+      end)
   ;;
 
   let font_lock_face : _ t =
     create_and_register
-      ( module struct
+      (module struct
         include Face_name
 
         let name = Q.font_lock_face
-      end )
+      end)
   ;;
 end
 
@@ -312,8 +300,8 @@ module Property = struct
       let property_value_and_rest = Value.cdr_exn value in
       T
         ( property_name
-        , Value.car_exn property_value_and_rest |> Property_name.of_value_exn property_name
-        )
+        , Value.car_exn property_value_and_rest
+          |> Property_name.of_value_exn property_name )
       :: of_property_list_exn (Value.cdr_exn property_value_and_rest)
   ;;
 

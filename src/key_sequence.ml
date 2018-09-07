@@ -6,7 +6,6 @@ module Q = struct
 
   let execute_kbd_macro = "execute-kbd-macro" |> Symbol.intern
   and read_key_sequence_vector = "read-key-sequence-vector" |> Symbol.intern
-  ;;
 end
 
 include (
@@ -25,4 +24,6 @@ let read () ~prompt =
 
 let enqueue_unread_command_input t = Input_event.enqueue_unread_command_input (to_list t)
 
-let sigusr1 = Value.vector [|Symbol.intern "sigusr1" |> Symbol.to_value|] |> of_value_exn
+let sigusr1 =
+  Value.vector [| Symbol.intern "sigusr1" |> Symbol.to_value |] |> of_value_exn
+;;

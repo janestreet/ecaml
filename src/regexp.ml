@@ -14,27 +14,20 @@ module Q = struct
   and set_match_data = "set-match-data" |> Symbol.intern
   and string_match = "string-match" |> Symbol.intern
   and string_match_p = "string-match-p" |> Symbol.intern
-  ;;
 end
 
 module Current_buffer = Current_buffer0
 
 include Value.Make_subtype (struct
     let name = "regexp"
-
     let here = [%here]
-
     let is_in_subtype = Value.is_string
   end)
 
 let of_pattern string = string |> Value.of_utf8_bytes |> of_value_exn
-
 let to_pattern t = t |> to_value |> Value.to_utf8_bytes_exn
-
 let of_rx rx = of_pattern (Rx.pattern rx)
-
 let match_anything = of_pattern ""
-
 let match_nothing = of_pattern "z^"
 
 let quote string =
@@ -54,7 +47,6 @@ let any_quote strings =
 ;;
 
 let any_pattern patterns = of_pattern (concat ~sep:{|\||} patterns)
-
 let any ts = any_pattern (List.map ts ~f:to_pattern)
 
 module Last_match = struct
@@ -103,7 +95,7 @@ module Last_match = struct
       | Some t -> set t)
   ;;
 
-  let text_exn ?(subexp=0) ?(text_properties=false) () =
+  let text_exn ?(subexp = 0) ?(text_properties = false) () =
     let result =
       Symbol.funcall2
         (if text_properties then Q.match_string else Q.match_string_no_properties)
@@ -130,7 +122,7 @@ module Last_match = struct
     result |> Text.of_value_exn
   ;;
 
-  let pos name q ?(subexp=0) () =
+  let pos name q ?(subexp = 0) () =
     (match !Location.last with
      | No_match -> raise_s [%message "Prior [Regexp] match did not match"]
      | _ -> ());
@@ -139,18 +131,16 @@ module Last_match = struct
     then
       raise_s
         [%message
-          (concat
-             [ "[Regexp.Last_match."; name; "_exn] got [subexp] that did not match" ])
+          (concat [ "[Regexp.Last_match."; name; "_exn] got [subexp] that did not match" ])
             (subexp : int)];
     result |> Value.to_int_exn
   ;;
 
   let start_exn = pos "start" Q.match_beginning
-
   let end_exn = pos "end" Q.match_end
 end
 
-let match_ ?start ?(update_last_match=false) t text =
+let match_ ?start ?(update_last_match = false) t text =
   let result =
     Symbol.funcall3
       (if update_last_match then Q.string_match else Q.string_match_p)

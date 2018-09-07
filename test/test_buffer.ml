@@ -3,9 +3,7 @@ open! Import
 open! Buffer
 
 let show t = print_s [%sexp (t : t)]
-
 let num_live () = List.length (all_live ())
-
 let num_live_at_start = num_live ()
 
 let%expect_test "[all_live]" =

@@ -7,9 +7,7 @@
 
 open! Core_kernel
 open! Import
-
 include Value.Subtype
-
 include Equal.S with type t := t
 
 (** [(describe-function 'standard-syntax-table)]
@@ -46,11 +44,9 @@ module Class : sig
   [@@deriving enumerate, sexp_of]
 
   include Equal.S with type t := t
-
   include Hashable.S_plain with type t := t
 
   val of_char_code_exn : Char_code.t -> t
-
   val to_string : t -> string
 end
 

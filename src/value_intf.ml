@@ -13,51 +13,31 @@ module type Make_subtype_arg = sig
   type value
 
   val here : Source_code_position.t
-
   val name : string
-
   val is_in_subtype : value -> bool
 end
 
 module type Funcall = sig
   type t
-
   type value
 
   val funcall0 : t -> value
-
   val funcall1 : t -> value -> value
-
   val funcall2 : t -> value -> value -> value
-
   val funcall3 : t -> value -> value -> value -> value
-
   val funcall4 : t -> value -> value -> value -> value -> value
-
   val funcall5 : t -> value -> value -> value -> value -> value -> value
-
   val funcallN : t -> value list -> value
-
   val funcallN_array : t -> value array -> value
-
   val funcall0_i : t -> unit
-
   val funcall1_i : t -> value -> unit
-
   val funcall2_i : t -> value -> value -> unit
-
   val funcall3_i : t -> value -> value -> value -> unit
-
   val funcall4_i : t -> value -> value -> value -> value -> unit
-
   val funcall5_i : t -> value -> value -> value -> value -> value -> unit
-
   val funcallN_i : t -> value list -> unit
-
   val funcallN_array_i : t -> value array -> unit
-
   val funcall_int_int_value_value_unit : t -> int -> int -> value -> value -> unit
-
   val funcall_int_int_value_unit : t -> int -> int -> value -> unit
 end
 
@@ -82,31 +62,19 @@ end
 
 module type Type = sig
   type value
-
   type 'a t
 
   val create : Sexp.t -> ('a -> Sexp.t) -> (value -> 'a) -> ('a -> value) -> 'a t
-
   val to_sexp : 'a t -> 'a -> Sexp.t
-
   val bool : bool t
-
   val ignored : unit t
-
   val int : int t
-
   val string : string t
-
   val unit : unit t
-
   val value : value t
-
   val list : 'a t -> 'a list t
-
   val vector : 'a t -> 'a array t
-
   val option : 'a t -> 'a option t
-
   val alist : 'a t -> 'b t -> ('a * 'b) list t
 
   (** Represent a tuple (a,b) as the elisp cons cell (a . b) *)
@@ -142,11 +110,8 @@ module type Value = sig
   include Funcall with type t := t with type value := t
 
   val intern : string -> t
-
   val nil : t
-
   val t : t
-
   val list : t list -> t
 
   (** [(describe-function 'cons)] *)
@@ -159,13 +124,9 @@ module type Value = sig
   val cdr_exn : t -> t
 
   val to_list_exn : t -> f:(t -> 'a) -> 'a list
-
   val vector : t array -> t
-
   val to_array_exn : t -> f:(t -> 'a) -> 'a array
-
   val option : ('a -> t) -> 'a option -> t
-
   val type_of : t -> t
 
   (** - [(Info-goto-node "(elisp)Type Predicates")] *)
@@ -266,21 +227,13 @@ module type Value = sig
   val of_int_exn : int -> t
 
   val to_int_exn : t -> int
-
   val of_float : float -> t
-
   val to_float_exn : t -> float
-
   val of_utf8_bytes : string -> t
-
   val to_utf8_bytes_exn : t -> string
-
   val vec_get : t -> int -> t
-
   val vec_set : t -> int -> t -> unit
-
   val vec_size : t -> int
-
   val initialize_module : unit
 
   (** An ['a Type.t] is an isomorphism between ['a] and a subset of [Value.t]. *)
@@ -308,16 +261,13 @@ module type Value = sig
   with type value := t
 
   module type Funcall = Funcall with type value := t
-
   module type Make_subtype_arg = Make_subtype_arg with type value := t
-
   module type Subtype = Subtype with type value := t with type 'a type_ := 'a Type.t
 
   module Make_subtype (Subtype : Make_subtype_arg) : Subtype
 
   module Expert : sig
     val raise_if_emacs_signaled : unit -> unit
-
     val non_local_exit_signal : exn -> unit
   end
 
@@ -329,7 +279,6 @@ module type Value = sig
     [@@deriving sexp_of]
 
     val now : unit -> t
-
     val diff : t -> t -> t
   end
 

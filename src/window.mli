@@ -15,7 +15,6 @@ open! Import
 type t = Window0.t [@@deriving sexp_of]
 
 include Equal.S with type t := t
-
 include Value.Subtype with type t := t
 
 (** [(describe-function 'window-list)] *)

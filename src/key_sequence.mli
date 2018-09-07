@@ -5,11 +5,9 @@
 
 open! Core_kernel
 open! Import
-
 include Value.Subtype
 
 val length : t -> int
-
 val get : t -> int -> Input_event.t
 
 (** [(describe-function 'listify-key-sequence)]

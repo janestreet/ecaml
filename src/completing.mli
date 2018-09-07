@@ -2,7 +2,6 @@ open! Core_kernel
 open! Import
 
 (* Prompts for input, with completion from a static collection of suggestions. *)
-
 module Initial_input : sig
   type t =
     | Empty

@@ -34,7 +34,6 @@ module Q = struct
   and ultra_expanded = "ultra-expanded" |> Symbol.intern
   and ultra_light = "ultra-light" |> Symbol.intern
   and unspecified = "unspecified" |> Symbol.intern
-  ;;
 end
 
 module Value = struct
@@ -45,16 +44,12 @@ end
 
 include Value.Make_subtype (struct
     let name = "face"
-
     let here = [%here]
-
     let is_in_subtype = Value.is_symbol
   end)
 
 let list_type = Value.Type.list type_
-
 let of_name s = s |> Value.intern |> of_value_exn
-
 let default = "default" |> of_name
 
 let to_name t =
@@ -66,18 +61,14 @@ let to_name t =
 ;;
 
 let compare t1 t2 = String.compare (t1 |> to_name) (t2 |> to_name)
-
 let equal = eq
 
 module type Attribute_value = sig
   type t [@@deriving sexp_of]
 
   val symbol : Symbol.t
-
   val of_value_exn : Value.t -> t
-
   val to_value : t -> Value.t
-
   val unspecified : t
 end
 
@@ -85,9 +76,7 @@ module Unimplemented = struct
   type t = Value.t [@@deriving sexp_of]
 
   let of_value_exn = Fn.id
-
   let to_value = Fn.id
-
   let unspecified = Value.unspecified
 end
 
@@ -108,8 +97,8 @@ module Color_or_unspecified = struct
     if Value.eq value Value.unspecified
     (* Sometimes Emacs returns an unspecified color as the string "unspecified-fg" or
        "unspecified-bg" rather than the symbol [unspecified]. *)
-    || Value.is_string value
-       && String.is_prefix ~prefix:"unspecified" (Value.to_utf8_bytes_exn value)
+    || (Value.is_string value
+        && String.is_prefix ~prefix:"unspecified" (Value.to_utf8_bytes_exn value))
     then Unspecified
     else Color (value |> Color.of_value_exn)
   ;;
@@ -179,7 +168,6 @@ module Height = struct
   [@@deriving sexp_of]
 
   let unspecified = Unspecified
-
   let symbol = Q.K.height
 
   let of_value_exn value =
@@ -215,7 +203,8 @@ module Inherit = struct
   let unspecified = Unspecified
 
   let to_value = function
-    | Face [] | Unspecified -> Value.unspecified
+    | Face []
+    | Unspecified -> Value.unspecified
     | Face [ face ] -> to_value face
     | Face faces -> list_type.to_value faces
   ;;
@@ -304,7 +293,6 @@ end
 module Slant = struct
   module T = struct
     let module_name = "Face.Slant"
-
     let symbol = Q.K.slant
 
     type t =
@@ -353,7 +341,6 @@ end
 module Weight = struct
   module T = struct
     let module_name = "Face.Weight"
-
     let symbol = Q.K.weight
 
     type t =
@@ -392,7 +379,6 @@ end
 module Width = struct
   module T = struct
     let module_name = "Face.Width"
-
     let symbol = Q.K.width
 
     type t =

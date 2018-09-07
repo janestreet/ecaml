@@ -3,7 +3,6 @@
 
 open! Core_kernel
 open! Import0
-
 include Value.Subtype
 
 (** [(describe-function 'eval)] *)
@@ -18,17 +17,11 @@ val read : string -> t
 val eval_string : string -> Value.t
 
 val nil : t
-
 val string : string -> t
-
 val symbol : Symbol.t -> t
-
 val int : int -> t
-
 val quote : Value.t -> t
-
 val progn : t list -> t
-
 val let_ : (Symbol.t * t) list -> t -> t
 
 val lambda

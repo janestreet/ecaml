@@ -10,14 +10,11 @@ module Q = struct
   and marker_insertion_type = "marker-insertion-type" |> Symbol.intern
   and marker_position = "marker-position" |> Symbol.intern
   and set_marker_insertion_type = "set-marker-insertion-type" |> Symbol.intern
-  ;;
 end
 
 include Value.Make_subtype (struct
     let name = "marker"
-
     let here = [%here]
-
     let is_in_subtype = Value.is_marker
   end)
 
@@ -59,7 +56,6 @@ let position t =
 ;;
 
 let create () = Symbol.funcall0 Q.make_marker |> of_value_exn
-
 let copy t = Symbol.funcall1 Q.copy_marker (t |> to_value) |> of_value_exn
 
 let set t buffer position =

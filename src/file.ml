@@ -22,7 +22,6 @@ module Q = struct
   and no_message = "no-message" |> Symbol.intern
   and rename_file = "rename-file" |> Symbol.intern
   and write_region = "write-region" |> Symbol.intern
-  ;;
 end
 
 module F = struct
@@ -39,7 +38,6 @@ module F = struct
 end
 
 let to_value = Value.of_utf8_bytes
-
 let predicate q file = Symbol.funcall1 q (file |> to_value) |> Value.to_bool
 
 let exists = predicate Q.file_exists_p
@@ -49,7 +47,6 @@ and is_readable = predicate Q.file_readable_p
 and is_regular = predicate Q.file_regular_p
 and is_symlink = predicate Q.file_symlink_p
 and is_writable = predicate Q.file_writable_p
-;;
 
 let is_below file ~dir =
   Symbol.funcall2 Q.file_in_directory_p (file |> to_value) (dir |> to_value)
@@ -61,7 +58,6 @@ let truename file =
 ;;
 
 let delete file = Symbol.funcall1_i Q.delete_file (file |> to_value)
-
 let copy ~src ~dst = Symbol.funcall2_i Q.copy_file (src |> to_value) (dst |> to_value)
 
 let rename ~src ~dst ~replace_dst_if_exists =
@@ -96,7 +92,7 @@ let locate_dominating_file_exn ~above ~basename =
           : string )]
 ;;
 
-let write ?(append=false) filename data =
+let write ?(append = false) filename data =
   Symbol.funcall5_i
     Q.write_region
     (data |> Value.of_utf8_bytes)

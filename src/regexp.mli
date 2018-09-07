@@ -5,7 +5,6 @@
 
 open! Core_kernel
 open! Import
-
 include Value.Subtype
 
 (** [Rx.t] is the preferred way to construct regexps, especially when the alternative
@@ -13,16 +12,13 @@ include Value.Subtype
 val of_rx : Rx.t -> t
 
 val match_anything : t
-
 val match_nothing : t
 
 (** [(Info-goto-node "(elisp)Syntax of Regexps")] *)
 val of_pattern : string -> t
 
 val to_pattern : t -> string
-
 val any : t list -> t
-
 val any_pattern : string list -> t
 
 (** [quote string] matches [string] and nothing else.
@@ -80,7 +76,6 @@ module Last_match : sig
   (*_ See the Jane Street Style Guide for an explanation of [Private] submodules:
 
     https://opensource.janestreet.com/standards/#private-submodules *)
-
   module Private : sig
     module Location : sig
       type t =

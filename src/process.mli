@@ -16,7 +16,6 @@ open! Import
 type t = Process0.t [@@deriving sexp_of]
 
 include Equal.S with type t := t
-
 include Value.Subtype with type t := t
 
 (** Accessors *)

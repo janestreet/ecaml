@@ -9,9 +9,7 @@ end
 
 include Value.Make_subtype (struct
     let name = "input-event"
-
     let here = [%here]
-
     let is_in_subtype = Value.is_event
   end)
 

@@ -17,15 +17,13 @@ module Name : sig
   (** Names let us pattern-match on major modes. *)
   type t = ..
 
-  (** Dummy value for modes we don't care about matching. *)type t += Undistinguished
+  (** Dummy value for modes we don't care about matching. *)
+  type t += Undistinguished
 end
 
 val name : t -> Name.t
-
 val keymap : t -> Keymap.t
-
 val keymap_var : t -> Keymap.t Var.t
-
 val syntax_table : t -> Syntax_table.t
 
 (** If a name is provided, [create] associates [change_command] with this name. It is an

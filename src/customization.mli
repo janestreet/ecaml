@@ -7,7 +7,6 @@ module Group : sig
   type t [@@deriving sexp_of]
 
   val of_string : string -> t
-
   val to_string : t -> string
 end
 

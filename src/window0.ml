@@ -6,8 +6,6 @@ open! Import0
 
 include Value.Make_subtype (struct
     let name = "window"
-
     let here = [%here]
-
     let is_in_subtype = Value.is_window
   end)

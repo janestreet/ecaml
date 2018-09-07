@@ -10,19 +10,15 @@ module Q = struct
   and sit_for = "sit-for" |> Symbol.intern
   and sleep_for = "sleep-for" |> Symbol.intern
   and timer_list = "timer-list" |> Symbol.intern
-  ;;
 end
 
 include Value.Make_subtype (struct
     let name = "timer"
-
     let here = [%here]
-
     let is_in_subtype = Value.is_timer
   end)
 
 let timer_list = Var.create Q.timer_list Value.Type.(list type_)
-
 let all_scheduled () = Current_buffer.value_exn timer_list
 
 let is_scheduled t =
@@ -50,10 +46,9 @@ let run_after ?repeat span f =
 ;;
 
 let run_after_i ?repeat span f = ignore (run_after ?repeat span f : t)
-
 let cancel t = Symbol.funcall1_i Q.cancel_timer (t |> to_value)
 
-let sit_for ?(redisplay=true) span =
+let sit_for ?(redisplay = true) span =
   Symbol.funcall2_i Q.sit_for (span |> to_seconds) (not redisplay |> Value.of_bool)
 ;;
 

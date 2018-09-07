@@ -17,7 +17,6 @@ module Fn = struct
   type t = Value.t array -> Value.t [@@deriving sexp_of]
 
   let type_id = Type_equal.Id.create ~name:"Ecaml.Fn" sexp_of_t
-
   let ecaml_type = Value.Type.caml_embed type_id
 end
 

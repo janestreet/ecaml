@@ -9,5 +9,4 @@ type t =
   -> unit
 
 val c : unit -> t
-
 val ocaml : t

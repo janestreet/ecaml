@@ -3,7 +3,6 @@ open! Import
 open! Selected_window
 
 let show_all () = print_s [%sexp (Window.all_in_selected_frame () : Window.t list)]
-
 let show () = print_s [%sexp (get () : Window.t)]
 
 let%expect_test "[get]" =

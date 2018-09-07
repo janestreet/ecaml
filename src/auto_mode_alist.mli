@@ -16,5 +16,4 @@ end
 type t = Entry.t list [@@deriving sexp_of]
 
 val auto_mode_alist : t Var.t
-
 val add : Entry.t list -> unit

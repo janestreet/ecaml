@@ -11,7 +11,6 @@
 open! Core_kernel
 open! Import
 open! Ecaml_filename
-
 include Current_buffer0_intf.Current_buffer0_public
 
 (** [(describe-variable 'default-directory)]
@@ -24,7 +23,6 @@ val directory : Filename.t Var.t
 val undo_list : unit -> Value.t
 
 val is_undo_enabled : unit -> bool
-
 val set_undo_enabled : bool -> unit
 
 (** [(describe-function 'buffer-file-name)]

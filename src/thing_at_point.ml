@@ -18,16 +18,17 @@ module Q = struct
   and url = "url" |> Symbol.intern
   and whitespace = "whitespace" |> Symbol.intern
   and word = "word" |> Symbol.intern
-  ;;
 end
 
 module F = struct
   open Funcall
 
   let beginning_of_thing = Q.beginning_of_thing <: Symbol.type_ @-> return nil
+
   and bounds_of_thing_at_point =
     Q.bounds_of_thing_at_point
     <: Symbol.type_ @-> return (option (tuple Position.type_ Position.type_))
+
   and end_of_thing = Q.end_of_thing <: Symbol.type_ @-> return nil
   and forward_thing = Q.forward_thing <: Symbol.type_ @-> int @-> return bool
   and thing_at_point =
@@ -85,12 +86,12 @@ let with_settings t ~f =
   | _ -> f ()
 ;;
 
-let find ?(text_properties=false) thing =
+let find ?(text_properties = false) thing =
   with_settings thing ~f:(fun () ->
     F.thing_at_point (thing |> to_symbol) (not text_properties))
 ;;
 
-let forward ?(n=1) thing =
+let forward ?(n = 1) thing =
   with_settings thing ~f:(fun () -> F.forward_thing (thing |> to_symbol) n)
 ;;
 
@@ -109,11 +110,8 @@ let beginning_exn thing =
 ;;
 
 let beginning = did_not_raise beginning_exn
-
 let end_exn thing = with_settings thing ~f:(fun () -> F.end_of_thing (thing |> to_symbol))
-
 let end_ = did_not_raise end_exn
-
 let bounds_prop = Symbol.Property.create Q.bounds_of_thing_at_point Function.type_
 
 let defthing ~(bounds : unit -> (Position.t * Position.t) option) loc symbol =

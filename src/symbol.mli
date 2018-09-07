@@ -4,7 +4,6 @@
 
 open! Core_kernel
 open! Import0
-
 include Symbol0_intf.Symbol0 with type t = Symbol0.t
 
 (** Accessors *)
@@ -55,11 +54,8 @@ module type Subtype = sig
   type t
 
   val of_symbol_exn : symbol -> t
-
   val to_symbol : t -> symbol
-
   val of_value_exn : Value.t -> t
-
   val to_value : t -> Value.t
 end
 
@@ -67,6 +63,5 @@ module Make_subtype (Arg : sig
     type t [@@deriving enumerate, sexp_of]
 
     val module_name : string
-
     val to_symbol : t -> symbol
   end) : Subtype with type t := Arg.t

@@ -12,13 +12,10 @@ module Q = struct
   and put = "put" |> intern
   and symbol_function = "symbol-function" |> intern
   and symbol_name = "symbol-name" |> intern
-  ;;
 end
 
 let name t = funcall1 Q.symbol_name (t |> to_value) |> Value.to_utf8_bytes_exn
-
 let compare_name t1 t2 = String.compare (name t1) (name t2)
-
 let function_is_defined t = funcall1 Q.fboundp (t |> to_value) |> Value.to_bool
 
 let function_exn t =
@@ -30,7 +27,6 @@ let function_exn t =
 ;;
 
 let create ~name = funcall1 Q.make_symbol (name |> Value.of_utf8_bytes) |> of_value_exn
-
 let require_cl = Memo.unit (fun () -> Feature0.require Q.cl)
 
 let gensym ?prefix () =
@@ -71,11 +67,8 @@ module type Subtype = sig
   type t
 
   val of_symbol_exn : symbol -> t
-
   val to_symbol : t -> symbol
-
   val of_value_exn : Value.t -> t
-
   val to_value : t -> Value.t
 end
 
@@ -83,7 +76,6 @@ module Make_subtype (Arg : sig
     type t [@@deriving enumerate, sexp_of]
 
     val module_name : string
-
     val to_symbol : t -> symbol
   end) =
 struct

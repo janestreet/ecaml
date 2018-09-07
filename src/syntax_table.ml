@@ -8,19 +8,15 @@ module Q = struct
   and make_syntax_table = "make-syntax-table" |> Symbol.intern
   and modify_syntax_entry = "modify-syntax-entry" |> Symbol.intern
   and standard_syntax_table = "standard-syntax-table" |> Symbol.intern
-  ;;
 end
 
 include Value.Make_subtype (struct
     let name = "syntax-table"
-
     let here = [%here]
-
     let is_in_subtype = Value.is_syntax_table
   end)
 
 let equal = eq
-
 let standard = Symbol.funcall0 Q.standard_syntax_table |> of_value_exn
 
 let create ?parent () =
@@ -60,7 +56,6 @@ module Class = struct
   include Hashable.Make_plain (T)
 
   let equal = [%compare.equal: t]
-
   let to_string t = [%sexp (t : t)] |> Sexp.to_string
 
   let to_char = function

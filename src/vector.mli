@@ -4,7 +4,6 @@
 
 open! Core_kernel
 open! Import
-
 include Value.Subtype
 
 val type_ : 'a Value.Type.t -> 'a array Value.Type.t
@@ -13,9 +12,7 @@ val type_ : 'a Value.Type.t -> 'a array Value.Type.t
 val create : len:int -> Value.t -> t
 
 val length : t -> int
-
 val get : t -> int -> Value.t
-
 val set : t -> int -> Value.t -> unit
 
 (** [(describe-function 'vector)] *)

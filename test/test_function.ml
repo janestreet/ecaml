@@ -148,9 +148,9 @@ let%expect_test "function descriptions" =
     Form.eval
       (Form.read
          (String.concat
-            [ "(with-temp-buffer\n  \
-               (let ((standard-output (current-buffer)))\n    \
-               (describe-function-1 '"
+            [ "(with-temp-buffer\n\
+              \  (let ((standard-output (current-buffer)))\n\
+              \    (describe-function-1 '"
             ; symbol |> Symbol.name
             ; ")\n    (buffer-string)))"
             ]))

@@ -9,12 +9,10 @@ module Q = struct
   and prog_mode = "prog-mode" |> Symbol.intern
   and special_mode = "special-mode" |> Symbol.intern
   and text_mode = "text-mode" |> Symbol.intern
-  ;;
 end
 
 module Name = struct
   type t = ..
-
   type t += Undistinguished
 
   let distinguished_values : (t * Source_code_position.t) String.Table.t =
@@ -70,9 +68,7 @@ let create here name ~change_command =
 ;;
 
 let keymap t = Current_buffer.value_exn t.keymap_var
-
 let keymap_var t = t.keymap_var
-
 let syntax_table t = Current_buffer.value_exn t.syntax_table_var
 
 type Name.t += Fundamental
@@ -93,7 +89,6 @@ let text = create [%here] (Some Text) ~change_command:Q.text_mode
 
 module For_testing = struct
   let derived_modes = ref []
-
   let finish_deriving_modes = lazy !derived_modes
 
   let log_derived_mode t =
@@ -106,7 +101,7 @@ module For_testing = struct
 end
 
 let define_derived_mode
-      ?(define_keys=[])
+      ?(define_keys = [])
       ?parent
       here
       name

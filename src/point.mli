@@ -155,19 +155,12 @@ type 'a with_search_options =
   -> 'a
 
 val search_backward : (string -> bool) with_search_options
-
 val search_backward_exn : (string -> unit) with_search_options
-
 val search_forward : (string -> bool) with_search_options
-
 val search_forward_exn : (string -> unit) with_search_options
-
 val search_backward_regexp : (Regexp.t -> bool) with_search_options
-
 val search_backward_regexp_exn : (Regexp.t -> unit) with_search_options
-
 val search_forward_regexp : (Regexp.t -> bool) with_search_options
-
 val search_forward_regexp_exn : (Regexp.t -> unit) with_search_options
 
 (** [looking_at regexp] returns [true] if the text after point matches [regexp].

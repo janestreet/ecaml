@@ -4,13 +4,12 @@ open! Import
 type t = ?ocaml_name:string -> string -> Type.t list -> Type.t -> unit
 
 let stub_prefix = "ecaml__"
-
 let stub name = stub_prefix ^ name
 
 let symbol_to_ocaml symbol =
   String.map symbol ~f:(function
-    | ('a'..'z' | '0'..'9') as c -> c
-    | 'A'..'Z' as c -> Char.lowercase c
+    | ('a' .. 'z' | '0' .. '9') as c -> c
+    | 'A' .. 'Z' as c -> Char.lowercase c
     | _ -> '_')
 ;;
 

@@ -12,15 +12,11 @@
 
 open! Core_kernel
 open! Import0
-
 include Value.Subtype
-
 include Equal.S with type t := t
 
 val default : t
-
 val of_name : string -> t
-
 val to_name : t -> string
 
 (** [(Info-goto-node "(elisp)Face Attributes")] *)
@@ -195,17 +191,13 @@ module Attribute : sig
   [@@deriving sexp_of]
 
   val to_symbol : _ t -> Symbol.t
-
   val of_value_exn : 'a t -> Value.t -> 'a
-
   val to_value : 'a t -> 'a -> Value.t
-
   val unspecified_value : 'a t -> 'a
 
   module Packed :
   sig
     type 'a attribute = 'a t
-
     type t = T : _ attribute -> t
 
     include Symbol.Subtype with type t := t
@@ -228,9 +220,7 @@ module Attribute_and_value : sig
   type t = T : 'a Attribute.t * 'a -> t [@@deriving sexp_of]
 
   val of_value_exn : Value.t -> t
-
   val compare_attribute_name : t -> t -> int
-
   val sort_by_attribute_name : t list -> t list
 end
 

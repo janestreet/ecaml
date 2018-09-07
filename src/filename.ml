@@ -13,7 +13,6 @@ module Q = struct
   and file_name_nondirectory = "file-name-nondirectory" |> Symbol.intern
   and file_name_sans_extension = "file-name-sans-extension" |> Symbol.intern
   and file_relative_name = "file-relative-name" |> Symbol.intern
-  ;;
 end
 
 include (
@@ -36,15 +35,10 @@ let is_absolute t =
 ;;
 
 let unary q t = Symbol.funcall1 q (t |> to_value) |> of_value_exn
-
 let extension_exn = unary Q.file_name_extension
-
 let nondirectory = unary Q.file_name_nondirectory
-
 let of_directory = unary Q.directory_file_name
-
 let sans_extension = unary Q.file_name_sans_extension
-
 let to_directory = unary Q.file_name_as_directory
 
 let directory t =

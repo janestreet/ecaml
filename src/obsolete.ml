@@ -4,7 +4,6 @@ open! Import
 module Q = struct
   let define_obsolete_function_alias = "define-obsolete-function-alias" |> Symbol.intern
   and make_obsolete = "make-obsolete" |> Symbol.intern
-  ;;
 end
 
 module F = struct

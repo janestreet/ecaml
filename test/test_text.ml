@@ -6,14 +6,11 @@ module Q = struct
   include Q
 
   let background_color = "background-color" |> Symbol.intern
-
   let foreground_color = "foreground-color" |> Symbol.intern
-
   let format = "format" |> Symbol.intern
 end
 
 let face = Property_name.face
-
 let font_lock_face = Property_name.font_lock_face
 
 let%expect_test "[length]" =
@@ -259,10 +256,7 @@ let%expect_test "[set_property]" =
 ;;
 
 let face_spec_ones : Face_spec.One.t list =
-  [ Attributes [ T (Slant, Italic) ]
-  ; Attributes [ T (Weight, Bold) ]
-  ; Face Face.default
-  ]
+  [ Attributes [ T (Slant, Italic) ]; Attributes [ T (Weight, Bold) ]; Face Face.default ]
 ;;
 
 let%expect_test "various [Face_spec.t] values" =
@@ -373,11 +367,11 @@ let%expect_test "[properties]" =
 let%expect_test "registering a new text property" =
   let property_name =
     Property_name.create_and_register
-      ( module struct
+      (module struct
         let name = "foo" |> Symbol.intern
 
         module Property_value = Symbol
-      end )
+      end)
   in
   let t = of_utf8_bytes "a" in
   set_property t property_name ("bar" |> Symbol.intern);
@@ -482,10 +476,10 @@ let%expect_test "[of_char_array]" =
     Option.iter expected ~f:(fun expected ->
       [%test_eq: string] expected (t |> to_utf8_bytes))
   in
-  test [|48; 49; 50|];
+  test [| 48; 49; 50 |];
   [%expect {| 012 |}];
-  test [|27; 91; 48; 109|];
+  test [| 27; 91; 48; 109 |];
   [%expect {| "\027[0m" |}];
-  test [|9484; 9472; 9516; 9472; 9488|] ~expected:{|┌─┬─┐|};
+  test [| 9484; 9472; 9516; 9472; 9488 |] ~expected:{|┌─┬─┐|};
   [%expect {| "\226\148\140\226\148\128\226\148\172\226\148\128\226\148\144" |}]
 ;;

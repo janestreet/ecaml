@@ -3,7 +3,6 @@ open! Import
 open! Completing
 
 let collection = [ "foo"; "bar"; "baz" ]
-
 let prompt = ""
 
 let%expect_test "completing_read" =

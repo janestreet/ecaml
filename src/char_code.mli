@@ -6,13 +6,10 @@
 
 open! Core_kernel
 open! Import
-
 include Value.Subtype
-
 include Equal.S with type t := t
 
 val of_int_exn : int -> t
-
 val to_int : t -> int
 
 (** [of_char_exn char] raises if [char] isn't ASCII, i.e. if [Char.to_int char >= 128]. *)

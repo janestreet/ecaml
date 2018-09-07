@@ -3,7 +3,6 @@ include Ecaml
 include Expect_test_helpers_kernel
 
 let concat = String.concat
-
 let try_with = Or_error.try_with
 
 (* [ignore_stderr] is useful for tests where Emacs outputs on stderr, which would cause
@@ -19,14 +18,12 @@ let ignore_stderr () =
 ;;
 
 let background color : Text.Face_spec.t = [ Attributes [ T (Background, Color color) ] ]
-
 let foreground color : Text.Face_spec.t = [ Attributes [ T (Foreground, Color color) ] ]
 
 let background_blue = background Color.blue
 and background_red = background Color.red
 and foreground_red = foreground Color.red
 and foreground_blue = foreground Color.blue
-;;
 
 let show_last_match ?subexp () =
   let module Last_match = Regexp.Last_match in
@@ -38,7 +35,7 @@ let show_last_match ?subexp () =
         ~end_:(try_with (fun () -> Last_match.end_exn ?subexp ()) : int Or_error.t)]
 ;;
 
-let print_s ?(templatize_current_directory=false) sexp =
+let print_s ?(templatize_current_directory = false) sexp =
   if not templatize_current_directory
   then print_s sexp
   else

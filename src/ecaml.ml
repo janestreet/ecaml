@@ -88,7 +88,6 @@ and lambda_nullary_nil = Defun.lambda_nullary_nil
 and message = Echo_area.message
 and messagef = Echo_area.messagef
 and message_s = Echo_area.message_s
-;;
 
 let provide =
   Ecaml_callback.(register end_of_module_initialization)
@@ -104,7 +103,6 @@ let provide =
 ;;
 
 let inhibit_read_only = Var.create Q.inhibit_read_only Value.Type.bool
-
 let inhibit_read_only f = Current_buffer.set_value_temporarily inhibit_read_only true ~f
 
 let () =

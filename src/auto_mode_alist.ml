@@ -65,9 +65,7 @@ end
 type t = Entry.t list [@@deriving sexp_of]
 
 let type_ = Value.Type.list Entry.type_
-
 let auto_mode_alist = Var.create Q.auto_mode_alist type_
-
 let auto_mode_alist_value = Var.create Q.auto_mode_alist Value.Type.value
 
 let add entries =

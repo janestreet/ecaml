@@ -9,21 +9,16 @@ module Q = struct
   and color_supported_p = "color-supported-p" |> Symbol.intern
   and color_values = "color-values" |> Symbol.intern
   and defined_colors = "defined-colors" |> Symbol.intern
-  ;;
 end
 
 include Value.Make_subtype (struct
     let name = "color"
-
     let here = [%here]
-
     let is_in_subtype = Value.is_string
   end)
 
 let to_name t = t |> to_value |> Value.to_utf8_bytes_exn
-
 let compare t1 t2 = String.compare (t1 |> to_name) (t2 |> to_name)
-
 let of_name s = s |> Value.of_utf8_bytes |> of_value_exn
 
 let black = "black" |> of_name
@@ -35,7 +30,6 @@ and orange = "orange" |> of_name
 and red = "red" |> of_name
 and white = "white" |> of_name
 and yellow = "yellow" |> of_name
-;;
 
 let frame option =
   (match option with
@@ -45,11 +39,8 @@ let frame option =
 ;;
 
 let is q ?on t = Symbol.funcall2 q (t |> to_value) (frame on) |> Value.to_bool
-
 let is_gray = is Q.color_gray_p
-
 let is_defined = is Q.color_defined_p
-
 let is_supported = is Q.color_supported_p
 
 let defined ?on () =
@@ -67,11 +58,8 @@ module RGB = struct
   [@@deriving sexp_of]
 
   let min_value = 0
-
   let max_value = (1 lsl 16) - 1
-
   let clamp i = Int.max min_value (Int.min max_value i)
-
   let map { r; g; b } ~f = { r = f r; g = f g; b = f b }
 end
 

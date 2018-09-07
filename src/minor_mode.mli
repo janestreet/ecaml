@@ -17,7 +17,6 @@ type t =
 val is_enabled : t -> bool
 
 val disable : t -> unit
-
 val enable : t -> unit
 
 (** [(describe-variable 'abbrev-mode)]

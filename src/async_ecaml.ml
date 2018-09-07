@@ -28,9 +28,7 @@ end
 
 module Cycle_report = struct
   let cycles : Time_ns.Span.t list ref = ref []
-
   let measuring = ref false
-
   let report_cycle time = if !measuring then cycles := time :: !cycles
 
   let generate_report () =
@@ -57,9 +55,7 @@ module Thread_safe_sleeper : sig
   type t [@@deriving sexp_of]
 
   val create : unit -> t
-
   val blocking_sleep : t -> unit
-
   val wake_up : t -> unit
 end = struct
   type t =
@@ -69,7 +65,6 @@ end = struct
   [@@deriving sexp_of]
 
   let create () = { mutex = Mutex.create (); wake_up = Condition.create () }
-
   let critical_section t ~f = Mutex.critical_section t.mutex ~f
 
   let blocking_sleep t =

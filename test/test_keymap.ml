@@ -3,9 +3,7 @@ open! Import
 open! Keymap
 
 let show t = print_s [%sexp (t : t)]
-
 let define_key t key entry = define_key t (Key_sequence.create_exn key) entry
-
 let lookup_key_exn t key = lookup_key_exn t (Key_sequence.create_exn key)
 
 let show_keys t keys =

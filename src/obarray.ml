@@ -10,9 +10,7 @@ end
 
 include Value.Make_subtype (struct
     let name = "obarray"
-
     let here = [%here]
-
     let is_in_subtype = Value.is_vector
   end)
 

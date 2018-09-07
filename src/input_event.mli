@@ -2,7 +2,6 @@
 
 open! Core_kernel
 open! Import
-
 include Input_event0_intf.Input_event0_public with type t = Input_event0.t
 
 (** [create_exn string] is a specialized version of [Key_sequence.create] that raises

@@ -5,12 +5,10 @@
 
 open! Core_kernel
 open! Import
-
 include Value.Subtype
 
 module Compare_as_string : sig
   include Comparable.S with type t = t
-
   include Sexpable.S with type t := t
 end
 
@@ -23,7 +21,6 @@ val char_code : t -> int -> Char_code.t
 val set_char_code : t -> int -> Char_code.t -> unit
 
 val of_utf8_bytes : string -> t
-
 val to_utf8_bytes : t -> string
 
 (** [length t] returns the number of characters in [t]. *)
@@ -46,14 +43,12 @@ module Face_spec : sig
     [@@deriving sexp_of]
 
     val of_value_exn : Value.t -> t
-
     val to_value : t -> Value.t
   end
 
   type t = One.t list [@@deriving sexp_of]
 
   val of_value_exn : Value.t -> t
-
   val to_value : t -> Value.t
 
   (** [normalize] sorts [t]; it is used to get consistent ordering when comparing
@@ -69,13 +64,9 @@ module Property_name : sig
   val face : Face_spec.t t
 
   val font_lock_face : Face_spec.t t
-
   val name : _ t -> Symbol.t
-
   val name_as_value : _ t -> Value.t
-
   val to_value : 'a t -> 'a -> Value.t
-
   val of_value_exn : 'a t -> Value.t -> 'a
 
   module type S = sig
@@ -83,7 +74,6 @@ module Property_name : sig
       type t [@@deriving sexp_of]
 
       val of_value_exn : Value.t -> t
-
       val to_value : t -> Value.t
     end
 
@@ -98,7 +88,6 @@ module Property_name : sig
   module Packed :
   sig
     type 'a property_name
-
     type t = T : _ property_name -> t [@@deriving sexp_of]
 
     val name : t -> Symbol.t

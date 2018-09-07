@@ -3,7 +3,6 @@ open! Import
 open! Value
 
 let show t = print_s [%sexp (t : t)]
-
 let test_predicate f t = print_s [%sexp (f t : bool)]
 
 let%expect_test "UTF-8" =
@@ -259,9 +258,7 @@ let%expect_test "[to_utf8_bytes_exn] raise" =
 module Make_subtype = struct
   module Non_nil = Make_subtype (struct
       let name = "non-nil"
-
       let here = [%here]
-
       let is_in_subtype = is_not_nil
     end)
 
@@ -323,13 +320,9 @@ let%expect_test "[funcallN_i]" =
 ;;
 
 let v0 = 0 |> of_int_exn
-
 let v1 = 1 |> of_int_exn
-
 let v2 = 2 |> of_int_exn
-
 let v3 = 3 |> of_int_exn
-
 let v4 = 4 |> of_int_exn
 
 let%expect_test "[funcall{0..5}]" =
