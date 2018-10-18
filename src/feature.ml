@@ -8,7 +8,7 @@ module Q = struct
   and features = "features" |> Symbol.intern
 end
 
-include Feature0
+include Ecaml_value.Feature
 
 let provide t = Symbol.funcall1_i Q.provide (t |> Symbol.to_value)
 let is_provided t = Symbol.funcall1 Q.featurep (t |> Symbol.to_value) |> Value.to_bool

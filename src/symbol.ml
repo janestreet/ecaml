@@ -1,6 +1,6 @@
 open! Core_kernel
 open! Import0
-include Symbol0
+include Ecaml_value.Symbol
 
 module Q = struct
   let cl = "cl" |> intern
@@ -27,7 +27,7 @@ let function_exn t =
 ;;
 
 let create ~name = funcall1 Q.make_symbol (name |> Value.of_utf8_bytes) |> of_value_exn
-let require_cl = Memo.unit (fun () -> Feature0.require Q.cl)
+let require_cl = Memo.unit (fun () -> Ecaml_value.Feature.require Q.cl)
 
 let gensym ?prefix () =
   require_cl ();

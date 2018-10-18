@@ -21,6 +21,7 @@ module Q = struct
   and default_directory = "default-directory" |> Symbol.intern
   and delete_duplicate_lines = "delete-duplicate-lines" |> Symbol.intern
   and delete_region = "delete-region" |> Symbol.intern
+  and describe_mode = "describe-mode" |> Symbol.intern
   and enable_multibyte_characters = "enable-multibyte-characters" |> Symbol.intern
   and erase_buffer = "erase-buffer" |> Symbol.intern
   and fill_column = "fill-column" |> Symbol.intern
@@ -31,7 +32,6 @@ module Q = struct
   and kill_region = "kill-region" |> Symbol.intern
   and local_variable_if_set_p = "local-variable-if-set-p" |> Symbol.intern
   and local_variable_p = "local-variable-p" |> Symbol.intern
-  and major_mode = "major-mode" |> Symbol.intern
   and make_local_variable = "make-local-variable" |> Symbol.intern
   and mark_active = "mark-active" |> Symbol.intern
   and mark_marker = "mark-marker" |> Symbol.intern
@@ -81,6 +81,7 @@ module F = struct
   and buffer_enable_undo = Q.buffer_enable_undo <: nullary @-> return nil
   and bury_buffer = Q.bury_buffer <: nullary @-> return nil
   and deactivate_mark = Q.deactivate_mark <: nullary @-> return nil
+  and describe_mode = Q.describe_mode <: nullary @-> return nil
   and erase_buffer = Q.erase_buffer <: nullary @-> return nil
   and kill_buffer = Q.kill_buffer <: nullary @-> return nil
   and save_buffer = Q.save_buffer <: nullary @-> return nil
@@ -162,20 +163,16 @@ let set_temporarily_to_temp_buffer f =
   protect ~f:(fun () -> set_temporarily t ~f) ~finally:(fun () -> Buffer.kill t)
 ;;
 
-let major_mode () =
-  Major_mode.create
-    [%here]
-    None
-    ~change_command:(value_exn (Var.create Q.major_mode Symbol.type_))
-;;
+let major_mode () = Major_mode.find_or_wrap_existing [%here] (value_exn major_mode_var)
 
 let change_major_mode major_mode =
-  Funcall.(Major_mode.change_command major_mode <: nullary @-> return nil) ()
+  Funcall.(Major_mode.symbol major_mode <: nullary @-> return nil) ()
 ;;
 
 let set_auto_mode ?keep_mode_if_same () = F.set_auto_mode keep_mode_if_same
 let bury = F.bury_buffer
 let directory = Var.create Q.default_directory Value.Type.string
+let describe_mode = F.describe_mode
 let is_modified = F.buffer_modified_p
 let set_modified = F.set_buffer_modified_p
 let fill_column = Var.create Q.fill_column Value.Type.int

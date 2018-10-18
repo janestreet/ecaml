@@ -1,3 +1,3 @@
 open! Core_kernel
-open! Import0
+open! Import
 include Unique_id.Int ()

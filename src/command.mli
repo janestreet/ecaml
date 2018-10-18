@@ -28,3 +28,14 @@ end
 (** [(describe-function 'call-interactively)]
     [(Info-goto-node "(elisp)Interactive Call")] *)
 val call_interactively : Value.t -> Raw_prefix_argument.t -> unit
+
+(** [(describe-variable 'inhibit-quit)]
+    [(Info-goto-node "(elisp)Quitting")] *)
+val inhibit_quit : bool Var.t
+
+(** [(describe-variable 'quit-flag)]
+    [(Info-goto-node "(elisp)Quitting")] *)
+val quit_flag : bool Var.t
+
+val quit_requested : unit -> bool
+val request_quit : unit -> unit

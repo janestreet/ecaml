@@ -1,16 +1,22 @@
 (* This module adds support for running Async code in Ecaml.
 
-   We change the way the scheduler works. The Async scheduler runs in its own thread, but
-   all Async cycles now run within the main emacs thread. When the scheduler would run a
+   We change the way the scheduler works.  The Async scheduler runs in its own thread, but
+   all Async cycles now run within the main emacs thread.  When the scheduler would run a
    cycle, it instead sends a packet to a socket that the emacs main thread listens to
    (which notifies emacs that it should run a cycle), and waits for the cycle to be run.
    This way, whenever we run Ecaml code, we have both the Emacs [active_env] and the Async
-   lock. This way, it is always safe to call Ecaml functions from Async, and to modify
+   lock.  This way, it is always safe to call Ecaml functions from Async, and to modify
    Async data structures from Ecaml. *)
 
-open! Core
+module Ecaml_filename = Filename
+open! Core_kernel
 open! Import
+module Ivar = Async.Ivar
+module Mutex = Core.Mutex
+module Time = Core.Time
+module Unix = Core.Unix
 module Scheduler = Async_unix.Async_unix_private.Raw_scheduler
+module Defun = Defun0
 
 module Q = struct
   let ecaml_async_take_lock_do_cycle = "ecaml-async-take-lock-do-cycle" |> Symbol.intern
@@ -51,73 +57,146 @@ module Cycle_report = struct
   ;;
 end
 
+(** [Thread_safe_sleeper] is a thread-safe data structure for use by threads holding
+    the Async lock.  The usage pattern is that one thread calls [blocking_sleep], which
+    causes it to release the Async lock (and OCaml lock) and block.  Later, another
+    thread calls [wake_up], after which the blocked thread wakes up and reacquires
+    the locks. *)
 module Thread_safe_sleeper : sig
   type t [@@deriving sexp_of]
 
   val create : unit -> t
+
+  (** [blocking_sleep] assumes [Scheduler.am_holding_lock scheduler]. It unlocks the
+      scheduler before sleeping, and re-locks the scheduler as soon as it wakes up. *)
   val blocking_sleep : t -> unit
+
   val wake_up : t -> unit
 end = struct
   type t =
     { mutex : Mutex.t sexp_opaque
     ; wake_up : Condition.t sexp_opaque
+    ; scheduler : Scheduler.t
     }
   [@@deriving sexp_of]
 
-  let create () = { mutex = Mutex.create (); wake_up = Condition.create () }
-  let critical_section t ~f = Mutex.critical_section t.mutex ~f
+  let create () =
+    { mutex = Mutex.create (); wake_up = Condition.create (); scheduler = Scheduler.t () }
+  ;;
+
+  let critical_section t ~f =
+    assert (Scheduler.am_holding_lock t.scheduler);
+    Mutex.critical_section t.mutex ~f
+  ;;
 
   let blocking_sleep t =
-    critical_section t ~f:(fun () -> Condition.wait t.wake_up t.mutex)
+    (* We unlock the Async lock while in a critical section rather than before
+       the critical section to avoid a race in which:
+       - Thread 1 requests service from Thread 2
+       - Thread 1 calls [blocking_sleep]
+       - Thread 1 unlocks the Async lock
+       - Thread 2 locks the Async lock
+       - Thread 2 performs service and calls [wake_up]
+       - Thread 2 unlocks the Async lock
+       - Thread 1 calls [wait], and is then stuck. *)
+    critical_section t ~f:(fun () ->
+      Scheduler.unlock t.scheduler;
+      Condition.wait t.wake_up t.mutex);
+    Scheduler.lock t.scheduler
   ;;
 
   let wake_up t = critical_section t ~f:(fun () -> Condition.broadcast t.wake_up)
 end
 
-module Cycle_requester = struct
+(** The Cycle_requester is a mechanism for requesting emacs to run a cycle by writing a
+    byte along a socket. Emacs passes this byte on to the process filter we define, which
+    runs a cycle in the emacs thread.
+
+    We maintain the invariant that there is at most one byte waiting to be read at a
+    time. *)
+module Cycle_requester : sig
+  type t
+
+  val byte_was_probably_lost : t -> unit
+  val create : unit -> t
+  val request_cycle : t -> unit
+  val register_cycle_handler : t -> (unit -> unit) -> unit
+  val shutdown : t -> unit
+end = struct
   type t =
     { mutable client_process : Process.t option
+    ; mutable exists_unread_byte : bool
     ; mutable server_process : Process.t option
     ; write_to_request_cycle : Unix.File_descr.t
     }
+
+  let byte_was_probably_lost t = t.exists_unread_byte <- false
 
   let create () =
     let write_to_request_cycle =
       Unix.socket ~domain:PF_UNIX ~kind:SOCK_STREAM ~protocol:0
     in
-    { client_process = None; server_process = None; write_to_request_cycle }
+    { client_process = None
+    ; exists_unread_byte = false
+    ; server_process = None
+    ; write_to_request_cycle
+    }
   ;;
 
   let request_cycle t =
-    try
-      ignore
-        (Unix.single_write t.write_to_request_cycle ~buf:(Bytes.of_string "\x05") : int)
-    with
-    | _ ->
-      (* We ignore exceptions here, because the network socket may be closed, e.g. when
-         Emacs is shutting down, and we don't want to fail in that case. *)
-      ()
+    assert (Scheduler.am_holding_lock (Scheduler.t ()));
+    (* Ensure we write at most 1 byte to the socket between runs of the cycle handler.
+       [request_cycle] might be called multiple times.  In extreme cases, writing more
+       than one byte to the socket could lead to the socket's buffer filling up and
+       [write] blocking, deadlocking emacs. *)
+    if not t.exists_unread_byte
+    then (
+      try
+        ignore
+          (Unix.single_write t.write_to_request_cycle ~buf:(Bytes.of_string "\x05") : int);
+        t.exists_unread_byte <- true
+      with
+      | _ ->
+        (* We ignore exceptions here, because the network socket may be closed, e.g. when
+           Emacs is shutting down, and we don't want to fail in that case. *)
+        ())
+  ;;
+
+  let with_current_dir dir ~f =
+    let saved_dir = Unix.getcwd () in
+    Unix.chdir dir;
+    Exn.protect ~f ~finally:(fun () -> Unix.chdir saved_dir)
   ;;
 
   let register_cycle_handler t run_cycle =
-    let socket_path = ".ecaml." ^ (Unix.getpid () |> Pid.to_string) in
-    let server_process =
-      Process.create_unix_network_process
-        ()
-        ~name:"Async scheduler"
-        ~socket_path
-        ~filter:(fun client_process _ ->
-          (match t.client_process with
-           | Some _ -> ()
-           | None ->
-             t.client_process <- Some client_process;
-             Process.set_query_on_exit client_process false);
-          run_cycle ())
+    let tmpdir =
+      Ecaml_filename.to_directory
+        (Option.value (System.getenv ~var:"TMPDIR") ~default:"/tmp")
     in
-    Process.set_query_on_exit server_process false;
-    Unix.connect t.write_to_request_cycle ~addr:(ADDR_UNIX socket_path);
-    Unix.unlink socket_path;
-    t.server_process <- Some server_process
+    (* If [String.length tmpdir > 108], then creating a unix socket at that path fails
+       with "Service name too long".  To avoid this, we chdir and create the socket using
+       a relative path. *)
+    with_current_dir tmpdir ~f:(fun () ->
+      let socket_path = ".ecaml." ^ (Unix.getpid () |> Pid.to_string) in
+      let server_process =
+        Process.create_unix_network_process
+          ()
+          ~name:"Async scheduler"
+          ~socket_path
+          ~filter:(fun client_process _ ->
+            assert (Scheduler.am_holding_lock (Scheduler.t ()));
+            t.exists_unread_byte <- false;
+            (match t.client_process with
+             | Some _ -> ()
+             | None ->
+               t.client_process <- Some client_process;
+               Process.set_query_on_exit client_process false);
+            run_cycle ())
+      in
+      Process.set_query_on_exit server_process false;
+      Unix.connect t.write_to_request_cycle ~addr:(ADDR_UNIX socket_path);
+      Unix.unlink socket_path;
+      t.server_process <- Some server_process)
   ;;
 
   let shutdown t =
@@ -126,60 +205,116 @@ module Cycle_requester = struct
   ;;
 end
 
+(* A [Pending_emacs_call.t] is a function that should be run outside of any Async job and
+   without the Async lock, but reports its result back into Async.  To ensure that pending
+   emacs calls are run in a timely manner, we run them whenever we run Async cycles, and
+   we request Async cycles whenever we enqueue a pending emacs call. *)
+module Pending_emacs_call = struct
+  type 'a call =
+    { f : unit -> 'a
+    ; result : ('a, exn) Result.t Ivar.t
+    }
+
+  type t = T : 'a call -> t
+end
+
 type t =
-  { cycle_done_sleeper : Thread_safe_sleeper.t
+  { (* [am_running_async_cycle] is set to [true] while we're running an Async cycle.
+       During an Async cycle, we avoid running nested Async cycles or
+       [block_on_async]s. *)
+    mutable am_running_async_cycle : bool
+  ; cycle_done_sleeper : Thread_safe_sleeper.t
   ; cycle_requester : Cycle_requester.t
   ; emacs_thread_id : int
   ; mutable exceptions_raised_outside_emacs_env : exn list
-  ; mutable have_requested_cycle : bool
   ; mutable keepalive_timer : Timer.t option
   ; mutable last_cycle_finished_at : Time_ns.t
   ; scheduler : Scheduler.t
+  ; mutable pending_emacs_calls : Pending_emacs_call.t Queue.t
   }
 
 let t =
-  { cycle_done_sleeper = Thread_safe_sleeper.create ()
+  { am_running_async_cycle = false
+  ; cycle_done_sleeper = Thread_safe_sleeper.create ()
   ; cycle_requester = Cycle_requester.create ()
   ; emacs_thread_id = Thread.(id (self ()))
   ; exceptions_raised_outside_emacs_env = []
-  ; have_requested_cycle = false
   ; keepalive_timer = None
   ; last_cycle_finished_at = Time_ns.epoch
   ; scheduler = Scheduler.t ()
+  ; pending_emacs_calls = Queue.create ()
   }
 ;;
 
-external have_active_env : unit -> bool = "ecaml_have_active_env"
+let run_pending_emacs_calls () =
+  let has_work_to_do = not (Queue.is_empty t.pending_emacs_calls) in
+  if has_work_to_do
+  then (
+    let pending_calls = t.pending_emacs_calls in
+    t.pending_emacs_calls <- Queue.create ();
+    Queue.iter pending_calls ~f:(fun (Pending_emacs_call.T pending_emacs_call) ->
+      Scheduler.unlock t.scheduler;
+      let result = Result.try_with pending_emacs_call.f in
+      Scheduler.lock t.scheduler;
+      Ivar.fill pending_emacs_call.result result));
+  has_work_to_do
+;;
 
+(* When the scheduler requests an Async cycle, [in_emacs_have_lock_do_cycle] runs the
+   cycle inside the emacs thread and notifies the scheduler when it is finished. *)
 let in_emacs_have_lock_do_cycle () =
-  if not (have_active_env ()) || not (Scheduler.am_holding_lock t.scheduler)
+  if not (Value.Expert.have_active_env ()) || not (Scheduler.am_holding_lock t.scheduler)
   then raise_s [%sexp "[in_emacs_have_lock_do_cycle] should only be called by emacs"];
-  if debug then Debug.eprint_s [%message "running a cycle" ~time:(Time.now () : Time.t)];
-  List.iter t.exceptions_raised_outside_emacs_env ~f:(fun exn ->
-    Echo_area.message_s [%sexp (exn : exn)]);
-  t.exceptions_raised_outside_emacs_env <- [];
-  let time = Time.now () in
-  Async_kernel.Async_kernel_scheduler.(run_cycle (t ()));
-  t.have_requested_cycle <- false;
-  t.last_cycle_finished_at <- Time_ns.now ();
-  if debug
-  then
-    Debug.eprint_s
-      [%message "cycle took" ~time:(Time.diff (Time.now ()) time : Time.Span.t)];
-  Thread_safe_sleeper.wake_up t.cycle_done_sleeper
+  (* If we are already running an Async cycle, then we can't start a new one, so we do
+     nothing.  We can reach here with [t.am_running_async_cycle = true] if Ecaml calls a
+     blocking Elisp function without using [run_outside_async].  We are in the middle of a
+     long, possibly unending, code transition in which we are wrapping such calls with
+     [run_outside_async]. *)
+  if not t.am_running_async_cycle
+  then (
+    if debug
+    then Debug.eprint_s [%message "running a cycle" ~time:(Time.now () : Time.t)];
+    List.iter t.exceptions_raised_outside_emacs_env ~f:(fun exn ->
+      Echo_area.message_s [%sexp (exn : exn)]);
+    t.exceptions_raised_outside_emacs_env <- [];
+    let time = Time.now () in
+    Exn.protect
+      ~f:(fun () ->
+        Async.Unix.Private.Wait.check_all ();
+        let rec run_cycles max_cycles =
+          (* Pending emacs calls may have been enqueued from outside of Async. Run them so
+             their deferreds get filled. *)
+          let ran_pending_calls = run_pending_emacs_calls () in
+          t.am_running_async_cycle <- true;
+          Exn.protect
+            ~f:(fun () -> Async_kernel.Async_kernel_scheduler.(run_cycle (t ())))
+            ~finally:(fun () -> t.am_running_async_cycle <- false);
+          if max_cycles > 0 && (ran_pending_calls || Scheduler.num_pending_jobs () > 0)
+          then run_cycles (max_cycles - 1)
+        in
+        (* 5 was chosen as an arbitrary limit to prevent the emacs toplevel from being
+           starved if an Async job misbehaves. *)
+        run_cycles 5)
+      ~finally:(fun () ->
+        t.last_cycle_finished_at <- Time_ns.now ();
+        if debug
+        then
+          Debug.eprint_s
+            [%message "cycle took" ~time:(Time.diff (Time.now ()) time : Time.Span.t)];
+        Thread_safe_sleeper.wake_up t.cycle_done_sleeper))
 ;;
 
 (* [request_emacs_run_cycle] requests the emacs main thread to run a cycle. It hands over
    the Async lock in the process. *)
-let request_emacs_run_cycle () =
-  if not t.have_requested_cycle
+let request_emacs_run_cycle scheduler_thread_id () =
+  assert (Scheduler.am_holding_lock t.scheduler);
+  (* Async helper threads call [request_emacs_run_cycle], and we don't want those to
+     block; we want only the scheduler to block. *)
+  if Thread.(id (self ())) = scheduler_thread_id
   then (
     let start = Time_ns.now () in
-    t.have_requested_cycle <- true;
     Cycle_requester.request_cycle t.cycle_requester;
-    Scheduler.unlock t.scheduler;
     Thread_safe_sleeper.blocking_sleep t.cycle_done_sleeper;
-    Scheduler.lock t.scheduler;
     let diff = Time_ns.diff (Time_ns.now ()) start in
     Cycle_report.report_cycle diff)
 ;;
@@ -198,26 +333,36 @@ let start_scheduler () =
   | Stopped -> raise_s [%sexp "Async has been shut down and cannot be restarted"]
   | Running -> ()
   | Uninitialized ->
+    assert (Scheduler.am_holding_lock t.scheduler);
     Scheduler_status.status := Running;
+    Async.Unix.Private.Wait.do_not_handle_sigchld ();
     if debug
     then Debug.eprint_s [%message "initializing async" [%here] (Time.now () : Time.t)];
-    ignore
-      ( Thread.create
-          (fun () ->
-             match Scheduler.go () ~raise_unhandled_exn:true with
-             | _ -> .
-             | exception exn ->
-               (match !Scheduler_status.status with
-                (* If we requested the scheduler to stop, this exception is expected. *)
-                | Stopped -> ()
-                | Running | Uninitialized -> raise exn))
-          ()
-        : Thread.t );
+    (* We hold the Async lock, so it should be impossible for the scheduler to try to run
+       a cycle. *)
+    (t.scheduler).have_lock_do_cycle
+    <- Some (fun () -> raise_s [%message "BUG in Async_ecaml" [%here]]);
+    let scheduler_thread =
+      Thread.create
+        (fun () ->
+           match Scheduler.go () ~raise_unhandled_exn:true with
+           | _ -> .
+           | exception exn ->
+             (match !Scheduler_status.status with
+              (* If we requested the scheduler to stop, this exception is expected. *)
+              | Stopped -> ()
+              | Running | Uninitialized -> raise exn))
+        ()
+    in
+    (* We set [have_lock_do_cycle] as early as possible so that the Async scheduler runs
+       cycles in the desired way, even if later parts of initialization raise. *)
+    (t.scheduler).have_lock_do_cycle
+    <- Some (request_emacs_run_cycle (Thread.id scheduler_thread));
     Defun.defun
       [%here]
-      Value.Type.unit
+      ~returns:Value.Type.unit
       Q.ecaml_async_take_lock_do_cycle
-      ~interactive:""
+      ~interactive:No_arg
       (let open Defun.Let_syntax in
        let%map_open () = return () in
        in_emacs_have_lock_do_cycle ());
@@ -229,14 +374,26 @@ let start_scheduler () =
     t.keepalive_timer
     <- Some
          (Timer.run_after
+            [%here]
             max_inter_cycle_timeout
             ~repeat:max_inter_cycle_timeout
-            (fun () ->
-               if Time_ns.Span.( >= )
-                    (Time_ns.diff (Time_ns.now ()) t.last_cycle_finished_at)
-                    max_inter_cycle_timeout
-               then in_emacs_have_lock_do_cycle ()));
-    (t.scheduler).have_lock_do_cycle <- Some request_emacs_run_cycle;
+            ~name:("async-ecaml-keepalive-timer" |> Symbol.intern)
+            ~f:(fun () ->
+              try
+                if Time_ns.Span.( >= )
+                     (Time_ns.diff (Time_ns.now ()) t.last_cycle_finished_at)
+                     max_inter_cycle_timeout
+                then (
+                  Cycle_requester.byte_was_probably_lost t.cycle_requester;
+                  in_emacs_have_lock_do_cycle ())
+              with
+              | exn ->
+                Echo_area.message_s [%sexp "Error in async keepalive timer", (exn : exn)]));
+    Set_once.set_exn Ecaml_callback.set_async_execution_context [%here] (fun () ->
+      if not t.am_running_async_cycle
+      then
+        Async_kernel.Async_kernel_scheduler.(
+          set_execution_context (t ()) main_execution_context));
     (* The default [max_inter_cycle_timeout] is much smaller.  Setting it to 1s reduces
        load on emacs. *)
     Scheduler.set_max_inter_cycle_timeout
@@ -245,39 +402,66 @@ let start_scheduler () =
        stderr and then exiting 1.  This would look like an emacs crash to the user, so we
        instead output the error to the minibuffer. *)
     Async_kernel.Monitor.detach_and_iter_errors Async_kernel.Monitor.main ~f:(fun exn ->
-      if have_active_env ()
-      then Echo_area.message_s [%sexp (exn : exn)]
+      if Value.Expert.have_active_env ()
+      then
+        (* We really want to see the error, so we inhibit quit while displaying it. *)
+        Current_buffer.set_value_temporarily Command.inhibit_quit true ~f:(fun () ->
+          Echo_area.message_s [%sexp (exn : exn)])
       else
         t.exceptions_raised_outside_emacs_env
         <- exn :: t.exceptions_raised_outside_emacs_env)
 ;;
 
+module Private = struct
+  let block_on_async f ~timeout =
+    assert (Scheduler.am_holding_lock t.scheduler);
+    if t.am_running_async_cycle
+    then raise_s [%sexp "Called [block_on_async] in the middle of an Async job!"];
+    let rec run_cycles_until_filled deferred =
+      if Command.quit_requested ()
+      then `Result (error_s [%message "Blocking operation interrupted"])
+      else (
+        match Async.Deferred.peek deferred with
+        | Some result -> result
+        | None ->
+          (* [Thread.delay] gives the scheduler thread time to run before we run a
+             cycle. *)
+          Scheduler.unlock t.scheduler;
+          Thread.delay (Time.Span.of_us 10. |> Time.Span.to_sec);
+          Scheduler.lock t.scheduler;
+          in_emacs_have_lock_do_cycle ();
+          run_cycles_until_filled deferred)
+    in
+    let deferred =
+      Async.(
+        Monitor.try_with ~extract_exn:true ~run:`Schedule f >>| Or_error.of_exn_result)
+    in
+    let deferred =
+      match timeout with
+      | None -> Async.Deferred.map deferred ~f:(fun result -> `Result result)
+      | Some timeout -> Async.Clock.with_timeout timeout deferred
+    in
+    match run_cycles_until_filled deferred with
+    | `Timeout -> raise_s [%sexp "Blocking operation timed out"]
+    | `Result (Ok x) -> x
+    | `Result (Error error) -> Error.raise error
+  ;;
+
+  let run_outside_async f =
+    let open Async in
+    Deferred.create (fun result ->
+      Queue.enqueue t.pending_emacs_calls (T { f; result });
+      (* We request an Async cycle to ensure the pending call is run in a timely
+         manner. *)
+      Cycle_requester.request_cycle t.cycle_requester)
+    >>| Result.ok_exn
+  ;;
+end
+
 module Expect_test_config = struct
   include Async.Expect_test_config
 
-  (* In tests, we run the scheduler in the same thread as emacs. This means we don't have
-     to signal emacs to run a cycle. Instead, we can directly run async cycles. *)
-
-  let have_lock_do_cycle () =
-    let thread_id = Thread.(id (self ())) in
-    if t.emacs_thread_id = thread_id
-    then
-      (* In tests, the scheduler runs in the same thread as emacs. *)
-      in_emacs_have_lock_do_cycle ()
-  ;;
-
-  let run f =
-    (t.scheduler).have_lock_do_cycle <- Some have_lock_do_cycle;
-    let deferred = f () in
-    let rec run_cycles () =
-      match Async.Deferred.peek deferred with
-      | Some result -> result
-      | None ->
-        Scheduler.one_iter t.scheduler;
-        run_cycles ()
-    in
-    run_cycles ()
-  ;;
+  let run f = Private.block_on_async f ~timeout:(Some (sec 60.))
 end
 
 let shutdown () =
@@ -300,31 +484,76 @@ let shutdown () =
 ;;
 
 let initialize () =
+  start_scheduler ();
   lock_async_during_module_initialization ();
   Defun.defun_nullary_nil
     [%here]
-    ~interactive:""
+    ~interactive:No_arg
     ("ecaml-async-shutdown" |> Symbol.intern)
     shutdown;
   Defun.defun_nullary_nil
     [%here]
     ("ecaml-async-generate-cycle-report" |> Symbol.intern)
-    ~interactive:""
-    (fun () ->
-       start_scheduler ();
-       Async.don't_wait_for (Cycle_report.generate_report ()));
+    ~interactive:No_arg
+    (fun () -> Async.don't_wait_for (Cycle_report.generate_report ()));
   let defun_benchmark ~name ~f =
-    Defun.defun_nullary_nil [%here] (name |> Symbol.intern) ~interactive:"" (fun () ->
-      let open Async in
-      start_scheduler ();
-      don't_wait_for
-        (let%map time = f () in
-         Echo_area.message_s time))
+    Defun.defun_nullary_nil
+      [%here]
+      (name |> Symbol.intern)
+      ~interactive:No_arg
+      (fun () ->
+         let open Async in
+         Private.block_on_async ~timeout:None (fun () ->
+           let%map time = f () in
+           Echo_area.message_s time))
   in
   defun_benchmark
     ~name:"ecaml-async-benchmark-small-pings"
     ~f:Ecaml_bench.Bench_async_ecaml.benchmark_small_pings;
   defun_benchmark
     ~name:"ecaml-async-benchmark-throughput"
-    ~f:Ecaml_bench.Bench_async_ecaml.benchmark_throughput
+    ~f:Ecaml_bench.Bench_async_ecaml.benchmark_throughput;
+  Defun.defun_nullary_nil
+    [%here]
+    ~interactive:No_arg
+    ("ecaml-async-test-blocking-timeout" |> Symbol.intern)
+    (fun () -> Private.block_on_async ~timeout:(Some (sec 10.)) Async.Deferred.never);
+  Defun.defun_nullary_nil
+    [%here]
+    ~interactive:No_arg
+    ("ecaml-async-test-execution-context-handling" |> Symbol.intern)
+    (fun () ->
+       let open Async in
+       let test_passed = ref true in
+       let check_execution_context () =
+         let execution_context = Scheduler.current_execution_context () in
+         if not (phys_equal execution_context Execution_context.main)
+         then (
+           test_passed := false;
+           Echo_area.message_s
+             [%message
+               "Ecaml callback not running in main execution context"
+                 (execution_context : Execution_context.t)])
+       in
+       check_execution_context ();
+       let timer =
+         Timer.run_after
+           ~repeat:(Time_ns.Span.of_sec 0.1)
+           [%here]
+           (Time_ns.Span.of_sec 0.1)
+           ~f:check_execution_context
+           ~name:("check-execution-context-timer" |> Symbol.intern)
+       in
+       don't_wait_for
+         (let%map _ignored =
+            Monitor.try_with (fun () ->
+              let%bind () = Clock.after (sec 0.1) in
+              let%bind () = Clock.after (sec 2.) in
+              Timer.cancel timer;
+              Echo_area.messagef
+                "Execution-context test %s"
+                (if !test_passed then "passed" else "failed");
+              return ())
+          in
+          ()))
 ;;

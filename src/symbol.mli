@@ -4,7 +4,10 @@
 
 open! Core_kernel
 open! Import0
-include Symbol0_intf.Symbol0 with type t = Symbol0.t
+
+include module type of struct
+  include Ecaml_value.Symbol
+end
 
 (** Accessors *)
 

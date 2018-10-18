@@ -1,7 +1,9 @@
+(** Prompts for input, with completion from a static collection of suggestions. *)
+
 open! Core_kernel
 open! Import
+open! Async
 
-(* Prompts for input, with completion from a static collection of suggestions. *)
 module Initial_input : sig
   type t =
     | Empty
@@ -36,7 +38,7 @@ val read
   -> unit
   -> collection:string list
   -> prompt:string (* typically ends with ": " *)
-  -> string
+  -> string Deferred.t
 
 (** [(describe-function 'completing-read-multiple)] **)
 val read_multiple
@@ -48,4 +50,29 @@ val read_multiple
   -> unit
   -> collection:string list
   -> prompt:string (* typically ends with ": " *)
-  -> string list
+  -> string list Deferred.t
+
+module Blocking : sig
+  (** [(describe-function 'completing-read)] **)
+  val read
+    :  ?default:string
+    -> ?history:Symbol.t
+    -> ?initial_input:Initial_input.t (* default is Empty *)
+    -> ?require_match:Require_match.t (* default is [Require_match.default] *)
+    -> unit
+    -> collection:string list
+    -> prompt:string (* typically ends with ": " *)
+    -> string
+
+  (** [(describe-function 'completing-read-multiple)] **)
+  val read_multiple
+    :  ?default:string
+    -> ?history:Symbol.t
+    -> ?initial_input:Initial_input.t (* default is Empty *)
+    -> ?require_match:Require_match.t (* default is False *)
+    -> ?separator_regexp:string (* default is "[ \t]*,[ \t]*" *)
+    -> unit
+    -> collection:string list
+    -> prompt:string (* typically ends with ": " *)
+    -> string list
+end

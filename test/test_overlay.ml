@@ -20,6 +20,10 @@ let count_in s ~start ~end_ =
   print_s [%message "in" s ~_:(List.length (in_ ~start ~end_) : int)]
 ;;
 
+let num_overlays_in_buffer () =
+  print_s [%sexp (List.length (in_ ~start:(Point.min ()) ~end_:(Point.max ())) : int)]
+;;
+
 let%expect_test "[create], [delete], [end_], [start]" =
   with_buffer (fun buffer ->
     let count_overlays () =
@@ -63,7 +67,7 @@ let%expect_test "[move]" =
     [%expect {|
       (in region1 1)
       (in region2 0) |}];
-    move t ~start:region2_start ~end_:region2_end;
+    ignore (move t ~start:region2_start ~end_:region2_end : t);
     count_overlays ();
     [%expect {|
       (in region1 0)
@@ -76,4 +80,35 @@ let%expect_test "[get_property], [put_property]" =
     put_property t Text.Property_name.face [ Face Face.default ];
     print_s [%sexp (get_property t Text.Property_name.face : Text.Face_spec.t)];
     [%expect {| ((Face default)) |}])
+;;
+
+let%expect_test "[remove_overlays]" =
+  with_buffer (fun _ ->
+    remove_overlays ();
+    num_overlays_in_buffer ();
+    [%expect {|
+      0 |}];
+    let add_overlay () =
+      let t = create () ~start:(Point.min ()) ~end_:(Point.max ()) in
+      put_property t Text.Property_name.face [ Face Face.default ]
+    in
+    add_overlay ();
+    num_overlays_in_buffer ();
+    [%expect {|
+      1 |}];
+    remove_overlays ();
+    num_overlays_in_buffer ();
+    [%expect {|
+      0 |}];
+    add_overlay ();
+    remove_overlays
+      ()
+      ~with_property:(Text.Property_name.font_lock_face, [ Face Face.default ]);
+    num_overlays_in_buffer ();
+    [%expect {|
+      1 |}];
+    remove_overlays () ~with_property:(Text.Property_name.face, [ Face Face.default ]);
+    num_overlays_in_buffer ();
+    [%expect {|
+      0 |}])
 ;;

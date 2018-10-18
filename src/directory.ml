@@ -9,6 +9,7 @@ module Q = struct
   and directory_files = "directory-files" |> Symbol.intern
   and directory_files_recursively = "directory-files-recursively" |> Symbol.intern
   and make_directory = "make-directory" |> Symbol.intern
+  and make_temp_file = "make-temp-file" |> Symbol.intern
 end
 
 let create ?(parents = false) dirname =
@@ -61,4 +62,20 @@ let files_recursively
     (matching |> Regexp.to_value)
     (include_directories |> Value.of_bool)
   |> (Value.Type.list Filename.type_).of_value_exn
+;;
+
+let make_temp_dir ~prefix ~suffix =
+  Symbol.funcall3
+    Q.make_temp_file
+    (prefix |> Value.of_utf8_bytes)
+    Value.t
+    (suffix |> Value.of_utf8_bytes)
+  |> Filename.of_value_exn
+;;
+
+let with_temp_dir ~f ~prefix ~suffix =
+  let filename = make_temp_dir ~prefix ~suffix in
+  Exn.protect
+    ~f:(fun () -> f filename)
+    ~finally:(fun () -> delete filename ~recursive:true)
 ;;

@@ -6,36 +6,40 @@ let%expect_test "[all_my_children], [name]" =
   let ts = all_emacs_children () in
   print_s [%message "" ~_:(ts : t list)];
   [%expect {|
-    () |}];
+    ("#<process Async scheduler>") |}];
   List.iter ts ~f:(fun t -> print_s [%message "" ~name:(name t : string)]);
-  [%expect {| |}]
+  [%expect {| (name "Async scheduler") |}]
 ;;
 
 let sleep ?buffer () =
   create ?buffer () ~name:"sleeper" ~prog:"/bin/sleep" ~args:[ "100" ]
 ;;
 
-let%expect_test "[start], [buffer], [name], [command], [pid], [status], [kill]" =
+let show t =
+  print_s
+    [%message
+      ""
+        ~name:(name t : string)
+        ~buffer:(buffer t : Buffer.t option)
+        ~command:(command t : string list option)
+        ~is_in_all_emacs_children:(List.mem (all_emacs_children ()) t ~equal : bool)
+        ~pid_is_positive:
+          ( match pid t with
+            | None -> None
+            | Some pid -> Some (Pid.to_int pid >= 0)
+                          : bool option )
+        ~status:(status t : Status.t)
+        ~exit_status:(exit_status t : Exit_status.t)]
+;;
+
+let%expect_test "[start], [buffer], [name], [command], [pid], [status], [exit_status], \
+                 [kill]"
+  =
   let t = sleep () in
   print_s [%sexp (t : t)];
   [%expect {|
     "#<process sleeper>" |}];
-  let show () =
-    print_s
-      [%message
-        ""
-          ~name:(name t : string)
-          ~buffer:(buffer t : Buffer.t option)
-          ~command:(command t : string list option)
-          ~is_in_all_emacs_children:(List.mem (all_emacs_children ()) t ~equal : bool)
-          ~pid_is_positive:
-            ( match pid t with
-              | None -> None
-              | Some pid -> Some (Pid.to_int pid >= 0)
-                            : bool option )
-          ~status:(status t : Symbol.t)]
-  in
-  show ();
+  show t;
   [%expect
     {|
     ((name sleeper)
@@ -43,9 +47,10 @@ let%expect_test "[start], [buffer], [name], [command], [pid], [status], [kill]" 
      (command ((/bin/sleep 100)))
      (is_in_all_emacs_children true)
      (pid_is_positive (true))
-     (status run)) |}];
+     (status      Run)
+     (exit_status Not_exited)) |}];
   kill t;
-  show ();
+  show t;
   [%expect
     {|
     ((name sleeper)
@@ -53,7 +58,22 @@ let%expect_test "[start], [buffer], [name], [command], [pid], [status], [kill]" 
      (command ((/bin/sleep 100)))
      (is_in_all_emacs_children false)
      (pid_is_positive (true))
-     (status signal)) |}]
+     (status Signal)
+     (exit_status (Fatal_signal 9))) |}]
+;;
+
+let%expect_test "[exit_status]" =
+  let test prog =
+    let t = create ~prog ~args:[] ~name:"t" () in
+    while Process.is_alive t do
+      Timer.sleep_for (0.01 |> Time_ns.Span.of_sec)
+    done;
+    print_s [%message (status t : Status.t) (exit_status t : Exit_status.t)]
+  in
+  test "true";
+  [%expect {| (("status t" Exit) ("exit_status t" (Exited 0))) |}];
+  test "false";
+  [%expect {| (("status t" Exit) ("exit_status t" (Exited 1))) |}]
 ;;
 
 let%expect_test "[buffer]" =
@@ -298,4 +318,49 @@ let%expect_test "[shell_command_exn ~working_directory]" =
     (module String)
     (shell_command_exn "pwd" ~working_directory:Of_current_buffer)
     (Current_buffer.(value_exn directory) |> File.truename |> Filename.of_directory)
+;;
+
+let input_region ~start ~end_ ~delete =
+  Call.Region_input.Region
+    { start = Position.of_int_exn start; end_ = Position.of_int_exn end_; delete }
+;;
+
+let test result =
+  let output = Current_buffer.contents () in
+  print_s [%message "" (result : Call.Result.t) (output : Text.t)];
+  Current_buffer.erase ()
+;;
+
+let%expect_test "[call_region_exn]" =
+  Point.insert "echo";
+  test (call_region_exn "cat" [] ~output:Before_point_in_current_buffer);
+  [%expect {|
+    ((result (Exit_status 0)) (output echoecho)) |}];
+  Point.insert "foooooooo";
+  test (call_region_exn "sed" [ "s/o/i/g" ] ~output:Before_point_in_current_buffer);
+  [%expect {|
+    ((result (Exit_status 0)) (output foooooooofiiiiiiii)) |}];
+  Point.insert "foobar";
+  test
+    (call_region_exn
+       ~input:(input_region ~start:1 ~end_:5 ~delete:false)
+       "sed"
+       ~output:Before_point_in_current_buffer
+       [ "s/o/i/g" ]);
+  [%expect {| ((result (Exit_status 0)) (output foobarfiib)) |}];
+  Point.insert "foobar";
+  test
+    (call_region_exn
+       ~input:(input_region ~start:1 ~end_:5 ~delete:true)
+       "sed"
+       ~output:Before_point_in_current_buffer
+       [ "s/o/i/g" ]);
+  [%expect {| ((result (Exit_status 0)) (output arfiib)) |}];
+  test
+    (call_region_exn
+       ~input:(String "footron")
+       "sed"
+       ~output:Before_point_in_current_buffer
+       [ "s/o/i/g" ]);
+  [%expect {| ((result (Exit_status 0)) (output fiitrin)) |}]
 ;;

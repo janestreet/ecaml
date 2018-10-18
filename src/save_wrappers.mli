@@ -21,3 +21,6 @@ val save_window_excursion : (unit -> 'a) -> 'a
 
 (** [(describe-function 'save-selected-window)] *)
 val save_selected_window : (unit -> 'a) -> 'a
+
+(** [(describe-function 'with-selected-frame)] *)
+val with_selected_frame : Value.t -> (unit -> 'a) -> 'a

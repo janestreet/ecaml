@@ -4,6 +4,7 @@
 
 open! Core_kernel
 open! Import0
+module Frame = Frame0
 include Value.Subtype
 
 val of_name : string -> t

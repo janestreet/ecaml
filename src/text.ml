@@ -6,6 +6,7 @@ module Q = struct
 
   let background_color = "background-color" |> Symbol.intern
   and concat = "concat" |> Symbol.intern
+  and display = "display" |> Symbol.intern
   and font_lock_face = "font-lock-face" |> Symbol.intern
   and foreground_color = "foreground-color" |> Symbol.intern
   and get_text_property = "get-text-property" |> Symbol.intern
@@ -175,6 +176,33 @@ module Face_spec = struct
   ;;
 end
 
+module Display_spec = struct
+  type nonrec t =
+    { property : Display_property.t
+    ; text : t
+    }
+  [@@deriving sexp_of]
+
+  let to_value (t : t) : Value.t =
+    Value.list [ Display_property.to_values t.property |> Value.list; t.text |> to_value ]
+  ;;
+
+  (* We expect values to be of the form ['((margin MARGIN) TEXT)]. *)
+  let of_value_exn value : t =
+    match Value.to_list_exn value ~f:ident with
+    | []
+    | [ _ ]
+    | _ :: _ :: _ :: _ ->
+      raise_s [%sexp "Display_spec: Could not convert value", (value : Value.t)]
+    | [ prop; txt ] ->
+      { property =
+          Display_property.of_values_exn
+            (Value.car_exn prop, Value.car_exn (Value.cdr_exn prop))
+      ; text = txt |> of_value_exn
+      }
+  ;;
+end
+
 module Property_name = struct
   module type S = sig
     module Property_value : sig
@@ -256,6 +284,10 @@ module Property_name = struct
     module Property_value = Face_spec
   end
 
+  module Display_name = struct
+    module Property_value = Display_spec
+  end
+
   let face : _ t =
     create_and_register
       (module struct
@@ -271,6 +303,15 @@ module Property_name = struct
         include Face_name
 
         let name = Q.font_lock_face
+      end)
+  ;;
+
+  let display : _ t =
+    create_and_register
+      (module struct
+        include Display_name
+
+        let name = Q.display
       end)
   ;;
 end

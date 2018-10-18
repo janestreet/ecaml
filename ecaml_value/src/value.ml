@@ -1,5 +1,5 @@
 open! Core_kernel
-open! Import0
+open! Import
 open Value_intf
 include Value0
 
@@ -9,9 +9,6 @@ module type Make_subtype_arg = Make_subtype_arg with type value := t
 module Emacs_value = struct
   type nonrec t = t
 end
-
-let sexp_of_t_ref = ref (fun _ -> [%message [%here] "sexp_of_t not yet defined"])
-let sexp_of_t t = !sexp_of_t_ref t
 
 type value = t [@@deriving sexp_of]
 
@@ -32,6 +29,8 @@ module Funcall_exit = struct
 end
 
 let initialize_module = Funcall_exit.initialize_module
+
+external have_active_env : unit -> bool = "ecaml_have_active_env"
 
 external non_local_exit_get_and_clear
   :  unit
@@ -91,6 +90,7 @@ module Q = struct
   and keymapp = "keymapp" |> intern
   and list = "list" |> intern
   and markerp = "markerp" |> intern
+  and message = "message" |> intern
   and nil = "nil" |> intern
   and prin1_to_string = "prin1-to-string" |> intern
   and processp = "processp" |> intern
@@ -316,6 +316,11 @@ let vec_set = wrap_raise3 vec_set
 external vec_size : t -> int = "ecaml_vec_size"
 
 let vec_size = wrap_raise1 vec_size
+let percent_s = of_utf8_bytes "%s"
+let message t = funcall2_i Q.message percent_s t
+let message_string s = message (of_utf8_bytes s)
+let messagef fmt = ksprintf message_string fmt
+let message_s sexp = messagef "%s" (sexp |> Sexp.to_string_hum)
 let nil = Q.nil
 let t = Q.t
 let option to_value = Option.value_map ~default:nil ~f:to_value
@@ -479,9 +484,30 @@ module Type = struct
 
   let create name sexp_of_t of_value_exn to_value =
     { id = Type_equal.Id.create ~name:(Sexp.to_string name) sexp_of_t
-    ; of_value_exn
+    ; of_value_exn =
+        (fun value ->
+           try of_value_exn value with
+           | exn ->
+             raise_s
+               [%message
+                 "unable to convert Elisp value to OCaml value"
+                   ~type_:(name : Sexp.t)
+                   (value : value)
+                   (exn : exn)])
     ; to_value
     }
+  ;;
+
+  module type Enum = Enum
+
+  let enum (type a) name (module M : Enum with type t = a) to_value =
+    let valid_values = List.map M.all ~f:(fun m -> to_value m, m) in
+    let of_value_exn value =
+      match List.Assoc.find valid_values value ~equal:eq with
+      | None -> raise_s [%message (valid_values : (value * M.t) list)]
+      | Some m -> m
+    in
+    create name [%sexp_of: M.t] of_value_exn to_value
   ;;
 
   let bool = create [%message "bool"] [%sexp_of: bool] to_bool of_bool
@@ -562,7 +588,7 @@ module Type = struct
 
   let caml_embed (type_id : _ Type_equal.Id.t) =
     create
-      [%message "caml_embed" (type_id : _ Type_equal.Id.t)]
+      [%message "caml_embed" ~type_id:(Type_equal.Id.name type_id : string)]
       (Type_equal.Id.to_sexp type_id)
       (fun v ->
          let embed = Caml_embed.of_value_exn v in
@@ -637,6 +663,7 @@ module Stat = struct
 end
 
 module Expert = struct
+  let have_active_env = have_active_env
   let non_local_exit_signal = non_local_exit_signal
   let raise_if_emacs_signaled = raise_if_emacs_signaled
 end

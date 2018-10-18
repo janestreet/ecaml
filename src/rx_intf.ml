@@ -1,12 +1,11 @@
-open! Core_kernel
-open! Import
-
 (** Symbolic construction of emacs regexps.
 
     [(describe-function 'rx)]
 
-    N.B. These bindings are incomplete only due to laziness (in the technical sense).
-*)
+    N.B. These bindings are incomplete only due to laziness (in the technical sense). *)
+
+open! Core_kernel
+open! Import
 
 module Char_class = struct
   type t =

@@ -6,44 +6,32 @@ module Q = struct
 
   let ask = "ask" |> Symbol.intern
   and grep = "grep" |> Symbol.intern
+  and grep_mode = "grep-mode" |> Symbol.intern
   and grep_save_buffers = "grep-save-buffers" |> Symbol.intern
   and grep_use_null_device = "grep-use-null-device" |> Symbol.intern
 end
 
 module Save_buffers = struct
-  type t =
-    | Ask
-    | False
-    | True
-  [@@deriving sexp_of]
+  module T = struct
+    type t =
+      | Ask
+      | False
+      | True
+    [@@deriving enumerate, sexp_of]
+  end
+
+  include T
 
   let ask = Q.ask |> Symbol.to_value
 
-  let to_value = function
-    | Ask -> ask
-    | False -> Value.nil
-    | True -> Value.t
-  ;;
-
-  let of_value_exn value =
-    if Value.is_nil value
-    then False
-    else if Value.equal value ask
-    then Ask
-    else if Value.is_function value
-    then
-      raise_s
-        [%message
-          "[Grep.Save_buffers.of_value_exn] doesn't support function values" [%here]]
-    else True
-  ;;
-
   let type_ =
-    Value.Type.create
+    Value.Type.enum
       [%message "Grep.Save_buffers.t"]
-      [%sexp_of: t]
-      of_value_exn
-      to_value
+      (module T)
+      (function
+        | Ask -> ask
+        | False -> Value.nil
+        | True -> Value.t)
   ;;
 end
 
@@ -57,3 +45,5 @@ let grep ~command =
     false
     ~f:(fun () -> Symbol.funcall1_i Q.grep (command |> Value.of_utf8_bytes))
 ;;
+
+include (val Major_mode.wrap_existing [%here] Q.grep_mode)

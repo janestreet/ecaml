@@ -12,7 +12,7 @@ let current =
 
 let%expect_test "obsolete functions already defined" =
   let obsolete = "foobar-2" |> Symbol.intern in
-  defun_nullary_nil [%here] obsolete (report obsolete) ~docstring:"_" ~interactive:"";
+  defun_nullary_nil [%here] obsolete (report obsolete) ~docstring:"_" ~interactive:No_arg;
   print_endline (describe_function obsolete);
   [%expect {|
     foobar-2 is an interactive Lisp function.
@@ -85,7 +85,7 @@ let%expect_test "obsolete functions not yet defined" =
     This function is obsolete;
     use `current-function' instead. |}];
   (* Later definitions override our obsolete. *)
-  defun_nullary_nil [%here] obsolete (report obsolete) ~docstring:"_" ~interactive:"";
+  defun_nullary_nil [%here] obsolete (report obsolete) ~docstring:"_" ~interactive:No_arg;
   print_endline (describe_function obsolete);
   [%expect
     {|

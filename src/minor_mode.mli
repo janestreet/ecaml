@@ -38,3 +38,24 @@ val view : t
 (** [(describe-variable 'visual-line-mode)]
     [(describe-function 'visual-line-mode)]*)
 val visual_line : t
+
+(** Find the keymap that is active when the given minor mode is enabled, if such a keymap
+    exists.
+
+    [(describe-variable 'minor-mode-map-alist)]*)
+val keymap : t -> Keymap.t option
+
+(** [(describe-function 'define-minor-mode)]
+    [(Info-goto-node "(elisp)Defining Minor Modes")]
+
+    Additionally, each [key_sequence, symbol] in [define_keys] is added to the new minor
+    mode's keymap. *)
+val define_minor_mode
+  :  ?define_keys:(string * Symbol.t) list
+  -> Source_code_position.t
+  -> name:Symbol.t
+  -> docstring:string
+  -> global:bool
+  -> mode_line:string
+  -> initialize:(unit -> unit)
+  -> t

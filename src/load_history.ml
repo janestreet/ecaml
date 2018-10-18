@@ -7,6 +7,7 @@ module Q = struct
   let autoload = "autoload" |> Symbol.intern
   and defface = "defface" |> Symbol.intern
   and load_history = "load-history" |> Symbol.intern
+  and require = "require" |> Symbol.intern
   and symbol_file = "symbol-file" |> Symbol.intern
 end
 
@@ -46,26 +47,22 @@ module Entry = struct
 end
 
 module Type = struct
-  type t =
-    | Fun
-    | Var
-  [@@deriving compare, hash, sexp_of]
+  module T = struct
+    type t =
+      | Fun
+      | Var
+    [@@deriving compare, enumerate, hash, sexp_of]
+  end
 
-  let of_value_exn value =
-    if Value.is_nil value
-    then Fun
-    else if Value.eq value (Q.defvar |> Symbol.to_value)
-    then Var
-    else raise_s [%message "unrecognized type" ~_:(value : Value.t)]
-  ;;
+  include T
 
-  let to_value = function
-    | Fun -> Value.nil
-    | Var -> Q.defvar |> Symbol.to_value
-  ;;
-
-  let type_ =
-    Value.Type.create [%sexp "load-history type"] [%sexp_of: t] of_value_exn to_value
+  let ({ Value.Type.of_value_exn; to_value; id = _ } as type_) =
+    Value.Type.enum
+      [%sexp "load-history type"]
+      (module T)
+      (function
+        | Fun -> Value.nil
+        | Var -> Q.defvar |> Symbol.to_value)
   ;;
 end
 

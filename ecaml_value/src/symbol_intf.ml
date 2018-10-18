@@ -1,7 +1,7 @@
 open! Core_kernel
-open! Import0
+open! Import
 
-module type Symbol0 = sig
+module type Symbol = sig
   include Value.Subtype
   include Equal.S with type t := t
   include Value.Funcall with type t := t

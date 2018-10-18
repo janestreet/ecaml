@@ -1,9 +1,10 @@
 open! Core_kernel
-open! Import0
+open! Import
 module Value = Value0
 module Scheduler = Async_unix.Async_unix_private.Raw_scheduler
 
 let scheduler = Scheduler.t ()
+let set_async_execution_context = Set_once.create ()
 
 module Arity = struct
   type 'callback t =
@@ -27,6 +28,10 @@ let register
       ~should_run_holding_async_lock
   =
   let with_lock f =
+    let f () =
+      Set_once.get_exn set_async_execution_context [%here] ();
+      f ()
+    in
     if Scheduler.am_holding_lock scheduler then f () else Scheduler.with_lock scheduler f
   in
   let callback =

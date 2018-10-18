@@ -1,4 +1,14 @@
 open! Core_kernel
+module Caml_embed = Ecaml_value.Caml_embed
+module Ecaml_callback = Ecaml_value.Ecaml_callback
+module Form = Ecaml_value.Form
+module Function = Ecaml_value.Function
+module Generated_bindings = Ecaml_value.Generated_bindings
+module Value = Ecaml_value.Value
+module Valueable = Ecaml_value.Valueable
+
+let ( << ) f g x = f (g x)
+let ( >> ) f g x = g (f x)
 
 let initialize_module =
   Printexc.record_backtrace true;
@@ -9,6 +19,7 @@ let concat = String.concat
 let debug = false
 let print_s = Expect_test_helpers_kernel.print_s
 let eprint_s = Core_kernel.Debug.eprint_s
+let raise_string s = raise_s [%sexp (concat s : string)]
 
 (* Buffer local variables can cause emacs to segfault when gc'ed. So we use these
    functions to prevent such variables from being gc'ed. See thread "nasty ecaml bug" or

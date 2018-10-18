@@ -5,31 +5,79 @@ module Q = struct
   include Q
 
   let call_process = "call-process" |> Symbol.intern
+  and call_process_region = "call-process-region" |> Symbol.intern
+  and closed = "closed" |> Symbol.intern
+  and connect = "connect" |> Symbol.intern
   and delete_process = "delete-process" |> Symbol.intern
+  and exit_ = "exit" |> Symbol.intern
+  and failed = "failed" |> Symbol.intern
   and get_process = "get-process" |> Symbol.intern
+  and listen = "listen" |> Symbol.intern
   and local = "local" |> Symbol.intern
   and make_network_process = "make-network-process" |> Symbol.intern
+  and open_ = "open" |> Symbol.intern
   and output = "output" |> Symbol.intern
   and process = "process" |> Symbol.intern
   and process_buffer = "process-buffer" |> Symbol.intern
   and process_command = "process-command" |> Symbol.intern
+  and process_exit_status = "process-exit-status" |> Symbol.intern
   and process_id = "process-id" |> Symbol.intern
   and process_list = "process-list" |> Symbol.intern
   and process_live_p = "process-live-p" |> Symbol.intern
+  and process_mark = "process-mark" |> Symbol.intern
   and process_name = "process-name" |> Symbol.intern
   and process_query_on_exit_flag = "process-query-on-exit-flag" |> Symbol.intern
   and process_status = "process-status" |> Symbol.intern
+  and run = "run" |> Symbol.intern
   and set_process_query_on_exit_flag = "set-process-query-on-exit-flag" |> Symbol.intern
+  and signal = "signal" |> Symbol.intern
   and start_process = "start-process" |> Symbol.intern
-  and process_mark = "process-mark" |> Symbol.intern
+  and stop = "stop" |> Symbol.intern
 end
 
 include Process0
+
+module Status = struct
+  module T = struct
+    type t =
+      | Closed
+      | Connect
+      | Exit
+      | Failed
+      | Listen
+      | Open
+      | Run
+      | Signal
+      | Stop
+    [@@deriving enumerate, sexp_of]
+  end
+
+  include T
+
+  let ({ Value.Type.id = _; of_value_exn; to_value } as type_) =
+    Value.Type.enum
+      [%sexp "process-status"]
+      (module T)
+      (Symbol.to_value
+       << function
+         | Closed -> Q.closed
+         | Connect -> Q.connect
+         | Exit -> Q.exit_
+         | Failed -> Q.failed
+         | Listen -> Q.listen
+         | Open -> Q.open_
+         | Run -> Q.run
+         | Signal -> Q.signal
+         | Stop -> Q.stop)
+  ;;
+end
 
 module F = struct
   open Funcall
 
   let is_alive = Q.process_live_p <: type_ @-> return bool
+  let process_exit_status = Q.process_exit_status <: type_ @-> return int
+  let process_status = Q.process_status <: type_ @-> return Status.type_
 end
 
 let equal = eq
@@ -64,7 +112,22 @@ let set_query_on_exit t b =
   Symbol.funcall2_i Q.set_process_query_on_exit_flag (t |> to_value) (b |> Value.of_bool)
 ;;
 
-let status t = Symbol.funcall1 Q.process_status (t |> to_value) |> Symbol.of_value_exn
+let status = F.process_status
+
+module Exit_status = struct
+  type t =
+    | Not_exited
+    | Exited of int
+    | Fatal_signal of int
+  [@@deriving sexp]
+end
+
+let exit_status t : Exit_status.t =
+  match status t with
+  | Exit -> Exited (F.process_exit_status t)
+  | Signal -> Fatal_signal (F.process_exit_status t)
+  | Closed | Connect | Failed | Listen | Open | Run | Stop -> Not_exited
+;;
 
 let find_by_name name =
   Symbol.funcall1 Q.get_process (name |> Value.of_utf8_bytes)
@@ -127,6 +190,13 @@ module Call = struct
       | Dev_null -> Value.nil
       | File file -> file |> Value.of_utf8_bytes
     ;;
+  end
+
+  module Region_input = struct
+    type t =
+      | Region of { start : Position.t; end_ : Position.t; delete : bool }
+      | String of string
+    [@@deriving sexp_of]
   end
 
   module Output = struct
@@ -196,6 +266,36 @@ module Call = struct
     ;;
   end
 end
+
+let call_region_exn
+      ?(input =
+        Call.Region_input.Region
+          { start = Point.min (); end_ = Point.max (); delete = false })
+      ?(output = Call.Output.Dev_null)
+      ?(redisplay_on_output = false)
+      ?(working_directory = Working_directory.Root)
+      prog
+      args
+  =
+  Working_directory.within working_directory ~f:(fun () ->
+    let start, end_, delete =
+      match input with
+      | Region { start; end_; delete } ->
+        start |> Position.to_value, end_ |> Position.to_value, delete
+      | String s -> s |> Value.of_utf8_bytes, Value.nil, false
+    in
+    Symbol.funcallN
+      Q.call_process_region
+      ([ start
+       ; end_
+       ; prog |> Value.of_utf8_bytes
+       ; delete |> Value.of_bool
+       ; output |> Call.Output.to_value
+       ; redisplay_on_output |> Value.of_bool
+       ]
+       @ (args |> List.map ~f:Value.of_utf8_bytes))
+    |> Call.Result.of_value_exn)
+;;
 
 let call_result_exn
       ?(input = Call.Input.Dev_null)

@@ -12,7 +12,14 @@ type entry =
   }
 [@@deriving fields]
 
-type Major_mode.Name.t += Major_mode
+module M =
+  (val Major_mode.define_derived_mode
+         [%here]
+         test_mode
+         ~docstring:"for testing"
+         ~initialize:ident
+         ~mode_line:"Test-mode"
+         ~parent:Tabulated_list_mode.major_mode)
 
 let t =
   let format =
@@ -22,15 +29,10 @@ let t =
     ]
   in
   create
-    [%here]
-    Major_mode
-    ~docstring:"for testing"
+    M.major_mode
     ~id_equal:String.equal
     ~id_of_record:id
     ~id_type:Value.Type.string
-    ~initialize:ident
-    ~mode_change_command:test_mode
-    ~mode_line:"Test-mode"
     format
 ;;
 

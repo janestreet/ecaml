@@ -1,11 +1,21 @@
 open! Core_kernel
-open! Import0
+open! Import
 module Id = Caml_embedded_id
 
-type t = Value0.t
+type t = Value0.t [@@deriving sexp_of]
 
 external ecaml_inject : Id.t -> t = "ecaml_inject"
 external ecaml_project : t -> Id.t = "ecaml_project"
+
+let ecaml_project t =
+  try ecaml_project t with
+  | exn ->
+    let name = "[Caml_embed.ecaml_project]" in
+    raise_s
+      (match exn with
+       | Failure message -> [%message (concat [ name; ": "; message ]) ~_:(t : t)]
+       | _ -> [%message name ~_:(exn : exn) ~_:(t : t)])
+;;
 
 let embedded_values = Id.Table.create ()
 

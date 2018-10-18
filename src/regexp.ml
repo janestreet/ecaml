@@ -11,6 +11,7 @@ module Q = struct
   and match_string_no_properties = "match-string-no-properties" |> Symbol.intern
   and regexp_opt = "regexp-opt" |> Symbol.intern
   and regexp_quote = "regexp-quote" |> Symbol.intern
+  and replace_regexp_in_string = "replace-regexp-in-string" |> Symbol.intern
   and set_match_data = "set-match-data" |> Symbol.intern
   and string_match = "string-match" |> Symbol.intern
   and string_match_p = "string-match-p" |> Symbol.intern
@@ -23,6 +24,15 @@ include Value.Make_subtype (struct
     let here = [%here]
     let is_in_subtype = Value.is_string
   end)
+
+module F = struct
+  open Funcall
+
+  let replace_regexp_in_string =
+    Q.replace_regexp_in_string
+    <: type_ @-> Text.type_ @-> Text.type_ @-> return Text.type_
+  ;;
+end
 
 let of_pattern string = string |> Value.of_utf8_bytes |> of_value_exn
 let to_pattern t = t |> to_value |> Value.to_utf8_bytes_exn
@@ -176,3 +186,9 @@ let extract ?start ?subexp t text =
 ;;
 
 let extract_string ?start ?subexp t s = extract ?start ?subexp t (Text.of_utf8_bytes s)
+let replace t ~with_ ~in_ = F.replace_regexp_in_string t with_ in_
+
+let replace_string t ~with_ ~in_ =
+  F.replace_regexp_in_string t (with_ |> Text.of_utf8_bytes) (in_ |> Text.of_utf8_bytes)
+  |> Text.to_utf8_bytes
+;;

@@ -37,7 +37,7 @@ let gid = nullary_int Q.group_gid
 let real_gid = nullary_int Q.group_real_gid
 
 let initialize () =
-  Function.defun
+  Defun.defun_raw
     [%here]
     ("ecaml-test-user-module" |> Symbol.intern)
     ~interactive:""

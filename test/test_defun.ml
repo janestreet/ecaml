@@ -13,7 +13,7 @@ let%expect_test "[defun]" =
   let symbol = Symbol.gensym () in
   defun
     here
-    return_type
+    ~returns:return_type
     symbol
     ~docstring:"Returns its own arguments as a sexp."
     (let open Let_syntax in
@@ -53,7 +53,7 @@ let%expect_test "[defun] tuple ordering" =
   let symbol = Symbol.gensym () in
   defun
     here
-    return_type
+    ~returns:return_type
     symbol
     ~docstring:""
     (let open Let_syntax in
@@ -78,7 +78,7 @@ let%expect_test "[defun] wrong number of arguments" =
   let symbol = Symbol.gensym () in
   defun
     here
-    return_type
+    ~returns:return_type
     symbol
     ~docstring:""
     (let open Defun.Let_syntax in
@@ -103,7 +103,7 @@ let%expect_test "[defun] omitted optional arguments" =
   let symbol = Symbol.gensym () in
   defun
     here
-    return_type
+    ~returns:return_type
     symbol
     ~docstring:""
     (let open Let_syntax in
@@ -120,7 +120,7 @@ let%expect_test "[lambda]" =
   let fn =
     lambda
       [%here]
-      Value.Type.int
+      ~returns:Value.Type.int
       (let open Defun.Let_syntax in
        let%map_open () = return ()
        and i = required ("int" |> Symbol.intern) int in

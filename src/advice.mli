@@ -20,7 +20,7 @@ open! Import
 *)
 val around_values
   :  ?docstring:string
-  -> ?interactive:string
+  -> ?interactive:Defun.Interactive.t
   -> Source_code_position.t
   -> Symbol.t
   -> ((Value.t list -> Value.t) -> Value.t list -> Value.t)
@@ -31,7 +31,7 @@ val around_values
     [for_function]. *)
 val around_funcall
   :  ?docstring:string
-  -> ?interactive:string
+  -> ?interactive:Defun.Interactive.t
   -> Source_code_position.t
   -> Symbol.t
   -> 'a Funcall.t

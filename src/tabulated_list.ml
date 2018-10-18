@@ -229,36 +229,15 @@ let draw ?sort_by t rows =
   F.tabulated_list_print false false
 ;;
 
-type Major_mode.Name.t += Major_mode
+module Tabulated_list_mode = (val Major_mode.wrap_existing [%here] Q.tabulated_list_mode)
 
-let tabulated_list_mode =
-  Major_mode.create [%here] (Some Major_mode) ~change_command:Q.tabulated_list_mode
-;;
-
-let create
-      ?define_keys
-      here
-      name
-      columns
-      ~docstring
-      ~id_equal
-      ~id_type
-      ~id_of_record
-      ~initialize
-      ~mode_change_command
-      ~mode_line
-  =
-  let major_mode =
-    Major_mode.define_derived_mode
-      here
-      name
-      ?define_keys
-      ~change_command:mode_change_command
-      ~docstring
-      ~parent:tabulated_list_mode
-      ~mode_line
-      ~initialize
-  in
+let create major_mode columns ~id_equal ~id_type ~id_of_record =
+  if not (Major_mode.is_derived major_mode ~from:Tabulated_list_mode.major_mode)
+  then
+    raise_s
+      [%sexp
+        "[Tabulated_list.create] called on a major mode not derived from \
+         [Tabulated_list.Tabulated_list_mode.major_mode]."];
   let entries_var =
     let entry_type =
       let open Value.Type in

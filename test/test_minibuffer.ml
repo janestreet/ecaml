@@ -4,7 +4,7 @@ open! Minibuffer
 
 let%expect_test "[y_or_n]" =
   let test input =
-    with_input input (fun () -> print_s [%sexp (y_or_n ~prompt:"" : bool)])
+    with_input input (fun () -> print_s [%sexp (Blocking.y_or_n ~prompt:"" : bool)])
   in
   test "y";
   [%expect {|
@@ -23,7 +23,9 @@ let%expect_test "[y_or_n_with_timeout]" =
     with_input input (fun () ->
       print_s
         [%sexp
-          ( y_or_n_with_timeout ~prompt:"" ~timeout:(Time_ns.Span.microsecond, 13)
+          ( Blocking.y_or_n_with_timeout
+              ~prompt:""
+              ~timeout:(Time_ns.Span.microsecond, 13)
             : int Y_or_n_with_timeout.t )])
   in
   test "y";
@@ -40,7 +42,7 @@ let%expect_test "[y_or_n_with_timeout]" =
 
 let%expect_test "[yes_or_no]" =
   let test input =
-    with_input input (fun () -> print_s [%sexp (yes_or_no ~prompt:"" : bool)])
+    with_input input (fun () -> print_s [%sexp (Blocking.yes_or_no ~prompt:"" : bool)])
   in
   test "yes\n";
   [%expect {|
@@ -51,7 +53,7 @@ let%expect_test "[yes_or_no]" =
 ;;
 
 let%expect_test "[read_from]" =
-  with_input "foo" (fun () -> print_s [%sexp (read_from () ~prompt:"" : string)]);
+  with_input "foo" (fun () -> print_s [%sexp (Blocking.read_from () ~prompt:"" : string)]);
   [%expect {|
     foo |}]
 ;;
@@ -82,13 +84,13 @@ let%expect_test "[setup_hook] [exit_hook] don't run in batch mode" =
      ignored. *)
   Hook.add
     setup_hook
-    (Hook.Function.create [%here] Normal ("test-setup" |> Symbol.intern) (fun () ->
+    (Hook.Function.create [%here] Normal Unit ("test-setup" |> Symbol.intern) (fun () ->
        print_s [%message "running setup hook"]));
   Hook.add
     exit_hook
-    (Hook.Function.create [%here] Normal ("test-exit" |> Symbol.intern) (fun () ->
+    (Hook.Function.create [%here] Normal Unit ("test-exit" |> Symbol.intern) (fun () ->
        print_s [%message "running exit hook"]));
-  with_input "foo" (fun () -> print_s [%sexp (read_from () ~prompt:"" : string)]);
+  with_input "foo" (fun () -> print_s [%sexp (Blocking.read_from () ~prompt:"" : string)]);
   [%expect {|
     foo |}]
 ;;

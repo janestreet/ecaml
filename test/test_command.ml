@@ -8,9 +8,9 @@ let%expect_test "[Raw_prefix_argument]" =
   let f = Symbol.gensym () in
   defun
     [%here]
-    Value.Type.unit
+    ~returns:Value.Type.unit
     f
-    ~interactive:"P"
+    ~interactive:Raw_prefix
     (let open Defun.Let_syntax in
      let%map_open arg = required ("arg" |> Symbol.intern) value in
      print_s
@@ -54,4 +54,23 @@ let%expect_test "[Raw_prefix_argument]" =
     ((arg                 -)
      (for_current_command Minus)
      (raw_prefix_argument Minus)) |}]
+;;
+
+let give_emacs_chance_to_signal () = ignore (Text.of_utf8_bytes "ignoreme")
+
+let%expect_test "quit" =
+  show_raise (fun () ->
+    Command.request_quit ();
+    give_emacs_chance_to_signal ());
+  [%expect {| (raised quit) |}]
+;;
+
+let%expect_test "inhibit-quit" =
+  show_raise (fun () ->
+    Current_buffer.set_value_temporarily inhibit_quit true ~f:(fun () ->
+      Command.request_quit ();
+      give_emacs_chance_to_signal ()));
+  [%expect {| "did not raise" |}];
+  show_raise (fun () -> give_emacs_chance_to_signal ());
+  [%expect {| (raised quit) |}]
 ;;

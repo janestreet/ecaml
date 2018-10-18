@@ -787,9 +787,9 @@ CAMLprim value ecaml_project(value val)
   emacs_env* env = ecaml_active_env_or_die();
   emacs_value user_ptr = emacs_of_ocaml(env, val);
   if (!user_ptrp(env, user_ptr))
-    caml_failwith("Tried to ecaml_project something that's not a user pointer.");
+    caml_failwith("tried to project something that's not a user pointer");
   void* data = env->get_user_ptr(env, user_ptr);
   if (!data)
-    caml_failwith("Tried to ecaml_project a NULL user pointer.");
+    caml_failwith("tried to project a NULL user pointer");
   CAMLreturn(*((value *)data));
 }

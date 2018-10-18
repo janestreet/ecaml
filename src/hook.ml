@@ -9,8 +9,14 @@ module Q = struct
   and after_save_hook = "after-save-hook" |> Symbol.intern
   and before_save_hook = "before-save-hook" |> Symbol.intern
   and kill_buffer_hook = "kill-buffer-hook" |> Symbol.intern
+  and post_command_hook = "post-command-hook" |> Symbol.intern
   and remove_hook = "remove-hook" |> Symbol.intern
   and run_hooks = "run-hooks" |> Symbol.intern
+  and start = "start" |> Symbol.intern
+  and window = "window" |> Symbol.intern
+  and window_configuration_change_hook =
+    "window-configuration-change-hook" |> Symbol.intern
+  and window_scroll_functions = "window-scroll-functions" |> Symbol.intern
 end
 
 module F = struct
@@ -24,21 +30,29 @@ module F = struct
   and run_hooks = Q.run_hooks <: Symbol.type_ @-> return nil
 end
 
-type file = file:string -> unit [@@deriving sexp_of]
-type normal = unit -> unit [@@deriving sexp_of]
+type file = { file : string } [@@deriving sexp_of]
+type normal = unit [@@deriving sexp_of]
+
+type window =
+  { window : Window.t
+  ; start : Position.t
+  }
+[@@deriving sexp_of]
 
 module Type = struct
   type 'a t =
     | File : file t
     | Normal : normal t
+    | Window : window t
   [@@deriving sexp_of]
 
   let args : type a. a t -> _ = function
     | File -> [ Q.file ]
     | Normal -> []
+    | Window -> [ Q.window; Q.start ]
   ;;
 
-  let fn (type a) (t : a t) (f : a) ~symbol : Function.Fn.t =
+  let fn (type a) (t : a t) (f : a -> unit) ~symbol : Function.Fn.t =
     let wrap f =
       match Or_error.try_with f with
       | Ok () -> ()
@@ -53,10 +67,20 @@ module Type = struct
           wrap f;
           Value.nil
         | _ -> assert false)
+    | Window ->
+      (function
+        | [| window; start |] ->
+          wrap (fun () ->
+            f
+              { window = window |> Window.of_value_exn
+              ; start = start |> Position.of_value_exn
+              });
+          Value.nil
+        | _ -> assert false)
     | File ->
       (function
         | [| file |] ->
-          wrap (fun () -> f ~file:(file |> Value.to_utf8_bytes_exn));
+          wrap (fun () -> f { file = file |> Value.to_utf8_bytes_exn });
           Value.nil
         | _ -> assert false)
   ;;
@@ -90,24 +114,40 @@ module Function = struct
     }
   [@@deriving sexp_of]
 
-  let create ?docstring here type_ symbol f =
-    Function.defun
+  module Return_type = struct
+    type timeout = { timeout : Time.Span.t option } [@@deriving sexp_of]
+
+    type _ t =
+      | Unit : unit t
+      | Unit_deferred : timeout -> unit Async.Deferred.t t
+    [@@deriving sexp_of]
+
+    let to_unit (type a r) (f : a -> r) (return_type : r t) : a -> unit =
+      match return_type with
+      | Unit -> f
+      | Unit_deferred { timeout } ->
+        fun a -> Async_ecaml.Private.block_on_async ~timeout (fun () -> f a)
+    ;;
+  end
+
+  let create ?docstring here type_ return_type symbol f =
+    Defun.defun_raw
       ?docstring
       here
       symbol
       ~args:(Type.args type_)
-      (Type.fn ~symbol type_ f);
+      (Type.fn ~symbol type_ (Return_type.to_unit f return_type));
     { symbol; type_ }
   ;;
 
-  let create_with_self ?docstring here type_ symbol f =
+  let create_with_self ?docstring here type_ return_type symbol f =
     let self = { symbol; type_ } in
-    Function.defun
+    Defun.defun_raw
       ?docstring
       here
       symbol
       ~args:(Type.args type_)
-      (Type.fn ~symbol type_ (f self));
+      (Type.fn ~symbol type_ (Return_type.to_unit (f self) return_type));
     self
   ;;
 
@@ -151,11 +191,21 @@ let after_load_once =
       Function.create
         [%here]
         File
+        Unit
         (Symbol.intern (concat [ "ecaml-after-load-"; !counter |> Int.to_string ]))
-        (fun ~file ->
+        (fun file ->
            remove after_load (Option.value_exn !hook_function_ref);
-           f ~file)
+           f file)
     in
     hook_function_ref := Some hook_function;
     add after_load hook_function
+;;
+
+let window_configuration_change = create Normal Q.window_configuration_change_hook
+let window_scroll_functions = create Window Q.window_scroll_functions
+let post_command = create Normal Q.post_command_hook
+
+let major_mode_hook major_mode =
+  let mode_name = major_mode |> Major_mode.symbol |> Symbol.name in
+  create Normal (mode_name ^ "-hook" |> Symbol.intern)
 ;;

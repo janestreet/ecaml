@@ -1,5 +1,6 @@
 open! Core_kernel
 open! Import
+module Defun = Defun0
 
 module Q = struct
   include Q
@@ -31,21 +32,22 @@ let is_scheduled t =
 
 let to_seconds span = span |> Time_ns.Span.to_sec |> Value.of_float
 
-let run_after ?repeat span f =
+let run_after ?repeat here span ~f ~name =
+  Defun.defun_nullary_nil here name f;
   Symbol.funcall3
     Q.run_at_time
     (span |> to_seconds)
     (match repeat with
      | None -> Value.nil
      | Some span -> span |> to_seconds)
-    (Function.create [%here] ~args:[] (fun _ ->
-       f ();
-       Value.nil)
-     |> Function.to_value)
+    (name |> Symbol.to_value)
   |> of_value_exn
 ;;
 
-let run_after_i ?repeat span f = ignore (run_after ?repeat span f : t)
+let run_after_i ?repeat here span ~f ~name =
+  ignore (run_after here ?repeat span ~f ~name : t)
+;;
+
 let cancel t = Symbol.funcall1_i Q.cancel_timer (t |> to_value)
 
 let sit_for ?(redisplay = true) span =

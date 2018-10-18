@@ -8,6 +8,15 @@
 
 open! Core_kernel
 open! Import
+open! Async
+
+module Y_or_n_with_timeout : sig
+  type 'a t =
+    | Y
+    | N
+    | Timeout of 'a
+  [@@deriving sexp_of]
+end
 
 (** [(describe-function 'read-from-minibuffer)]
     [(Info-goto-node "(elisp)Text from Minibuffer")] *)
@@ -18,30 +27,22 @@ val read_from
   -> ?initial_contents:string
   -> unit
   -> prompt:string
-  -> string
+  -> string Deferred.t
 
 (** [(describe-function 'y-or-n-p)]
     [(Info-goto-node "(elisp)Yes-or-No Queries")] *)
-val y_or_n : prompt:string -> bool
-
-module Y_or_n_with_timeout : sig
-  type 'a t =
-    | Y
-    | N
-    | Timeout of 'a
-  [@@deriving sexp_of]
-end
+val y_or_n : prompt:string -> bool Deferred.t
 
 (** [(describe-function 'y-or-n-p-with-timeout)]
     [(Info-goto-node "(elisp)Yes-or-No Queries")] *)
 val y_or_n_with_timeout
   :  prompt:string
   -> timeout:Time_ns.Span.t * 'a
-  -> 'a Y_or_n_with_timeout.t
+  -> 'a Y_or_n_with_timeout.t Deferred.t
 
 (** [(describe-function 'yes-or-no-p)]
     [(Info-goto-node "(elisp)Yes-or-No Queries")] *)
-val yes_or_no : prompt:string -> bool
+val yes_or_no : prompt:string -> bool Deferred.t
 
 (** [(describe-variable 'minibuffer-exit-hook)]
     [(Info-goto-node "(elisp)Minibuffer Misc")] *)
@@ -50,3 +51,31 @@ val exit_hook : Hook.normal Hook.t
 (** [(describe-variable 'minibuffer-setup-hook)]
     [(Info-goto-node "(elisp)Minibuffer Misc")] *)
 val setup_hook : Hook.normal Hook.t
+
+module Blocking : sig
+  (** [(describe-function 'read-from-minibuffer)]
+      [(Info-goto-node "(elisp)Text from Minibuffer")] *)
+  val read_from
+    :  ?default_value:string
+    -> ?history_list:Symbol.t
+    -> ?history_list_pos:int
+    -> ?initial_contents:string
+    -> unit
+    -> prompt:string
+    -> string
+
+  (** [(describe-function 'y-or-n-p)]
+      [(Info-goto-node "(elisp)Yes-or-No Queries")] *)
+  val y_or_n : prompt:string -> bool
+
+  (** [(describe-function 'y-or-n-p-with-timeout)]
+      [(Info-goto-node "(elisp)Yes-or-No Queries")] *)
+  val y_or_n_with_timeout
+    :  prompt:string
+    -> timeout:Time_ns.Span.t * 'a
+    -> 'a Y_or_n_with_timeout.t
+
+  (** [(describe-function 'yes-or-no-p)]
+      [(Info-goto-node "(elisp)Yes-or-No Queries")] *)
+  val yes_or_no : prompt:string -> bool
+end

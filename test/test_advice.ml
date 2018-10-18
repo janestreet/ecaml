@@ -6,7 +6,7 @@ let%expect_test "" =
   let for_function = "test-function" |> Symbol.intern in
   defun
     [%here]
-    Value.Type.int
+    ~returns:Value.Type.int
     for_function
     (let open Defun.Let_syntax in
      let%map_open args = rest ("rest" |> Symbol.intern) value in

@@ -45,6 +45,10 @@ val add_undo_boundary : unit -> unit
 (** [(describe-function 'undo)] *)
 val undo : int -> unit
 
+(** [(describe-function 'describe-mode)]
+    [(Info-goto-node "(elisp)Mode Help")] *)
+val describe_mode : unit -> unit
+
 (** [set_temporarily t ~f] runs [f] with the current buffer set to [t].
     [(describe-function 'with-current-buffer)]. *)
 val set_temporarily : Buffer.t -> f:(unit -> 'a) -> 'a

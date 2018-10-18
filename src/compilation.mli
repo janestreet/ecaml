@@ -4,3 +4,6 @@ open! Core_kernel
 open! Import
 
 val buffer_name_function : Function.t option Var.t
+
+(** [(describe-function 'compilation-next-error)] *)
+val next_error : ?different_file:bool -> ?start_at:Position.t -> int -> unit

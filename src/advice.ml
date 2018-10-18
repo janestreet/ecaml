@@ -28,7 +28,7 @@ let add_internal ?docstring ?interactive here advice_name f ~for_function =
     ?docstring
     ?interactive
     here
-    Value.Type.value
+    ~returns:Value.Type.value
     advice_name
     (let open Defun.Let_syntax in
      let%map_open () = return ()

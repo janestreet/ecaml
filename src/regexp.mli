@@ -123,5 +123,10 @@ val extract_string
   -> string
   -> string option
 
+(** [(describe-function 'replace-regexp-in-string)] *)
+val replace : t -> with_:Text.t -> in_:Text.t -> Text.t
+
+val replace_string : t -> with_:string -> in_:string -> string
+
 (** [(describe-function 'save-match-data)] *)
 val save_match_data : (unit -> 'a) -> 'a

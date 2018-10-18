@@ -1,7 +1,7 @@
+(** [(Info-goto-node "(elisp)Obsolete Functions")] *)
+
 open! Core_kernel
 open! Import
-
-(** [(Info-goto-node "(elisp)Obsolete Functions")] *)
 
 (** [(describe-function 'make-obsolete)] *)
 val make : ?when_:string -> Symbol.t -> current:Symbol.t -> unit

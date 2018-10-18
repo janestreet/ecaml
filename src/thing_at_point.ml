@@ -120,7 +120,7 @@ let defthing ~(bounds : unit -> (Position.t * Position.t) option) loc symbol =
     symbol
     (Defun.lambda_nullary
        loc
-       Value.Type.(option (tuple Position.type_ Position.type_))
+       ~returns:Value.Type.(option (tuple Position.type_ Position.type_))
        bounds);
   Other symbol
 ;;

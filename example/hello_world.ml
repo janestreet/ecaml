@@ -12,7 +12,7 @@ let () =
   message "Hello, world!";
   defun
     [%here]
-    Value.Type.unit
+    ~returns:Value.Type.unit
     ("say-hello" |> Symbol.intern)
     ~docstring:"Takes one argument NAME and says \"Hello, NAME\""
     (let open Defun.Let_syntax in

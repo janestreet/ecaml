@@ -7,7 +7,8 @@ let () = clear t
 let show t = print_s [%sexp (t : _ t)]
 
 let create_function s =
-  Function.create [%here] Normal (s |> Symbol.intern) (fun () -> print_s [%message s])
+  Function.create [%here] Normal Unit (s |> Symbol.intern) (fun () ->
+    print_s [%message s])
 ;;
 
 let f1 = create_function "f1"
@@ -111,14 +112,14 @@ let%expect_test "[run]" =
 ;;
 
 let create_after_load_fun s =
-  Function.create [%here] File (s |> Symbol.intern) (fun ~file:_ -> print_s [%message s])
+  Function.create [%here] File Unit (s |> Symbol.intern) (fun _ -> print_s [%message s])
 ;;
 
 let%expect_test "[after_load] hooks" =
   let f1 = create_after_load_fun "f1" in
   let f2 = create_after_load_fun "f2" in
   add after_load f1;
-  after_load_once (fun ~file:_ -> print_endline "after_load_once hook");
+  after_load_once (fun _ -> print_endline "after_load_once hook");
   add after_load f2;
   let file = Caml.Filename.temp_file "ecamltest" ".el" in
   Out_channel.write_all file ~data:"'()";
@@ -135,22 +136,54 @@ let%expect_test "[after_load] hooks" =
   remove after_load f2
 ;;
 
+let%expect_test "Blocking async hook" =
+  let test ~pause ~timeout =
+    let f1 =
+      Function.create
+        [%here]
+        File
+        (Unit_deferred { timeout = Some timeout })
+        ("f1" |> Symbol.intern)
+        (fun _ ->
+           let%map.Async () = Async.Clock.after pause in
+           print_s [%message "f1"])
+    in
+    add after_load f1;
+    let file = Caml.Filename.temp_file "ecamltest" ".el" in
+    Out_channel.write_all file ~data:"'()";
+    Load.load ~message:false file;
+    remove after_load f1
+  in
+  test ~pause:(sec 0.01) ~timeout:(sec 1.);
+  [%expect {| f1 |}];
+  test ~pause:(sec 1.) ~timeout:(sec 0.01);
+  [%expect {| ("Error in hook" f1 "Blocking operation timed out") |}]
+;;
+
 let%expect_test "[after_save], [kill_buffer]" =
   let file = "test-after-save.tmp" in
   Selected_window.find_file file;
   add
     after_save
     ~buffer_local:true
-    (Function.create [%here] Normal ("test-after-save-hook" |> Symbol.intern) (fun () ->
-       print_s [%message "after-save hook ran"]));
+    (Function.create
+       [%here]
+       Normal
+       Unit
+       ("test-after-save-hook" |> Symbol.intern)
+       (fun () -> print_s [%message "after-save hook ran"]));
   print_s [%sexp (Current_buffer.is_buffer_local (var after_save) : bool)];
   [%expect {|
     true |}];
   add
     kill_buffer
     ~buffer_local:true
-    (Function.create [%here] Normal ("test-kill-buffer-hook" |> Symbol.intern) (fun () ->
-       print_s [%message "kill-buffer hook ran"]));
+    (Function.create
+       [%here]
+       Normal
+       Unit
+       ("test-kill-buffer-hook" |> Symbol.intern)
+       (fun () -> print_s [%message "kill-buffer hook ran"]));
   Point.insert "foo";
   Current_buffer.save ();
   [%expect {|

@@ -27,14 +27,19 @@ let%expect_test "finalization of embedded ocaml values" =
   print_s (Ecaml.debug_embedded_caml_values ());
   [%expect
     {|
-    ((0 <fun>)
-     (1 <fun>)
-     (2 <fun>)
-     (3 <fun>)
-     (4 <fun>)
-     (5 <fun>)
-     (6 <fun>)
-     (7 <fun>)) |}];
+    ((0  <fun>)
+     (1  <fun>)
+     (2  <fun>)
+     (3  <fun>)
+     (4  <fun>)
+     (5  <fun>)
+     (6  <fun>)
+     (7  <fun>)
+     (8  <fun>)
+     (9  <fun>)
+     (10 <fun>)
+     (11 <fun>)
+     (12 <fun>)) |}];
   let module A = struct
     type t =
       { a : string
@@ -57,30 +62,40 @@ let%expect_test "finalization of embedded ocaml values" =
     print_s (Ecaml.debug_embedded_caml_values ()));
   [%expect
     {|
-    ((0 <fun>)
-     (1 <fun>)
-     (2 <fun>)
-     (3 <fun>)
-     (4 <fun>)
-     (5 <fun>)
-     (6 <fun>)
-     (7 <fun>)
-     (8 ((a V1) (b 1)))
-     (9 ((a V2) (b 2)))) |}];
+    ((0  <fun>)
+     (1  <fun>)
+     (2  <fun>)
+     (3  <fun>)
+     (4  <fun>)
+     (5  <fun>)
+     (6  <fun>)
+     (7  <fun>)
+     (8  <fun>)
+     (9  <fun>)
+     (10 <fun>)
+     (11 <fun>)
+     (12 <fun>)
+     (13 ((a V1) (b 1)))
+     (14 ((a V2) (b 2)))) |}];
   make_ocaml_garbage_not_keep_emacs_values_alive ();
   emacs_garbage_collect ();
   make_ocaml_garbage_not_keep_emacs_values_alive ();
   print_s (Ecaml.debug_embedded_caml_values ());
   [%expect
     {|
-    ((0 <fun>)
-     (1 <fun>)
-     (2 <fun>)
-     (3 <fun>)
-     (4 <fun>)
-     (5 <fun>)
-     (6 <fun>)
-     (7 <fun>)) |}]
+    ((0  <fun>)
+     (1  <fun>)
+     (2  <fun>)
+     (3  <fun>)
+     (4  <fun>)
+     (5  <fun>)
+     (6  <fun>)
+     (7  <fun>)
+     (8  <fun>)
+     (9  <fun>)
+     (10 <fun>)
+     (11 <fun>)
+     (12 <fun>)) |}]
 ;;
 
 let%expect_test "Emacs objects no longer referenced from OCaml can be gc'ed by Emacs" =
@@ -123,7 +138,7 @@ let%expect_test "OCaml objects no longer referenced from Emacs can be gc'ed by O
     ((alive_before true)
      (alive_after  false)) |}];
   test_ocaml_gc_handles_references_from_emacs ~make_emacs_reference:(fun ~ocaml_value ->
-    lambda_nullary [%here] Value.Type.value ocaml_value |> Function.to_value);
+    lambda_nullary [%here] ~returns:Value.Type.value ocaml_value |> Function.to_value);
   [%expect {|
     ((alive_before true)
      (alive_after  false)) |}]

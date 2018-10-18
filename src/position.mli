@@ -17,6 +17,15 @@ include Comparable.S_plain with type t := t
 
 val of_int_exn : int -> t
 val to_int : t -> int
+
+(** [(describe-function 'position-bytes)].
+    [(Info-goto-node "(elisp)Text Representations")] *)
+val to_byte_position : t -> int
+
+(** [(describe-function 'byte-to-position)].
+    [(Info-goto-node "(elisp)Text Representations")] *)
+val of_byte_position : int -> t
+
 val add : t -> int -> t
 val sub : t -> int -> t
 val diff : t -> t -> int

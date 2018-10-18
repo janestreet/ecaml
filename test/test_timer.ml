@@ -6,7 +6,7 @@ let sec = Time_ns.Span.of_sec
 
 let test f =
   let continue = ref true in
-  run_after_i (sec 0.) (fun () ->
+  run_after_i [%here] (sec 0.) ~name:(Symbol.gensym ()) ~f:(fun () ->
     print_s [%message "ran"];
     continue := false);
   while !continue do
@@ -29,7 +29,7 @@ let%expect_test "[run_after], [sleep_for]" =
 let%expect_test "[run_after ~repeat]" =
   let r = ref 0 in
   let continue = ref true in
-  run_after_i (sec 0.) ~repeat:(sec 0.001) (fun () ->
+  run_after_i [%here] (sec 0.) ~repeat:(sec 0.001) ~name:(Symbol.gensym ()) ~f:(fun () ->
     if !r = 3
     then continue := false
     else (
@@ -45,7 +45,7 @@ let%expect_test "[run_after ~repeat]" =
 ;;
 
 let%expect_test "[cancel], [is_scheduled]" =
-  let t = run_after (sec 60.) ignore in
+  let t = run_after [%here] (sec 60.) ~name:(Symbol.gensym ()) ~f:ignore in
   print_s [%sexp (is_scheduled t : bool)];
   [%expect {|
     true |}];

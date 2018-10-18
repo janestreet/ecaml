@@ -11,6 +11,7 @@ include Value.Subtype with type t = Buffer0.t
 type buffer = t
 
 include Equal.S with type t := t
+module Compare_by_name : Comparable.S_plain with type t = t
 
 (** Accessors *)
 
@@ -25,6 +26,8 @@ val name : t -> string option
 
 (** - [(describe-function 'get-buffer-process)] *)
 val process : t -> Process0.t option
+
+val process_exn : t -> Process0.t
 
 (** [all_live] returns a list of all live buffers.  [(describe-function 'buffer-list)]. *)
 val all_live : unit -> t list
@@ -70,6 +73,15 @@ val buffer_local_variables : t -> (Symbol.t * Value.t option) list
 *)
 val find_file_noselect : Filename.t -> t
 
+(** From [(Info-goto-node "(emacs)Select Buffer")]:
+
+    Emacs uses buffer names that start with a space for internal purposes. It treats these
+    buffers specially in minor ways---for example, by default they do not record undo
+    information. It is best to avoid using such buffer names yourself.
+
+    As dead buffers have no names, it is unknown whether a dead buffer was internal. *)
+val is_internal_or_dead : t -> bool
+
 module Which_buffers : sig
   type t =
     | File_visiting
@@ -84,3 +96,5 @@ val save_some
   -> ?which_buffers:Which_buffers.t (** default is [File_visiting] *)
   -> unit
   -> unit
+
+val with_temp_buffer : (t -> 'a) -> 'a

@@ -39,6 +39,9 @@ val beginning_of_line : unit -> unit
 (** [(describe-function 'end-of-line)]. *)
 val end_of_line : unit -> unit
 
+(** [(describe-function 'count-lines)]. *)
+val count_lines : start:Position.t -> end_:Position.t -> int
+
 (** [(describe-function 'back-to-indentation)]. *)
 val goto_first_non_blank : unit -> unit
 
@@ -92,6 +95,9 @@ val backward_word : int -> unit
     [(Info-goto-node "(elisp)Text Lines")] *)
 val line_number : unit -> int
 
+(** [(describe-function 'eobp)] *)
+val is_end_of_buffer : unit -> bool
+
 (** [column_number] returns the colum of point, where the beginning of line is column 0.
     [(describe-function 'current-column)].
     [(Info-goto-node "(elisp)Columns")] *)
@@ -129,6 +135,14 @@ val marker_at_min : unit -> Marker.t
 
 (** [(describe-function 'point-max-marker)]. *)
 val marker_at_max : unit -> Marker.t
+
+(** [(describe-function 'next-line)]. *)
+val next_line : unit -> unit
+
+(** [(describe-function 'previous-line)]. *)
+val previous_line : unit -> unit
+
+val scroll_up : int -> unit
 
 (** There are eight search functions, varying by whether they:
 

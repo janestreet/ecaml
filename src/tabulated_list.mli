@@ -1,9 +1,10 @@
-open! Core_kernel
-open! Import
-
 (** Tabulated lists display table data, one line per record and one column per field.
 
     Note that we attempt to improve upon the elisp interface of tabulated-list-mode. *)
+
+open! Core_kernel
+open! Import
+module Tabulated_list_mode : Major_mode.S
 
 module Column : sig
   (** A column of data to be displayed on screen. *)
@@ -45,18 +46,13 @@ end
 
 type ('record, 'id) t
 
+(** Raises unless the major mode derives from [Tabulated_list_mode.major_mode]. *)
 val create
-  :  ?define_keys:(string * Symbol.t) list
-  -> Source_code_position.t
-  -> Major_mode.Name.t
+  :  Major_mode.t
   -> 'record Column.t list
-  -> docstring:string
   -> id_equal:('id -> 'id -> bool)
   -> id_type:'id Value.Type.t
   -> id_of_record:('record -> 'id)
-  -> initialize:(unit -> unit)
-  -> mode_change_command:Symbol.t
-  -> mode_line:string
   -> ('record, 'id) t
 
 val keymap : _ t -> Keymap.t

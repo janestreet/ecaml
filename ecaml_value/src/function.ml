@@ -1,10 +1,9 @@
 open! Core_kernel
-open! Import0
+open! Import
 
 module Q = struct
-  include Q
-
   let apply = "apply" |> Symbol.intern
+  let nil = "nil" |> Symbol.intern
 end
 
 include Value.Make_subtype (struct
@@ -101,14 +100,8 @@ let create =
     |> of_value_exn
 ;;
 
-module For_testing = struct
-  let defun_symbols = ref []
-end
-
-let defun ?docstring ?interactive ?optional_args ?rest_arg here ~args symbol f =
-  Load_history.add_entry here (Fun symbol);
-  For_testing.defun_symbols := symbol :: !For_testing.defun_symbols;
-  Symbol.set_function
-    symbol
-    (create ?docstring ?interactive ?optional_args ?rest_arg here ~args f |> to_value)
+let create_nullary ?docstring ?interactive here f =
+  create ?docstring ?interactive here ~args:[] (fun _ ->
+    f ();
+    Value.nil)
 ;;

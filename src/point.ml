@@ -7,9 +7,11 @@ module Q = struct
   let back_to_indentation = "back-to-indentation" |> Symbol.intern
   and backward_sexp = "backward-sexp" |> Symbol.intern
   and beginning_of_line = "beginning-of-line" |> Symbol.intern
+  and count_lines = "count-lines" |> Symbol.intern
   and current_column = "current-column" |> Symbol.intern
   and delete_char = "delete-char" |> Symbol.intern
   and end_of_line = "end-of-line" |> Symbol.intern
+  and eobp = "eobp" |> Symbol.intern
   and forward_char = "forward-char" |> Symbol.intern
   and forward_line = "forward-line" |> Symbol.intern
   and forward_sexp = "forward-sexp" |> Symbol.intern
@@ -22,6 +24,8 @@ module Q = struct
   and looking_at = "looking-at" |> Symbol.intern
   and looking_at_p = "looking-at-p" |> Symbol.intern
   and move_to_column = "move-to-column" |> Symbol.intern
+  and next_line = "next-line" |> Symbol.intern
+  and previous_line = "previous-line" |> Symbol.intern
   and point_marker = "point-marker" |> Symbol.intern
   and point_max_marker = "point-max-marker" |> Symbol.intern
   and point_min_marker = "point-min-marker" |> Symbol.intern
@@ -30,6 +34,7 @@ module Q = struct
   and search_backward_regexp = "search-backward-regexp" |> Symbol.intern
   and search_forward = "search-forward" |> Symbol.intern
   and search_forward_regexp = "search-forward-regexp" |> Symbol.intern
+  and scroll_up = "scroll-up" |> Symbol.intern
   and simple = "simple" |> Symbol.intern
 end
 
@@ -38,9 +43,14 @@ module F = struct
   open! Value.Type
 
   let back_to_indentation = Q.back_to_indentation <: nullary @-> return nil
-  let forward_line = Q.forward_line <: int @-> return int
+  let count_lines = Q.count_lines <: Position.type_ @-> Position.type_ @-> return int
   let delete_char = Q.delete_char <: int @-> return unit
+  let forward_line = Q.forward_line <: int @-> return int
+  let is_end_of_buffer = Q.eobp <: nullary @-> return bool
+  let next_line = Q.next_line <: nullary @-> return nil
+  let previous_line = Q.previous_line <: nullary @-> return nil
   let recenter = Q.recenter <: option int @-> return nil
+  let scroll_up = Q.scroll_up <: int @-> return nil
 end
 
 module Current_buffer = Current_buffer0
@@ -63,6 +73,7 @@ let forward_line_exn n =
 ;;
 
 let backward_line n = forward_line (-n)
+let count_lines ~start ~end_ = F.count_lines start end_
 
 let goto_line l =
   goto_min ();
@@ -79,10 +90,11 @@ let forward_word n = ignore (Generated_bindings.forward_word n : bool)
 let backward_word n = ignore (Generated_bindings.backward_word n : bool)
 
 let line_number =
-  Feature0.require Q.simple;
+  Ecaml_value.Feature.require Q.simple;
   fun () -> Symbol.funcall0 Q.line_number_at_pos |> Value.to_int_exn
 ;;
 
+let is_end_of_buffer = F.is_end_of_buffer
 let column_number () = Symbol.funcall0 Q.current_column |> Value.to_int_exn
 let goto_column n = Symbol.funcall1_i Q.move_to_column (n |> Value.of_int_exn)
 
@@ -101,6 +113,9 @@ let kill_word count = Symbol.funcall1_i Q.kill_word (count |> Value.of_int_exn)
 let marker_at () = Symbol.funcall0 Q.point_marker |> Marker.of_value_exn
 let marker_at_min () = Symbol.funcall0 Q.point_min_marker |> Marker.of_value_exn
 let marker_at_max () = Symbol.funcall0 Q.point_max_marker |> Marker.of_value_exn
+let next_line = F.next_line
+let previous_line = F.previous_line
+let scroll_up lines = F.scroll_up lines
 
 let bound_value = function
   | None -> Value.nil

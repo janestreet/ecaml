@@ -35,13 +35,16 @@ let show_last_match ?subexp () =
         ~end_:(try_with (fun () -> Last_match.end_exn ?subexp ()) : int Or_error.t)]
 ;;
 
-let print_s ?(templatize_current_directory = false) sexp =
+let print_s ?(hide_positions = false) ?(templatize_current_directory = false) sexp =
   if not templatize_current_directory
-  then print_s sexp
+  then print_s sexp ~hide_positions
   else
     print_endline
       (sexp
        |> Sexp_pretty.sexp_to_string
+       |> (if hide_positions
+           then Expect_test_helpers_kernel.hide_positions_in_string
+           else Fn.id)
        |> fun string ->
        String.Search_pattern.replace_all
          (String.Search_pattern.create
@@ -76,7 +79,7 @@ let with_input_macro string f =
   Keymap.define_key
     keymap
     (Key_sequence.create_exn start_sequence)
-    (Value (lambda_nullary_nil [%here] f ~interactive:"" |> Function.to_value));
+    (Value (lambda_nullary_nil [%here] f ~interactive:No_arg |> Function.to_value));
   Keymap.set_transient keymap;
   Key_sequence.execute keyseq
 ;;

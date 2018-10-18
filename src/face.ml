@@ -1,5 +1,6 @@
 open! Core_kernel
 open! Import0
+module Frame = Frame0
 
 module Q = struct
   include Q

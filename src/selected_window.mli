@@ -15,14 +15,23 @@ val set : ?move_to_front_of_buffer_list:bool -> Window.t -> unit
 (** [(describe-function 'switch-to-buffer)] *)
 val switch_to_buffer : Buffer.t -> unit
 
+(** [(describe-function 'switch-to-buffer-other-window)] *)
+val switch_to_buffer_other_window : Buffer.t -> unit
+
 (** [(describe-function 'split-window-horizontally)] *)
 val split_horizontally_exn : unit -> unit
+
+(** [(describe-function 'split-window-sensibly)] *)
+val split_sensibly_exn : unit -> unit
 
 (** [(describe-function 'split-window-vertically)] *)
 val split_vertically_exn : unit -> unit
 
 (** [(describe-function 'find-file)] *)
 val find_file : string -> unit
+
+(** [(describe-function 'find-file-other-window)] *)
+val find_file_other_window : string -> unit
 
 (** [(describe-function 'view-file)] *)
 val view_file : string -> unit
@@ -35,3 +44,6 @@ val save_window_excursion : (unit -> 'a) -> 'a
 
 (** [(describe-function 'quit-window)] *)
 val quit : unit -> unit
+
+(** [(describe-function 'other-window)] *)
+val other_window : int -> unit

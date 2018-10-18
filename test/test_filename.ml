@@ -40,7 +40,16 @@ let%expect_test "[extension], [sans_extension]" =
   [%expect
     {|
     ((filename foo)
-     (extension (Error (wrong-type-argument (stringp nil))))
+     (extension (
+       Error (
+         "unable to convert Elisp value to OCaml value"
+         (type_ filename)
+         (value nil)
+         (exn (
+           "unable to convert Elisp value to OCaml value"
+           (type_ string)
+           (value nil)
+           (exn (wrong-type-argument (stringp nil))))))))
      (sans_extension (Ok foo)))
     ((filename foo.ml)
      (extension      (Ok ml))

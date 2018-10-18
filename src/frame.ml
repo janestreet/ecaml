@@ -1,26 +1,14 @@
 open! Core_kernel
 open! Import0
+include Frame0
 
-module Q = struct
-  include Q
+module F = struct
+  open Funcall
 
-  let frame_height = "frame-height" |> Symbol.intern
-  and frame_list = "frame-list" |> Symbol.intern
-  and frame_parameters = "frame-parameters" |> Symbol.intern
-  and frame_pixel_height = "frame-pixel-height" |> Symbol.intern
-  and frame_pixel_width = "frame-pixel-width" |> Symbol.intern
-  and frame_width = "frame-width" |> Symbol.intern
-  and select_frame = "select-frame" |> Symbol.intern
-  and selected_frame = "selected-frame" |> Symbol.intern
-  and visible_frame_list = "visible-frame-list" |> Symbol.intern
+  let frame_live_p = Q.frame_live_p <: type_ @-> return bool
 end
 
-include Value.Make_subtype (struct
-    let name = "frame"
-    let here = [%here]
-    let is_in_subtype = Value.is_frame
-  end)
-
+let create () = Symbol.funcall0 Q.make_frame |> of_value_exn
 let num_cols t = Symbol.funcall1 Q.frame_width (t |> to_value) |> Value.to_int_exn
 let num_rows t = Symbol.funcall1 Q.frame_height (t |> to_value) |> Value.to_int_exn
 
@@ -46,5 +34,6 @@ let all_visible () =
 ;;
 
 let all_live () = Symbol.funcall0 Q.frame_list |> Value.to_list_exn ~f:of_value_exn
-let selected () = Symbol.funcall0 Q.selected_frame |> of_value_exn
 let set_selected t = Symbol.funcall1_i Q.select_frame (t |> to_value)
+let set_selected_temporarily t ~f = Save_wrappers.with_selected_frame (to_value t) f
+let is_live = F.frame_live_p

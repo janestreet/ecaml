@@ -7,7 +7,7 @@
     built on top of this module. *)
 
 open! Core_kernel
-open! Import0
+open! Import
 
 module type Make_subtype_arg = sig
   type value
@@ -102,6 +102,10 @@ module type Type = sig
       default directory). nil values are converted to ".", which has the same meaning.
   *)
   val path_list : string list t
+end
+
+module type Enum = sig
+  type t [@@deriving enumerate, sexp_of]
 end
 
 module type Value = sig
@@ -235,6 +239,10 @@ module type Value = sig
   val vec_set : t -> int -> t -> unit
   val vec_size : t -> int
   val initialize_module : unit
+  val message_string : string -> unit
+  val messagef : ('a, unit, string, unit) format4 -> 'a
+  val message_s : Sexp.t -> unit
+  val message : t -> unit
 
   (** An ['a Type.t] is an isomorphism between ['a] and a subset of [Value.t]. *)
   module Type :
@@ -257,6 +265,10 @@ module type Value = sig
     (** [map_id type_ name] is short for [map type_ ~name ~of_:Fn.id ~to_:Fn.id].
         It is not interchangeable with [type_] itself. *)
     val map_id : 'a t -> Sexp.t -> 'a t
+
+    module type Enum = Enum
+
+    val enum : Sexp.t -> (module Enum with type t = 'a) -> ('a -> value) -> 'a t
   end
   with type value := t
 
@@ -267,6 +279,7 @@ module type Value = sig
   module Make_subtype (Subtype : Make_subtype_arg) : Subtype
 
   module Expert : sig
+    val have_active_env : unit -> bool
     val raise_if_emacs_signaled : unit -> unit
     val non_local_exit_signal : exn -> unit
   end

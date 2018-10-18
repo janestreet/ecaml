@@ -7,7 +7,7 @@ let%expect_test "[iter], [standard]" =
   iter standard ~f:(fun s -> all := Symbol.name s :: !all);
   print_s [%sexp (List.length !all : int)];
   [%expect {|
-    15_342 |}];
+    15_357 |}];
   print_s
     [%sexp
       ( !all |> List.sort ~compare:String.compare |> fun l -> List.take l 100

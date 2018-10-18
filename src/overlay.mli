@@ -1,11 +1,11 @@
+(** Overlays modify the appearance of a buffer's text, for presentation's sake.
+
+    [(Info-goto-node "(elisp)Overlays")] *)
+
 open! Core_kernel
 open! Import
 
-(* Overlays modify the appearance of a buffer's text, for presentation's sake.
-
-   [(Info-goto-node "(elisp)Overlays")] *)
-
-type t
+type t [@@deriving sexp_of]
 
 include Valueable.S with type t := t
 
@@ -25,7 +25,7 @@ val end_ : t -> Position.t
 val delete : t -> unit
 
 (** [(describe-function 'move-overlay)] *)
-val move : ?buffer:Buffer.t -> t -> start:Position.t -> end_:Position.t -> unit
+val move : ?buffer:Buffer.t -> t -> start:Position.t -> end_:Position.t -> t
 
 (** [(describe-function 'overlay-get)] *)
 val get_property : t -> 'a Text.Property_name.t -> 'a
@@ -36,5 +36,16 @@ val put_property : t -> 'a Text.Property_name.t -> 'a -> unit
 (** [(describe-function 'overlays-at)] *)
 val at : Position.t -> t list
 
+(** [(describe-function 'remove-overlays)].
+    [(Info-goto-node "(elisp)Managing Overlays")] *)
+val remove_overlays
+  :  ?start:Position.t
+  -> ?end_:Position.t
+  -> ?with_property:'a Text.Property_name.t * 'a
+  -> unit
+  -> unit
+
 (** [(describe-function 'overlays-in)] *)
 val in_ : start:Position.t -> end_:Position.t -> t list
+
+val equal : t -> t -> bool

@@ -1,16 +1,20 @@
 open! Core_kernel
-open! Import0
+open! Import
 
 module Q = struct
-  include Q
-
   let eval = "eval" |> Symbol.intern
   and interactive = "interactive" |> Symbol.intern
   and lambda = "lambda" |> Symbol.intern
   and let_ = "let" |> Symbol.intern
   and progn = "progn" |> Symbol.intern
+  and quote = "quote" |> Symbol.intern
   and read_from_whole_string = "read-from-whole-string" |> Symbol.intern
   and thingatpt = "thingatpt" |> Symbol.intern
+
+  module A = struct
+    let optional = "&optional" |> Symbol.intern
+    let rest = "&rest" |> Symbol.intern
+  end
 end
 
 include Value.Make_subtype (struct
@@ -26,7 +30,7 @@ let eval t = Symbol.funcall1 Q.eval (t |> to_value)
 let eval_i t = ignore (eval t : Value.t)
 
 let read =
-  Feature0.require Q.thingatpt;
+  Feature.require Q.thingatpt;
   fun string ->
     Symbol.funcall1 Q.read_from_whole_string (string |> Value.of_utf8_bytes)
     |> of_value_exn
@@ -60,9 +64,10 @@ let lambda =
        then raise_s [%message "docstring contains a NUL byte" (docstring : string)]);
     let args =
       [ args
-      ; optional_args
-        |> Option.value_map ~default:[] ~f:(fun optional_args ->
-          Q.A.optional :: optional_args)
+      ; (match optional_args with
+         | None
+         | Some [] -> []
+         | Some optional_args -> Q.A.optional :: optional_args)
       ; rest_arg
         |> Option.value_map ~default:[] ~f:(fun rest_arg -> [ Q.A.rest; rest_arg ])
       ]
@@ -99,18 +104,4 @@ let lambda =
     |> List.filter_opt
     |> Value.list
     |> of_value_exn
-;;
-
-let defvar here symbol initial_value ~docstring =
-  ignore
-    ( eval
-        ([ Q.defvar |> Symbol.to_value
-         ; symbol |> Symbol.to_value
-         ; initial_value |> q
-         ; docstring |> Value.of_utf8_bytes
-         ]
-         |> Value.list
-         |> of_value_exn)
-      : Value.t );
-  Load_history.add_entry here (Var symbol)
 ;;

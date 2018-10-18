@@ -7,28 +7,10 @@
     async_unix
     core_kernel
     ecaml_bench
+    ecaml_value
     expect_test_helpers_kernel
     ))
-  (preprocess (pps (ppx_jane -annotated-ignores ppxlib.runner)))
-  ;; We need -std=c99 to enable (stack-allocated) variable-length arrays in ecaml_funcall.
-  (c_flags (:standard -std=c99))
-  (c_names (ecaml_stubs generated_stubs))))
-
-(rule
- ((targets (generated_stubs.c))
-  (deps (../gen/gen_c.exe))
-  (action (bash "../gen/gen_c.exe > ${@}.tmp && mv ${@}.tmp ${@}"))
-  (fallback)))
-
-(rule
- ((targets (generated_bindings.ml))
-  (deps (../gen/gen_ml.exe ${ROOT}/bin/apply-style jbuild))
-  (action (bash "../gen/gen_ml.exe |
-           ${ROOT}/bin/apply-style -- \
-             format - -original-file ${@} -directory-config jbuild \
-             > ${@}.tmp &&
-           mv ${@}.tmp ${@}"))
-  (fallback)))
+  (preprocess (pps (ppx_jane -annotated-ignores ppxlib.runner)))))
 
 (alias
  ((name DEFAULT)

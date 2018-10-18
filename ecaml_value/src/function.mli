@@ -1,7 +1,9 @@
-(** Functions that call from Emacs to OCaml. *)
+(** Lower-level interface for functions that call from Emacs to OCaml.
+
+    Try [Defun] first. *)
 
 open! Core_kernel
-open! Import0
+open! Import
 
 module Fn : sig
   type t = Value.t array -> Value.t
@@ -19,13 +21,16 @@ type 'a with_spec =
   -> 'a
 
 val create : (Fn.t -> t) with_spec
-val defun : (Symbol.t -> Fn.t -> unit) with_spec
+
+val create_nullary
+  :  ?docstring:string
+  -> ?interactive:string
+  -> Source_code_position.t
+  -> (unit -> unit)
+  -> t
+
 val to_value : t -> Value.t
 
 module Expert : sig
   val raise_in_dispatch : bool ref
-end
-
-module For_testing : sig
-  val defun_symbols : Symbol.t list ref
 end

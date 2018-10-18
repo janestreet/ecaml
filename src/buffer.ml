@@ -16,13 +16,14 @@ module Q = struct
   and get_buffer_window_list = "get-buffer-window-list" |> Symbol.intern
   and get_file_buffer = "get-file-buffer" |> Symbol.intern
   and save_some_buffers = "save-some-buffers" |> Symbol.intern
+  and visible = "visible" |> Symbol.intern
 end
 
 module Process = Process0
 module Window = Window0
 include Buffer0
 
-type buffer = t
+type buffer = t [@@deriving sexp_of]
 
 let is_live t = Generated_bindings.buffer_live_p (t |> to_value)
 
@@ -30,6 +31,17 @@ let name t =
   let result = Symbol.funcall1 Q.buffer_name (t |> to_value) in
   if Value.is_nil result then None else Some (result |> Value.to_utf8_bytes_exn)
 ;;
+
+module Compare_by_name = struct
+  module T = struct
+    type t = buffer [@@deriving sexp_of]
+
+    let compare = Comparable.lift [%compare: string option] ~f:name
+  end
+
+  include T
+  include Comparable.Make_plain (T)
+end
 
 let file_name t =
   let result = Symbol.funcall1 Q.buffer_file_name (t |> to_value) in
@@ -39,6 +51,12 @@ let file_name t =
 let process t =
   let result = Symbol.funcall1 Q.get_buffer_process (t |> to_value) in
   if Value.is_nil result then None else Some (result |> Process.of_value_exn)
+;;
+
+let process_exn t =
+  match process t with
+  | Some process -> process
+  | None -> raise_s [%message "buffer does not have a process" ~_:(t : t)]
 ;;
 
 let all_live () = Symbol.funcall0 Q.buffer_list |> Value.to_list_exn ~f:of_value_exn
@@ -64,7 +82,11 @@ let find_or_create ~name =
 let kill t = Symbol.funcall1_i Q.kill_buffer (t |> to_value)
 
 let displayed_in t =
-  Symbol.funcall1 Q.get_buffer_window_list (t |> to_value)
+  Symbol.funcall3
+    Q.get_buffer_window_list
+    (t |> to_value)
+    Value.nil
+    (Q.visible |> Symbol.to_value)
   |> Value.to_list_exn ~f:Window.of_value_exn
 ;;
 
@@ -87,6 +109,12 @@ let find_file_noselect filename =
   Symbol.funcall1 Q.find_file_noselect (filename |> Value.of_utf8_bytes) |> of_value_exn
 ;;
 
+let is_internal_or_dead t =
+  match name t with
+  | None -> true
+  | Some name -> String.is_prefix name ~prefix:" "
+;;
+
 module Which_buffers = struct
   type t =
     | File_visiting
@@ -107,4 +135,14 @@ let save_some ?(query = true) ?(which_buffers = Which_buffers.File_visiting) () 
     Q.save_some_buffers
     (not query |> Value.of_bool)
     (which_buffers |> Which_buffers.to_value)
+;;
+
+let with_temp_buffer f =
+  let temp_buffer = create ~name:" *temp*" in
+  Exn.protect
+    ~f:(fun () -> f temp_buffer)
+    ~finally:(fun () ->
+      match kill temp_buffer with
+      | () -> ()
+      | exception _ -> ())
 ;;

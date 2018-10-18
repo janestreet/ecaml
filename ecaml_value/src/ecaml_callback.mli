@@ -1,7 +1,7 @@
 (** This module is used to enforce the expected types of registered callbacks. *)
 
 open! Core_kernel
-open! Import0
+open! Import
 module Value = Value0
 
 type 'a t
@@ -25,3 +25,5 @@ val no_active_env : (unit -> unit) t
     longer used in emacs and are scheduled to be removed. The function runs whenever we
     enter OCaml from emacs, provided of course that there are values to collect. *)
 val free_embedded_caml_values : (Caml_embedded_id.t array -> unit) t
+
+val set_async_execution_context : (unit -> unit) Set_once.t

@@ -11,13 +11,20 @@ open! Core_kernel
 open! Import
 
 type 'a t [@@deriving sexp_of]
-type file = file:string -> unit
-type normal = unit -> unit
+type file = { file : string } [@@deriving sexp_of]
+type normal = unit [@@deriving sexp_of]
+
+type window =
+  { window : Window.t
+  ; start : Position.t
+  }
+[@@deriving sexp_of]
 
 module Type : sig
   type 'a t =
     | File : file t
     | Normal : normal t
+    | Window : window t
   [@@deriving sexp_of]
 end
 
@@ -34,14 +41,24 @@ end
 module Function : sig
   type 'a t [@@deriving sexp_of]
 
+  module Return_type : sig
+    type timeout = { timeout : Time.Span.t option } [@@deriving sexp_of]
+
+    type _ t =
+      | Unit : unit t
+      | Unit_deferred : timeout -> unit Async.Deferred.t t
+    [@@deriving sexp_of]
+  end
+
   (** [create here return_type symbol f] defines an emacs function named [symbol]
       that runs [f] when called. It returns an ['a t] usable for modifying hooks. *)
   val create
     :  ?docstring:string
     -> Source_code_position.t
     -> 'a Type.t
+    -> 'r Return_type.t
     -> Symbol.t
-    -> 'a
+    -> ('a -> 'r)
     -> 'a t
 
   (** [create_with_self here return_type symbol f] works the same as [create], except that
@@ -53,8 +70,9 @@ module Function : sig
     :  ?docstring:string
     -> Source_code_position.t
     -> 'a Type.t
+    -> 'r Return_type.t
     -> Symbol.t
-    -> ('a t -> 'a)
+    -> ('a t -> 'a -> 'r)
     -> 'a t
 end
 
@@ -83,7 +101,7 @@ val after_load : file t
 
 (** [after_load_once f] adds [f] to [after_load], and then removes it when it runs,
     so that [f] only runs once. *)
-val after_load_once : file -> unit
+val after_load_once : (file -> unit) -> unit
 
 (** [(describe-variable 'after-save-hook)]
     [(Info-goto-node "(elisp)Saving Buffers")] *)
@@ -96,3 +114,18 @@ val before_save : normal t
 (** [(describe-variable 'kill-buffer-hook)]
     [(Info-goto-node "(elisp)Killing Buffers")] *)
 val kill_buffer : normal t
+
+(** [(describe-variable 'post-command-hook)]
+    [(Info-goto-node "(elisp)Command Overview")] *)
+val post_command : normal t
+
+(** [(describe-variable 'window-configuration-change-hook)]
+    [(Info-goto-node "(elisp)Window Hooks")] *)
+val window_configuration_change : normal t
+
+(** [(describe-variable 'window-scroll-functions)]
+    [(Info-goto-node "(elisp)Window Hooks")] *)
+val window_scroll_functions : window t
+
+(** [(Info-goto-node "(elisp)Major Mode Conventions")] *)
+val major_mode_hook : Major_mode.t -> normal t

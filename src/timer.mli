@@ -20,10 +20,22 @@ val is_scheduled : t -> bool
 
 (** [(describe-function 'run-at-time)]
     [(Info-goto-node "(elisp)Timers")] *)
-val run_after : ?repeat:Time_ns.Span.t -> Time_ns.Span.t -> (unit -> unit) -> t
+val run_after
+  :  ?repeat:Time_ns.Span.t
+  -> Source_code_position.t
+  -> Time_ns.Span.t
+  -> f:(unit -> unit)
+  -> name:Symbol.t
+  -> t
 
 (** [run_after_i s f = ignore (run_after s f)] *)
-val run_after_i : ?repeat:Time_ns.Span.t -> Time_ns.Span.t -> (unit -> unit) -> unit
+val run_after_i
+  :  ?repeat:Time_ns.Span.t
+  -> Source_code_position.t
+  -> Time_ns.Span.t
+  -> f:(unit -> unit)
+  -> name:Symbol.t
+  -> unit
 
 (** [(describe-function 'cancel-timer)]
     [(Info-goto-node "(elisp)Timers")] *)

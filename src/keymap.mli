@@ -75,6 +75,9 @@ val lookup_key_exn
     [(Info-goto-node "(elisp)Functions for Key Lookup")] *)
 val define_key : t -> Key_sequence.t -> Entry.t -> unit
 
+(** [(describe-variable 'minor-mode-map-alist)] *)
+val minor_mode_map_alist : (Symbol.t * t) list Var.t
+
 (** [override_minor_mode_map minor_mode ~f] overrides the bindings for [minor_mode] in the
     current buffer with the result of calling [f] on the keymap for [minor_mode].
 

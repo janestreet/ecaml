@@ -906,19 +906,17 @@ let%expect_test "[indent_region]" =
 ;;
 
 let%expect_test "[revert]" =
-  let dir = "dir.tmp" in
-  Directory.create dir ~parents:true;
-  Selected_window.find_file (concat [ dir; "/file" ]);
-  ignore
-    ( Process.shell_command_exn "echo foo >file" ~working_directory:Of_current_buffer
-      : string );
-  print_s [%sexp (contents () : Text.t)];
-  [%expect {| "" |}];
-  revert ();
-  print_s [%sexp (contents () : Text.t)];
-  [%expect {| "foo\n" |}];
-  kill ();
-  Directory.delete dir ~recursive:true
+  Directory.with_temp_dir ~prefix:"test-revert" ~suffix:"" ~f:(fun dir ->
+    Selected_window.find_file (concat [ dir; "/file" ]);
+    ignore
+      ( Process.shell_command_exn "echo foo >file" ~working_directory:Of_current_buffer
+        : string );
+    print_s [%sexp (contents () : Text.t)];
+    [%expect {| "" |}];
+    revert ();
+    print_s [%sexp (contents () : Text.t)];
+    [%expect {| "foo\n" |}];
+    kill ())
 ;;
 
 let%expect_test "[set_revert_buffer_function]" =
@@ -965,4 +963,164 @@ let%expect_test "[paragraph_start], [paragraph_separate]" =
   show paragraph_separate;
   [%expect {|
     "[ \t\012]*$" |}]
+;;
+
+let%expect_test "[describe_mode]" =
+  Current_buffer.set_temporarily_to_temp_buffer (fun () ->
+    Current_buffer.change_major_mode Major_mode.Fundamental.major_mode;
+    describe_mode ();
+    Selected_window.other_window 1;
+    print_endline
+      (Current_buffer.contents ()
+       |> Text.to_utf8_bytes
+       |> String.tr ~target:'\012' ~replacement:'\n');
+    Selected_window.quit ());
+  [%expect
+    {|
+    Type C-x 1 to delete the help window, C-M-v to scroll help.
+    Enabled minor modes: Auto-Composition Auto-Compression Auto-Encryption
+    Electric-Indent File-Name-Shadow Global-Eldoc Line-Number Mouse-Wheel
+    Tooltip Transient-Mark
+
+    (Information about these minor modes follows the major mode info.)
+
+     mode defined in `simple.el':
+    Major mode not specialized for anything in particular.
+    Other major modes are defined by comparison with this one.
+
+
+    Auto-Composition minor mode (no indicator):
+    Toggle Auto Composition mode.
+    With a prefix argument ARG, enable Auto Composition mode if ARG
+    is positive, and disable it otherwise.  If called from Lisp,
+    enable the mode if ARG is omitted or nil.
+
+    When Auto Composition mode is enabled, text characters are
+    automatically composed by functions registered in
+    `composition-function-table'.
+
+    You can use `global-auto-composition-mode' to turn on
+    Auto Composition mode in all buffers (this is the default).
+
+
+    Auto-Compression minor mode (no indicator):
+    Toggle Auto Compression mode.
+    With a prefix argument ARG, enable Auto Compression mode if ARG
+    is positive, and disable it otherwise.  If called from Lisp,
+    enable the mode if ARG is omitted or nil.
+
+    Auto Compression mode is a global minor mode.  When enabled,
+    compressed files are automatically uncompressed for reading, and
+    compressed when writing.
+
+
+    Auto-Encryption minor mode (no indicator):
+    Toggle automatic file encryption/decryption (Auto Encryption mode).
+    With a prefix argument ARG, enable Auto Encryption mode if ARG is
+    positive, and disable it otherwise.  If called from Lisp, enable
+    the mode if ARG is omitted or nil.
+
+    (fn &optional ARG)
+
+
+    Electric-Indent minor mode (no indicator):
+    Toggle on-the-fly reindentation (Electric Indent mode).
+    With a prefix argument ARG, enable Electric Indent mode if ARG is
+    positive, and disable it otherwise.  If called from Lisp, enable
+    the mode if ARG is omitted or nil.
+
+    When enabled, this reindents whenever the hook `electric-indent-functions'
+    returns non-nil, or if you insert a character from `electric-indent-chars'.
+
+    This is a global minor mode.  To toggle the mode in a single buffer,
+    use `electric-indent-local-mode'.
+
+
+    File-Name-Shadow minor mode (no indicator):
+    Toggle file-name shadowing in minibuffers (File-Name Shadow mode).
+    With a prefix argument ARG, enable File-Name Shadow mode if ARG
+    is positive, and disable it otherwise.  If called from Lisp,
+    enable the mode if ARG is omitted or nil.
+
+    File-Name Shadow mode is a global minor mode.  When enabled, any
+    part of a filename being read in the minibuffer that would be
+    ignored (because the result is passed through
+    `substitute-in-file-name') is given the properties in
+    `file-name-shadow-properties', which can be used to make that
+    portion dim, invisible, or otherwise less visually noticeable.
+
+
+    Global-Eldoc minor mode (no indicator):
+    Toggle Global Eldoc mode on or off.
+    With a prefix argument ARG, enable Global Eldoc mode if ARG is
+    positive, and disable it otherwise.  If called from Lisp, enable
+    the mode if ARG is omitted or nil, and toggle it if ARG is `toggle'.
+
+    If Global Eldoc mode is on, `eldoc-mode' will be enabled in all
+    buffers where it's applicable.  These are buffers that have modes
+    that have enabled eldoc support.  See `eldoc-documentation-function'.
+
+    (fn &optional ARG)
+
+
+    Line-Number minor mode (no indicator):
+    Toggle line number display in the mode line (Line Number mode).
+    With a prefix argument ARG, enable Line Number mode if ARG is
+    positive, and disable it otherwise.  If called from Lisp, enable
+    the mode if ARG is omitted or nil.
+
+    Line numbers do not appear for very large buffers and buffers
+    with very long lines; see variables `line-number-display-limit'
+    and `line-number-display-limit-width'.
+
+    (fn &optional ARG)
+
+
+    Mouse-Wheel minor mode (no indicator):
+    Toggle mouse wheel support (Mouse Wheel mode).
+    With a prefix argument ARG, enable Mouse Wheel mode if ARG is
+    positive, and disable it otherwise.  If called from Lisp, enable
+    the mode if ARG is omitted or nil.
+
+
+    Tooltip minor mode (no indicator):
+    Toggle Tooltip mode.
+    With a prefix argument ARG, enable Tooltip mode if ARG is positive,
+    and disable it otherwise.  If called from Lisp, enable the mode
+    if ARG is omitted or nil.
+
+    When this global minor mode is enabled, Emacs displays help
+    text (e.g. for buttons and menu items that you put the mouse on)
+    in a pop-up window.
+
+    When Tooltip mode is disabled, Emacs displays help text in the
+    echo area, instead of making a pop-up window.
+
+
+    Transient-Mark minor mode (no indicator):
+    Toggle Transient Mark mode.
+    With a prefix argument ARG, enable Transient Mark mode if ARG is
+    positive, and disable it otherwise.  If called from Lisp, enable
+    Transient Mark mode if ARG is omitted or nil.
+
+    Transient Mark mode is a global minor mode.  When enabled, the
+    region is highlighted with the `region' face whenever the mark
+    is active.  The mark is "deactivated" by changing the buffer,
+    and after certain other operations that set the mark but whose
+    main purpose is something else--for example, incremental search,
+    <, and >.
+
+    You can also deactivate the mark by typing C-g or
+    M-ESC ESC.
+
+    Many commands change their behavior when Transient Mark mode is
+    in effect and the mark is active, by acting on the region instead
+    of their usual default part of the buffer's text.  Examples of
+    such commands include M-;, M-x flush-lines, M-x keep-lines,
+    M-%, C-M-%, M-x ispell, and C-x u.
+    To see the documentation of commands which are sensitive to the
+    Transient Mark mode, invoke C-h d and type "transient"
+    or "mark.*active" at the prompt.
+
+    (fn &optional ARG) |}]
 ;;

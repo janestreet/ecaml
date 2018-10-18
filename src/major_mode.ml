@@ -1,111 +1,122 @@
 open! Core_kernel
 open! Import
+open Major_mode_intf
 
 module Q = struct
   include Q
 
   let define_derived_mode = "define-derived-mode" |> Symbol.intern
+  and derived_mode_p = "derived-mode-p" |> Symbol.intern
+  and dired_mode = "dired-mode" |> Symbol.intern
+  and emacs_lisp_mode = "emacs-lisp-mode" |> Symbol.intern
   and fundamental_mode = "fundamental-mode" |> Symbol.intern
+  and lisp_mode = "lisp-mode" |> Symbol.intern
+  and makefile_mode = "makefile-mode" |> Symbol.intern
   and prog_mode = "prog-mode" |> Symbol.intern
+  and scheme_mode = "scheme-mode" |> Symbol.intern
   and special_mode = "special-mode" |> Symbol.intern
   and text_mode = "text-mode" |> Symbol.intern
+  and tuareg_mode = "tuareg-mode" |> Symbol.intern
+end
+
+module F = struct
+  open Funcall
+
+  let derived_mode_p = Q.derived_mode_p <: Symbol.type_ @-> return bool
 end
 
 module Name = struct
   type t = ..
   type t += Undistinguished
-
-  let distinguished_values : (t * Source_code_position.t) String.Table.t =
-    String.Table.create ()
-  ;;
-
-  let add_or_get_distinguished_value t here ~change_command =
-    let key = Symbol.name change_command in
-    match t with
-    | None ->
-      (match Hashtbl.find distinguished_values key with
-       | Some (t, _) -> t
-       | None -> Undistinguished)
-    | Some t ->
-      (match Hashtbl.find distinguished_values key with
-       | Some (_, previous_def) ->
-         raise_s
-           [%message
-             "Already associated with a name."
-               (change_command : Symbol.t)
-               (here : Source_code_position.t)
-               (previous_def : Source_code_position.t)]
-       | None ->
-         Hashtbl.set distinguished_values ~key ~data:(t, here);
-         t)
-  ;;
 end
 
 module Current_buffer = Current_buffer0
 
 type t =
-  { change_command : Symbol.t
+  { wrapped_at : Source_code_position.t
+  ; symbol : Symbol.t
   ; keymap_var : Keymap.t Var.t
   ; name : Name.t sexp_opaque
   ; syntax_table_var : Syntax_table.t Var.t
   }
 [@@deriving fields, sexp_of]
 
-let equal t1 t2 = Symbol.equal t1.change_command t2.change_command
+let equal t1 t2 = Symbol.equal t1.symbol t2.symbol
+let compare_name t1 t2 = Symbol.compare_name t1.symbol t2.symbol
+let t_by_symbol : t String.Table.t = Hashtbl.create (module String)
 
-let create here name ~change_command =
-  { change_command
-  ; keymap_var =
-      Var.create
-        (Symbol.intern (concat [ change_command |> Symbol.name; "-map" ]))
-        Keymap.type_
-  ; name = Name.add_or_get_distinguished_value name here ~change_command
-  ; syntax_table_var =
-      Var.create
-        (Symbol.intern (concat [ change_command |> Symbol.name; "-syntax-table" ]))
-        Syntax_table.type_
-  }
+let add wrapped_at name symbol =
+  let t =
+    { wrapped_at
+    ; symbol
+    ; keymap_var =
+        Var.create
+          (Symbol.intern (concat [ symbol |> Symbol.name; "-map" ]))
+          Keymap.type_
+    ; name
+    ; syntax_table_var =
+        Var.create
+          (Symbol.intern (concat [ symbol |> Symbol.name; "-syntax-table" ]))
+          Syntax_table.type_
+    }
+  in
+  Hashtbl.add_exn t_by_symbol ~key:(symbol |> Symbol.name) ~data:t;
+  t
+;;
+
+module type S = S with type t := t and type name := Name.t
+
+let wrap_existing wrapped_at symbol =
+  ( module struct
+    type Name.t += Major_mode
+
+    let major_mode =
+      match Hashtbl.find t_by_symbol (symbol |> Symbol.name) with
+      | None -> add wrapped_at Major_mode symbol
+      | Some t ->
+        raise_s
+          [%message
+            "Already associated with a name."
+              (symbol : Symbol.t)
+              (wrapped_at : Source_code_position.t)
+              ~previous_def:(t : t)]
+    ;;
+  end
+  : S )
+;;
+
+let find_or_wrap_existing here symbol =
+  match Hashtbl.find t_by_symbol (symbol |> Symbol.name) with
+  | Some t -> t
+  | None -> add here Name.Undistinguished symbol
 ;;
 
 let keymap t = Current_buffer.value_exn t.keymap_var
 let keymap_var t = t.keymap_var
 let syntax_table t = Current_buffer.value_exn t.syntax_table_var
 
-type Name.t += Fundamental
+module Fundamental = (val wrap_existing [%here] Q.fundamental_mode)
+module Prog = (val wrap_existing [%here] Q.prog_mode)
+module Special = (val wrap_existing [%here] Q.special_mode)
+module Text = (val wrap_existing [%here] Q.text_mode)
+module Dired = (val wrap_existing [%here] Q.dired_mode)
+module Tuareg = (val wrap_existing [%here] Q.tuareg_mode)
+module Makefile = (val wrap_existing [%here] Q.makefile_mode)
+module Lisp = (val wrap_existing [%here] Q.lisp_mode)
+module Scheme = (val wrap_existing [%here] Q.scheme_mode)
+module Emacs_lisp = (val wrap_existing [%here] Q.emacs_lisp_mode)
 
-let fundamental = create [%here] (Some Fundamental) ~change_command:Q.fundamental_mode
-
-type Name.t += Prog
-
-let prog = create [%here] (Some Prog) ~change_command:Q.prog_mode
-
-type Name.t += Special
-
-let special = create [%here] (Some Special) ~change_command:Q.special_mode
-
-type Name.t += Text
-
-let text = create [%here] (Some Text) ~change_command:Q.text_mode
+let all_derived_modes = ref []
 
 module For_testing = struct
-  let derived_modes = ref []
-  let finish_deriving_modes = lazy !derived_modes
-
-  let log_derived_mode t =
-    match Lazy.is_val finish_deriving_modes with
-    | true ->
-      raise_s
-        [%message "Cannot [define_derived_mode] after [force finish_deriving_modes]."]
-    | false -> derived_modes := t :: !derived_modes
-  ;;
+  let all_derived_modes () = !all_derived_modes |> List.sort ~compare:compare_name
 end
 
 let define_derived_mode
       ?(define_keys = [])
       ?parent
       here
-      name
-      ~change_command
+      symbol
       ~docstring
       ~initialize
       ~mode_line
@@ -113,10 +124,10 @@ let define_derived_mode
   Form.eval_i
     (Form.list
        [ Q.define_derived_mode |> Form.symbol
-       ; change_command |> Form.symbol
+       ; symbol |> Form.symbol
        ; (match parent with
           | None -> Form.nil
-          | Some t -> Field.get Fields.change_command t |> Form.symbol)
+          | Some t -> Field.get Fields.symbol t |> Form.symbol)
        ; mode_line |> Form.string
        ; docstring |> Form.string
        ; Form.list
@@ -128,15 +139,21 @@ let define_derived_mode
                 |> Function.to_value)
            ]
        ]);
-  Load_history.add_entry here (Fun change_command);
+  Load_history.add_entry here (Fun symbol);
   List.iter [ "abbrev-table"; "hook"; "map"; "syntax-table" ] ~f:(fun suffix ->
     Load_history.add_entry
       here
-      (Var (concat [ change_command |> Symbol.name; "-"; suffix ] |> Symbol.intern)));
-  let t = create here (Some name) ~change_command in
-  let the_keymap = keymap t in
+      (Var (concat [ symbol |> Symbol.name; "-"; suffix ] |> Symbol.intern)));
+  let m = wrap_existing here symbol in
+  let module M = (val m) in
+  let the_keymap = keymap M.major_mode in
   List.iter define_keys ~f:(fun (keys, symbol) ->
     Keymap.define_key the_keymap (Key_sequence.create_exn keys) (Symbol symbol));
-  For_testing.log_derived_mode t;
-  t
+  all_derived_modes := M.major_mode :: !all_derived_modes;
+  m
+;;
+
+let is_derived t ~from =
+  Current_buffer0.(set_value_temporarily major_mode_var (symbol t)) ~f:(fun () ->
+    F.derived_mode_p (symbol from))
 ;;

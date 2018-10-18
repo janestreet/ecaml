@@ -86,10 +86,7 @@ let locate_dominating_file_exn ~above ~basename =
   match locate_dominating_file ~above ~basename with
   | Some x -> x
   | None ->
-    raise_s
-      [%sexp
-        ( concat [ "Unable to find ["; basename; "] in directory above ["; above; "]." ]
-          : string )]
+    raise_string [ "Unable to find ["; basename; "] in directory above ["; above; "]." ]
 ;;
 
 let write ?(append = false) filename data =

@@ -6,6 +6,7 @@
 
 open! Core_kernel
 open! Import
+include Major_mode.S
 
 (** [(describe-function 'grep))]
     [(Info-goto-node "(emacs)Grep Searching")] *)

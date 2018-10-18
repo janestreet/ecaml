@@ -1,5 +1,5 @@
 open! Core_kernel
-open! Import0
+open! Import
 
 module type S = sig
   type t

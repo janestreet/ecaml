@@ -34,5 +34,9 @@ let%expect_test "wrong return type" =
       "funcall failed to convert return value."
       (symbol locate-file)
       (type_  string)
-      (exn (wrong-type-argument (stringp nil))))) |}]
+      (exn (
+        "unable to convert Elisp value to OCaml value"
+        (type_ string)
+        (value nil)
+        (exn (wrong-type-argument (stringp nil))))))) |}]
 ;;

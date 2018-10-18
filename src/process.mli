@@ -35,8 +35,35 @@ val pid : t -> Pid.t option
 (** [(describe-function 'process-query-on-exit-flag)] *)
 val query_on_exit : t -> bool
 
+module Status : sig
+  type t =
+    | Closed
+    | Connect
+    | Exit
+    | Failed
+    | Listen
+    | Open
+    | Run
+    | Signal
+    | Stop
+  [@@deriving sexp_of]
+
+  include Valueable.S with type t := t
+end
+
 (** [(describe-function 'process-status)] *)
-val status : t -> Symbol.t
+val status : t -> Status.t
+
+module Exit_status : sig
+  type t =
+    | Not_exited
+    | Exited of int
+    | Fatal_signal of int
+  [@@deriving sexp_of]
+end
+
+(** [(describe-function 'process-exit-status)] *)
+val exit_status : t -> Exit_status.t
 
 (** [(describe-function 'process-live-p)] *)
 val is_alive : t -> bool
@@ -70,6 +97,13 @@ module Call : sig
     type t =
       | Dev_null
       | File of string
+    [@@deriving sexp_of]
+  end
+
+  module Region_input : sig
+    type t =
+      | Region of { start : Position.t; end_ : Position.t; delete : bool }
+      | String of string
     [@@deriving sexp_of]
   end
 
@@ -111,6 +145,18 @@ end
     [(describe-function 'call-process)] *)
 val call_result_exn
   :  ?input:Call.Input.t (** default is [Dev_null] *)
+  -> ?output:Call.Output.t (** default is [Dev_null] *)
+  -> ?redisplay_on_output:bool (** default is [false] *)
+  -> ?working_directory:Working_directory.t (** default is [Root] *)
+  -> string
+  -> string list
+  -> Call.Result.t
+
+(** [(Info-goto-node "(elisp)Synchronous Processes")]
+    [(describe-function 'call-process-region)] *)
+val call_region_exn
+  :  ?input:Call.Region_input.t
+  (** default is [Region { start = Point.min (); end_ = Point.max ()}] *)
   -> ?output:Call.Output.t (** default is [Dev_null] *)
   -> ?redisplay_on_output:bool (** default is [false] *)
   -> ?working_directory:Working_directory.t (** default is [Root] *)
@@ -166,7 +212,10 @@ val shell_command_expect_no_output_exn
   -> unit
 
 (** [(Info-goto-node "(elisp)Network Servers")]
-    [(describe-function 'make-network-process)] *)
+    [(describe-function 'make-network-process)]
+
+    The [t] returned by [create_unix_network_process] represents listening on the socket.
+    The [t] passed to [filter] represents a specific connection accepted on the socket. *)
 val create_unix_network_process
   :  unit
   -> filter:(t -> Text.t -> unit)

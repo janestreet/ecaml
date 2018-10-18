@@ -64,3 +64,14 @@ let call_interactively value raw_prefix_argument =
   Current_buffer.set_value Raw_prefix_argument.for_current_command raw_prefix_argument;
   Symbol.funcall1_i Q.call_interactively value
 ;;
+
+let inhibit_quit = Var.create ("inhibit-quit" |> Symbol.intern) Value.Type.bool
+let quit_flag = Var.create ("quit-flag" |> Symbol.intern) Value.Type.bool
+let request_quit () = Current_buffer.set_value quit_flag true
+
+let quit_requested () =
+  (* We use [try-with] because calling into Elisp can itself check [quit-flag]
+     and raise.  And in fact does, at least in Emacs 25.2. *)
+  try Current_buffer.value_exn quit_flag with
+  | _ -> true
+;;

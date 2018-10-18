@@ -20,6 +20,7 @@ module Q = struct
   let overlay_start = "overlay-start" |> Symbol.intern
   let overlays_at = "overlays-at" |> Symbol.intern
   let overlays_in = "overlays-in" |> Symbol.intern
+  let remove_overlays = "remove-overlays" |> Symbol.intern
 end
 
 module F = struct
@@ -34,7 +35,11 @@ module F = struct
 
   let move_overlay =
     Q.move_overlay
-    <: type_ @-> Position.type_ @-> Position.type_ @-> option Buffer.type_ @-> return nil
+    <: type_
+       @-> Position.type_
+       @-> Position.type_
+       @-> option Buffer.type_
+       @-> return type_
   ;;
 
   let overlay_buffer = Q.overlay_buffer <: type_ @-> return Buffer.type_
@@ -73,5 +78,26 @@ let put_property t property_name property_value =
     (property_value |> Text.Property_name.to_value property_name)
 ;;
 
+let remove_overlays ?start ?end_ ?with_property () =
+  let option x f =
+    match x with
+    | None -> Value.nil
+    | Some x -> f x
+  in
+  let property_name, property_value =
+    match with_property with
+    | None -> Value.nil, Value.nil
+    | Some (name, value) ->
+      Text.Property_name.name_as_value name, Text.Property_name.to_value name value
+  in
+  Symbol.funcall4_i
+    Q.remove_overlays
+    (option start Position.to_value)
+    (option end_ Position.to_value)
+    property_name
+    property_value
+;;
+
 let at position = F.overlays_at position None
 let in_ ~start ~end_ = F.overlays_in start end_
+let equal a b = Value.eq (a |> to_value) (b |> to_value)

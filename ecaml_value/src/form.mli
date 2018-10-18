@@ -2,7 +2,7 @@
     [(Info-goto-node "(elisp)Forms")]. *)
 
 open! Core_kernel
-open! Import0
+open! Import
 include Value.Subtype
 
 (** [(describe-function 'eval)] *)
@@ -33,10 +33,6 @@ val lambda
   -> args:Symbol.t list
   -> body:t
   -> t
-
-(** [(describe-function 'defvar)]
-    [(Info-goto-node "(elisp)Defining Variables")] *)
-val defvar : Source_code_position.t -> Symbol.t -> Value.t -> docstring:string -> unit
 
 (** A function call, macro application, or special form.
     [(Info-goto-node "(elisp)Classifying Lists")]. *)

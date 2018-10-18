@@ -10,6 +10,9 @@ include Value.Subtype
 
 (** Accessors *)
 
+(** [(describe-function 'make-frame)] *)
+val create : unit -> t
+
 (** [(describe-function 'frame-width)] *)
 val num_cols : t -> int
 
@@ -31,8 +34,14 @@ val selected : unit -> t
 (** [(describe-function 'select-frame)] *)
 val set_selected : t -> unit
 
+(** [(describe-function 'with-selected-frame)] *)
+val set_selected_temporarily : t -> f:(unit -> 'a) -> 'a
+
 (** [(describe-function 'visible-frame-list)] *)
 val all_visible : unit -> t list
 
 (** [(describe-function 'frame-list)] *)
 val all_live : unit -> t list
+
+(** [(describe-function 'frame-live-p)] *)
+val is_live : t -> bool

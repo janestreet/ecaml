@@ -10,6 +10,7 @@ module Q = struct
   and choice = "choice" |> Symbol.intern
   and coding_system = "coding-system" |> Symbol.intern
   and color = "color" |> Symbol.intern
+  and cons = "cons" |> Symbol.intern
   and const = "const" |> Symbol.intern
   and defcustom = "defcustom" |> Symbol.intern
   and directory = "directory" |> Symbol.intern

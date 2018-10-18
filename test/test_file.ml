@@ -101,26 +101,27 @@ let%expect_test "[copy], [rename], [delete]" =
 ;;
 
 let%expect_test "[locate_dominating_file]" =
-  Directory.create "a.tmp/b/c" ~parents:true;
-  let basename = "foo" in
-  touch (concat [ "a.tmp/"; basename ]);
-  let test ~above =
-    print_s
-      ~templatize_current_directory:true
-      [%sexp
-        ( locate_dominating_file ~above ~basename |> Option.map ~f:File.truename
-          : string option )]
-  in
-  test ~above:"a.tmp/b/c";
-  [%expect {|
-    (<current-directory>/a.tmp/) |}];
-  test ~above:"a.tmp/b";
-  [%expect {|
-    (<current-directory>/a.tmp/) |}];
-  test ~above:"a.tmp";
-  [%expect {|
-    (<current-directory>/a.tmp/) |}];
-  Directory.delete "a.tmp" ~recursive:true
+  Directory.with_temp_dir ~prefix:"test-locate_dominating_file" ~suffix:"" ~f:(fun dir ->
+    Directory.create (concat [ dir; "/b/c" ]) ~parents:true;
+    let basename = "foo" in
+    touch (concat [ dir; "/"; basename ]);
+    let test ~above =
+      print_s
+        [%sexp
+          ( locate_dominating_file ~above:(concat [ dir; "/"; above ]) ~basename
+            |> Option.map ~f:(fun x ->
+              x |> File.truename |> String.chop_prefix_exn ~prefix:dir)
+            : string option )]
+    in
+    test ~above:"b/c";
+    [%expect {|
+      (/) |}];
+    test ~above:"b";
+    [%expect {|
+      (/) |}];
+    test ~above:"";
+    [%expect {|
+      (/) |}])
 ;;
 
 let%expect_test "[locate_dominating_file_exn] raise" =

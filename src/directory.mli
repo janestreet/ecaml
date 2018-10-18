@@ -27,3 +27,13 @@ val files_recursively
   -> ?matching:Regexp.t (** default is [Regexp.match_anything] *)
   -> Filename.t
   -> Filename.t list
+
+(** [(describe-function 'make-temp-file)]
+    [(Info-goto-node "(elisp)Unique File Names")] *)
+val make_temp_dir : prefix:string -> suffix:string -> Filename.t
+
+(** Creates a temp directory, calls [f] on its name, and deletes it after [f] returns,
+    even if [f] returns by raising.
+
+    N.B. This is not the behavior of [(describe-function 'with-temp-file)]. *)
+val with_temp_dir : f:(Filename.t -> 'a) -> prefix:string -> suffix:string -> 'a

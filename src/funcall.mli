@@ -1,6 +1,3 @@
-open! Core_kernel
-open! Import
-
 (** A typeful interface for calling Elisp, as [external] does for C. E.g., {[
 
       module F = struct
@@ -15,8 +12,10 @@ open! Import
 
       let about_emacs = F.about_emacs
 
-    ]} The [F] convention is borrowed from the Emacs C source.
-*)
+    ]} The [F] convention is borrowed from the Emacs C source. *)
+
+open! Core_kernel
+open! Import
 
 type 'a t
 

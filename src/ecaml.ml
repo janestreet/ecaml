@@ -17,18 +17,21 @@ module Completing = Completing
 module Current_buffer = Current_buffer
 module Customization = Customization
 module Defun = Defun
+module Describe = Describe
 module Directory = Directory
 module Display = Display
+module Display_property = Display_property
+module Documentation = Documentation
 module Echo_area = Echo_area
 module Face = Face
 module Feature = Feature
 module File = File
 module Filename = Filename
 module Find_function = Find_function
-module Form = Form
+module Form = Ecaml_value.Form
 module Frame = Frame
 module Funcall = Funcall
-module Function = Function
+module Function = Ecaml_value.Function
 module Grep = Grep
 module Hash_table = Hash_table
 module Hook = Hook
@@ -59,8 +62,8 @@ module Text = Text
 module Thing_at_point = Thing_at_point
 module Timer = Timer
 module User = User
-module Value = Value
-module Valueable = Valueable
+module Value = Ecaml_value.Value
+module Valueable = Ecaml_value.Valueable
 module Var = Var
 module Vector = Vector
 module Window = Window
@@ -76,10 +79,12 @@ end
 
 let defcustom = Customization.defcustom
 and define_derived_mode = Major_mode.define_derived_mode
+and define_minor_mode = Minor_mode.define_minor_mode
 and defun = Defun.defun
+and defun_blocking_async = Defun.defun_blocking_async
 and defun_nullary = Defun.defun_nullary
 and defun_nullary_nil = Defun.defun_nullary_nil
-and defvar = Form.defvar
+and defvar = Defvar.defvar
 and describe_function = Describe.function_
 and inhibit_messages = Echo_area.inhibit_messages
 and lambda = Defun.lambda
@@ -88,6 +93,7 @@ and lambda_nullary_nil = Defun.lambda_nullary_nil
 and message = Echo_area.message
 and messagef = Echo_area.messagef
 and message_s = Echo_area.message_s
+and raise_string = raise_string
 
 let provide =
   Ecaml_callback.(register end_of_module_initialization)
@@ -109,9 +115,9 @@ let () =
   let symbol = "ecaml-test-raise" |> Symbol.intern in
   defun
     [%here]
-    Value.Type.unit
+    ~returns:Value.Type.unit
     symbol
-    ~interactive:""
+    ~interactive:No_arg
     (let open Defun.Let_syntax in
      let%map_open n = optional Q.number int in
      let n = Option.value n ~default:0 in
@@ -126,18 +132,18 @@ let () =
     defun_nullary_nil
       [%here]
       ("ecaml-test-minibuffer-y-or-n-with-timeout" |> Symbol.intern)
-      ~interactive:""
+      ~interactive:No_arg
       (fun () ->
          message_s
            [%message
-             ( Minibuffer.y_or_n_with_timeout
+             ( Minibuffer.Blocking.y_or_n_with_timeout
                  ~prompt:"prompt"
                  ~timeout:(Time_ns.Span.second, 13)
                : int Minibuffer.Y_or_n_with_timeout.t )]);
     defun_nullary_nil
       [%here]
       ("ecaml-test-minibuffer" |> Symbol.intern)
-      ~interactive:""
+      ~interactive:No_arg
       (fun () ->
          let test
                ?default_value
@@ -148,7 +154,7 @@ let () =
                ~prompt
            =
            let result =
-             Minibuffer.read_from
+             Minibuffer.Blocking.read_from
                ()
                ?default_value
                ?history_list

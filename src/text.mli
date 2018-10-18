@@ -56,6 +56,21 @@ module Face_spec : sig
   val normalize : t -> t
 end
 
+module Display_spec : sig
+  (** Display specs apply a property, like [margin], to a text. In Elisp, one would write,
+      e.g., [(propertize " " 'display `((margin left-margin) ,str))] where [str] is a
+      text. A display spec is therefore a pair of a property and the text it's applied
+      to. *)
+  type nonrec t =
+    { property : Display_property.t
+    ; text : t
+    }
+  [@@deriving sexp_of]
+
+  val of_value_exn : Value.t -> t
+  val to_value : t -> Value.t
+end
+
 (** [(Info-goto-node "(elisp)Text Properties")] *)
 module Property_name : sig
   type 'a t [@@deriving sexp_of]
@@ -64,6 +79,7 @@ module Property_name : sig
   val face : Face_spec.t t
 
   val font_lock_face : Face_spec.t t
+  val display : Display_spec.t t
   val name : _ t -> Symbol.t
   val name_as_value : _ t -> Value.t
   val to_value : 'a t -> 'a -> Value.t
