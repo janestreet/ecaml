@@ -26,3 +26,9 @@ let%expect_test "[setenv], [getenv], [setenv_temporarily]" =
   [%expect {|
     (b) |}]
 ;;
+
+let%expect_test "[noninteractive]" =
+  print_s [%sexp (Current_buffer.value_exn noninteractive : bool)];
+  [%expect {|
+    true |}]
+;;

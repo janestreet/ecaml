@@ -6,20 +6,22 @@ let test_mode = "test-major-mode" |> Symbol.intern
 
 module M =
   (val define_derived_mode
-         [%here]
          test_mode
+         [%here]
          ~docstring:"docstring"
+         ~mode_line:"<test-mode mode line>"
          ~initialize:(fun () -> print_s [%message "initialized"])
-         ~mode_line:"<test-mode mode line>")
+         ())
 
 let%expect_test "duplicate [define_derived_mode]" =
   show_raise ~hide_positions:true (fun () ->
     define_derived_mode
-      [%here]
       test_mode
+      [%here]
       ~docstring:"docstring"
+      ~mode_line:"<test-mode mode line>"
       ~initialize:(fun () -> print_s [%message "initialized"])
-      ~mode_line:"<test-mode mode line>");
+      ());
   [%expect
     {|
     (raised (
@@ -37,11 +39,11 @@ let%expect_test "duplicate [define_derived_mode]" =
 let%expect_test "duplicate name is NOT caught" =
   show_raise (fun () ->
     define_derived_mode
-      [%here]
       ("other-mode" |> Symbol.intern)
+      [%here]
       ~docstring:""
-      ~initialize:Fn.id
-      ~mode_line:"");
+      ~mode_line:""
+      ());
   [%expect {| "did not raise" |}]
 ;;
 
@@ -142,12 +144,12 @@ let%expect_test "[is_derived]" =
   [%expect {| false |}];
   let module M =
     (val define_derived_mode
-           [%here]
            ("texting-mode" |> Symbol.intern)
+           [%here]
            ~docstring:""
-           ~initialize:(fun () -> ())
            ~mode_line:"texting"
-           ~parent:Text.major_mode)
+           ~parent:Text.major_mode
+           ())
   in
   print_s [%sexp (is_derived M.major_mode ~from:Text.major_mode : bool)];
   [%expect {| true |}]

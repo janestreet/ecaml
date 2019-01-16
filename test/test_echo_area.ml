@@ -12,8 +12,8 @@ let show () =
   Buffer.kill buffer
 ;;
 
-let%expect_test "[message_value]" =
-  message_value (13 |> Value.of_int_exn);
+let%expect_test "[message_s] of a value" =
+  message_s [%sexp (13 |> Value.of_int_exn : Value.t)];
   show ();
   [%expect {|
     13
@@ -34,6 +34,14 @@ let%expect_test "[messagef]" =
   [%expect {|
     13
     13 |}]
+;;
+
+let%expect_test "[message_s] of an atom" =
+  message_s [%message "foo bar"];
+  show ();
+  [%expect {|
+    foo bar
+    foo bar |}]
 ;;
 
 let%expect_test "[message_s]" =

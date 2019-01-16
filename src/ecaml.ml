@@ -16,13 +16,16 @@ module Compilation = Compilation
 module Completing = Completing
 module Current_buffer = Current_buffer
 module Customization = Customization
+module Defconst = Defconst
 module Defun = Defun
+module Defvar = Defvar
 module Describe = Describe
 module Directory = Directory
 module Display = Display
 module Display_property = Display_property
 module Documentation = Documentation
 module Echo_area = Echo_area
+module Elisp_time = Elisp_time
 module Face = Face
 module Feature = Feature
 module File = File
@@ -48,6 +51,7 @@ module Obarray = Obarray
 module Obsolete = Obsolete
 module Org_table = Org_table
 module Overlay = Overlay
+module Plist = Plist
 module Point = Point
 module Position = Position
 module Process = Process
@@ -69,6 +73,7 @@ module Vector = Vector
 module Window = Window
 module Working_directory = Working_directory
 open! Core_kernel
+open! Async_kernel
 open! Import
 
 module Q = struct
@@ -77,14 +82,20 @@ module Q = struct
   let inhibit_read_only = "inhibit-read-only" |> Symbol.intern
 end
 
-let defcustom = Customization.defcustom
+let ( << ) = ( << )
+and ( >> ) = ( >> )
+and concat = concat
+and defalias = Defun.defalias
+and defconst = Defconst.defconst
+and defconst_i = Defconst.defconst_i
+and defcustom = Customization.defcustom
 and define_derived_mode = Major_mode.define_derived_mode
 and define_minor_mode = Minor_mode.define_minor_mode
 and defun = Defun.defun
-and defun_blocking_async = Defun.defun_blocking_async
 and defun_nullary = Defun.defun_nullary
 and defun_nullary_nil = Defun.defun_nullary_nil
 and defvar = Defvar.defvar
+and defvaralias = Defvar.defvaralias
 and describe_function = Describe.function_
 and inhibit_messages = Echo_area.inhibit_messages
 and lambda = Defun.lambda
@@ -93,6 +104,7 @@ and lambda_nullary_nil = Defun.lambda_nullary_nil
 and message = Echo_area.message
 and messagef = Echo_area.messagef
 and message_s = Echo_area.message_s
+and print_s = print_s
 and raise_string = raise_string
 
 let provide =
@@ -114,10 +126,10 @@ let inhibit_read_only f = Current_buffer.set_value_temporarily inhibit_read_only
 let () =
   let symbol = "ecaml-test-raise" |> Symbol.intern in
   defun
-    [%here]
-    ~returns:Value.Type.unit
     symbol
+    [%here]
     ~interactive:No_arg
+    (Returns Value.Type.unit)
     (let open Defun.Let_syntax in
      let%map_open n = optional Q.number int in
      let n = Option.value n ~default:0 in
@@ -129,21 +141,24 @@ let () =
      [Minibuffer.read_from]. *)
   if false
   then (
-    defun_nullary_nil
-      [%here]
+    defun_nullary
       ("ecaml-test-minibuffer-y-or-n-with-timeout" |> Symbol.intern)
-      ~interactive:No_arg
-      (fun () ->
-         message_s
-           [%message
-             ( Minibuffer.Blocking.y_or_n_with_timeout
-                 ~prompt:"prompt"
-                 ~timeout:(Time_ns.Span.second, 13)
-               : int Minibuffer.Y_or_n_with_timeout.t )]);
-    defun_nullary_nil
       [%here]
-      ("ecaml-test-minibuffer" |> Symbol.intern)
       ~interactive:No_arg
+      Returns_unit_deferred
+      (fun () ->
+         let%bind int =
+           Minibuffer.y_or_n_with_timeout
+             ~prompt:"prompt"
+             ~timeout:(Time_ns.Span.second, 13)
+         in
+         message_s [%message (int : int Minibuffer.Y_or_n_with_timeout.t)];
+         return ());
+    defun_nullary
+      ("ecaml-test-minibuffer" |> Symbol.intern)
+      [%here]
+      ~interactive:No_arg
+      Returns_unit_deferred
       (fun () ->
          let test
                ?default_value
@@ -153,8 +168,8 @@ let () =
                ()
                ~prompt
            =
-           let result =
-             Minibuffer.Blocking.read_from
+           let%bind result =
+             Minibuffer.read_from
                ()
                ?default_value
                ?history_list
@@ -162,11 +177,12 @@ let () =
                ?initial_contents
                ~prompt:(concat [ prompt; ": " ])
            in
-           message (concat [ "result: "; result ])
+           message (concat [ "result: "; result ]);
+           return ()
          in
-         test () ~prompt:"test 1";
-         test () ~prompt:"test 2" ~default_value:"some-default";
-         test () ~prompt:"test 3" ~initial_contents:"some-contents";
+         let%bind () = test () ~prompt:"test 1" in
+         let%bind () = test () ~prompt:"test 2" ~default_value:"some-default" in
+         let%bind () = test () ~prompt:"test 3" ~initial_contents:"some-contents" in
          test () ~prompt:"test 4" ~history_list:("some-history-list" |> Symbol.intern)))
 ;;
 

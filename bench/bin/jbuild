@@ -1,9 +1,0 @@
-(executables
- ((names (bench_async_ecaml))
-  (libraries (
-    async
-    core
-    ecaml_bench))
-  (preprocess (pps (ppx_jane ppxlib.runner)))))
-
-(jbuild_version 1)

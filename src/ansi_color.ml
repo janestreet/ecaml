@@ -159,29 +159,35 @@ module Colors : sig
   val color : t -> Color_spec.t -> Color.t
   val faint_default_color : t -> Color.t
 end = struct
-  let defcustom_color_var here symbol ~standard_value ~docstring =
+  let defcustom_color_var symbol here ~docstring ~standard_value () =
     let standard_value =
       standard_value
       |> List.map ~f:Value.of_utf8_bytes
       |> Vector.of_list
       |> Vector.to_value
     in
-    Customization.defcustom
-      here
-      symbol
-      (Vector (List.init 8 ~f:(fun _ -> Customization.Type.Color)))
-      ~docstring
-      ~group:customization_group
-      ~standard_value
+    ignore
+      ( Customization.defcustom
+          symbol
+          here
+          ~docstring
+          ~group:customization_group
+          ~type_:Value.Type.value
+          ~customization_type:
+            (Vector (List.init 8 ~f:(fun _ -> Customization.Type.Color)))
+          ~standard_value
+          ()
+        : _ Var.t )
   ;;
 
   let () =
     defcustom_color_var
-      [%here]
       Q.ansi_color_bright_vector
+      [%here]
       ~docstring:
-        "Bright colors used to color escape sequences 90-97 (foreground) and 100-107 \
-         (background)"
+        {|
+Bright colors used to color escape sequences 90-97 (foreground) and 100-107 (background)
+|}
       ~standard_value:
         [ "grey50"
         ; "red1"
@@ -192,12 +198,13 @@ end = struct
         ; "cyan1"
         ; "white"
         ]
+      ()
   ;;
 
   let () =
     defcustom_color_var
-      [%here]
       Q.ansi_color_faint_vector
+      [%here]
       ~docstring:"Dimmed colors used to color foreground with escape sequence 2"
       ~standard_value:
         [ "black"
@@ -209,6 +216,7 @@ end = struct
         ; "cyan4"
         ; "grey50"
         ]
+      ()
   ;;
 
   type t =
@@ -1003,17 +1011,15 @@ end
 let transition t ~raw_code = State_machine.transition t.state_machine ~raw_code
 
 let show_invalid_escapes =
-  Var.create ("ansi-color-show-invalid-escapes" |> Symbol.intern) Value.Type.bool
-;;
-
-let () =
   Customization.defcustom
+    ("ansi-color-show-invalid-escapes" |> Symbol.intern)
     [%here]
-    show_invalid_escapes.symbol
-    Boolean
     ~docstring:""
     ~group:customization_group
-    ~standard_value:Value.t
+    ~type_:Value.Type.bool
+    ~customization_type:Boolean
+    ~standard_value:true
+    ()
 ;;
 
 let keep_verbatim t ~except_for_last =
@@ -1209,7 +1215,7 @@ let color_region ~start ~end_ ~use_temp_file ~preserve_state ~drop_unsupported_e
            ~end_:(start + region.pos + region.len));
        Current_buffer.set_multibyte is_multibyte);
      Sys.remove temp_file_state.temp_file);
-  if show_messages && t.saw_escape && not am_running_inline_test
+  if show_messages && t.saw_escape && System.is_interactive ()
   then (
     let took = Time_ns.diff (Time_ns.now ()) before in
     Echo_area.message

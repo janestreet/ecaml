@@ -317,10 +317,14 @@ external vec_size : t -> int = "ecaml_vec_size"
 
 let vec_size = wrap_raise1 vec_size
 let percent_s = of_utf8_bytes "%s"
-let message t = funcall2_i Q.message percent_s t
-let message_string s = message (of_utf8_bytes s)
-let messagef fmt = ksprintf message_string fmt
-let message_s sexp = messagef "%s" (sexp |> Sexp.to_string_hum)
+let message s = funcall2_i Q.message percent_s (of_utf8_bytes s)
+let messagef fmt = ksprintf message fmt
+
+let message_s : Sexp.t -> unit = function
+  | Atom string -> message string
+  | sexp -> messagef "%s" (sexp |> Sexp.to_string_hum)
+;;
+
 let nil = Q.nil
 let t = Q.t
 let option to_value = Option.value_map ~default:nil ~f:to_value
@@ -475,6 +479,7 @@ module Type = struct
     ; of_value_exn : value -> 'a
     ; to_value : 'a -> value
     }
+  [@@deriving fields]
 
   module type S = Type with type 'a t := 'a t with type value := value
 
@@ -503,7 +508,7 @@ module Type = struct
   let enum (type a) name (module M : Enum with type t = a) to_value =
     let valid_values = List.map M.all ~f:(fun m -> to_value m, m) in
     let of_value_exn value =
-      match List.Assoc.find valid_values value ~equal:eq with
+      match List.Assoc.find valid_values value ~equal with
       | None -> raise_s [%message (valid_values : (value * M.t) list)]
       | Some m -> m
     in
@@ -511,6 +516,7 @@ module Type = struct
   ;;
 
   let bool = create [%message "bool"] [%sexp_of: bool] to_bool of_bool
+  let float = create [%message "float"] [%sexp_of: float] to_float_exn of_float
   let ignored = create [%message "ignored"] [%sexp_of: unit] ignore (const nil)
   let int = create [%message "int"] [%sexp_of: int] to_int_exn of_int_exn
 

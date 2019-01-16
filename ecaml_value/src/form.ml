@@ -82,15 +82,8 @@ let lambda =
       match docstring with
       | None -> here
       | Some s ->
-        concat
-          [ s
-          ; (if String.is_empty s || String.is_suffix s ~suffix:"\n\n"
-             then ""
-             else if String.is_suffix s ~suffix:"\n"
-             then "\n"
-             else "\n\n")
-          ; here
-          ]
+        let s = String.strip s in
+        concat [ (if String.is_empty s then "" else concat [ s; "\n\n" ]); here ]
     in
     [ Q.lambda |> Symbol.to_value |> some
     ; args |> some

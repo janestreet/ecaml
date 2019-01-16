@@ -13,6 +13,7 @@ let buffer_file_name = "buffer-file-name" |> Symbol.intern
 let buffer_local_variables = "buffer-local-variables" |> Symbol.intern
 let buffer_read_only = "buffer-read-only" |> Symbol.intern
 let default_value = "default-value" |> Symbol.intern
+let defface = "defface" |> Symbol.intern
 let defun = "defun" |> Symbol.intern
 let defvar = "defvar" |> Symbol.intern
 let face = "face" |> Symbol.intern

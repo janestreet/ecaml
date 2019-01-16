@@ -86,13 +86,14 @@ module type Major_mode = sig
       Additionally, each [key_sequence, symbol] in [define_keys] is added to the new major
       mode's keymap. *)
   val define_derived_mode
-    :  ?define_keys:(string * Symbol.t) list
-    -> ?parent:t
+    :  Symbol.t
     -> Source_code_position.t
-    -> Symbol.t
     -> docstring:string
-    -> initialize:(unit -> unit)
+    -> ?define_keys:(string * Symbol.t) list
     -> mode_line:string
+    -> ?parent:t
+    -> ?initialize:(unit -> unit)
+    -> unit
     -> (module S)
 
   val is_derived : t -> from:t -> bool

@@ -16,7 +16,8 @@ module Mutex = Core.Mutex
 module Time = Core.Time
 module Unix = Core.Unix
 module Scheduler = Async_unix.Async_unix_private.Raw_scheduler
-module Defun = Defun0
+
+let message_s = Echo_area.message_s
 
 module Q = struct
   let ecaml_async_take_lock_do_cycle = "ecaml-async-take-lock-do-cycle" |> Symbol.intern
@@ -308,12 +309,12 @@ let in_emacs_have_lock_do_cycle () =
    the Async lock in the process. *)
 let request_emacs_run_cycle scheduler_thread_id () =
   assert (Scheduler.am_holding_lock t.scheduler);
+  Cycle_requester.request_cycle t.cycle_requester;
   (* Async helper threads call [request_emacs_run_cycle], and we don't want those to
      block; we want only the scheduler to block. *)
   if Thread.(id (self ())) = scheduler_thread_id
   then (
     let start = Time_ns.now () in
-    Cycle_requester.request_cycle t.cycle_requester;
     Thread_safe_sleeper.blocking_sleep t.cycle_done_sleeper;
     let diff = Time_ns.diff (Time_ns.now ()) start in
     Cycle_report.report_cycle diff)
@@ -359,10 +360,10 @@ let start_scheduler () =
     (t.scheduler).have_lock_do_cycle
     <- Some (request_emacs_run_cycle (Thread.id scheduler_thread));
     Defun.defun
-      [%here]
-      ~returns:Value.Type.unit
       Q.ecaml_async_take_lock_do_cycle
+      [%here]
       ~interactive:No_arg
+      (Returns Value.Type.unit)
       (let open Defun.Let_syntax in
        let%map_open () = return () in
        in_emacs_have_lock_do_cycle ());
@@ -398,6 +399,15 @@ let start_scheduler () =
        load on emacs. *)
     Scheduler.set_max_inter_cycle_timeout
       (max_inter_cycle_timeout |> Time_ns.Span.to_span);
+    (* [Async_unix] installs a handler for logging exceptions raised to try-with that has
+       already returned.  That logs to stderr, which doesn't work well in Emacs.  So we
+       install a handler that reports the error with [message_s]. *)
+    (Async_kernel.Monitor.Expert.try_with_log_exn :=
+       fun exn ->
+         message_s
+           [%message
+             "Exception raised to [Monitor.try_with] that already returned."
+               ~_:(exn : exn)]);
     (* Async would normally deal with errors that reach the main monitor by printing to
        stderr and then exiting 1.  This would look like an emacs crash to the user, so we
        instead output the error to the minibuffer. *)
@@ -406,14 +416,14 @@ let start_scheduler () =
       then
         (* We really want to see the error, so we inhibit quit while displaying it. *)
         Current_buffer.set_value_temporarily Command.inhibit_quit true ~f:(fun () ->
-          Echo_area.message_s [%sexp (exn : exn)])
+          message_s [%sexp (exn : exn)])
       else
         t.exceptions_raised_outside_emacs_env
         <- exn :: t.exceptions_raised_outside_emacs_env)
 ;;
 
 module Private = struct
-  let block_on_async f ~timeout =
+  let block_on_async ?(timeout = None) f =
     assert (Scheduler.am_holding_lock t.scheduler);
     if t.am_running_async_cycle
     then raise_s [%sexp "Called [block_on_async] in the middle of an Async job!"];
@@ -447,6 +457,10 @@ module Private = struct
     | `Result (Error error) -> Error.raise error
   ;;
 
+  let () =
+    Set_once.set_exn Defun.Private.block_on_async [%here] (fun f -> block_on_async f)
+  ;;
+
   let run_outside_async f =
     let open Async in
     Deferred.create (fun result ->
@@ -461,7 +475,7 @@ end
 module Expect_test_config = struct
   include Async.Expect_test_config
 
-  let run f = Private.block_on_async f ~timeout:(Some (sec 60.))
+  let run f = Private.block_on_async f
 end
 
 let shutdown () =
@@ -487,23 +501,23 @@ let initialize () =
   start_scheduler ();
   lock_async_during_module_initialization ();
   Defun.defun_nullary_nil
+    ("ecaml-async-shutdown" |> Symbol.intern)
     [%here]
     ~interactive:No_arg
-    ("ecaml-async-shutdown" |> Symbol.intern)
     shutdown;
   Defun.defun_nullary_nil
-    [%here]
     ("ecaml-async-generate-cycle-report" |> Symbol.intern)
+    [%here]
     ~interactive:No_arg
     (fun () -> Async.don't_wait_for (Cycle_report.generate_report ()));
   let defun_benchmark ~name ~f =
     Defun.defun_nullary_nil
-      [%here]
       (name |> Symbol.intern)
+      [%here]
       ~interactive:No_arg
       (fun () ->
          let open Async in
-         Private.block_on_async ~timeout:None (fun () ->
+         Private.block_on_async (fun () ->
            let%map time = f () in
            Echo_area.message_s time))
   in
@@ -514,14 +528,14 @@ let initialize () =
     ~name:"ecaml-async-benchmark-throughput"
     ~f:Ecaml_bench.Bench_async_ecaml.benchmark_throughput;
   Defun.defun_nullary_nil
+    ("ecaml-async-test-blocking-timeout" |> Symbol.intern)
     [%here]
     ~interactive:No_arg
-    ("ecaml-async-test-blocking-timeout" |> Symbol.intern)
     (fun () -> Private.block_on_async ~timeout:(Some (sec 10.)) Async.Deferred.never);
   Defun.defun_nullary_nil
+    ("ecaml-async-test-execution-context-handling" |> Symbol.intern)
     [%here]
     ~interactive:No_arg
-    ("ecaml-async-test-execution-context-handling" |> Symbol.intern)
     (fun () ->
        let open Async in
        let test_passed = ref true in
@@ -555,5 +569,39 @@ let initialize () =
                 (if !test_passed then "passed" else "failed");
               return ())
           in
-          ()))
+          ()));
+  Defun.defun_nullary_nil
+    ("ecaml-async-test-in-thread-run" |> Symbol.intern)
+    [%here]
+    ~docstring:"Call [In_thread.run] a number of times and report on its performance."
+    ~interactive:No_arg
+    (fun () ->
+       let open Async in
+       don't_wait_for
+         (let open Deferred.Let_syntax in
+          message_s [%message "testing"];
+          let all_elapsed = ref [] in
+          let long_cutoff = Time_ns.Span.of_sec 0.01 in
+          let rec loop i =
+            if i = 0
+            then (
+              let all_elapsed =
+                List.sort
+                  ~compare:Time_ns.Span.compare
+                  (let x = !all_elapsed in
+                   all_elapsed := [];
+                   x)
+              in
+              message_s [%message "test finished" (all_elapsed : Time_ns.Span.t list)];
+              return ())
+            else (
+              let before = Time_ns.now () in
+              let%bind () = In_thread.run (fun () -> Thread.yield ()) in
+              let elapsed = Time_ns.diff (Time_ns.now ()) before in
+              all_elapsed := elapsed :: !all_elapsed;
+              if Time_ns.Span.( >= ) elapsed long_cutoff
+              then message_s [%message "Slow [In_thread.run]" (elapsed : Time_ns.Span.t)];
+              loop (i - 1))
+          in
+          loop 100))
 ;;

@@ -78,6 +78,7 @@ module Property_name : sig
   (** [(Info-goto-node "(elisp)Special Properties")] *)
   val face : Face_spec.t t
 
+  val mouse_face : Face_spec.t t
   val font_lock_face : Face_spec.t t
   val display : Display_spec.t t
   val name : _ t -> Symbol.t

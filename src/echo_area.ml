@@ -9,8 +9,7 @@ end
 
 module Current_buffer = Current_buffer0
 
-let message_value = Value.message
-let message = Value.message_string
+let message = Value.message
 let messagef = Value.messagef
 let message_s = Value.message_s
 let inhibit_message = Var.create Q.inhibit_message Value.Type.bool

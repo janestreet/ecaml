@@ -12,6 +12,7 @@ module Q = struct
   and frame_pixel_width = "frame-pixel-width" |> Symbol.intern
   and frame_width = "frame-width" |> Symbol.intern
   and make_frame = "make-frame" |> Symbol.intern
+  and other_frame = "other-frame" |> Symbol.intern
   and select_frame = "select-frame" |> Symbol.intern
   and selected_frame = "selected-frame" |> Symbol.intern
   and visible_frame_list = "visible-frame-list" |> Symbol.intern

@@ -364,3 +364,62 @@ let%expect_test "[call_region_exn]" =
        [ "s/o/i/g" ]);
   [%expect {| ((result (Exit_status 0)) (output fiitrin)) |}]
 ;;
+
+let%expect_test "[call_exn] with sexp error message" =
+  List.iter Bool.all ~f:(fun verbose_exn ->
+    show_raise (fun () ->
+      call_exn ~verbose_exn "/bin/bash" [ "-c"; {|
+echo '("foo bar" baz)'
+exit 1
+|} ]));
+  [%expect
+    {|
+    (raised ("foo bar" baz))
+    (raised (
+      "[Process.call_exn] failed"
+      (prog /bin/bash)
+      (args   (-c          "\necho '(\"foo bar\" baz)'\nexit 1\n"))
+      (result (Exit_status 1))
+      (output ("foo bar"   baz)))) |}]
+;;
+
+let%expect_test "[call_exn] with a multi-line error message" =
+  List.iter Bool.all ~f:(fun verbose_exn ->
+    show_raise (fun () ->
+      call_exn
+        ~verbose_exn
+        "/bin/bash"
+        [ "-c"; {|
+echo line1
+echo line2
+echo line3
+exit 1
+|} ]));
+  [%expect
+    {|
+    (raised (line1 line2 line3))
+    (raised (
+      "[Process.call_exn] failed"
+      (prog /bin/bash)
+      (args (-c "\necho line1\necho line2\necho line3\nexit 1\n"))
+      (result (Exit_status 1))
+      (output (line1 line2 line3)))) |}]
+;;
+
+let%expect_test "[call_expect_no_output] with sexp error message" =
+  List.iter Bool.all ~f:(fun verbose_exn ->
+    show_raise (fun () ->
+      call_exn ~verbose_exn "/bin/bash" [ "-c"; {|
+echo '("foo bar" baz)'
+exit 1
+|} ]));
+  [%expect
+    {|
+    (raised ("foo bar" baz))
+    (raised (
+      "[Process.call_exn] failed"
+      (prog /bin/bash)
+      (args   (-c          "\necho '(\"foo bar\" baz)'\nexit 1\n"))
+      (result (Exit_status 1))
+      (output ("foo bar"   baz)))) |}]
+;;

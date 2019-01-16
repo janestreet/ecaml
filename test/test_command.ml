@@ -7,10 +7,10 @@ let is_command value = print_s [%sexp (Value.is_command value : bool)]
 let%expect_test "[Raw_prefix_argument]" =
   let f = Symbol.gensym () in
   defun
-    [%here]
-    ~returns:Value.Type.unit
     f
+    [%here]
     ~interactive:Raw_prefix
+    (Returns Value.Type.unit)
     (let open Defun.Let_syntax in
      let%map_open arg = required ("arg" |> Symbol.intern) value in
      print_s

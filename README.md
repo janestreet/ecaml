@@ -1,11 +1,9 @@
-Emacs plugin in OCaml
-=====================
+# Emacs packages in OCaml
 
-Ecaml is a library for writing Emacs plugins in OCaml. It uses Emacs
-25 support for plugins to load native OCaml code into Emacs.
+`Ecaml` is a library for writing Emacs packages in OCaml. It uses Emacs
+25 support for dynamic modules to load native OCaml code into Emacs.
 
-Building a plugin
------------------
+## Building a plugin
 
 ### Using Dune
 
@@ -38,8 +36,7 @@ $ ocamlfind ocamlopt -linkpkg -package ecaml -thread -output-complete-obj \
     -runtime-variant _pic -pp ppx-jane example_plugin.ml -o example_plugin.so
 ```
 
-Links
------
+## Links
 
 As of Emacs version 25, Emacs supports plugins.  Here is the API:
 
@@ -53,8 +50,7 @@ Here's an example plugin:
 
   http://git.savannah.gnu.org/cgit/emacs.git/tree/modules/mod-test/mod-test.c?id=e18ee60b02d08b2f075903005798d3d6064dc013
 
-Licensing
----------
+## Licensing
 
 Note that Emacs modules must be GPL compatible, so you must make sure
 that your work based on Ecaml is released under a GPL compatible

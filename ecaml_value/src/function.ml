@@ -105,3 +105,5 @@ let create_nullary ?docstring ?interactive here f =
     f ();
     Value.nil)
 ;;
+
+let of_symbol symbol = of_value_exn (Symbol.to_value symbol)

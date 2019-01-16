@@ -9,6 +9,7 @@ module Q = struct
   and buffer_modified_p = "buffer-modified-p" |> Symbol.intern
   and buffer_restore_window_display_state =
     "Buffer.restore-window-display-state" |> Symbol.intern
+  and buffer_size = "buffer-size" |> Symbol.intern
   and buffer_substring = "buffer-substring" |> Symbol.intern
   and buffer_substring_no_properties = "buffer-substring-no-properties" |> Symbol.intern
   and buffer_undo_list = "buffer-undo-list" |> Symbol.intern
@@ -26,6 +27,7 @@ module Q = struct
   and erase_buffer = "erase-buffer" |> Symbol.intern
   and fill_column = "fill-column" |> Symbol.intern
   and flush_lines = "flush-lines" |> Symbol.intern
+  and get_text_property = "get-text-property" |> Symbol.intern
   and ignore_auto = "ignore-auto" |> Symbol.intern
   and indent_region = "indent-region" |> Symbol.intern
   and kill_local_variable = "kill-local-variable" |> Symbol.intern
@@ -38,6 +40,8 @@ module Q = struct
   and noconfirm = "noconfirm" |> Symbol.intern
   and paragraph_separate = "paragraph-separate" |> Symbol.intern
   and paragraph_start = "paragraph-start" |> Symbol.intern
+  and region_beginning = "region-beginning" |> Symbol.intern
+  and region_end = "region-end" |> Symbol.intern
   and rename_buffer = "rename-buffer" |> Symbol.intern
   and revert_buffer = "revert-buffer" |> Symbol.intern
   and revert_buffer_function = "revert-buffer-function" |> Symbol.intern
@@ -79,6 +83,7 @@ module F = struct
 
   let buffer_disable_undo = Q.buffer_disable_undo <: nullary @-> return nil
   and buffer_enable_undo = Q.buffer_enable_undo <: nullary @-> return nil
+  and buffer_size = Q.buffer_size <: nullary @-> return int
   and bury_buffer = Q.bury_buffer <: nullary @-> return nil
   and deactivate_mark = Q.deactivate_mark <: nullary @-> return nil
   and describe_mode = Q.describe_mode <: nullary @-> return nil
@@ -93,6 +98,8 @@ module F = struct
   and current_local_map = Q.current_local_map <: nullary @-> return (option Keymap.type_)
   and current_minor_mode_maps =
     Q.current_minor_mode_maps <: nullary @-> return (list Keymap.type_)
+  and get_text_property =
+    Q.get_text_property <: Position.type_ @-> value @-> return (option value)
   and mark_marker = Q.mark_marker <: nullary @-> return Marker.type_
   and syntax_table = Q.syntax_table <: nullary @-> return Syntax_table.type_
   and delete_region = Q.delete_region <: Position.type_ @-> Position.type_ @-> return nil
@@ -100,6 +107,8 @@ module F = struct
   and kill_local_variable = Q.kill_local_variable <: Symbol.type_ @-> return nil
   and kill_region = Q.kill_region <: Position.type_ @-> Position.type_ @-> return nil
   and make_local_variable = Q.make_local_variable <: Symbol.type_ @-> return nil
+  and region_beginning = Q.region_beginning <: nullary @-> return Position.type_
+  and region_end = Q.region_end <: nullary @-> return Position.type_
   and rename_buffer = Q.rename_buffer <: string @-> bool @-> return nil
   and revert_buffer = Q.revert_buffer <: value @-> bool @-> return nil
   and set_buffer_modified_p = Q.set_buffer_modified_p <: bool @-> return nil
@@ -285,6 +294,11 @@ let set_text_properties_staged properties =
     Symbol.funcall_int_int_value_unit Q.set_text_properties start end_ properties)
 ;;
 
+let get_text_property at property_name =
+  F.get_text_property at (property_name |> Text.Property_name.name_as_value)
+  |> Option.map ~f:(Text.Property_name.of_value_exn property_name)
+;;
+
 let add_text_properties ?start ?end_ properties =
   F.add_text_properties
     (or_point_min start)
@@ -313,6 +327,10 @@ let set_mark = F.set_mark
 let mark_active = Var.create Q.mark_active Value.Type.bool
 let mark_is_active () = value_exn mark_active
 let deactivate_mark = F.deactivate_mark
+
+let active_region () =
+  if mark_is_active () then Some (F.region_beginning (), F.region_end ()) else None
+;;
 
 let make_buffer_local var =
   add_gc_root (var |> Var.symbol_as_value);
@@ -378,3 +396,6 @@ let replace_buffer_contents =
       [%message "function not defined" ~symbol:(Q.replace_buffer_contents : Symbol.t)]
   else Ok F.replace_buffer_contents
 ;;
+
+let size = F.buffer_size
+let truncate_lines = Var.create ("truncate-lines" |> Symbol.intern) Value.Type.bool

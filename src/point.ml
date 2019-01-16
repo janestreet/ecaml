@@ -7,11 +7,13 @@ module Q = struct
   let back_to_indentation = "back-to-indentation" |> Symbol.intern
   and backward_sexp = "backward-sexp" |> Symbol.intern
   and beginning_of_line = "beginning-of-line" |> Symbol.intern
+  and bobp = "bobp" |> Symbol.intern
   and count_lines = "count-lines" |> Symbol.intern
   and current_column = "current-column" |> Symbol.intern
   and delete_char = "delete-char" |> Symbol.intern
   and end_of_line = "end-of-line" |> Symbol.intern
   and eobp = "eobp" |> Symbol.intern
+  and following_char = "following-char" |> Symbol.intern
   and forward_char = "forward-char" |> Symbol.intern
   and forward_line = "forward-line" |> Symbol.intern
   and forward_sexp = "forward-sexp" |> Symbol.intern
@@ -19,6 +21,7 @@ module Q = struct
   and indent_line_to = "indent-line-to" |> Symbol.intern
   and insert = "insert" |> Symbol.intern
   and insert_file_contents = "insert-file-contents" |> Symbol.intern
+  and insert_file_contents_literally = "insert-file-contents-literally" |> Symbol.intern
   and kill_word = "kill-word" |> Symbol.intern
   and line_number_at_pos = "line-number-at-pos" |> Symbol.intern
   and looking_at = "looking-at" |> Symbol.intern
@@ -45,8 +48,15 @@ module F = struct
   let back_to_indentation = Q.back_to_indentation <: nullary @-> return nil
   let count_lines = Q.count_lines <: Position.type_ @-> Position.type_ @-> return int
   let delete_char = Q.delete_char <: int @-> return unit
+  let following_char = Q.following_char <: nullary @-> return Char_code.type_
   let forward_line = Q.forward_line <: int @-> return int
-  let is_end_of_buffer = Q.eobp <: nullary @-> return bool
+  let bobp = Q.bobp <: nullary @-> return bool
+  let eobp = Q.eobp <: nullary @-> return bool
+
+  let insert_file_contents_literally =
+    Q.insert_file_contents_literally <: string @-> return nil
+  ;;
+
   let next_line = Q.next_line <: nullary @-> return nil
   let previous_line = Q.previous_line <: nullary @-> return nil
   let recenter = Q.recenter <: option int @-> return nil
@@ -88,13 +98,15 @@ let forward_sexp_exn n = Symbol.funcall1_i Q.forward_sexp (n |> Value.of_int_exn
 let backward_sexp_exn n = Symbol.funcall1_i Q.backward_sexp (n |> Value.of_int_exn)
 let forward_word n = ignore (Generated_bindings.forward_word n : bool)
 let backward_word n = ignore (Generated_bindings.backward_word n : bool)
+let following_char () = F.following_char ()
 
 let line_number =
   Ecaml_value.Feature.require Q.simple;
   fun () -> Symbol.funcall0 Q.line_number_at_pos |> Value.to_int_exn
 ;;
 
-let is_end_of_buffer = F.is_end_of_buffer
+let is_beginning_of_buffer = F.bobp
+let is_end_of_buffer = F.eobp
 let column_number () = Symbol.funcall0 Q.current_column |> Value.to_int_exn
 let goto_column n = Symbol.funcall1_i Q.move_to_column (n |> Value.of_int_exn)
 
@@ -109,6 +121,7 @@ let insert_file_contents_exn path =
   Symbol.funcall1_i Q.insert_file_contents (path |> Value.of_utf8_bytes)
 ;;
 
+let insert_file_contents_literally path = F.insert_file_contents_literally path
 let kill_word count = Symbol.funcall1_i Q.kill_word (count |> Value.of_int_exn)
 let marker_at () = Symbol.funcall0 Q.point_marker |> Marker.of_value_exn
 let marker_at_min () = Symbol.funcall0 Q.point_min_marker |> Marker.of_value_exn

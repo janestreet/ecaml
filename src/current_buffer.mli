@@ -219,6 +219,9 @@ val set_text_properties_staged
   :  Text.Property.t list
   -> (start:int -> end_:int -> unit) Staged.t
 
+(** [(describe-function 'get-text-property)] *)
+val get_text_property : Position.t -> 'a Text.Property_name.t -> 'a option
+
 (** [(describe-function 'add-text-properties)]
     [(Info-goto-node "(elisp)Changing Properties")]. *)
 val add_text_properties
@@ -258,6 +261,12 @@ val set_mark : Position.t -> unit
 (** [(describe-variable 'mark-active)]
     [(Info-goto-node "(elisp)The Mark")] *)
 val mark_is_active : unit -> bool
+
+(** [(describe-function 'region-beginning)]
+    [(describe-function 'region-end)]
+
+    Returns [(region-beginning), (region-end)] if the mark is active. *)
+val active_region : unit -> (Position.t * Position.t) option
 
 (** [(describe-function 'deactivate-mark)]
     [(Info-goto-node "(elisp)The Mark")] *)
@@ -316,3 +325,9 @@ val set_revert_buffer_function : (confirm:bool -> unit) -> unit
     This function was introduced in Emacs 26 and the value is an error if an earlier
     version of emacs is used. *)
 val replace_buffer_contents : (Buffer.t -> unit) Or_error.t
+
+(** [(describe-function 'buffer-size)] *)
+val size : unit -> int
+
+(** [(describe-variable 'truncate-lines)] *)
+val truncate_lines : bool Var.t

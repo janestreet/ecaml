@@ -1,0 +1,18 @@
+(library (name ecaml_value) (public_name ecaml.ecaml_value)
+ (libraries async_unix core_kernel)
+ (preprocess (pps ppx_jane -annotated-ignores)) (c_flags :standard -std=c99)
+ (c_names ecaml_stubs generated_stubs))
+
+(rule (targets generated_stubs.c) (deps ../gen/gen_c.exe)
+ (action
+  (bash "../gen/gen_c.exe > %{targets}.tmp && mv %{targets}.tmp %{targets}"))
+ (mode fallback))
+
+(rule (targets generated_bindings.ml)
+ (deps ../gen/gen_ml.exe %{workspace_root}/bin/apply-style jbuild)
+ (action
+  (bash
+    "../gen/gen_ml.exe |\
+   \n           %{workspace_root}/bin/apply-style -- format - -original-file %{targets} -directory-config jbuild > %{targets}.tmp &&\
+   \n           mv %{targets}.tmp %{targets}"))
+ (mode fallback))

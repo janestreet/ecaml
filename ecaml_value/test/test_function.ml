@@ -176,7 +176,7 @@ let%expect_test "function descriptions" =
 
     (test-function)
 
-    Implemented at [app/emacs/lib/ecaml/test/test_function.ml:LINE:COL]. |}];
+    Implemented at [app/emacs/lib/ecaml_value/test/test_function.ml:LINE:COL]. |}];
   describe () ~args:[ x ];
   [%expect
     {|
@@ -184,7 +184,7 @@ let%expect_test "function descriptions" =
 
     (test-function X)
 
-    Implemented at [app/emacs/lib/ecaml/test/test_function.ml:LINE:COL]. |}];
+    Implemented at [app/emacs/lib/ecaml_value/test/test_function.ml:LINE:COL]. |}];
   describe () ~args:[ x; y ];
   [%expect
     {|
@@ -192,7 +192,7 @@ let%expect_test "function descriptions" =
 
     (test-function X Y)
 
-    Implemented at [app/emacs/lib/ecaml/test/test_function.ml:LINE:COL]. |}];
+    Implemented at [app/emacs/lib/ecaml_value/test/test_function.ml:LINE:COL]. |}];
   describe () ~args:[] ~rest_arg:x;
   [%expect
     {|
@@ -200,7 +200,7 @@ let%expect_test "function descriptions" =
 
     (test-function &rest X)
 
-    Implemented at [app/emacs/lib/ecaml/test/test_function.ml:LINE:COL]. |}];
+    Implemented at [app/emacs/lib/ecaml_value/test/test_function.ml:LINE:COL]. |}];
   describe () ~args:[ x ] ~rest_arg:y;
   [%expect
     {|
@@ -208,7 +208,7 @@ let%expect_test "function descriptions" =
 
     (test-function X &rest Y)
 
-    Implemented at [app/emacs/lib/ecaml/test/test_function.ml:LINE:COL]. |}];
+    Implemented at [app/emacs/lib/ecaml_value/test/test_function.ml:LINE:COL]. |}];
   describe () ~args:[] ~optional_args:[ x ];
   [%expect
     {|
@@ -216,7 +216,7 @@ let%expect_test "function descriptions" =
 
     (test-function &optional X)
 
-    Implemented at [app/emacs/lib/ecaml/test/test_function.ml:LINE:COL]. |}];
+    Implemented at [app/emacs/lib/ecaml_value/test/test_function.ml:LINE:COL]. |}];
   describe () ~args:[] ~optional_args:[ x; y ];
   [%expect
     {|
@@ -224,7 +224,7 @@ let%expect_test "function descriptions" =
 
     (test-function &optional X Y)
 
-    Implemented at [app/emacs/lib/ecaml/test/test_function.ml:LINE:COL]. |}];
+    Implemented at [app/emacs/lib/ecaml_value/test/test_function.ml:LINE:COL]. |}];
   describe () ~docstring:"custom doc" ~args:[ w ] ~optional_args:[ x; y ] ~rest_arg:z;
   [%expect
     {|
@@ -234,7 +234,7 @@ let%expect_test "function descriptions" =
 
     custom doc
 
-    Implemented at [app/emacs/lib/ecaml/test/test_function.ml:LINE:COL]. |}]
+    Implemented at [app/emacs/lib/ecaml_value/test/test_function.ml:LINE:COL]. |}]
 ;;
 
 let%expect_test "function arguments" =

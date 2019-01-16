@@ -11,6 +11,7 @@ type t = string [@@deriving compare, sexp_of]
 include
   Comparable.S with type t := t with type comparator_witness = String.comparator_witness
 
+include Hashable.S with type t := t
 include Valueable.S with type t := t
 
 (** [(describe-function 'file-name-directory)]

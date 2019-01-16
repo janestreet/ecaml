@@ -39,7 +39,8 @@ let%expect_test "finalization of embedded ocaml values" =
      (9  <fun>)
      (10 <fun>)
      (11 <fun>)
-     (12 <fun>)) |}];
+     (12 <fun>)
+     (13 <fun>)) |}];
   let module A = struct
     type t =
       { a : string
@@ -75,8 +76,9 @@ let%expect_test "finalization of embedded ocaml values" =
      (10 <fun>)
      (11 <fun>)
      (12 <fun>)
-     (13 ((a V1) (b 1)))
-     (14 ((a V2) (b 2)))) |}];
+     (13 <fun>)
+     (14 ((a V1) (b 1)))
+     (15 ((a V2) (b 2)))) |}];
   make_ocaml_garbage_not_keep_emacs_values_alive ();
   emacs_garbage_collect ();
   make_ocaml_garbage_not_keep_emacs_values_alive ();
@@ -95,7 +97,8 @@ let%expect_test "finalization of embedded ocaml values" =
      (9  <fun>)
      (10 <fun>)
      (11 <fun>)
-     (12 <fun>)) |}]
+     (12 <fun>)
+     (13 <fun>)) |}]
 ;;
 
 let%expect_test "Emacs objects no longer referenced from OCaml can be gc'ed by Emacs" =
@@ -138,7 +141,7 @@ let%expect_test "OCaml objects no longer referenced from Emacs can be gc'ed by O
     ((alive_before true)
      (alive_after  false)) |}];
   test_ocaml_gc_handles_references_from_emacs ~make_emacs_reference:(fun ~ocaml_value ->
-    lambda_nullary [%here] ~returns:Value.Type.value ocaml_value |> Function.to_value);
+    lambda_nullary [%here] (Returns Value.Type.value) ocaml_value |> Function.to_value);
   [%expect {|
     ((alive_before true)
      (alive_after  false)) |}]

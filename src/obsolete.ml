@@ -2,8 +2,8 @@ open! Core_kernel
 open! Import
 
 module Q = struct
-  let define_obsolete_function_alias = "define-obsolete-function-alias" |> Symbol.intern
-  and make_obsolete = "make-obsolete" |> Symbol.intern
+  let make_obsolete = "make-obsolete" |> Symbol.intern
+  and make_obsolete_variable = "make-obsolete-variable" |> Symbol.intern
 end
 
 module F = struct
@@ -11,20 +11,18 @@ module F = struct
   open Value.Type
 
   let make_obsolete =
-    Q.make_obsolete <: Symbol.type_ @-> Symbol.type_ @-> option string @-> return nil
+    Q.make_obsolete <: Symbol.type_ @-> Symbol.type_ @-> string @-> return nil
+  ;;
+
+  let make_obsolete_variable =
+    Q.make_obsolete_variable <: Symbol.type_ @-> Symbol.type_ @-> string @-> return nil
   ;;
 end
 
-let alias ?docstring ?when_ obsolete ~current =
-  let open Form in
-  eval_i
-    (list
-       [ symbol Q.define_obsolete_function_alias
-       ; quote (Symbol.to_value obsolete)
-       ; quote (Symbol.to_value current)
-       ; Option.map when_ ~f:string |> Option.value ~default:nil
-       ; Option.map docstring ~f:string |> Option.value ~default:nil
-       ])
+let make_function_obsolete obsolete ~current ~since =
+  F.make_obsolete obsolete current since
 ;;
 
-let make ?when_ obsolete ~current = F.make_obsolete obsolete current when_
+let make_variable_obsolete obsolete ~current ~since =
+  F.make_obsolete_variable obsolete current since
+;;

@@ -317,6 +317,12 @@ let call_result_exn
     |> Call.Result.of_value_exn)
 ;;
 
+module Lines_or_sexp = struct
+  include Async_unix.Process.Lines_or_sexp
+
+  let of_text text = text |> Text.to_utf8_bytes |> String.strip |> create
+end
+
 let call_exn
       ?input
       ?working_directory
@@ -338,7 +344,7 @@ let call_exn
       let buffer_contents = Current_buffer.contents () |> Text.to_utf8_bytes in
       if strip_whitespace then String.strip buffer_contents else buffer_contents
     | result ->
-      let output = Current_buffer.contents () in
+      let output = Current_buffer.contents () |> Lines_or_sexp.of_text in
       (match verbose_exn with
        | true ->
          raise_s
@@ -347,8 +353,8 @@ let call_exn
                (prog : string)
                (args : string list)
                (result : Call.Result.t)
-               (output : Text.t)]
-       | false -> raise_s [%sexp (Text.to_utf8_bytes output |> String.strip : string)]))
+               (output : Lines_or_sexp.t)]
+       | false -> raise_s [%sexp (output : Lines_or_sexp.t)]))
 ;;
 
 let call_expect_no_output_exn
@@ -371,7 +377,7 @@ let call_expect_no_output_exn
           (prog : string)
           (args : string list)
           (result : string)
-          ~output:(Current_buffer.contents () : Text.t)]
+          ~output:(Current_buffer.contents () |> Lines_or_sexp.of_text : Lines_or_sexp.t)]
 ;;
 
 let bash = "/bin/bash"

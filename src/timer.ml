@@ -1,6 +1,5 @@
 open! Core_kernel
 open! Import
-module Defun = Defun0
 
 module Q = struct
   include Q
@@ -33,7 +32,7 @@ let is_scheduled t =
 let to_seconds span = span |> Time_ns.Span.to_sec |> Value.of_float
 
 let run_after ?repeat here span ~f ~name =
-  Defun.defun_nullary_nil here name f;
+  Defun.defun_nullary_nil name here f;
   Symbol.funcall3
     Q.run_at_time
     (span |> to_seconds)

@@ -10,6 +10,7 @@ module Q = struct
   and font_lock_face = "font-lock-face" |> Symbol.intern
   and foreground_color = "foreground-color" |> Symbol.intern
   and get_text_property = "get-text-property" |> Symbol.intern
+  and mouse_face = "mouse-face" |> Symbol.intern
   and multibyte_string_p = "multibyte-string-p" |> Symbol.intern
   and propertize = "propertize" |> Symbol.intern
   and remove_list_of_text_properties = "remove-list-of-text-properties" |> Symbol.intern
@@ -294,6 +295,15 @@ module Property_name = struct
         include Face_name
 
         let name = Q.face
+      end)
+  ;;
+
+  let mouse_face : _ t =
+    create_and_register
+      (module struct
+        include Face_name
+
+        let name = Q.mouse_face
       end)
   ;;
 

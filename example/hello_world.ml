@@ -11,10 +11,12 @@ open! Ecaml
 let () =
   message "Hello, world!";
   defun
-    [%here]
-    ~returns:Value.Type.unit
     ("say-hello" |> Symbol.intern)
-    ~docstring:"Takes one argument NAME and says \"Hello, NAME\""
+    [%here]
+    ~docstring:{|
+Takes one argument NAME and says "Hello, NAME"
+|}
+    (Returns Value.Type.unit)
     (let open Defun.Let_syntax in
      let%map_open name = required ("NAME" |> Symbol.intern) Value.Type.string in
      message ("Hello, " ^ name));

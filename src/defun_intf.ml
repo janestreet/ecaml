@@ -3,6 +3,7 @@
     It does for Elisp what [Command] does for the command line. *)
 
 open! Core_kernel
+open! Async_kernel
 open! Import
 
 module type S = sig
@@ -23,7 +24,7 @@ module type S = sig
 end
 
 module type Defun = sig
-  type 'a t
+  type 'a t [@@deriving sexp_of]
 
   module Open_on_rhs_intf : sig
     module type S = S with type 'a t = 'a t
@@ -53,76 +54,96 @@ module type Defun = sig
 
   val defun_raw : (Symbol.t -> Function.Fn.t -> unit) Function.with_spec
 
+  module Returns : sig
+    type 'a t =
+      | Returns of 'a Value.Type.t
+      (** [Returns_unit_deferred] is meant to be used for interactive commands directly
+          called by the user.  It is restricted to functions returning [unit Deferred.t]
+          to encourage this use case.  Calling such a function from within async raises.
+          Restricting [Returns_unit_deferred] to top-level interactive commands makes it
+          less likely that this situation will occur. *)
+      | Returns_unit_deferred : unit Deferred.t t
+    [@@deriving sexp_of]
+  end
+
   val defun
-    :  ?define_keys:(Keymap.t * string) list
-    -> ?docstring:string
-    -> ?interactive:Interactive.t
-    -> ?obsoletes:Symbol.t
+    :  Symbol.t
     -> Source_code_position.t
-    -> returns:'a Value.Type.t
-    -> Symbol.t
+    -> ?docstring:string
+    -> ?define_keys:(Keymap.t * string) list
+    -> ?obsoletes:Symbol.t
+    -> ?interactive:Interactive.t
+    -> 'a Returns.t
     -> 'a t
     -> unit
 
-  val defun_nullary
-    :  ?define_keys:(Keymap.t * string) list
-    -> ?docstring:string
-    -> ?interactive:Interactive.t
-    -> ?obsoletes:Symbol.t
+  (** [(describe-function 'defalias)]
+      [(Info-goto-node "(elisp)Defining Functions")] *)
+  val defalias
+    :  Symbol.t
     -> Source_code_position.t
-    -> returns:'a Value.Type.t
-    -> Symbol.t
+    -> ?docstring:string
+    -> alias_of:Symbol.t
+    -> unit
+    -> unit
+
+  (** [(describe-function 'define-obsolete-function-alias)]
+
+      N.B. Load order matters.  A subsequent [defun] will override the aliasing. *)
+  val define_obsolete_alias
+    :  Symbol.t
+    -> Source_code_position.t
+    -> ?docstring:string
+    -> alias_of:Symbol.t
+    -> since:string
+    -> unit
+    -> unit
+
+  val defun_nullary
+    :  Symbol.t
+    -> Source_code_position.t
+    -> ?docstring:string
+    -> ?define_keys:(Keymap.t * string) list
+    -> ?obsoletes:Symbol.t
+    -> ?interactive:Interactive.t
+    -> 'a Returns.t
     -> (unit -> 'a)
     -> unit
 
   val defun_nullary_nil
-    :  ?define_keys:(Keymap.t * string) list
-    -> ?docstring:string
-    -> ?interactive:Interactive.t
-    -> ?obsoletes:Symbol.t
+    :  Symbol.t
     -> Source_code_position.t
-    -> Symbol.t
+    -> ?docstring:string
+    -> ?define_keys:(Keymap.t * string) list
+    -> ?obsoletes:Symbol.t
+    -> ?interactive:Interactive.t
     -> (unit -> unit)
     -> unit
 
-  (** [defun_blocking_async] is meant to be used for interactive commands directly called
-      by the user. It is restricted to functions returning [unit Async.Deferred.t] to
-      encourage this use case.
-
-      You cannot call a defun_blocking_async function from within async. Doing so results
-      in a runtime exception. Restricting [defun_blocking_async] to top-level interactive
-      commands makes it less likely that this situation will occur. *)
-  val defun_blocking_async
-    :  ?define_keys:(Keymap.t * string) list
+  val lambda
+    :  Source_code_position.t
     -> ?docstring:string
     -> ?interactive:Interactive.t
-    -> ?obsoletes:Symbol.t
-    -> ?timeout:Time.Span.t option
-    -> Source_code_position.t
-    -> Symbol.t
-    -> unit Async.Deferred.t t
-    -> unit
-
-  val lambda
-    :  ?docstring:string
-    -> ?interactive:Interactive.t
-    -> Source_code_position.t
-    -> returns:'a Value.Type.t
+    -> 'a Returns.t
     -> 'a t
     -> Function.t
 
   val lambda_nullary
-    :  ?docstring:string
+    :  Source_code_position.t
+    -> ?docstring:string
     -> ?interactive:Interactive.t
-    -> Source_code_position.t
-    -> returns:'a Value.Type.t
+    -> 'a Returns.t
     -> (unit -> 'a)
     -> Function.t
 
   val lambda_nullary_nil
-    :  ?docstring:string
+    :  Source_code_position.t
+    -> ?docstring:string
     -> ?interactive:Interactive.t
-    -> Source_code_position.t
     -> (unit -> unit)
     -> Function.t
+
+  module Private : sig
+    val block_on_async : ((unit -> unit Deferred.t) -> unit) Set_once.t
+  end
 end

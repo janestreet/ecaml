@@ -1,5 +1,6 @@
 open! Core_kernel
 open! Import
+include Customization_intf
 
 module Q = struct
   include Q
@@ -12,6 +13,7 @@ module Q = struct
   and color = "color" |> Symbol.intern
   and cons = "cons" |> Symbol.intern
   and const = "const" |> Symbol.intern
+  and customize_variable = "customize-variable" |> Symbol.intern
   and defcustom = "defcustom" |> Symbol.intern
   and directory = "directory" |> Symbol.intern
   and float = "float" |> Symbol.intern
@@ -26,6 +28,13 @@ module Q = struct
   and variable = "variable" |> Symbol.intern
 end
 
+module F = struct
+  open Funcall
+
+  let customize_variable = Q.customize_variable <: Symbol.type_ @-> return nil
+end
+
+let customize_variable = F.customize_variable
 let q value = Value.list [ Symbol.to_value Q.quote; value ]
 
 module Group = struct
@@ -84,7 +93,7 @@ module Type = struct
     | Coding_system -> s Q.coding_system
     | Color -> s Q.color
     | Cons (t1, t2) -> composite Q.cons [ t1; t2 ]
-    | Const v -> Value.list [ s Q.const; q v ]
+    | Const v -> Value.list [ s Q.const; v ]
     | Directory -> s Q.directory
     | Existing_file -> Value.list [ s Q.file; s Q.K.must_match; Value.t ]
     | Face -> s Q.face
@@ -116,35 +125,141 @@ module Type = struct
   ;;
 
   let to_value = v
+  let enum all value_of_a = Choice (List.map all ~f:(fun a -> Const (value_of_a a)))
 end
 
-let defcustom here option customization_type ~docstring ~group ~standard_value =
-  try
-    Load_history.add_entry here (Var option);
-    ignore
-      ( Form.eval
-          ([ Q.defcustom |> Symbol.to_value
-           ; option |> Symbol.to_value
-           ; standard_value |> q
-           ; docstring |> Value.of_utf8_bytes
-           ; Q.K.group |> Symbol.to_value
-           ; group |> Symbol.to_value |> q
-           ; Q.K.type_ |> Symbol.to_value
-           ; customization_type |> Type.to_value |> q
-           ]
-           |> Value.list
-           |> Form.of_value_exn)
-        : Value.t )
-  with
-  | exn ->
-    raise_s
-      [%message
-        "[defcustom] failed"
-          (exn : exn)
-          (option : Symbol.t)
-          (customization_type : Type.t)
-          (group : Symbol.t)
-          (standard_value : Value.t)
-          (docstring : string)
-          ~_:(here : Source_code_position.t)]
+let all_defcustom_symbols = ref []
+
+module Private = struct
+  let all_defcustom_symbols () =
+    !all_defcustom_symbols |> List.sort ~compare:Symbol.compare_name
+  ;;
+end
+
+let defcustom
+      ?(show_form = false)
+      symbol
+      here
+      ~docstring
+      ~group
+      ~type_
+      ~customization_type
+      ~standard_value
+      ()
+  =
+  let standard_value = standard_value |> Value.Type.to_value type_ in
+  (try
+     let docstring =
+       concat
+         [ docstring |> String.strip
+         ; "\n\n"
+         ; concat [ "Customization group: "; group |> Group.to_string; "\n" ]
+         ; concat
+             [ "Customization type:"
+             ; (let string =
+                  [%sexp (customization_type : Type.t)] |> Sexp.to_string_hum
+                in
+                if String.contains string '\n'
+                then concat [ "\n"; string ]
+                else concat [ " "; string ])
+             ]
+         ]
+     in
+     all_defcustom_symbols := symbol :: !all_defcustom_symbols;
+     Load_history.add_entry here (Var symbol);
+     let form =
+       [ Q.defcustom |> Symbol.to_value
+       ; symbol |> Symbol.to_value
+       ; standard_value |> q
+       ; docstring |> Value.of_utf8_bytes
+       ; Q.K.group |> Symbol.to_value
+       ; group |> Symbol.to_value |> q
+       ; Q.K.type_ |> Symbol.to_value
+       ; customization_type |> Type.to_value |> q
+       ]
+       |> Value.list
+       |> Form.of_value_exn
+     in
+     if show_form then Echo_area.message_s [%sexp (form : Form.t)];
+     ignore (Form.eval form : Value.t)
+   with
+   | exn ->
+     raise_s
+       [%message
+         "[defcustom] failed"
+           (exn : exn)
+           (symbol : Symbol.t)
+           (customization_type : Type.t)
+           (group : Symbol.t)
+           (standard_value : Value.t)
+           (docstring : string)
+           ~_:(here : Source_code_position.t)]);
+  Var.create
+    symbol
+    (Value.Type.create
+       (Value.Type.name type_)
+       (Value.Type.to_sexp type_)
+       (fun value ->
+          try Value.Type.of_value_exn type_ value with
+          | _ ->
+            raise_s
+              [%message
+                ""
+                  ~_:
+                    (concat
+                       [ "invalid value for customization variable: "
+                       ; symbol |> Symbol.name
+                       ])
+                  (customization_type : Type.t)])
+       (Value.Type.to_value type_))
 ;;
+
+module Enum = struct
+  module type Arg = Enum_arg
+  module type S = Enum
+
+  let make (type t) symbol here (module T : Arg with type t = t) ~docstring ~group =
+    ( module struct
+      type t = T.t
+
+      let ({ Value.Type.of_value_exn; to_value; id = _ } as type_) =
+        Value.Type.enum
+          [%sexp (Symbol.name symbol : string)]
+          (module T)
+          (T.to_symbol >> Symbol.to_value)
+      ;;
+
+      let var = Var.create symbol type_
+
+      let docstring =
+        concat
+          ~sep:"\n"
+          (docstring
+           :: ""
+           :: List.map T.all ~f:(fun t ->
+             let docstring =
+               match T.docstring t with
+               | "" -> []
+               | docstring -> [ ": "; docstring ]
+             in
+             concat ("  - " :: (t |> T.to_symbol |> Symbol.name) :: docstring)))
+      ;;
+
+      let initialize_defcustom () =
+        ignore
+          ( defcustom
+              symbol
+              here
+              ~docstring
+              ~group
+              ~type_
+              ~customization_type:(Type.enum T.all to_value)
+              ~standard_value:T.standard_value
+              ()
+            : _ Var.t )
+      ;;
+    end
+    : S
+      with type t = t )
+  ;;
+end

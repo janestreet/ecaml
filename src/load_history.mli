@@ -7,6 +7,7 @@
 
 open! Core_kernel
 open! Import0
+module Face = Face0
 
 (** [(describe-function 'symbol-file)] *)
 val defining_file : Symbol.t -> string option
@@ -43,6 +44,7 @@ val update_emacs_with_entries : chop_prefix:string -> in_dir:string -> unit
     argument of [find-function-search-for-symbol]. *)
 module Type : sig
   type t =
+    | Face
     | Fun
     | Var
   [@@deriving sexp_of]

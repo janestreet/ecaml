@@ -62,6 +62,24 @@ let%expect_test "[execute]" =
     [%expect {| "foo\nbar\n" |}])
 ;;
 
+let print_am_executing () =
+  print_s [%sexp (Current_buffer.value_exn am_executing : bool)]
+;;
+
+let%expect_test "[am_executing] false" =
+  print_am_executing ();
+  [%expect {|
+    false |}]
+;;
+
+let%expect_test "[am_executing] true" =
+  defun_nullary_nil ("foo" |> Symbol.intern) [%here] ~interactive:No_arg (fun () ->
+    print_am_executing ());
+  execute (create_exn "M-x foo");
+  [%expect {|
+    true |}]
+;;
+
 let%expect_test "[enqueue_unread_command_input]" =
   let show () =
     print_s

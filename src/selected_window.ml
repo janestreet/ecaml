@@ -54,3 +54,7 @@ let quit = F.quit_window
 let save_window_excursion f = Save_wrappers.save_window_excursion f
 let save_selected_window f = Save_wrappers.save_selected_window f
 let other_window = F.other_window
+
+let set_temporarily window ~f =
+  Save_wrappers.with_selected_window (window |> Window.to_value) f
+;;

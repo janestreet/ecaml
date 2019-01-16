@@ -23,13 +23,13 @@ let add_predefined_function advice_name ~for_function =
   F.advice_add for_function Q.K.around advice_name
 ;;
 
-let add_internal ?docstring ?interactive here advice_name f ~for_function =
+let add_internal advice_name here ~for_function ?docstring ?interactive f =
   Defun.defun
+    advice_name
+    here
     ?docstring
     ?interactive
-    here
-    ~returns:Value.Type.value
-    advice_name
+    (Returns Value.Type.value)
     (let open Defun.Let_syntax in
      let%map_open () = return ()
      and inner = required Q.inner value
@@ -38,24 +38,19 @@ let add_internal ?docstring ?interactive here advice_name f ~for_function =
   add_predefined_function advice_name ~for_function
 ;;
 
-let around_values ?docstring ?interactive here advice_name f ~for_function =
-  add_internal
-    ?docstring
-    ?interactive
-    here
-    advice_name
-    (fun inner rest -> f (Value.funcallN inner) rest)
-    ~for_function
+let around_values advice_name here ?docstring ~for_function ?interactive f =
+  add_internal advice_name here ?docstring ~for_function ?interactive (fun inner rest ->
+    f (Value.funcallN inner) rest)
 ;;
 
-let around_funcall ?docstring ?interactive here advice_name funcall f ~for_function =
+let around_funcall advice_name here ?docstring ~for_function ?interactive funcall f =
   add_internal
+    advice_name
+    here
+    ~for_function
     ?docstring
     ?interactive
-    here
-    advice_name
     (Funcall.Private.advice funcall f)
-    ~for_function
 ;;
 
 let remove advice_name ~for_function = F.advice_remove for_function advice_name

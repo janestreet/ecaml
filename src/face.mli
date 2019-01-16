@@ -252,3 +252,11 @@ val attributes
 
 (** [(describe-function 'face-spec-set)] *)
 val spec_set : t -> Attribute_and_value.t list -> unit
+
+(** [(describe-function 'defface)] *)
+val defface
+  :  Source_code_position.t
+  -> string
+  -> Attribute_and_value.t list
+  -> docstring:string
+  -> t

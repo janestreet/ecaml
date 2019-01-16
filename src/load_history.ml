@@ -1,11 +1,11 @@
 open! Core_kernel
 open! Import0
+module Face = Face0
 
 module Q = struct
   include Q
 
   let autoload = "autoload" |> Symbol.intern
-  and defface = "defface" |> Symbol.intern
   and load_history = "load-history" |> Symbol.intern
   and require = "require" |> Symbol.intern
   and symbol_file = "symbol-file" |> Symbol.intern
@@ -49,6 +49,7 @@ end
 module Type = struct
   module T = struct
     type t =
+      | Face
       | Fun
       | Var
     [@@deriving compare, enumerate, hash, sexp_of]
@@ -61,6 +62,7 @@ module Type = struct
       [%sexp "load-history type"]
       (module T)
       (function
+        | Face -> Q.defface |> Symbol.to_value
         | Fun -> Value.nil
         | Var -> Q.defvar |> Symbol.to_value)
   ;;
@@ -99,6 +101,7 @@ let add_entry here (entry : Entry.t) =
     Hashtbl.set location_by_key ~key:(Key.create symbol type_) ~data:here
   in
   match entry with
+  | Face face -> add (face |> Face.to_name |> Symbol.intern) Face
   | Fun symbol -> add symbol Fun
   | Var symbol -> add symbol Var
   | _ -> ()

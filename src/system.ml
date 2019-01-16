@@ -6,6 +6,7 @@ module Q = struct
 
   let exec_path = "exec-path" |> Symbol.intern
   and getenv = "getenv" |> Symbol.intern
+  and noninteractive = "noninteractive" |> Symbol.intern
   and process_environment = "process-environment" |> Symbol.intern
   and setenv = "setenv" |> Symbol.intern
   and system_name = "system-name" |> Symbol.intern
@@ -26,6 +27,8 @@ let setenv ~var ~value =
 
 let process_environment = Var.create Q.process_environment Value.Type.(list string)
 let exec_path = Var.create Q.exec_path Value.Type.path_list
+let noninteractive = Var.create Q.noninteractive Value.Type.bool
+let is_interactive () = not (Current_buffer.value_exn noninteractive)
 
 module Var_and_value = struct
   type t =

@@ -2,6 +2,9 @@
 
 open! Core_kernel
 open! Import0
+
+(** A [Command.t] is an Elisp value satsifying [commandp].
+    [(describe-function 'commandp)] *)
 include Value.Subtype
 
 (** [(Info-goto-node "(elisp)Prefix Command Arguments")] *)

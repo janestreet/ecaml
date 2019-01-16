@@ -12,10 +12,10 @@ let print_funcallN symbol args =
 let%expect_test "[defun]" =
   let symbol = Symbol.gensym () in
   defun
-    here
-    ~returns:return_type
     symbol
+    here
     ~docstring:"Returns its own arguments as a sexp."
+    (Returns return_type)
     (let open Let_syntax in
      let%map_open () = return ()
      and i = required ("int" |> Symbol.intern) Value.Type.int
@@ -52,10 +52,10 @@ Returns its own arguments as a sexp. |}]
 let%expect_test "[defun] tuple ordering" =
   let symbol = Symbol.gensym () in
   defun
-    here
-    ~returns:return_type
     symbol
+    here
     ~docstring:""
+    (Returns return_type)
     (let open Let_syntax in
      let%map_open () = return ()
      and difference =
@@ -77,10 +77,10 @@ let%expect_test "[defun] tuple ordering" =
 let%expect_test "[defun] wrong number of arguments" =
   let symbol = Symbol.gensym () in
   defun
-    here
-    ~returns:return_type
     symbol
+    here
     ~docstring:""
+    (Returns return_type)
     (let open Defun.Let_syntax in
      let%map_open () = return ()
      and arg = required ("arg" |> Symbol.intern) int in
@@ -102,10 +102,10 @@ let%expect_test "[defun] wrong number of arguments" =
 let%expect_test "[defun] omitted optional arguments" =
   let symbol = Symbol.gensym () in
   defun
-    here
-    ~returns:return_type
     symbol
+    here
     ~docstring:""
+    (Returns return_type)
     (let open Let_syntax in
      let%map_open () = return ()
      and optional = optional ("optional" |> Symbol.intern) Value.Type.int in
@@ -120,7 +120,7 @@ let%expect_test "[lambda]" =
   let fn =
     lambda
       [%here]
-      ~returns:Value.Type.int
+      (Returns Value.Type.int)
       (let open Defun.Let_syntax in
        let%map_open () = return ()
        and i = required ("int" |> Symbol.intern) int in
@@ -139,4 +139,17 @@ let%expect_test "[lambda]" =
   if not (String.is_prefix docstring ~prefix:"Implemented at")
   then print_endline docstring;
   [%expect {| |}]
+;;
+
+let%expect_test "[defalias]" =
+  let f = "f" |> Symbol.intern in
+  defalias f [%here] ~alias_of:("+" |> Symbol.intern) ();
+  print_endline (describe_function f);
+  [%expect
+    {|
+    f is an alias for `+'.
+
+    (f &rest NUMBERS-OR-MARKERS)
+
+    Return sum of any number of arguments, which are numbers or markers. |}]
 ;;

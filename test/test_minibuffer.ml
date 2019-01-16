@@ -1,10 +1,14 @@
 open! Core_kernel
+open! Async_kernel
 open! Import
 open! Minibuffer
 
 let%expect_test "[y_or_n]" =
   let test input =
-    with_input input (fun () -> print_s [%sexp (Blocking.y_or_n ~prompt:"" : bool)])
+    with_input input (fun () ->
+      let%bind bool = y_or_n ~prompt:"" in
+      print_s [%sexp (bool : bool)];
+      return ())
   in
   test "y";
   [%expect {|
@@ -21,12 +25,11 @@ let%expect_test "[y_or_n]" =
 let%expect_test "[y_or_n_with_timeout]" =
   let test input =
     with_input input (fun () ->
-      print_s
-        [%sexp
-          ( Blocking.y_or_n_with_timeout
-              ~prompt:""
-              ~timeout:(Time_ns.Span.microsecond, 13)
-            : int Y_or_n_with_timeout.t )])
+      let%bind response =
+        y_or_n_with_timeout ~prompt:"" ~timeout:(Time_ns.Span.microsecond, 13)
+      in
+      print_s [%sexp (response : int Y_or_n_with_timeout.t)];
+      return ())
   in
   test "y";
   [%expect {|
@@ -42,7 +45,10 @@ let%expect_test "[y_or_n_with_timeout]" =
 
 let%expect_test "[yes_or_no]" =
   let test input =
-    with_input input (fun () -> print_s [%sexp (Blocking.yes_or_no ~prompt:"" : bool)])
+    with_input input (fun () ->
+      let%bind response = yes_or_no ~prompt:"" in
+      print_s [%sexp (response : bool)];
+      return ())
   in
   test "yes\n";
   [%expect {|
@@ -53,7 +59,10 @@ let%expect_test "[yes_or_no]" =
 ;;
 
 let%expect_test "[read_from]" =
-  with_input "foo" (fun () -> print_s [%sexp (Blocking.read_from () ~prompt:"" : string)]);
+  with_input "foo" (fun () ->
+    let%bind response = read_from () ~prompt:"" in
+    print_s [%sexp (response : string)];
+    return ());
   [%expect {|
     foo |}]
 ;;
@@ -90,7 +99,10 @@ let%expect_test "[setup_hook] [exit_hook] don't run in batch mode" =
     exit_hook
     (Hook.Function.create [%here] Normal Unit ("test-exit" |> Symbol.intern) (fun () ->
        print_s [%message "running exit hook"]));
-  with_input "foo" (fun () -> print_s [%sexp (Blocking.read_from () ~prompt:"" : string)]);
+  with_input "foo" (fun () ->
+    let%bind response = read_from () ~prompt:"" in
+    print_s [%sexp (response : string)];
+    return ());
   [%expect {|
     foo |}]
 ;;

@@ -13,3 +13,7 @@ module F = struct
 end
 
 let substitute_command_keys = F.substitute_command_keys
+
+module Special_sequence = struct
+  let keymap symbol = concat [ "\\{"; symbol |> Symbol.name; "}" ]
+end

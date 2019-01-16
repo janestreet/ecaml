@@ -20,15 +20,15 @@ let advise_for_ocaml () =
   Feature.require ("find-func" |> Symbol.intern);
   let for_function = "find-function-search-for-symbol" |> Symbol.intern in
   Advice.around_funcall
-    [%here]
     ("find-function-search-ocaml" |> Symbol.intern)
+    [%here]
+    ~for_function
     (let open Funcall in
      let open Value.Type in
      Symbol.type_
      @-> Load_history.Type.type_
      @-> string
      @-> return (tuple Buffer.type_ (option Position.type_)))
-    ~for_function
     (fun inner symbol type_ library ->
        (* [find-function-search-for-symbol] is used by both [find-function] and
           [find-variable], so [symbol] can be a function or a variable. *)

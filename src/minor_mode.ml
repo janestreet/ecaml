@@ -17,8 +17,9 @@ type t =
   { function_name : Symbol.t
   ; variable_name : Symbol.t
   }
-[@@deriving sexp_of]
+[@@deriving fields, sexp_of]
 
+let compare_name = Comparable.lift Symbol.compare_name ~f:function_name
 let abbrev = { function_name = Q.abbrev_mode; variable_name = Q.abbrev_mode }
 
 let goto_address =
@@ -39,15 +40,21 @@ let is_enabled t =
 
 let disable t = Symbol.funcall1_i t.function_name (0 |> Value.of_int_exn)
 let enable t = Symbol.funcall1_i t.function_name (1 |> Value.of_int_exn)
+let all_minor_modes = ref []
+
+module Private = struct
+  let all_minor_modes () = !all_minor_modes |> List.sort ~compare:compare_name
+end
 
 let define_minor_mode
-      ?(define_keys = [])
+      name
       here
-      ~name
       ~docstring
-      ~global
+      ?(define_keys = [])
       ~mode_line
-      ~initialize
+      ~global
+      ?(initialize = fun () -> ())
+      ()
   =
   let keymap_var =
     Var.create (Symbol.intern (concat [ name |> Symbol.name; "-map" ])) Keymap.type_
@@ -56,11 +63,18 @@ let define_minor_mode
   let keymap = Current_buffer.value_exn keymap_var in
   List.iter define_keys ~f:(fun (keys, symbol) ->
     Keymap.define_key keymap (Key_sequence.create_exn keys) (Symbol symbol));
+  let docstring =
+    concat
+      [ String.strip docstring
+      ; "\n\n"
+      ; Documentation.Special_sequence.keymap keymap_var.symbol
+      ]
+  in
   Form.eval_i
     (Form.list
        [ Q.define_minor_mode |> Form.symbol
        ; name |> Form.symbol
-       ; docstring |> Form.string
+       ; docstring |> String.strip |> Form.string
        ; Q.K.lighter |> Form.symbol
        ; String.concat [ " "; mode_line ] |> Form.string
        ; Q.K.keymap |> Form.symbol
@@ -76,7 +90,9 @@ let define_minor_mode
                 |> Function.to_value)
            ]
        ]);
-  { function_name = name; variable_name = name }
+  let t = { function_name = name; variable_name = name } in
+  all_minor_modes := t :: !all_minor_modes;
+  t
 ;;
 
 let keymap t =
@@ -84,4 +100,10 @@ let keymap t =
     (Current_buffer.value_exn Keymap.minor_mode_map_alist)
     t.function_name
     ~equal:Symbol.equal
+;;
+
+let keymap_exn t =
+  match keymap t with
+  | Some x -> x
+  | None -> raise_s [%message "minor mode has no keymap" ~minor_mode:(t : t)]
 ;;

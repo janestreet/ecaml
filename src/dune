@@ -1,0 +1,7 @@
+(library (name ecaml) (public_name ecaml)
+ (libraries async async_unix core_kernel ecaml_bench ecaml_value
+  expect_test_helpers_kernel)
+ (preprocess (pps ppx_jane -annotated-ignores)))
+
+(alias (name DEFAULT) (deps unnecessarily-global-symbols.sh glob_files *.ml)
+ (action (bash ./unnecessarily-global-symbols.sh)))

@@ -1,4 +1,5 @@
 open! Core_kernel
+open! Async_kernel
 include Ecaml
 include Expect_test_helpers_kernel
 
@@ -15,6 +16,11 @@ let ignore_stderr () =
   stage (fun () ->
     Unix.dup2 ~src:saved_stderr ~dst:Unix.stderr;
     Unix.close saved_stderr)
+;;
+
+let ignoring_stderr f =
+  let restore = unstage (ignore_stderr ()) in
+  protect ~f ~finally:restore
 ;;
 
 let background color : Text.Face_spec.t = [ Attributes [ T (Background, Color color) ] ]
@@ -79,12 +85,14 @@ let with_input_macro string f =
   Keymap.define_key
     keymap
     (Key_sequence.create_exn start_sequence)
-    (Value (lambda_nullary_nil [%here] f ~interactive:No_arg |> Function.to_value));
+    (Value
+       (lambda_nullary [%here] ~interactive:No_arg Returns_unit_deferred f
+        |> Function.to_value));
   Keymap.set_transient keymap;
   Key_sequence.execute keyseq
 ;;
 
-let with_input string f =
+let with_input (type a) string (f : unit -> a Deferred.t) : a =
   let module Out_channel = Core.Out_channel in
   let module Unix = Core.Unix in
   let r, w = Unix.pipe () in
@@ -105,7 +113,9 @@ let with_input string f =
          "[with_input] doesn't support strings this long" ~_:(String.length string : int)]);
   Unix.dup2 ~src:r ~dst:Unix.stdin;
   Unix.close r;
-  protect ~f ~finally:(fun () -> Unix.dup2 ~src:stdin_to_restore ~dst:Unix.stdin)
+  protect
+    ~f:(fun () -> Async_ecaml.Private.block_on_async f)
+    ~finally:(fun () -> Unix.dup2 ~src:stdin_to_restore ~dst:Unix.stdin)
 ;;
 
 let%expect_test "[with_input] with too long string" =

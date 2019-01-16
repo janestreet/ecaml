@@ -1,0 +1,2 @@
+(library (name ecaml_bench) (public_name ecaml.bench) (libraries core async)
+ (preprocess (pps ppx_jane)))

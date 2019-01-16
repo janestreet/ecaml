@@ -125,16 +125,22 @@ module Which_buffers = struct
     | File_visiting -> Value.nil
     | These f ->
       Function.create [%here] ~args:[] (fun _ ->
-        f (Current_buffer0.get ()) |> Value.of_bool)
+        let buffer = Current_buffer0.get () in
+        try f buffer |> Value.of_bool with
+        | exn ->
+          raise_s [%message "[Which_buffers.These]" (buffer : buffer) (exn : exn)])
       |> Function.to_value
   ;;
 end
 
 let save_some ?(query = true) ?(which_buffers = Which_buffers.File_visiting) () =
-  Symbol.funcall2_i
-    Q.save_some_buffers
-    (not query |> Value.of_bool)
-    (which_buffers |> Which_buffers.to_value)
+  try
+    Symbol.funcall2_i
+      Q.save_some_buffers
+      (not query |> Value.of_bool)
+      (which_buffers |> Which_buffers.to_value)
+  with
+  | exn -> raise_s [%message "[Buffer.save_some]" (exn : exn)]
 ;;
 
 let with_temp_buffer f =

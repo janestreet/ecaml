@@ -17,6 +17,7 @@ module Q = struct
   and set_keymap_parent = "set-keymap-parent" |> Symbol.intern
   and set_transient_map = "set-transient-map" |> Symbol.intern
   and special_event_map = "special-event-map" |> Symbol.intern
+  and suppress_keymap = "suppress-keymap" |> Symbol.intern
   and undefined = "undefined" |> Symbol.intern
   and use_global_map = "use-global-map" |> Symbol.intern
 end
@@ -167,3 +168,7 @@ let override_minor_mode_map symbol ~f =
 ;;
 
 let special_event_map = Var.create Q.special_event_map type_
+
+let suppress_keymap ?(suppress_digits = false) t =
+  Symbol.funcall2_i Q.suppress_keymap (t |> to_value) (suppress_digits |> Value.of_bool)
+;;

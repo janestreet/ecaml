@@ -32,11 +32,30 @@ let%expect_test "[split_vertically_exn]" =
     ("#<window 1 on *scratch*>" "#<window 4 on *scratch*>") |}]
 ;;
 
+let window1, window4 =
+  match Window.all_in_selected_frame () with
+  | [ x; y ] -> x, y
+  | [ w ] -> w, w
+  | _ -> raise_s [%message [%here]]
+;;
+
 let%expect_test "[set]" =
   show ();
   [%expect {|
     "#<window 1 on *scratch*>" |}];
-  set (List.nth_exn (Window.all_in_selected_frame ()) 1);
+  set window4;
+  show ();
+  [%expect {|
+    "#<window 4 on *scratch*>" |}]
+;;
+
+let%expect_test "[set_temporarily]" =
+  show ();
+  [%expect {|
+    "#<window 4 on *scratch*>" |}];
+  set_temporarily window1 ~f:show;
+  [%expect {|
+    "#<window 1 on *scratch*>" |}];
   show ();
   [%expect {|
     "#<window 4 on *scratch*>" |}]

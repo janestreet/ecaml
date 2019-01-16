@@ -63,16 +63,4 @@ module Blocking : sig
     -> collection:string list
     -> prompt:string (* typically ends with ": " *)
     -> string
-
-  (** [(describe-function 'completing-read-multiple)] **)
-  val read_multiple
-    :  ?default:string
-    -> ?history:Symbol.t
-    -> ?initial_input:Initial_input.t (* default is Empty *)
-    -> ?require_match:Require_match.t (* default is False *)
-    -> ?separator_regexp:string (* default is "[ \t]*,[ \t]*" *)
-    -> unit
-    -> collection:string list
-    -> prompt:string (* typically ends with ": " *)
-    -> string list
 end

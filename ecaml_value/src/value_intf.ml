@@ -67,6 +67,7 @@ module type Type = sig
   val create : Sexp.t -> ('a -> Sexp.t) -> (value -> 'a) -> ('a -> value) -> 'a t
   val to_sexp : 'a t -> 'a -> Sexp.t
   val bool : bool t
+  val float : float t
   val ignored : unit t
   val int : int t
   val string : string t
@@ -239,10 +240,9 @@ module type Value = sig
   val vec_set : t -> int -> t -> unit
   val vec_size : t -> int
   val initialize_module : unit
-  val message_string : string -> unit
+  val message : string -> unit
   val messagef : ('a, unit, string, unit) format4 -> 'a
   val message_s : Sexp.t -> unit
-  val message : t -> unit
 
   (** An ['a Type.t] is an isomorphism between ['a] and a subset of [Value.t]. *)
   module Type :
@@ -254,12 +254,13 @@ module type Value = sig
       ; of_value_exn : value -> 'a
       ; to_value : 'a -> value
       }
-    [@@deriving sexp_of]
+    [@@deriving fields, sexp_of]
 
     module type S = Type with type 'a t := 'a t with type value := value
 
     include S
 
+    val name : _ t -> Sexp.t
     val map : 'a t -> name:Sexp.t -> of_:('a -> 'b) -> to_:('b -> 'a) -> 'b t
 
     (** [map_id type_ name] is short for [map type_ ~name ~of_:Fn.id ~to_:Fn.id].

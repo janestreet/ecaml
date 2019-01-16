@@ -45,3 +45,6 @@ val all_live : unit -> t list
 
 (** [(describe-function 'frame-live-p)] *)
 val is_live : t -> bool
+
+(** [(describe-function 'other-frame)] *)
+val other_frame : int -> unit

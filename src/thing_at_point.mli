@@ -57,8 +57,8 @@ val end_ : t -> bool
     that property isn't otherwise used, the symbol can be used for other purposes as well.
 *)
 val defthing
-  :  bounds:(unit -> (Position.t * Position.t) option)
-  (** An implementation of [bounds]. *)
+  :  Symbol.t
   -> Source_code_position.t
-  -> Symbol.t
+  -> bounds:(unit -> (Position.t * Position.t) option)
+  (** An implementation of [bounds]. *)
   -> t

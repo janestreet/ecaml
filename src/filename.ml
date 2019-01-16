@@ -24,6 +24,8 @@ include (
       Comparable.S
       with type t := t
       with type comparator_witness = String.comparator_witness
+
+    include Hashable.S with type t := t
   end)
 
 let ({ Value.Type.id = _; of_value_exn; to_value } as type_) =

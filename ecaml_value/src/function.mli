@@ -30,6 +30,7 @@ val create_nullary
   -> t
 
 val to_value : t -> Value.t
+val of_symbol : Symbol.t -> t
 
 module Expert : sig
   val raise_in_dispatch : bool ref

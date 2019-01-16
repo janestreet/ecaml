@@ -114,13 +114,13 @@ let end_exn thing = with_settings thing ~f:(fun () -> F.end_of_thing (thing |> t
 let end_ = did_not_raise end_exn
 let bounds_prop = Symbol.Property.create Q.bounds_of_thing_at_point Function.type_
 
-let defthing ~(bounds : unit -> (Position.t * Position.t) option) loc symbol =
+let defthing symbol loc ~(bounds : unit -> (Position.t * Position.t) option) =
   Symbol.Property.put
     bounds_prop
     symbol
     (Defun.lambda_nullary
        loc
-       ~returns:Value.Type.(option (tuple Position.type_ Position.type_))
+       (Returns Value.Type.(option (tuple Position.type_ Position.type_)))
        bounds);
   Other symbol
 ;;

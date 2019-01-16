@@ -89,11 +89,17 @@ val forward_word : int -> unit
     [(Info-goto-node "(elisp)Word Motion")] *)
 val backward_word : int -> unit
 
+(** [(describe-function 'following-char)] *)
+val following_char : unit -> Char_code.t
+
 (** [line_number] returns the line number of the character after point, where the first
     line of the buffer is line [1].
     [(describe-function 'line-number-at-pos)].
     [(Info-goto-node "(elisp)Text Lines")] *)
 val line_number : unit -> int
+
+(** [(describe-function 'bobp)] *)
+val is_beginning_of_buffer : unit -> bool
 
 (** [(describe-function 'eobp)] *)
 val is_end_of_buffer : unit -> bool
@@ -121,6 +127,9 @@ val insert_text : Text.t -> unit
 
 (** [(describe-function 'insert-file-contents)] *)
 val insert_file_contents_exn : string -> unit
+
+(** [(describe-function 'insert-file-contents-literally)] *)
+val insert_file_contents_literally : string -> unit
 
 (** [(describe-function 'kill-word)]. *)
 val kill_word : int -> unit

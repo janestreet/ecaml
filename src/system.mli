@@ -20,6 +20,13 @@ val setenv : var:string -> value:string option -> unit
     [(Info-goto-node "(elisp)System Environment")] *)
 val process_environment : string list Var.t
 
+(** [(describe-variable 'noninteractive)]
+    [(Info-goto-node "(elisp)Batch Mode")] *)
+val noninteractive : bool Var.t
+
+(** [is_interactive () = not (Current_buffer.value_exn noninteractive)] *)
+val is_interactive : unit -> bool
+
 val hostname : unit -> string
 
 (** [(describe-variable 'exec-path)] *)

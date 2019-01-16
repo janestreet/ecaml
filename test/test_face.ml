@@ -1470,3 +1470,33 @@ let%expect_test "[all_defined], [attributes]" =
       (Stipple    unspecified)
       (Inherit    Unspecified))) |}]
 ;;
+
+let%expect_test "[defface]" =
+  let name = "foobar" in
+  let t =
+    defface
+      [%here]
+      name
+      [ T (Foreground, Color Color.cyan); T (Overline, Absent) ]
+      ~docstring:"Test face"
+  in
+  print_s [%message "" ~_:(t : t) ~_:(attributes t : Attribute_and_value.t list)];
+  [%expect
+    {|
+    (foobar (
+      (Font_family    Unspecified)
+      (Font_foundry   Unspecified)
+      (Width          Unspecified)
+      (Height         Unspecified)
+      (Weight         Unspecified)
+      (Slant          Unspecified)
+      (Underline      Unspecified)
+      (Overline       Absent)
+      (Strike_through Unspecified)
+      (Box            unspecified)
+      (Inverse_video  Unspecified)
+      (Foreground (Color cyan))
+      (Background Unspecified)
+      (Stipple    unspecified)
+      (Inherit    Unspecified))) |}]
+;;

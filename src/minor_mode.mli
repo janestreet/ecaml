@@ -11,7 +11,7 @@ type t =
   { function_name : Symbol.t
   ; variable_name : Symbol.t
   }
-[@@deriving sexp_of]
+[@@deriving fields, sexp_of]
 
 (** Returns true if [t] is defined and enabled, and false otherwise. *)
 val is_enabled : t -> bool
@@ -45,17 +45,24 @@ val visual_line : t
     [(describe-variable 'minor-mode-map-alist)]*)
 val keymap : t -> Keymap.t option
 
+val keymap_exn : t -> Keymap.t
+
 (** [(describe-function 'define-minor-mode)]
     [(Info-goto-node "(elisp)Defining Minor Modes")]
 
     Additionally, each [key_sequence, symbol] in [define_keys] is added to the new minor
     mode's keymap. *)
 val define_minor_mode
-  :  ?define_keys:(string * Symbol.t) list
+  :  Symbol.t
   -> Source_code_position.t
-  -> name:Symbol.t
   -> docstring:string
-  -> global:bool
+  -> ?define_keys:(string * Symbol.t) list
   -> mode_line:string
-  -> initialize:(unit -> unit)
+  -> global:bool
+  -> ?initialize:(unit -> unit)
+  -> unit
   -> t
+
+module Private : sig
+  val all_minor_modes : unit -> t list
+end

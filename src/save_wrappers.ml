@@ -12,6 +12,7 @@ module Q = struct
   and save_selected_window = "save-selected-window" |> Symbol.intern
   and save_window_excursion = "save-window-excursion" |> Symbol.intern
   and with_selected_frame = "with-selected-frame" |> Symbol.intern
+  and with_selected_window = "with-selected-window" |> Symbol.intern
 end
 
 let save_ save_function args f =
@@ -47,3 +48,4 @@ let save_restriction f = save_ Q.save_restriction [] f
 let save_window_excursion f = save_ Q.save_window_excursion [] f
 let save_selected_window f = save_ Q.save_selected_window [] f
 let with_selected_frame frame f = save_ Q.with_selected_frame [ frame ] f
+let with_selected_window window f = save_ Q.with_selected_window [ window ] f

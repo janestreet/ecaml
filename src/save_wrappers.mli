@@ -24,3 +24,6 @@ val save_selected_window : (unit -> 'a) -> 'a
 
 (** [(describe-function 'with-selected-frame)] *)
 val with_selected_frame : Value.t -> (unit -> 'a) -> 'a
+
+(** [(describe-function 'with-selected-window)] *)
+val with_selected_window : Value.t -> (unit -> 'a) -> 'a

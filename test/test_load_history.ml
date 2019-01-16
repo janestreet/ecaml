@@ -8,15 +8,19 @@ let%expect_test "[defcustom], [defvar], [defun], [update_emacs_with_entries], \
   let custom = "custom" |> Symbol.intern in
   let var = "var" |> Symbol.intern in
   let fun_ = "fun" |> Symbol.intern in
-  defcustom
-    [%here]
-    custom
-    Boolean
-    ~docstring:"custom docstring"
-    ~group:("custom-group" |> Customization.Group.of_string)
-    ~standard_value:Value.nil;
-  defvar [%here] var Value.nil ~docstring:"foo";
-  defun_nullary_nil [%here] fun_ Fn.id;
+  ignore
+    ( defcustom
+        custom
+        [%here]
+        ~docstring:"custom docstring"
+        ~group:("custom-group" |> Customization.Group.of_string)
+        ~type_:Value.Type.bool
+        ~customization_type:Boolean
+        ~standard_value:false
+        ()
+      : _ Var.t );
+  defvar var [%here] ~docstring:"foo" ~initial_value:Value.nil ();
+  defun_nullary_nil fun_ [%here] Fn.id;
   update_emacs_with_entries ~chop_prefix:"app/emacs/" ~in_dir:"<dir>";
   let show_defining_file symbol =
     print_s [%sexp (defining_file symbol : string option)]

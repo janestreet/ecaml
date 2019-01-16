@@ -13,13 +13,13 @@ type entry =
 [@@deriving fields]
 
 module M =
-  (val Major_mode.define_derived_mode
-         [%here]
+  (val define_derived_mode
          test_mode
+         [%here]
          ~docstring:"for testing"
-         ~initialize:ident
          ~mode_line:"Test-mode"
-         ~parent:Tabulated_list_mode.major_mode)
+         ~parent:Tabulated_list_mode.major_mode
+         ())
 
 let t =
   let format =

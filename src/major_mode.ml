@@ -113,13 +113,14 @@ module For_testing = struct
 end
 
 let define_derived_mode
-      ?(define_keys = [])
-      ?parent
-      here
       symbol
+      here
       ~docstring
-      ~initialize
+      ?(define_keys = [])
       ~mode_line
+      ?parent
+      ?(initialize = fun () -> ())
+      ()
   =
   Form.eval_i
     (Form.list
@@ -129,7 +130,7 @@ let define_derived_mode
           | None -> Form.nil
           | Some t -> Field.get Fields.symbol t |> Form.symbol)
        ; mode_line |> Form.string
-       ; docstring |> Form.string
+       ; docstring |> String.strip |> Form.string
        ; Form.list
            [ Q.funcall |> Form.symbol
            ; Form.quote

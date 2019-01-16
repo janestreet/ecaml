@@ -226,7 +226,7 @@ let draw ?sort_by t rows =
     (Array.of_list
        (List.map t.columns ~f:(fun column -> Column.fixed_width_format column rows)));
   F.tabulated_list_init_header ();
-  F.tabulated_list_print false false
+  F.tabulated_list_print true false
 ;;
 
 module Tabulated_list_mode = (val Major_mode.wrap_existing [%here] Q.tabulated_list_mode)
@@ -283,3 +283,5 @@ let current_buffer_has_entries () =
     (Value.is_nil
        (Current_buffer.value_exn (Var.create Q.tabulated_list_entries Value.Type.value)))
 ;;
+
+let revert_hook = Hook.create Normal ("tabulated-list-revert-hook" |> Symbol.intern)

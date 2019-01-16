@@ -33,6 +33,10 @@ val create_exn : string -> t
     [(Info-goto-node "(elisp)Keyboard Macros")] *)
 val execute : t -> unit
 
+(** [(describe-variable 'executing-kbd-macro)]
+    [(Info-goto-node "(elisp)Keyboard Macros")] *)
+val am_executing : bool Var.t
+
 (** [(describe-function 'read-key-sequence-vector)]
     [(Info-goto-node "(elisp)Key Sequence Input")] *)
 val read : unit -> prompt:string -> t

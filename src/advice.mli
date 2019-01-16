@@ -19,24 +19,24 @@ open! Import
     doesn't need to interact with the arguments or return value of [for_function].
 *)
 val around_values
-  :  ?docstring:string
-  -> ?interactive:Defun.Interactive.t
+  :  Symbol.t
   -> Source_code_position.t
-  -> Symbol.t
-  -> ((Value.t list -> Value.t) -> Value.t list -> Value.t)
+  -> ?docstring:string
   -> for_function:Symbol.t
+  -> ?interactive:Defun.Interactive.t
+  -> ((Value.t list -> Value.t) -> Value.t list -> Value.t)
   -> unit
 
 (** [around_funcall] provides typeful access to the arguments and return value of
     [for_function]. *)
 val around_funcall
-  :  ?docstring:string
-  -> ?interactive:Defun.Interactive.t
+  :  Symbol.t
   -> Source_code_position.t
-  -> Symbol.t
+  -> ?docstring:string
+  -> for_function:Symbol.t
+  -> ?interactive:Defun.Interactive.t
   -> 'a Funcall.t
   -> ('a -> 'a)
-  -> for_function:Symbol.t
   -> unit
 
 (** [(describe-function 'advice-add)] *)

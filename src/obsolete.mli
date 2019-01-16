@@ -4,10 +4,7 @@ open! Core_kernel
 open! Import
 
 (** [(describe-function 'make-obsolete)] *)
-val make : ?when_:string -> Symbol.t -> current:Symbol.t -> unit
+val make_function_obsolete : Symbol.t -> current:Symbol.t -> since:string -> unit
 
-(** [(describe-function 'define-obsolete-function-alias)]
-
-    N.B. Load order matters.  A subsequent [defun] will override the aliasing.
-*)
-val alias : ?docstring:string -> ?when_:string -> Symbol.t -> current:Symbol.t -> unit
+(** [(describe-function 'make-obsolete-variable)] *)
+val make_variable_obsolete : Symbol.t -> current:Symbol.t -> since:string -> unit
