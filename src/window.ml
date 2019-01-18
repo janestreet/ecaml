@@ -15,6 +15,7 @@ module Q = struct
   and window_body_height = "window-body-height" |> Symbol.intern
   and window_buffer = "window-buffer" |> Symbol.intern
   and window_end = "window-end" |> Symbol.intern
+  and window_frame = "window-frame" |> Symbol.intern
   and window_height = "window-height" |> Symbol.intern
   and window_list = "window-list" |> Symbol.intern
   and window_live_p = "window-live-p" |> Symbol.intern
@@ -59,6 +60,7 @@ module F = struct
   and set_window_margins =
     Q.set_window_margins <: type_ @-> option int @-> option int @-> return nil
   and set_window_start = Q.set_window_start <: type_ @-> Position.type_ @-> return nil
+  and window_frame = Q.window_frame <: type_ @-> return Frame.type_
 
   and window_list =
     Q.window_list
@@ -109,3 +111,4 @@ let delete_other_windows = F.delete_other_windows
 let start t = F.window_start t
 let set_start t position = F.set_window_start t position
 let end_ ?(update = false) t = F.window_end t update
+let frame t = F.window_frame t

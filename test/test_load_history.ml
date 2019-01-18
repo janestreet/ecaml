@@ -19,7 +19,9 @@ let%expect_test "[defcustom], [defvar], [defun], [update_emacs_with_entries], \
         ~standard_value:false
         ()
       : _ Var.t );
-  defvar var [%here] ~docstring:"foo" ~initial_value:Value.nil ();
+  ignore
+    ( defvar var [%here] ~docstring:"foo" ~type_:Value.Type.bool ~initial_value:false ()
+      : _ Var.t );
   defun_nullary_nil fun_ [%here] Fn.id;
   update_emacs_with_entries ~chop_prefix:"app/emacs/" ~in_dir:"<dir>";
   let show_defining_file symbol =

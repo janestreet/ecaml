@@ -38,8 +38,8 @@ let real_gid = nullary_int Q.group_real_gid
 
 let initialize () =
   Defun.defun_raw
-    [%here]
     ("ecaml-test-user-module" |> Symbol.intern)
+    [%here]
     ~interactive:""
     ~args:[]
     (fun _ ->

@@ -143,28 +143,33 @@ let minor_mode_map_alist =
 ;;
 
 let minor_mode_overriding_map_alist =
-  Var.create
+  Buffer_local.wrap_existing
     Q.minor_mode_overriding_map_alist
     Value.Type.(list (tuple Symbol.type_ type_))
 ;;
 
-let find_minor_mode_map var symbol =
-  List.Assoc.find (Current_buffer0.value_exn var) symbol ~equal:Symbol.equal
-;;
+let find_minor_mode_map assoc symbol = List.Assoc.find assoc symbol ~equal:Symbol.equal
 
 let override_minor_mode_map symbol ~f =
-  match find_minor_mode_map minor_mode_overriding_map_alist symbol with
+  match
+    find_minor_mode_map
+      (Buffer_local.Private.get_in_current_buffer minor_mode_overriding_map_alist)
+      symbol
+  with
   | Some t -> f t
   | None ->
     let t =
-      match find_minor_mode_map minor_mode_map_alist symbol with
+      match
+        find_minor_mode_map (Current_buffer0.value_exn minor_mode_map_alist) symbol
+      with
       | Some t -> deep_copy t
       | None -> create ()
     in
     f t;
-    Current_buffer0.set_value
+    Buffer_local.Private.set_in_current_buffer
       minor_mode_overriding_map_alist
-      ((symbol, t) :: Current_buffer0.value_exn minor_mode_overriding_map_alist)
+      ((symbol, t)
+       :: Buffer_local.Private.get_in_current_buffer minor_mode_overriding_map_alist)
 ;;
 
 let special_event_map = Var.create Q.special_event_map type_

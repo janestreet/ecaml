@@ -129,10 +129,9 @@ let%expect_test "[defcustom] invalid-value error message" =
   [%expect
     {|
     (raised (
-      "unable to convert Elisp value to OCaml value"
-      (type_ int)
-      (value nil)
-      (exn (
-        "invalid value for customization variable: zzz"
-        (customization_type Integer))))) |}]
+      "invalid value for variable: zzz" (
+        "unable to convert Elisp value to OCaml value"
+        (type_ int)
+        (value nil)
+        (exn (wrong-type-argument (integerp nil)))))) |}]
 ;;

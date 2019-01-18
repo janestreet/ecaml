@@ -182,7 +182,7 @@ end
 
 type ('record, 'id) t =
   { columns : 'record Column.t list
-  ; entries_var : 'record list Var.t
+  ; entries_var : 'record list Buffer_local.t
   ; id_equal : 'id -> 'id -> bool
   ; id_of_record : 'record -> 'id
   ; id_type : 'id Value.Type.t
@@ -193,11 +193,15 @@ type ('record, 'id) t =
 let keymap t = Major_mode.keymap (major_mode t)
 
 let tabulated_list_format_var =
-  Var.create Q.tabulated_list_format (Value.Type.vector Column.Format.Fixed_width.type_)
+  Buffer_local.wrap_existing
+    Q.tabulated_list_format
+    (Value.Type.vector Column.Format.Fixed_width.type_)
 ;;
 
 let tabulated_list_sort_key_var =
-  Var.create Q.tabulated_list_sort_key Value.Type.(option (tuple string bool))
+  Buffer_local.wrap_existing
+    Q.tabulated_list_sort_key
+    Value.Type.(option (tuple string bool))
 ;;
 
 let draw ?sort_by t rows =
@@ -212,7 +216,7 @@ let draw ?sort_by t rows =
     | Some column ->
       if not column.format.sortable
       then raise_s [%sexp "Column is not sortable", (sort_header : string)]);
-  Current_buffer.set_value
+  Current_buffer.set_buffer_local
     tabulated_list_sort_key_var
     (Option.map
        sort_by
@@ -220,8 +224,8 @@ let draw ?sort_by t rows =
          (Tuple2.map_snd ~f:(function
             | `Ascending -> false
             | `Descending -> true)));
-  Current_buffer.set_value t.entries_var rows;
-  Current_buffer.set_value
+  Current_buffer.set_buffer_local t.entries_var rows;
+  Current_buffer.set_buffer_local
     tabulated_list_format_var
     (Array.of_list
        (List.map t.columns ~f:(fun column -> Column.fixed_width_format column rows)));
@@ -252,7 +256,7 @@ let create major_mode columns ~id_equal ~id_type ~id_of_record =
               |> Array.of_list
             , () ) ))
     in
-    Var.create Q.tabulated_list_entries (Value.Type.list entry_type)
+    Buffer_local.wrap_existing Q.tabulated_list_entries (Value.Type.list entry_type)
   in
   { columns; entries_var; id_equal; id_of_record; id_type; major_mode }
 ;;
@@ -281,7 +285,10 @@ let move_point_to_id t id =
 let current_buffer_has_entries () =
   not
     (Value.is_nil
-       (Current_buffer.value_exn (Var.create Q.tabulated_list_entries Value.Type.value)))
+       (Current_buffer.get_buffer_local
+          (Buffer_local.wrap_existing Q.tabulated_list_entries Value.Type.value)))
 ;;
 
-let revert_hook = Hook.create Normal ("tabulated-list-revert-hook" |> Symbol.intern)
+let revert_hook =
+  Hook.create ("tabulated-list-revert-hook" |> Symbol.intern) ~hook_type:Normal
+;;

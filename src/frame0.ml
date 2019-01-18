@@ -10,6 +10,7 @@ module Q = struct
   and frame_parameters = "frame-parameters" |> Symbol.intern
   and frame_pixel_height = "frame-pixel-height" |> Symbol.intern
   and frame_pixel_width = "frame-pixel-width" |> Symbol.intern
+  and frame_terminal = "frame-terminal" |> Symbol.intern
   and frame_width = "frame-width" |> Symbol.intern
   and make_frame = "make-frame" |> Symbol.intern
   and other_frame = "other-frame" |> Symbol.intern

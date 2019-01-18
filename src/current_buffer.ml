@@ -4,7 +4,8 @@ open! Import
 module Q = struct
   include Current_buffer0.Q
 
-  let buffer_disable_undo = "buffer-disable-undo" |> Symbol.intern
+  let buffer_chars_modified_tick = "buffer-chars-modified-tick" |> Symbol.intern
+  and buffer_disable_undo = "buffer-disable-undo" |> Symbol.intern
   and buffer_enable_undo = "buffer-enable-undo" |> Symbol.intern
   and buffer_modified_p = "buffer-modified-p" |> Symbol.intern
   and buffer_restore_window_display_state =
@@ -81,7 +82,9 @@ end
 module F = struct
   open Funcall
 
-  let buffer_disable_undo = Q.buffer_disable_undo <: nullary @-> return nil
+  let buffer_chars_modified_tick =
+    Q.buffer_chars_modified_tick <: nullary @-> return Modified_tick.type_
+  and buffer_disable_undo = Q.buffer_disable_undo <: nullary @-> return nil
   and buffer_enable_undo = Q.buffer_enable_undo <: nullary @-> return nil
   and buffer_size = Q.buffer_size <: nullary @-> return int
   and bury_buffer = Q.bury_buffer <: nullary @-> return nil
@@ -161,18 +164,18 @@ module F = struct
   and replace_buffer_contents = Q.replace_buffer_contents <: Buffer.type_ @-> return nil
 end
 
-let set_temporarily t ~f =
-  let old = get () in
-  set t;
-  protect ~f ~finally:(fun () -> set old)
-;;
+let get_buffer_local = Buffer_local.Private.get_in_current_buffer
+let get_buffer_local_exn = Buffer_local.Private.get_in_current_buffer_exn
+let set_buffer_local = Buffer_local.Private.set_in_current_buffer
 
 let set_temporarily_to_temp_buffer f =
   let t = Buffer.create ~name:"*temp-buffer*" in
   protect ~f:(fun () -> set_temporarily t ~f) ~finally:(fun () -> Buffer.kill t)
 ;;
 
-let major_mode () = Major_mode.find_or_wrap_existing [%here] (value_exn major_mode_var)
+let major_mode () =
+  Major_mode.find_or_wrap_existing [%here] (get_buffer_local Major_mode.major_mode_var)
+;;
 
 let change_major_mode major_mode =
   Funcall.(Major_mode.symbol major_mode <: nullary @-> return nil) ()
@@ -180,14 +183,14 @@ let change_major_mode major_mode =
 
 let set_auto_mode ?keep_mode_if_same () = F.set_auto_mode keep_mode_if_same
 let bury = F.bury_buffer
-let directory = Var.create Q.default_directory Value.Type.string
+let directory = Buffer_local.wrap_existing Q.default_directory Value.Type.string
 let describe_mode = F.describe_mode
 let is_modified = F.buffer_modified_p
 let set_modified = F.set_buffer_modified_p
-let fill_column = Var.create Q.fill_column Value.Type.int
+let fill_column = Buffer_local.wrap_existing Q.fill_column Value.Type.int
 let paragraph_start = Var.create Q.paragraph_start Regexp.type_
 let paragraph_separate = Var.create Q.paragraph_separate Regexp.type_
-let read_only = Var.create Q.buffer_read_only Value.Type.bool
+let read_only = Buffer_local.wrap_existing Q.buffer_read_only Value.Type.bool
 let file_name () = Buffer.file_name (get ())
 
 let file_name_exn () =
@@ -202,16 +205,19 @@ let name () =
   | None -> raise_s [%message "current buffer has nil buffer-name"]
 ;;
 
-let file_name_var = Var.create Q.buffer_file_name Value.Type.(option string)
+let file_name_var =
+  Buffer_local.wrap_existing Q.buffer_file_name Value.Type.(option string)
+;;
+
 let transient_mark_mode = Var.create Q.transient_mark_mode Value.Type.bool
-let buffer_undo_list = Var.create Q.buffer_undo_list Value.Type.value
-let is_undo_enabled () = not (Value.eq (value_exn buffer_undo_list) Value.t)
+let buffer_undo_list = Buffer_local.wrap_existing Q.buffer_undo_list Value.Type.value
+let is_undo_enabled () = not (Value.eq (get_buffer_local buffer_undo_list) Value.t)
 
 let set_undo_enabled bool =
   if bool then F.buffer_enable_undo () else F.buffer_disable_undo ()
 ;;
 
-let undo_list () = value_exn buffer_undo_list
+let undo_list () = get_buffer_local buffer_undo_list
 let undo = F.undo
 let add_undo_boundary = F.undo_boundary
 
@@ -253,10 +259,10 @@ let save_window_display_state f =
 let set_multibyte = F.set_buffer_multibyte
 
 let enable_multibyte_characters =
-  Var.create Q.enable_multibyte_characters Value.Type.bool
+  Buffer_local.wrap_existing Q.enable_multibyte_characters Value.Type.bool
 ;;
 
-let is_multibyte () = value_exn enable_multibyte_characters
+let is_multibyte () = get_buffer_local enable_multibyte_characters
 let rename_exn ?(unique = false) () ~name = F.rename_buffer name unique
 
 let set_text_property ?start ?end_ property_name property_value =
@@ -324,8 +330,8 @@ let text_property_is_present ?start ?end_ property_name =
 let set_marker_position = F.set_marker
 let mark = F.mark_marker
 let set_mark = F.set_mark
-let mark_active = Var.create Q.mark_active Value.Type.bool
-let mark_is_active () = value_exn mark_active
+let mark_active = Buffer_local.wrap_existing Q.mark_active Value.Type.bool
+let mark_is_active () = get_buffer_local mark_active
 let deactivate_mark = F.deactivate_mark
 
 let active_region () =
@@ -379,9 +385,16 @@ let indent_region ?start ?end_ () =
 
 let revert ?(confirm = false) () = F.revert_buffer Value.nil (not confirm)
 
+let revert_buffer_function =
+  Buffer_local.wrap_existing
+    Q.revert_buffer_function
+    Function.type_
+    ~make_buffer_local_always:true
+;;
+
 let set_revert_buffer_function f =
-  set_value
-    (Var.create Q.revert_buffer_function Function.type_)
+  set_buffer_local
+    revert_buffer_function
     (Function.create [%here] ~args:[ Q.ignore_auto; Q.noconfirm ] (function
        | [| _; noconfirm |] ->
          f ~confirm:(noconfirm |> Value.to_bool |> not);
@@ -398,4 +411,9 @@ let replace_buffer_contents =
 ;;
 
 let size = F.buffer_size
-let truncate_lines = Var.create ("truncate-lines" |> Symbol.intern) Value.Type.bool
+
+let truncate_lines =
+  Buffer_local.wrap_existing ("truncate-lines" |> Symbol.intern) Value.Type.bool
+;;
+
+let chars_modified_tick = F.buffer_chars_modified_tick

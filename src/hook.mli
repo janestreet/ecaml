@@ -20,7 +20,7 @@ type window =
   }
 [@@deriving sexp_of]
 
-module Type : sig
+module Hook_type : sig
   type 'a t =
     | File : file t
     | Normal : normal t
@@ -28,7 +28,7 @@ module Type : sig
   [@@deriving sexp_of]
 end
 
-val create : 'a Type.t -> Symbol.t -> 'a t
+val create : Symbol.t -> hook_type:'a Hook_type.t -> 'a t
 val var : _ t -> Function.t list Var.t
 
 module Where : sig
@@ -41,23 +41,21 @@ end
 module Function : sig
   type 'a t [@@deriving sexp_of]
 
-  module Return_type : sig
-    type timeout = { timeout : Time.Span.t option } [@@deriving sexp_of]
-
+  module Returns : sig
     type _ t =
-      | Unit : unit t
-      | Unit_deferred : timeout -> unit Async.Deferred.t t
+      | Returns : unit Value.Type.t -> unit t
+      | Returns_unit_deferred : unit Async.Deferred.t t
     [@@deriving sexp_of]
   end
 
   (** [create here return_type symbol f] defines an emacs function named [symbol]
       that runs [f] when called. It returns an ['a t] usable for modifying hooks. *)
   val create
-    :  ?docstring:string
+    :  Symbol.t
     -> Source_code_position.t
-    -> 'a Type.t
-    -> 'r Return_type.t
-    -> Symbol.t
+    -> ?docstring:string
+    -> hook_type:'a Hook_type.t
+    -> 'r Returns.t
     -> ('a -> 'r)
     -> 'a t
 
@@ -67,11 +65,11 @@ module Function : sig
       This is useful, for example, if [f] wants to remove itself from a hook once it is
       called. *)
   val create_with_self
-    :  ?docstring:string
+    :  Symbol.t
     -> Source_code_position.t
-    -> 'a Type.t
-    -> 'r Return_type.t
-    -> Symbol.t
+    -> ?docstring:string
+    -> hook_type:'a Hook_type.t
+    -> 'r Returns.t
     -> ('a t -> 'a -> 'r)
     -> 'a t
 end
@@ -102,6 +100,10 @@ val after_load : file t
 (** [after_load_once f] adds [f] to [after_load], and then removes it when it runs,
     so that [f] only runs once. *)
 val after_load_once : (file -> unit) -> unit
+
+(** [(describe-variable 'after-revert-hook)]
+    [(Info-goto-node "(elisp)Reverting")] *)
+val after_revert : normal t
 
 (** [(describe-variable 'after-save-hook)]
     [(Info-goto-node "(elisp)Saving Buffers")] *)

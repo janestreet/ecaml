@@ -29,18 +29,20 @@ let add symbol here =
   Load_history.add_entry here (Var symbol)
 ;;
 
-let defvar symbol here ~docstring ~initial_value () =
+let defvar symbol here ~docstring ~type_ ~initial_value () =
   ignore
     ( Form.eval
         ([ Q.defvar |> Symbol.to_value
          ; symbol |> Symbol.to_value
-         ; Value.list [ Symbol.to_value Q.quote; initial_value ]
+         ; Value.list
+             [ Symbol.to_value Q.quote; initial_value |> Value.Type.to_value type_ ]
          ; docstring |> String.strip |> Value.of_utf8_bytes
          ]
          |> Value.list
          |> Form.of_value_exn)
       : Value.t );
-  add symbol here
+  add symbol here;
+  Var.create symbol type_
 ;;
 
 let defvaralias symbol here ?docstring ~alias_of () =

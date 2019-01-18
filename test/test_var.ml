@@ -136,12 +136,13 @@ let%expect_test "caml_embed value" =
   [%expect
     {|
     (raised (
-      "unable to convert Elisp value to OCaml value"
-      (type_ (caml_embed (type_id A)))
-      (value nil)
-      (exn (
-        "[Caml_embed.ecaml_project]: tried to project something that's not a user pointer"
-        nil)))) |}];
+      "invalid value for variable: embedded-var-a"
+      ("unable to convert Elisp value to OCaml value"
+       (type_ (caml_embed (type_id A)))
+       (value nil)
+       (exn (
+         "[Caml_embed.ecaml_project]: tried to project something that's not a user pointer"
+         nil))))) |}];
   let orig : A.t = { a = "Foo"; b = 100 } in
   Current_buffer.set_value t orig;
   let from_emacs = Current_buffer.value_exn t in

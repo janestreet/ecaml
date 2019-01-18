@@ -3,6 +3,7 @@
 open! Core_kernel
 open! Import
 
+(** [(describe-variable 'compilation-buffer-name-function)] *)
 val buffer_name_function : Function.t option Var.t
 
 (** [(describe-function 'compilation-next-error)] *)

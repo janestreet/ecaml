@@ -54,7 +54,7 @@ let print_s ?(hide_positions = false) ?(templatize_current_directory = false) se
        |> fun string ->
        String.Search_pattern.replace_all
          (String.Search_pattern.create
-            (File.truename Current_buffer.(value_exn directory)))
+            (File.truename Current_buffer.(get_buffer_local directory)))
          ~in_:string
          ~with_:"<current-directory>/")
 ;;
@@ -114,7 +114,11 @@ let with_input (type a) string (f : unit -> a Deferred.t) : a =
   Unix.dup2 ~src:r ~dst:Unix.stdin;
   Unix.close r;
   protect
-    ~f:(fun () -> Async_ecaml.Private.block_on_async f)
+    ~f:(fun () ->
+      Async_ecaml.Private.block_on_async
+        [%here]
+        ~context:(lazy [%message "Ecaml_test.Import.with_input"])
+        f)
     ~finally:(fun () -> Unix.dup2 ~src:stdin_to_restore ~dst:Unix.stdin)
 ;;
 

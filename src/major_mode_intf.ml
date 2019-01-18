@@ -98,6 +98,9 @@ module type Major_mode = sig
 
   val is_derived : t -> from:t -> bool
 
+  (** [(describe-variable 'major-mode)] *)
+  val major_mode_var : Symbol.t Buffer_local.t
+
   module For_testing : sig
     val all_derived_modes : unit -> t list
   end

@@ -5,18 +5,27 @@ module Q = struct
   let defconst = "defconst" |> Symbol.intern
 end
 
-let defconst_i symbol here ~docstring (type_ : _ Value.Type.t) initial_value =
+let all_defconst_symbols = ref []
+
+module Private = struct
+  let all_defconst_symbols () =
+    !all_defconst_symbols |> List.sort ~compare:Symbol.compare_name
+  ;;
+end
+
+let defconst_i symbol here ~docstring ~(type_ : _ Value.Type.t) ~value =
+  all_defconst_symbols := symbol :: !all_defconst_symbols;
   Load_history.add_entry here (Var symbol);
   Form.list
     [ Form.symbol Q.defconst
     ; Form.symbol symbol
-    ; Form.quote (type_.to_value initial_value)
+    ; Form.quote (type_.to_value value)
     ; Form.string (docstring |> String.strip)
     ]
   |> Form.eval_i
 ;;
 
-let defconst symbol here ~docstring type_ initial_value =
-  defconst_i symbol here ~docstring type_ initial_value;
+let defconst symbol here ~docstring ~type_ ~value =
+  defconst_i symbol here ~docstring ~type_ ~value;
   Var.create symbol type_
 ;;

@@ -19,15 +19,6 @@ module Fn = struct
   let ecaml_type = Value.Type.caml_embed type_id
 end
 
-type 'a with_spec =
-  ?docstring:string
-  -> ?interactive:string
-  -> ?optional_args:Symbol.t list
-  -> ?rest_arg:Symbol.t
-  -> Source_code_position.t
-  -> args:Symbol.t list
-  -> 'a
-
 module Expert = struct
   let raise_in_dispatch = ref false
 end
@@ -63,7 +54,7 @@ let create =
         "call-OCaml-function" ~implemented_at:([%here] : Source_code_position.t)]
        |> Sexp.to_string)
   in
-  fun ?docstring ?interactive ?optional_args ?rest_arg here ~args callback ->
+  fun here ?docstring ?interactive ~args ?optional_args ?rest_arg callback ->
     let callback = Fn.ecaml_type.to_value callback in
     (* We wrap [callback] with a lambda expression that, when called, calls [dispatch]
        with the [callback] and the same arguments. This way, lambda expression holds on to
@@ -100,8 +91,8 @@ let create =
     |> of_value_exn
 ;;
 
-let create_nullary ?docstring ?interactive here f =
-  create ?docstring ?interactive here ~args:[] (fun _ ->
+let create_nullary here ?docstring ?interactive f =
+  create here ?docstring ?interactive ~args:[] (fun _ ->
     f ();
     Value.nil)
 ;;

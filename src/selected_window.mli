@@ -39,7 +39,9 @@ val view_file : string -> unit
 (** [(describe-function 'save-selected-window)] *)
 val save_selected_window : (unit -> 'a) -> 'a
 
-(** [(describe-function 'with-selected-window)] *)
+(** [(describe-function 'with-selected-window)].
+    Avoid using [set_temporarily], which can have visual artifacts that annoy the user,
+    like flicker of the mode line or cursor. *)
 val set_temporarily : Window.t -> f:(unit -> 'a) -> 'a
 
 (** [(describe-function 'save-window-excursion)] *)

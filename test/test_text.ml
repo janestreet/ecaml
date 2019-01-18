@@ -93,10 +93,10 @@ let%expect_test "ordinary UTF-8" =
 ;;
 
 let%expect_test "malformed UTF-8" =
-  show_string "ÄÅÇ";
+  show_string "\128\129\130";
   [%expect
     {|
-    ((text      "\200\201\202")
+    ((text      "\128\129\130")
      (length    3)
      (num_bytes 6)
      (string    "\128\129\130")) |}]

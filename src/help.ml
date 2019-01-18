@@ -16,6 +16,10 @@ module F = struct
   let describe_minor_mode = Q.describe_minor_mode <: Symbol.type_ @-> return nil
 end
 
+let describe_function = F.describe_function
+let describe_minor_mode = F.describe_minor_mode
+let describe_variable = F.describe_variable
+
 let get_text_of_help ~invoke_help =
   Echo_area.inhibit_messages invoke_help;
   Buffer.find ~name:"*Help*"
@@ -34,8 +38,8 @@ let get_text_of_help ~invoke_help =
     |> String.strip)
 ;;
 
-let function_ ?(obscure_symbol = false) symbol =
-  let s = get_text_of_help ~invoke_help:(fun () -> F.describe_function symbol) in
+let describe_function_text ?(obscure_symbol = false) symbol =
+  let s = get_text_of_help ~invoke_help:(fun () -> describe_function symbol) in
   if obscure_symbol
   then
     String.Search_pattern.replace_all
@@ -45,9 +49,10 @@ let function_ ?(obscure_symbol = false) symbol =
   else s
 ;;
 
-let variable symbol = get_text_of_help ~invoke_help:(fun () -> F.describe_variable symbol)
-let display_minor_mode symbol = F.describe_minor_mode symbol
+let describe_minor_mode_text symbol =
+  get_text_of_help ~invoke_help:(fun () -> describe_minor_mode symbol)
+;;
 
-let minor_mode symbol =
-  get_text_of_help ~invoke_help:(fun () -> display_minor_mode symbol)
+let describe_variable_text symbol =
+  get_text_of_help ~invoke_help:(fun () -> describe_variable symbol)
 ;;

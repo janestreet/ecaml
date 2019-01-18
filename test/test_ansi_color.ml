@@ -388,55 +388,55 @@ let%expect_test "256-indexed color" =
         foo 0 3 (face (:foreground #000000) font-lock-face (:foreground #000000)))))
     ("\027[38;5;17mfoo" (
       Ok (
-        foo 0 3 (face (:foreground #000033) font-lock-face (:foreground #000033)))))
+        foo 0 3 (face (:foreground #00005F) font-lock-face (:foreground #00005F)))))
     ("\027[38;5;22mfoo" (
       Ok (
-        foo 0 3 (face (:foreground #003300) font-lock-face (:foreground #003300)))))
+        foo 0 3 (face (:foreground #005F00) font-lock-face (:foreground #005F00)))))
     ("\027[38;5;52mfoo" (
       Ok (
-        foo 0 3 (face (:foreground #330000) font-lock-face (:foreground #330000)))))
+        foo 0 3 (face (:foreground #5F0000) font-lock-face (:foreground #5F0000)))))
     ("\027[38;5;100mfoo" (
       Ok (
-        foo 0 3 (face (:foreground #666600) font-lock-face (:foreground #666600)))))
+        foo 0 3 (face (:foreground #878700) font-lock-face (:foreground #878700)))))
     ("\027[38;5;110mfoo" (
       Ok (
-        foo 0 3 (face (:foreground #6699CC) font-lock-face (:foreground #6699CC)))))
+        foo 0 3 (face (:foreground #87AFD7) font-lock-face (:foreground #87AFD7)))))
     ("\027[38;5;115mfoo" (
       Ok (
-        foo 0 3 (face (:foreground #66CC99) font-lock-face (:foreground #66CC99)))))
+        foo 0 3 (face (:foreground #87D7AF) font-lock-face (:foreground #87D7AF)))))
     ("\027[38;5;120mfoo" (
       Ok (
-        foo 0 3 (face (:foreground #66FF66) font-lock-face (:foreground #66FF66)))))
+        foo 0 3 (face (:foreground #87FF87) font-lock-face (:foreground #87FF87)))))
     ("\027[38;5;127mfoo" (
       Ok (
-        foo 0 3 (face (:foreground #990099) font-lock-face (:foreground #990099)))))
+        foo 0 3 (face (:foreground #AF00AF) font-lock-face (:foreground #AF00AF)))))
     ("\027[38;5;128mfoo" (
       Ok (
-        foo 0 3 (face (:foreground #9900CC) font-lock-face (:foreground #9900CC)))))
+        foo 0 3 (face (:foreground #AF00D7) font-lock-face (:foreground #AF00D7)))))
     ("\027[38;5;150mfoo" (
       Ok (
-        foo 0 3 (face (:foreground #99CC66) font-lock-face (:foreground #99CC66)))))
+        foo 0 3 (face (:foreground #AFD787) font-lock-face (:foreground #AFD787)))))
     ("\027[38;5;200mfoo" (
       Ok (
-        foo 0 3 (face (:foreground #FF00CC) font-lock-face (:foreground #FF00CC)))))
+        foo 0 3 (face (:foreground #FF00D7) font-lock-face (:foreground #FF00D7)))))
     ("\027[38;5;230mfoo" (
       Ok (
-        foo 0 3 (face (:foreground #FFFFCC) font-lock-face (:foreground #FFFFCC)))))
+        foo 0 3 (face (:foreground #FFFFD7) font-lock-face (:foreground #FFFFD7)))))
     ("\027[38;5;231mfoo" (
       Ok (
         foo 0 3 (face (:foreground #FFFFFF) font-lock-face (:foreground #FFFFFF)))))
     ("\027[38;5;232mfoo" (
       Ok (
-        foo 0 3 (face (:foreground #000000) font-lock-face (:foreground #000000)))))
+        foo 0 3 (face (:foreground #080808) font-lock-face (:foreground #080808)))))
     ("\027[38;5;233mfoo" (
       Ok (
-        foo 0 3 (face (:foreground #0B0B0B) font-lock-face (:foreground #0B0B0B)))))
+        foo 0 3 (face (:foreground #121212) font-lock-face (:foreground #121212)))))
     ("\027[38;5;254mfoo" (
       Ok (
-        foo 0 3 (face (:foreground #F3F3F3) font-lock-face (:foreground #F3F3F3)))))
+        foo 0 3 (face (:foreground #E4E4E4) font-lock-face (:foreground #E4E4E4)))))
     ("\027[38;5;255mfoo" (
       Ok (
-        foo 0 3 (face (:foreground #FFFFFF) font-lock-face (:foreground #FFFFFF))))) |}]
+        foo 0 3 (face (:foreground #EEEEEE) font-lock-face (:foreground #EEEEEE))))) |}]
 ;;
 
 let%expect_test "rgb color" =
@@ -545,7 +545,8 @@ let%expect_test "single code" =
       Ok (foo 0 3 (face (:underline t) font-lock-face (:underline t)))))
     ("\027[5mfoo" (Ok foo))
     ("\027[6mfoo" (Ok foo))
-    ("\027[7mfoo" (Ok foo))
+    ("\027[7mfoo" (
+      Ok (foo 0 3 (face (:inverse-video t) font-lock-face (:inverse-video t)))))
     ("\027[8mfoo" (Ok foo))
     ("\027[9mfoo" (Ok foo))
     ("\027[10mfoo" (Ok foo))

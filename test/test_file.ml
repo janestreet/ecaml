@@ -41,7 +41,7 @@ let%expect_test "[exists], [is_*]" =
 ;;
 
 let%expect_test "[is_below]" =
-  let dir = Current_buffer.(value_exn directory) in
+  let dir = Current_buffer.(get_buffer_local directory) in
   let is_below ?debug file ~dir =
     let result = is_below file ~dir in
     match debug with

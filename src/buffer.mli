@@ -51,8 +51,10 @@ val find_or_create : name:string -> t
 (** [kill t] kills [t], so that [not (is_live t)].  [(describe-function 'kill-buffer)]. *)
 val kill : t -> unit
 
-(** [(describe-function 'get-buffer-window-list)] *)
-val displayed_in : t -> Window0.t list
+(** Return a list of all windows on the current terminal that are displaying the given buffer.
+
+    [(describe-function 'get-buffer-window-list)] *)
+val displayed_in : ?current_frame_only:bool -> t -> Window0.t list
 
 (** [(Info-goto-node "(elisp)Choosing Window")]
     [(describe-function 'display-buffer)] *)

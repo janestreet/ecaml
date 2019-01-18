@@ -2,15 +2,13 @@ open! Core_kernel
 open! Import
 open! Timer
 
-let sec = Time_ns.Span.of_sec
-
 let test f =
   let continue = ref true in
-  run_after_i [%here] (sec 0.) ~name:(Symbol.gensym ()) ~f:(fun () ->
+  run_after_i [%here] (sec_ns 0.) ~name:(Symbol.gensym ()) ~f:(fun () ->
     print_s [%message "ran"];
     continue := false);
   while !continue do
-    f (sec 0.001)
+    f (sec_ns 0.001)
   done
 ;;
 
@@ -29,14 +27,19 @@ let%expect_test "[run_after], [sleep_for]" =
 let%expect_test "[run_after ~repeat]" =
   let r = ref 0 in
   let continue = ref true in
-  run_after_i [%here] (sec 0.) ~repeat:(sec 0.001) ~name:(Symbol.gensym ()) ~f:(fun () ->
-    if !r = 3
-    then continue := false
-    else (
-      incr r;
-      print_s [%message "" ~_:(!r : int)]));
+  run_after_i
+    [%here]
+    (sec_ns 0.)
+    ~repeat:(sec_ns 0.001)
+    ~name:(Symbol.gensym ())
+    ~f:(fun () ->
+      if !r = 3
+      then continue := false
+      else (
+        incr r;
+        print_s [%message "" ~_:(!r : int)]));
   while !continue do
-    sit_for (sec 0.001)
+    sit_for (sec_ns 0.001)
   done;
   [%expect {|
     1
@@ -45,7 +48,7 @@ let%expect_test "[run_after ~repeat]" =
 ;;
 
 let%expect_test "[cancel], [is_scheduled]" =
-  let t = run_after [%here] (sec 60.) ~name:(Symbol.gensym ()) ~f:ignore in
+  let t = run_after [%here] (sec_ns 60.) ~name:(Symbol.gensym ()) ~f:ignore in
   print_s [%sexp (is_scheduled t : bool)];
   [%expect {|
     true |}];

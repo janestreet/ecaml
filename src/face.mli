@@ -255,8 +255,9 @@ val spec_set : t -> Attribute_and_value.t list -> unit
 
 (** [(describe-function 'defface)] *)
 val defface
-  :  Source_code_position.t
-  -> string
-  -> Attribute_and_value.t list
+  :  string
+  -> Source_code_position.t
   -> docstring:string
+  -> customization_group:Customization.Group.t
+  -> Attribute_and_value.t list
   -> t

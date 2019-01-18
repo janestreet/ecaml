@@ -9,7 +9,6 @@ module Q = struct
   and buffer_name = "buffer-name" |> Symbol.intern
   and display_buffer = "display-buffer" |> Symbol.intern
   and find_file_noselect = "find-file-noselect" |> Symbol.intern
-  and generate_new_buffer = "generate-new-buffer" |> Symbol.intern
   and get_buffer = "get-buffer" |> Symbol.intern
   and get_buffer_create = "get-buffer-create" |> Symbol.intern
   and get_buffer_process = "get-buffer-process" |> Symbol.intern
@@ -21,7 +20,13 @@ end
 
 module Process = Process0
 module Window = Window0
-include Buffer0
+
+include (
+  Buffer0 :
+    module type of struct
+    include Buffer0
+  end
+  with module Q := Buffer0.Q)
 
 type buffer = t [@@deriving sexp_of]
 
@@ -61,10 +66,6 @@ let process_exn t =
 
 let all_live () = Symbol.funcall0 Q.buffer_list |> Value.to_list_exn ~f:of_value_exn
 
-let create ~name =
-  Symbol.funcall1 Q.generate_new_buffer (name |> Value.of_utf8_bytes) |> of_value_exn
-;;
-
 let find ~name =
   let v = Symbol.funcall1 Q.get_buffer (name |> Value.of_utf8_bytes) in
   if Value.is_nil v then None else Some (v |> of_value_exn)
@@ -79,14 +80,12 @@ let find_or_create ~name =
   Symbol.funcall1 Q.get_buffer_create (name |> Value.of_utf8_bytes) |> of_value_exn
 ;;
 
-let kill t = Symbol.funcall1_i Q.kill_buffer (t |> to_value)
-
-let displayed_in t =
+let displayed_in ?(current_frame_only = false) t =
   Symbol.funcall3
     Q.get_buffer_window_list
     (t |> to_value)
     Value.nil
-    (Q.visible |> Symbol.to_value)
+    (if current_frame_only then Value.nil else Q.visible |> Symbol.to_value)
   |> Value.to_list_exn ~f:Window.of_value_exn
 ;;
 

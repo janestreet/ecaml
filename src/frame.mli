@@ -48,3 +48,6 @@ val is_live : t -> bool
 
 (** [(describe-function 'other-frame)] *)
 val other_frame : int -> unit
+
+(** [(describe-function 'frame-terminal)] *)
+val terminal : t -> Terminal.t

@@ -79,3 +79,6 @@ val set_start : t -> Position.t -> unit
 
 (** [(describe-function 'window-end)] *)
 val end_ : ?update:bool (** default is [false] *) -> t -> Position.t
+
+(** [(describe-function 'window-frame)] *)
+val frame : t -> Frame.t

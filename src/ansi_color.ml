@@ -227,6 +227,24 @@ Bright colors used to color escape sequences 90-97 (foreground) and 100-107 (bac
     }
   [@@deriving fields, sexp_of]
 
+  (* The standard does not seem to specify how [rgb6_component] and [grayscale24] should
+     work, but this is how most of the terminals do it.
+
+     See discussion in:
+     https://stackoverflow.com/questions/27159322/rgb-values-of-the-colors-in-the-ansi-extended-colors-index-17-255
+     (section: Default RGB values) *)
+  let rgb6_component = function
+    | 0 -> 0
+    | x -> 0x37 + (0x28 * x)
+  ;;
+
+  let grayscale24 index =
+    assert (index < 24);
+    assert (index >= 0);
+    let value = (index * 10) + 8 in
+    Color.of_rgb8 ~r:value ~g:value ~b:value
+  ;;
+
   let rgb6 index =
     let b = index mod 6 in
     let index = index / 6 in
@@ -235,17 +253,10 @@ Bright colors used to color escape sequences 90-97 (foreground) and 100-107 (bac
     let r = index mod 6 in
     let index = index / 6 in
     assert (index = 0);
-    let r = r * 255 / 5 in
-    let g = g * 255 / 5 in
-    let b = b * 255 / 5 in
+    let r = rgb6_component r in
+    let g = rgb6_component g in
+    let b = rgb6_component b in
     Color.of_rgb8 ~r ~g ~b
-  ;;
-
-  let grayscale24 index =
-    assert (index < 24);
-    assert (index >= 0);
-    let value = index * 255 / 23 in
-    Color.of_rgb8 ~r:value ~g:value ~b:value
   ;;
 
   let color t color_spec =
@@ -451,11 +462,6 @@ end = struct
         | None -> t, [ attr_val Foreground (Color (Colors.faint_default_color colors)) ]
         | Some c -> { t with foreground = Some (Color_spec.make_fainter c) }, [])
     in
-    let t =
-      if not t.reverse_video
-      then t
-      else { t with foreground = t.background; background = t.foreground }
-    in
     let w f acc field =
       match f (Field.get field t) with
       | None -> acc
@@ -479,7 +485,7 @@ end = struct
       ~faint:skip (* handled above *)
       ~foreground:(add_color Foreground (fun c -> Color c))
       ~italic:(add_if_true Slant Italic)
-      ~reverse_video:skip (* handled above *)
+      ~reverse_video:(add_if_true Inverse_video Yes)
       ~underline:(add_if_true Underline Foreground)
     |> function
     | [] -> []
@@ -982,20 +988,19 @@ let create
 ;;
 
 module Colorization_state = struct
-  type t =
-    { last_end : Marker.t
-    ; last_colorized : Marker.t
-    ; state_machine : State_machine.t
-    }
-  [@@deriving sexp_of, fields]
+  module T = struct
+    type t =
+      { last_end : Marker.t
+      ; last_colorized : Marker.t
+      ; state_machine : State_machine.t
+      }
+    [@@deriving sexp_of, fields]
+  end
 
-  let type_id = Type_equal.Id.create ~name:"colorization-state" sexp_of_t
-  let type_ = Value.Type.(caml_embed type_id |> option)
-  let var = Var.create ("ansi-color-state" |> Symbol.intern) type_
+  include T
 
-  let () =
-    Var.set_default_value var None;
-    Var.make_buffer_local_always var
+  let in_buffer =
+    Buffer_local.defvar_embedded ("ansi-color-state" |> Symbol.intern) [%here] (module T)
   ;;
 
   let create state_machine =
@@ -1144,7 +1149,7 @@ let color_region ~start ~end_ ~use_temp_file ~preserve_state ~drop_unsupported_e
     if not preserve_state
     then start, None
     else (
-      match Current_buffer.value_exn Colorization_state.var with
+      match Current_buffer.get_buffer_local Colorization_state.in_buffer with
       | None -> start, None
       | Some { last_end; last_colorized; state_machine = _ } as colorization_state ->
         let last_end = Option.value_exn (Marker.position last_end) in
@@ -1181,7 +1186,7 @@ let color_region ~start ~end_ ~use_temp_file ~preserve_state ~drop_unsupported_e
       match colorization_state with
       | None ->
         let v = Colorization_state.create t.state_machine in
-        Current_buffer.set_value Colorization_state.var (Some v);
+        Current_buffer.set_buffer_local Colorization_state.in_buffer (Some v);
         v
       | Some v -> v
     in
@@ -1245,7 +1250,7 @@ let color_region_in_current_buffer
 
 let color_current_buffer () =
   let buffer_was_modified = Current_buffer.is_modified () in
-  Current_buffer.(set_value read_only) false;
+  Current_buffer.(set_buffer_local read_only) false;
   Current_buffer.set_undo_enabled false;
   ignore
     ( color_region
@@ -1256,6 +1261,6 @@ let color_current_buffer () =
         ~drop_unsupported_escapes:false
       : bool );
   if not buffer_was_modified then Current_buffer.set_modified false;
-  Current_buffer.(set_value read_only) true;
+  Current_buffer.(set_buffer_local read_only) true;
   Point.goto_char (Point.min ())
 ;;

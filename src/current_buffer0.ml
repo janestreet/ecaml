@@ -6,7 +6,6 @@ module Q = struct
 
   let boundp = "boundp" |> Symbol.intern
   and current_buffer = "current-buffer" |> Symbol.intern
-  and major_mode = "major-mode" |> Symbol.intern
   and makunbound = "makunbound" |> Symbol.intern
   and set_buffer = "set-buffer" |> Symbol.intern
   and symbol_value = "symbol-value" |> Symbol.intern
@@ -16,6 +15,12 @@ module Buffer = Buffer0
 
 let get () = Symbol.funcall0 Q.current_buffer |> Buffer.of_value_exn
 let set t = Symbol.funcall1_i Q.set_buffer (t |> Buffer.to_value)
+
+let set_temporarily t ~f =
+  let old = get () in
+  set t;
+  protect ~f ~finally:(fun () -> set old)
+;;
 
 let value_is_defined (var : _ Var.t) =
   Symbol.funcall1 Q.boundp (var.symbol |> Symbol.to_value) |> Value.to_bool
@@ -81,5 +86,3 @@ let has_non_null_value var =
   | None -> false
   | Some b -> b
 ;;
-
-let major_mode_var = Var.create Q.major_mode Symbol.type_

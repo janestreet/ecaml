@@ -11,21 +11,20 @@ end
 
 include Value.Subtype
 
-type 'a with_spec =
-  ?docstring:string
+val create
+  :  Source_code_position.t
+  -> ?docstring:string
   -> ?interactive:string
+  -> args:Symbol.t list
   -> ?optional_args:Symbol.t list
   -> ?rest_arg:Symbol.t
-  -> Source_code_position.t
-  -> args:Symbol.t list
-  -> 'a
-
-val create : (Fn.t -> t) with_spec
+  -> Fn.t
+  -> t
 
 val create_nullary
-  :  ?docstring:string
+  :  Source_code_position.t
+  -> ?docstring:string
   -> ?interactive:string
-  -> Source_code_position.t
   -> (unit -> unit)
   -> t
 

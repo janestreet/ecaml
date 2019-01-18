@@ -22,8 +22,8 @@ end
     [(Info-goto-node "(elisp)Text from Minibuffer")] *)
 val read_from
   :  ?default_value:string
-  -> ?history_list:Symbol.t
-  -> ?history_list_pos:int
+  -> ?history:string list Var.t
+  -> ?history_pos:int
   -> ?initial_contents:string
   -> unit
   -> prompt:string

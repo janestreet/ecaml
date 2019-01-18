@@ -50,7 +50,7 @@ let%expect_test "accessors" =
     (parameters (
       (menu-bar-lines     1)
       (buried-buffer-list nil)
-      (buffer-list (#<buffer *scratch*>))
+      (buffer-list ("#<buffer *scratch*>"))
       (unsplittable     nil)
       (minibuffer       "#<window 2 on  *Minibuf-0*>")
       (modeline         t)

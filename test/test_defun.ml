@@ -39,7 +39,7 @@ let%expect_test "[defun]" =
       (s two)
       (s_o (three))
       (rest (four five))) |}];
-  print_endline (describe_function ~obscure_symbol:true symbol);
+  print_endline (Help.describe_function_text ~obscure_symbol:true symbol);
   [%expect
     {|
 <SYMBOL> is a Lisp function.
@@ -67,7 +67,7 @@ let%expect_test "[defun] tuple ordering" =
   print_funcallN symbol [ 2 |> Value.Type.int.to_value; 1 |> Value.Type.int.to_value ];
   [%expect {|
     (difference 1) |}];
-  print_endline (describe_function ~obscure_symbol:true symbol);
+  print_endline (Help.describe_function_text ~obscure_symbol:true symbol);
   [%expect {|
 <SYMBOL> is a Lisp function.
 
@@ -144,7 +144,7 @@ let%expect_test "[lambda]" =
 let%expect_test "[defalias]" =
   let f = "f" |> Symbol.intern in
   defalias f [%here] ~alias_of:("+" |> Symbol.intern) ();
-  print_endline (describe_function f);
+  print_endline (Help.describe_function_text f);
   [%expect
     {|
     f is an alias for `+'.

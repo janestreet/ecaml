@@ -20,6 +20,7 @@ let debug = false
 let print_s = Expect_test_helpers_kernel.print_s
 let eprint_s = Core_kernel.Debug.eprint_s
 let raise_string s = raise_s [%sexp (concat s : string)]
+let sec_ns = Time_ns.Span.of_sec
 
 (* Buffer local variables can cause emacs to segfault when gc'ed. So we use these
    functions to prevent such variables from being gc'ed. See thread "nasty ecaml bug" or

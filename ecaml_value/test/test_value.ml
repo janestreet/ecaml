@@ -1,9 +1,26 @@
 open! Core_kernel
 open! Import
 open! Value
+open! For_testing
 
 let show t = print_s [%sexp (t : t)]
 let test_predicate f t = print_s [%sexp (f t : bool)]
+
+let%expect_test "[sexp_of_t] for strings" =
+  let test string = show (string |> of_utf8_bytes) in
+  test "";
+  [%expect {|
+    "" |}];
+  test "a";
+  [%expect {|
+    a |}];
+  test "()";
+  [%expect {|
+    () |}];
+  test "(a b c)";
+  [%expect {|
+    (a b c) |}]
+;;
 
 let%expect_test "UTF-8" =
   let t = "┌" |> of_utf8_bytes in
@@ -406,6 +423,105 @@ let%expect_test "[funcallN_array{,_i}] with many arguments" =
     (num_args 3_500_000) |}]
 ;;
 
+let%expect_test "rendering OCaml exceptions in Emacs and Ocaml" =
+  let test ?(debug_on_error = false) message =
+    try
+      Current_buffer.set_value_temporarily
+        Debugger.debug_on_error
+        debug_on_error
+        ~f:(fun () ->
+          ignore
+            ( Value.funcall1
+                ("(lambda (f) (funcall f))" |> Form.eval_string)
+                (Function.create_nullary [%here] (fun () -> raise_s message)
+                 |> Function.to_value)
+              : Value.t ));
+      assert false
+    with
+    | exn ->
+      print_endline "Ocaml:";
+      print_s [%sexp (exn : exn)];
+      print_endline "Emacs:";
+      (match exn with
+       | Elisp_signal { data; _ } ->
+         (match to_list_exn data ~f:Fn.id with
+          | [] -> assert false
+          | string :: rest ->
+            let string = string |> to_utf8_bytes_exn in
+            if List.is_empty rest
+            then print_endline string
+            else
+              (* The following format is based on how Emacs renders errors in the
+                 minibuffer.  E.g. [M-x eval-expression]:
+
+                 {v
+                   (defun test-error-rendering ()
+                    (interactive)
+                    (signal 'error '("foo" (a b) c d)))
+                 v}
+
+                 And then [M-x test-error-rendering] will output:
+
+                 {v
+                   foo: (a b), c, d
+                 v} *)
+              printf
+                "%s: %s\n"
+                string
+                (concat ~sep:", " (List.map rest ~f:prin1_to_string)))
+       | _ -> require [%here] false)
+  in
+  test [%message "foo"];
+  [%expect {|
+    Ocaml:
+    (foo)
+    Emacs:
+    foo |}];
+  test [%message "foo"] ~debug_on_error:true;
+  [%expect
+    {|
+    Ocaml:
+    ((foo (backtrace ("<backtrace elided in test>"))))
+    Emacs:
+    (foo (backtrace ("<backtrace elided in test>"))) |}];
+  test [%message "foo" "bar"];
+  [%expect {|
+    Ocaml:
+    ((foo bar))
+    Emacs:
+    (foo bar) |}];
+  test [%message "foo" "bar"] ~debug_on_error:true;
+  [%expect
+    {|
+    Ocaml:
+    (((foo bar) (backtrace ("<backtrace elided in test>"))))
+    Emacs:
+    ((foo bar) (backtrace ("<backtrace elided in test>"))) |}];
+  test (List (List.init 15 ~f:(fun i -> Sexp.Atom ("foobar" ^ Int.to_string i))));
+  [%expect
+    {|
+    Ocaml:
+    ((
+      foobar0
+      foobar1
+      foobar2
+      foobar3
+      foobar4
+      foobar5
+      foobar6
+      foobar7
+      foobar8
+      foobar9
+      foobar10
+      foobar11
+      foobar12
+      foobar13
+      foobar14))
+    Emacs:
+    (foobar0 foobar1 foobar2 foobar3 foobar4 foobar5 foobar6 foobar7 foobar8
+     foobar9 foobar10 foobar11 foobar12 foobar13 foobar14) |}]
+;;
+
 module Type = struct
   open Type
 
@@ -442,6 +558,30 @@ module Type = struct
     [%expect {|
       ((v1 foo)
        (v2 foo)) |}];
+    test None (option int ~wrapped:false);
+    [%expect {|
+      ((v1 nil)
+       (v2 nil)) |}];
+    test (Some 13) (option int ~wrapped:false);
+    [%expect {|
+      ((v1 13)
+       (v2 13)) |}];
+    test None (option int ~wrapped:true);
+    [%expect {|
+      ((v1 nil)
+       (v2 nil)) |}];
+    test (Some 13) (option int ~wrapped:true);
+    [%expect {|
+      ((v1 (13))
+       (v2 (13))) |}];
+    test None (option bool ~wrapped:true);
+    [%expect {|
+      ((v1 nil)
+       (v2 nil)) |}];
+    test (Some false) (option bool ~wrapped:true);
+    [%expect {|
+      ((v1 (nil))
+       (v2 (nil))) |}];
     test [] (list int);
     [%expect {|
       ((v1 nil)

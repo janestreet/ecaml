@@ -154,7 +154,11 @@ let define_derived_mode
   m
 ;;
 
+let major_mode_var =
+  Buffer_local.wrap_existing ("major-mode" |> Symbol.intern) Symbol.type_
+;;
+
 let is_derived t ~from =
-  Current_buffer0.(set_value_temporarily major_mode_var (symbol t)) ~f:(fun () ->
-    F.derived_mode_p (symbol from))
+  Current_buffer0.(set_value_temporarily (major_mode_var |> Buffer_local.var) (symbol t))
+    ~f:(fun () -> F.derived_mode_p (symbol from))
 ;;

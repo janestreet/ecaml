@@ -39,3 +39,12 @@ val set_default_value : 'a t -> 'a -> unit
 (** [(describe-function 'make-variable-buffer-local)]
     [(Info-goto-node "(elisp)Creating Buffer-Local")] *)
 val make_buffer_local_always : _ t -> unit
+
+(** [is_buffer_local_always t] returns [true] if [t] automatically becomes buffer-local
+    when set.  Calling [make_buffer_local_always t] causes [is_buffer_local_always t =
+    true]. *)
+val is_buffer_local_always : _ t -> bool
+
+(** [(describe-function 'local-variable-if-set-p )]
+    [(Info-goto-node "(elisp)Creating Buffer-Local")] *)
+val is_buffer_local_if_set : _ t -> Buffer0.t -> bool

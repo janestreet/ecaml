@@ -42,7 +42,7 @@ module Cycle_report = struct
     let open Async in
     Echo_area.message "Collecting 10 seconds of cycle data...";
     measuring := true;
-    let%map () = Clock_ns.after (Time_ns.Span.of_sec 10.) in
+    let%map () = Clock_ns.after (sec_ns 10.) in
     measuring := false;
     let samples = !cycles in
     cycles := [];
@@ -423,43 +423,51 @@ let start_scheduler () =
 ;;
 
 module Private = struct
-  let block_on_async ?(timeout = None) f =
+  module Context_backtrace = struct
+    type t = (Source_code_position.t * Sexp.t Lazy.t) list [@@deriving sexp_of]
+  end
+
+  let context_backtrace : Context_backtrace.t ref = ref []
+
+  let block_on_async here ?context f =
     assert (Scheduler.am_holding_lock t.scheduler);
-    if t.am_running_async_cycle
-    then raise_s [%sexp "Called [block_on_async] in the middle of an Async job!"];
-    let rec run_cycles_until_filled deferred =
-      if Command.quit_requested ()
-      then `Result (error_s [%message "Blocking operation interrupted"])
-      else (
-        match Async.Deferred.peek deferred with
-        | Some result -> result
-        | None ->
-          (* [Thread.delay] gives the scheduler thread time to run before we run a
-             cycle. *)
-          Scheduler.unlock t.scheduler;
-          Thread.delay (Time.Span.of_us 10. |> Time.Span.to_sec);
-          Scheduler.lock t.scheduler;
-          in_emacs_have_lock_do_cycle ();
-          run_cycles_until_filled deferred)
-    in
-    let deferred =
-      Async.(
-        Monitor.try_with ~extract_exn:true ~run:`Schedule f >>| Or_error.of_exn_result)
-    in
-    let deferred =
-      match timeout with
-      | None -> Async.Deferred.map deferred ~f:(fun result -> `Result result)
-      | Some timeout -> Async.Clock.with_timeout timeout deferred
-    in
-    match run_cycles_until_filled deferred with
-    | `Timeout -> raise_s [%sexp "Blocking operation timed out"]
-    | `Result (Ok x) -> x
-    | `Result (Error error) -> Error.raise error
+    Ref.set_temporarily
+      context_backtrace
+      ((here, Option.value context ~default:(lazy [%message])) :: !context_backtrace)
+      ~f:(fun () ->
+        if t.am_running_async_cycle
+        then
+          raise_s
+            [%message.omit_nil
+              "Called [block_on_async] in the middle of an Async job!"
+                (context_backtrace : Context_backtrace.t ref)];
+        let rec run_cycles_until_filled deferred =
+          if Command.quit_requested ()
+          then error_s [%message "Blocking operation interrupted"]
+          else (
+            match Async.Deferred.peek deferred with
+            | Some result -> result
+            | None ->
+              (* [Thread.delay] gives the scheduler thread time to run before we run a
+                 cycle. *)
+              Scheduler.unlock t.scheduler;
+              Thread.delay (Time.Span.of_us 10. |> Time.Span.to_sec);
+              Scheduler.lock t.scheduler;
+              in_emacs_have_lock_do_cycle ();
+              run_cycles_until_filled deferred)
+        in
+        let deferred =
+          Async.(
+            Monitor.try_with ~extract_exn:true ~run:`Schedule f
+            >>| Or_error.of_exn_result)
+        in
+        let result = run_cycles_until_filled deferred in
+        match result with
+        | Ok x -> x
+        | Error error -> Error.raise error)
   ;;
 
-  let () =
-    Set_once.set_exn Defun.Private.block_on_async [%here] (fun f -> block_on_async f)
-  ;;
+  let () = Set_once.set_exn Defun.Private.block_on_async [%here] block_on_async
 
   let run_outside_async f =
     let open Async in
@@ -475,7 +483,9 @@ end
 module Expect_test_config = struct
   include Async.Expect_test_config
 
-  let run f = Private.block_on_async f
+  let run f =
+    Private.block_on_async [%here] ~context:(lazy [%message "Expect_test_config.run"]) f
+  ;;
 end
 
 let shutdown () =
@@ -511,15 +521,15 @@ let initialize () =
     ~interactive:No_arg
     (fun () -> Async.don't_wait_for (Cycle_report.generate_report ()));
   let defun_benchmark ~name ~f =
-    Defun.defun_nullary_nil
+    Defun.defun_nullary
       (name |> Symbol.intern)
       [%here]
       ~interactive:No_arg
+      Returns_unit_deferred
       (fun () ->
          let open Async in
-         Private.block_on_async (fun () ->
-           let%map time = f () in
-           Echo_area.message_s time))
+         let%map time = f () in
+         Echo_area.message_s time)
   in
   defun_benchmark
     ~name:"ecaml-async-benchmark-small-pings"
@@ -527,11 +537,14 @@ let initialize () =
   defun_benchmark
     ~name:"ecaml-async-benchmark-throughput"
     ~f:Ecaml_bench.Bench_async_ecaml.benchmark_throughput;
-  Defun.defun_nullary_nil
-    ("ecaml-async-test-blocking-timeout" |> Symbol.intern)
+  Defun.defun_nullary
+    ("ecaml-async-test-block-forever" |> Symbol.intern)
     [%here]
     ~interactive:No_arg
-    (fun () -> Private.block_on_async ~timeout:(Some (sec 10.)) Async.Deferred.never);
+    Returns_unit_deferred
+    (fun () ->
+       message_s [%message "blocking forever -- press C-g to interrupt"];
+       Async.Deferred.never ());
   Defun.defun_nullary_nil
     ("ecaml-async-test-execution-context-handling" |> Symbol.intern)
     [%here]
@@ -552,9 +565,9 @@ let initialize () =
        check_execution_context ();
        let timer =
          Timer.run_after
-           ~repeat:(Time_ns.Span.of_sec 0.1)
+           ~repeat:(sec_ns 0.1)
            [%here]
-           (Time_ns.Span.of_sec 0.1)
+           (sec_ns 0.1)
            ~f:check_execution_context
            ~name:("check-execution-context-timer" |> Symbol.intern)
        in
@@ -581,7 +594,7 @@ let initialize () =
          (let open Deferred.Let_syntax in
           message_s [%message "testing"];
           let all_elapsed = ref [] in
-          let long_cutoff = Time_ns.Span.of_sec 0.01 in
+          let long_cutoff = sec_ns 0.01 in
           let rec loop i =
             if i = 0
             then (

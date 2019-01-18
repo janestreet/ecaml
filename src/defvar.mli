@@ -7,9 +7,10 @@ val defvar
   :  Symbol.t
   -> Source_code_position.t
   -> docstring:string
-  -> initial_value:Value.t
+  -> type_:'a Value.Type.t
+  -> initial_value:'a
   -> unit
-  -> unit
+  -> 'a Var.t
 
 (** [(describe-function 'defvaralias)]
     [(Info-goto-node "(elisp)Variable Aliases")] *)

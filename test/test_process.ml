@@ -66,7 +66,7 @@ let%expect_test "[exit_status]" =
   let test prog =
     let t = create ~prog ~args:[] ~name:"t" () in
     while Process.is_alive t do
-      Timer.sleep_for (0.01 |> Time_ns.Span.of_sec)
+      Timer.sleep_for (0.01 |> sec_ns)
     done;
     print_s [%message (status t : Status.t) (exit_status t : Exit_status.t)]
   in
@@ -114,6 +114,10 @@ let%expect_test "[query_on_exit], [set_query_on_exit]" =
   kill t
 ;;
 
+let print_current_buffer_contents () =
+  print_string (Current_buffer.contents () |> Text.to_utf8_bytes)
+;;
+
 let test_call_result_exn
       ?input
       ?(output = Call.Output.Before_point_in_current_buffer)
@@ -124,15 +128,15 @@ let test_call_result_exn
   =
   Current_buffer.set_temporarily_to_temp_buffer (fun () ->
     let result = call_result_exn prog args ?input ~output ?working_directory in
-    print_s
-      [%message
-        "" (result : Call.Result.t) ~output:(Current_buffer.contents () : Text.t)])
+    print_s [%message (result : Call.Result.t)];
+    print_endline "output:";
+    print_current_buffer_contents ())
 ;;
 
 let show_file_contents file =
   Current_buffer.set_temporarily_to_temp_buffer (fun () ->
     Point.insert_file_contents_exn file;
-    print_s [%sexp (Current_buffer.contents () : Text.t)])
+    print_current_buffer_contents ())
 ;;
 
 let%expect_test "[call_result_exn] raise" =
@@ -145,19 +149,24 @@ let%expect_test "[call_result_exn] raise" =
 let%expect_test "[call_result_exn]" =
   test_call_result_exn () ~prog:"true" ~args:[];
   [%expect {|
-    ((result (Exit_status 0)) (output "")) |}];
+    (result (Exit_status 0))
+    output: |}];
   test_call_result_exn () ~prog:"false" ~args:[];
   [%expect {|
-    ((result (Exit_status 1)) (output "")) |}];
+    (result (Exit_status 1))
+    output: |}];
   test_call_result_exn () ~prog:"echo" ~args:[ "foo"; "bar" ];
   [%expect {|
-    ((result (Exit_status 0)) (output "foo bar\n")) |}]
+    (result (Exit_status 0))
+    output:
+    foo bar |}]
 ;;
 
 let%expect_test "[Call.Input.Dev_null]" =
   test_call_result_exn () ~prog:"cat" ~args:[] ~input:Dev_null;
   [%expect {|
-    ((result (Exit_status 0)) (output "")) |}]
+    (result (Exit_status 0))
+    output: |}]
 ;;
 
 let%expect_test "[Call.Input.File]" =
@@ -168,47 +177,56 @@ let%expect_test "[Call.Input.File]" =
   Current_buffer.kill ();
   test_call_result_exn () ~prog:"cat" ~args:[ file ];
   [%expect {|
-    ((result (Exit_status 0)) (output foobar)) |}];
+    (result (Exit_status 0))
+    output:
+    foobar |}];
   test_call_result_exn () ~prog:"cat" ~args:[] ~input:(File file);
   [%expect {|
-    ((result (Exit_status 0)) (output foobar)) |}];
+    (result (Exit_status 0))
+    output:
+    foobar |}];
   Sys.remove file
 ;;
 
 let%expect_test "[Call.Output.Dev_null]" =
   test_call_result_exn () ~prog:"echo" ~args:[ "foo" ] ~output:Dev_null;
   [%expect {|
-    ((result (Exit_status 0)) (output "")) |}]
+    (result (Exit_status 0))
+    output: |}]
 ;;
 
 let%expect_test "[Call.Output.File]" =
   let file = Caml.Filename.temp_file "" "" in
   test_call_result_exn () ~prog:"echo" ~args:[ "foo" ] ~output:(Overwrite_file file);
   [%expect {|
-    ((result (Exit_status 0)) (output "")) |}];
+    (result (Exit_status 0))
+    output: |}];
   show_file_contents file;
   [%expect {|
-    "foo\n" |}];
+    foo |}];
   test_call_result_exn
     ()
     ~prog:"bash"
     ~args:[ "-c"; "echo 1>&2 another-foo" ]
     ~output:(Overwrite_file file);
   [%expect {|
-    ((result (Exit_status 0)) (output "")) |}];
+    (result (Exit_status 0))
+    output: |}];
   show_file_contents file;
   [%expect {|
-    "another-foo\n" |}];
+    another-foo |}];
   test_call_result_exn
     ()
     ~prog:"bash"
     ~args:[ "-c"; "echo foo; echo >&2 bar" ]
     ~output:(Overwrite_file file);
   [%expect {|
-    ((result (Exit_status 0)) (output "")) |}];
+    (result (Exit_status 0))
+    output: |}];
   show_file_contents file;
   [%expect {|
-    "foo\nbar\n" |}];
+    foo
+    bar |}];
   Sys.remove file
 ;;
 
@@ -221,24 +239,28 @@ let%expect_test "[Call.Output.Split]" =
       ~output:
         (Split { stderr = Dev_null; stdout = Before_point_in (Current_buffer.get ()) });
     [%expect {|
-      ((result (Exit_status 0)) (output "")) |}];
-    print_s [%sexp (Current_buffer.contents () : Text.t)];
+      (result (Exit_status 0))
+      output: |}];
+    print_current_buffer_contents ();
     [%expect {|
-      "foo\n" |}]);
+      foo |}]);
   test_call_result_exn
     ()
     ~prog:"echo"
     ~args:[ "foo" ]
     ~output:(Split { stderr = Dev_null; stdout = Before_point_in_current_buffer });
   [%expect {|
-    ((result (Exit_status 0)) (output "foo\n")) |}];
+    (result (Exit_status 0))
+    output:
+    foo |}];
   test_call_result_exn
     ()
     ~prog:"echo"
     ~args:[ "foo" ]
     ~output:(Split { stderr = Dev_null; stdout = Dev_null });
   [%expect {|
-    ((result (Exit_status 0)) (output "")) |}];
+    (result (Exit_status 0))
+    output: |}];
   let file = Caml.Filename.temp_file "" "" in
   test_call_result_exn
     ()
@@ -246,10 +268,11 @@ let%expect_test "[Call.Output.Split]" =
     ~args:[ "-c"; "echo 1>&2 foo" ]
     ~output:(Split { stderr = Overwrite_file file; stdout = Dev_null });
   [%expect {|
-    ((result (Exit_status 0)) (output "")) |}];
+    (result (Exit_status 0))
+    output: |}];
   show_file_contents file;
   [%expect {|
-    "foo\n" |}];
+    foo |}];
   Sys.remove file;
   let file1 = Caml.Filename.temp_file "" "" in
   let file2 = Caml.Filename.temp_file "" "" in
@@ -259,13 +282,14 @@ let%expect_test "[Call.Output.Split]" =
     ~args:[ "-c"; "echo foo; echo >&2 bar" ]
     ~output:(Split { stderr = Overwrite_file file1; stdout = Overwrite_file file2 });
   [%expect {|
-    ((result (Exit_status 0)) (output "")) |}];
+    (result (Exit_status 0))
+    output: |}];
   show_file_contents file1;
   [%expect {|
-    "bar\n" |}];
+    bar |}];
   show_file_contents file2;
   [%expect {|
-    "foo\n" |}];
+    foo |}];
   Sys.remove file1;
   Sys.remove file2
 ;;
@@ -317,7 +341,9 @@ let%expect_test "[shell_command_exn ~working_directory]" =
     [%here]
     (module String)
     (shell_command_exn "pwd" ~working_directory:Of_current_buffer)
-    (Current_buffer.(value_exn directory) |> File.truename |> Filename.of_directory)
+    (Current_buffer.(get_buffer_local directory)
+     |> File.truename
+     |> Filename.of_directory)
 ;;
 
 let input_region ~start ~end_ ~delete =
@@ -326,8 +352,9 @@ let input_region ~start ~end_ ~delete =
 ;;
 
 let test result =
-  let output = Current_buffer.contents () in
-  print_s [%message "" (result : Call.Result.t) (output : Text.t)];
+  print_s [%message (result : Call.Result.t)];
+  print_endline "output:";
+  print_current_buffer_contents ();
   Current_buffer.erase ()
 ;;
 
@@ -335,11 +362,15 @@ let%expect_test "[call_region_exn]" =
   Point.insert "echo";
   test (call_region_exn "cat" [] ~output:Before_point_in_current_buffer);
   [%expect {|
-    ((result (Exit_status 0)) (output echoecho)) |}];
+    (result (Exit_status 0))
+    output:
+    echoecho |}];
   Point.insert "foooooooo";
   test (call_region_exn "sed" [ "s/o/i/g" ] ~output:Before_point_in_current_buffer);
   [%expect {|
-    ((result (Exit_status 0)) (output foooooooofiiiiiiii)) |}];
+    (result (Exit_status 0))
+    output:
+    foooooooofiiiiiiii |}];
   Point.insert "foobar";
   test
     (call_region_exn
@@ -347,7 +378,10 @@ let%expect_test "[call_region_exn]" =
        "sed"
        ~output:Before_point_in_current_buffer
        [ "s/o/i/g" ]);
-  [%expect {| ((result (Exit_status 0)) (output foobarfiib)) |}];
+  [%expect {|
+    (result (Exit_status 0))
+    output:
+    foobarfiib |}];
   Point.insert "foobar";
   test
     (call_region_exn
@@ -355,14 +389,20 @@ let%expect_test "[call_region_exn]" =
        "sed"
        ~output:Before_point_in_current_buffer
        [ "s/o/i/g" ]);
-  [%expect {| ((result (Exit_status 0)) (output arfiib)) |}];
+  [%expect {|
+    (result (Exit_status 0))
+    output:
+    arfiib |}];
   test
     (call_region_exn
        ~input:(String "footron")
        "sed"
        ~output:Before_point_in_current_buffer
        [ "s/o/i/g" ]);
-  [%expect {| ((result (Exit_status 0)) (output fiitrin)) |}]
+  [%expect {|
+    (result (Exit_status 0))
+    output:
+    fiitrin |}]
 ;;
 
 let%expect_test "[call_exn] with sexp error message" =

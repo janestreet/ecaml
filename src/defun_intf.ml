@@ -52,7 +52,16 @@ module type Defun = sig
     val defun_symbols : Symbol.t list ref
   end
 
-  val defun_raw : (Symbol.t -> Function.Fn.t -> unit) Function.with_spec
+  val defun_raw
+    :  Symbol.t
+    -> Source_code_position.t
+    -> ?docstring:string
+    -> ?interactive:string
+    -> args:Symbol.t list
+    -> ?optional_args:Symbol.t list
+    -> ?rest_arg:Symbol.t
+    -> Function.Fn.t
+    -> unit
 
   module Returns : sig
     type 'a t =
@@ -144,6 +153,11 @@ module type Defun = sig
     -> Function.t
 
   module Private : sig
-    val block_on_async : ((unit -> unit Deferred.t) -> unit) Set_once.t
+    val block_on_async :
+      (Source_code_position.t
+       -> ?context:Sexp.t Lazy.t
+       -> (unit -> unit Deferred.t)
+       -> unit)
+        Set_once.t
   end
 end

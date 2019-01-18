@@ -6,6 +6,7 @@ module F = struct
   open Funcall
 
   let frame_live_p = Q.frame_live_p <: type_ @-> return bool
+  let frame_terminal = Q.frame_terminal <: type_ @-> return Terminal.type_
   let other_frame = Q.other_frame <: int @-> return nil
 end
 
@@ -39,3 +40,4 @@ let set_selected t = Symbol.funcall1_i Q.select_frame (t |> to_value)
 let set_selected_temporarily t ~f = Save_wrappers.with_selected_frame (to_value t) f
 let is_live = F.frame_live_p
 let other_frame = F.other_frame
+let terminal = F.frame_terminal

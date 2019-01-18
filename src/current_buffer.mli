@@ -13,9 +13,13 @@ open! Import
 open! Ecaml_filename
 include Current_buffer0_intf.Current_buffer0_public
 
+val get_buffer_local : 'a Buffer_local.t -> 'a
+val get_buffer_local_exn : 'a option Buffer_local.t -> 'a
+val set_buffer_local : 'a Buffer_local.t -> 'a -> unit
+
 (** [(describe-variable 'default-directory)]
     [(Info-goto-node "(elisp)File Name Expansion")] *)
-val directory : Filename.t Var.t
+val directory : Filename.t Buffer_local.t
 
 (** [(describe-variable 'buffer-undo-list)]
     [(Info-goto-node "(elisp)Undo")]
@@ -36,7 +40,7 @@ val name : unit -> string
 
 (** [(describe-variable 'buffer-file-name)]
     [(Info-goto-node "(elisp)Buffer File Name")] *)
-val file_name_var : Filename.t option Var.t
+val file_name_var : Filename.t option Buffer_local.t
 
 (** [(describe-function 'undo-boundary)]
     [(Info-goto-node "(elisp)Undo")] *)
@@ -48,10 +52,6 @@ val undo : int -> unit
 (** [(describe-function 'describe-mode)]
     [(Info-goto-node "(elisp)Mode Help")] *)
 val describe_mode : unit -> unit
-
-(** [set_temporarily t ~f] runs [f] with the current buffer set to [t].
-    [(describe-function 'with-current-buffer)]. *)
-val set_temporarily : Buffer.t -> f:(unit -> 'a) -> 'a
 
 (** [set_temporarily_to_temp_buffer f] creates a temporary buffer and runs [f] with the
     current buffer set to the temporary buffer.  [(describe-function 'with-temp-buffer)]. *)
@@ -69,7 +69,7 @@ val set_modified : bool -> unit
 
 (** [(describe-variable 'fill-column)]
     [(Info-goto-node "(elisp)Margins")] *)
-val fill_column : int Var.t
+val fill_column : int Buffer_local.t
 
 (** [(describe-variable 'paragraph-start)]
     [(Info-goto-node "(elisp)Standard Regexps ")] *)
@@ -81,7 +81,7 @@ val paragraph_separate : Regexp.t Var.t
 
 (** [(describe-variable 'buffer-read-only)]
     [(Info-goto-node "(elisp)Read-Only Buffers")] *)
-val read_only : bool Var.t
+val read_only : bool Buffer_local.t
 
 (** [(describe-variable 'transient-mark-mode)]
     [(describe-function 'transient-mark-mode)]
@@ -330,4 +330,7 @@ val replace_buffer_contents : (Buffer.t -> unit) Or_error.t
 val size : unit -> int
 
 (** [(describe-variable 'truncate-lines)] *)
-val truncate_lines : bool Var.t
+val truncate_lines : bool Buffer_local.t
+
+(** [(describe-function 'buffer-chars-modified-tick)] *)
+val chars_modified_tick : unit -> Modified_tick.t

@@ -8,6 +8,10 @@ module type Current_buffer0_public = sig
   (** [(describe-function 'set-buffer)] *)
   val set : Buffer0.t -> unit
 
+  (** [set_temporarily t ~f] runs [f] with the current buffer set to [t].
+      [(describe-function 'with-current-buffer)]. *)
+  val set_temporarily : Buffer0.t -> f:(unit -> 'a) -> 'a
+
   (** [(describe-function 'symbol-value)] *)
   val symbol_value : Symbol.t -> Value.t
 
@@ -39,8 +43,6 @@ end
 
 module type Current_buffer0 = sig
   include Current_buffer0_public
-
-  val major_mode_var : Symbol.t Var.t
 
   module Q : sig
     include module type of Q

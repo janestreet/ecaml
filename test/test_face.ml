@@ -8,6 +8,14 @@ let%expect_test "[font_family_list]" =
     () |}]
 ;;
 
+let customization_group =
+  Customization.Group.defgroup
+    ("test-group" |> Symbol.intern)
+    [%here]
+    ~docstring:"A test customization group"
+    ~parents:[]
+;;
+
 let some_attribute_value (type a) (attribute : a Attribute.t) : a option =
   let open Attribute in
   match attribute with
@@ -1475,10 +1483,11 @@ let%expect_test "[defface]" =
   let name = "foobar" in
   let t =
     defface
-      [%here]
       name
-      [ T (Foreground, Color Color.cyan); T (Overline, Absent) ]
+      [%here]
       ~docstring:"Test face"
+      ~customization_group
+      [ T (Foreground, Color Color.cyan); T (Overline, Absent) ]
   in
   print_s [%message "" ~_:(t : t) ~_:(attributes t : Attribute_and_value.t list)];
   [%expect

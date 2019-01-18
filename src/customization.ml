@@ -13,8 +13,10 @@ module Q = struct
   and color = "color" |> Symbol.intern
   and cons = "cons" |> Symbol.intern
   and const = "const" |> Symbol.intern
+  and customize_group = "customize-group" |> Symbol.intern
   and customize_variable = "customize-variable" |> Symbol.intern
   and defcustom = "defcustom" |> Symbol.intern
+  and defgroup = "defgroup" |> Symbol.intern
   and directory = "directory" |> Symbol.intern
   and float = "float" |> Symbol.intern
   and function_ = "function" |> Symbol.intern
@@ -31,17 +33,47 @@ end
 module F = struct
   open Funcall
 
+  let customize_group = Q.customize_group <: Symbol.type_ @-> return nil
   let customize_variable = Q.customize_variable <: Symbol.type_ @-> return nil
 end
 
 let customize_variable = F.customize_variable
+let customize_group = F.customize_group
 let q value = Value.list [ Symbol.to_value Q.quote; value ]
 
 module Group = struct
-  type t = Symbol.t [@@deriving sexp_of]
+  include (
+    Symbol :
+    sig
+      type t = Symbol.t [@@deriving sexp_of]
+
+      include Valueable.S with type t := t
+    end)
+
+  let all_defgroups = ref []
+
+  let defgroup group_name here ~docstring ~parents =
+    let form_of_parent parent =
+      Form.[ Q.K.group |> symbol; parent |> Symbol.to_value |> quote ]
+    in
+    let docstring =
+      sprintf "%s\n\nDefined at %s" docstring (here |> Source_code_position.to_string)
+    in
+    Form.(
+      eval_i
+        (list
+           (List.concat
+              [ [ Q.defgroup |> symbol; group_name |> symbol; nil; docstring |> string ]
+              ; List.concat_map parents ~f:form_of_parent
+              ])));
+    all_defgroups := group_name :: !all_defgroups;
+    group_name
+  ;;
 
   let of_string = Symbol.intern
   let to_string = Symbol.name
+  let to_symbol t = t
+  let emacs = of_string "emacs"
 end
 
 module Type = struct
@@ -134,6 +166,8 @@ module Private = struct
   let all_defcustom_symbols () =
     !all_defcustom_symbols |> List.sort ~compare:Symbol.compare_name
   ;;
+
+  let all_defgroups () = !Group.all_defgroups |> List.sort ~compare:Symbol.compare_name
 end
 
 let defcustom
@@ -194,24 +228,7 @@ let defcustom
            (standard_value : Value.t)
            (docstring : string)
            ~_:(here : Source_code_position.t)]);
-  Var.create
-    symbol
-    (Value.Type.create
-       (Value.Type.name type_)
-       (Value.Type.to_sexp type_)
-       (fun value ->
-          try Value.Type.of_value_exn type_ value with
-          | _ ->
-            raise_s
-              [%message
-                ""
-                  ~_:
-                    (concat
-                       [ "invalid value for customization variable: "
-                       ; symbol |> Symbol.name
-                       ])
-                  (customization_type : Type.t)])
-       (Value.Type.to_value type_))
+  Var.create symbol type_
 ;;
 
 module Enum = struct

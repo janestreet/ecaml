@@ -71,6 +71,7 @@ let intern = wrap_raise1 intern
 module Q = struct
   let append = "append" |> intern
   and arrayp = "arrayp" |> intern
+  and backtrace = "backtrace" |> intern
   and bufferp = "bufferp" |> intern
   and car = "car" |> intern
   and cadr = "cadr" |> intern
@@ -80,6 +81,7 @@ module Q = struct
   and consp = "consp" |> intern
   and debug_on_error = "debug-on-error" |> intern
   and equal = "equal" |> intern
+  and equal_including_properties = "equal-including-properties" |> intern
   and error = "error" |> intern
   and eventp = "eventp" |> intern
   and floatp = "floatp" |> intern
@@ -95,6 +97,7 @@ module Q = struct
   and prin1_to_string = "prin1-to-string" |> intern
   and processp = "processp" |> intern
   and stringp = "stringp" |> intern
+  and substring_no_properties = "substring-no-properties" |> intern
   and symbol_value = "symbol-value" |> intern
   and symbolp = "symbolp" |> intern
   and syntax_table_p = "syntax-table-p" |> intern
@@ -300,6 +303,11 @@ let to_float_exn = wrap_raise1 to_float_exn
 external of_utf8_bytes : string -> t = "ecaml_of_string"
 
 let of_utf8_bytes = wrap_raise1 of_utf8_bytes
+let of_utf8_bytes_cache = Hashtbl.create (module String)
+
+let of_utf8_bytes_cached string =
+  Hashtbl.find_or_add of_utf8_bytes_cache string ~default:(fun () -> of_utf8_bytes string)
+;;
 
 external to_utf8_bytes_exn : t -> string = "ecaml_to_string"
 
@@ -386,20 +394,6 @@ let to_array_exn (t : t) ~f =
 
 let vector arr = funcallN_array Q.vector arr
 
-let looks_nice_in_symbol = function
-  | 'a' .. 'z'
-  | 'A' .. 'Z'
-  | '0' .. '9'
-  | '_' | '-' | '!' | '*' | '+' | '/' | ':' | '<' | '=' | '>' | '@' | '|' -> true
-  | _ -> false
-;;
-
-let rec pretty_sexp : Sexp.t -> t = function
-  | Atom s ->
-    if String.for_all s ~f:looks_nice_in_symbol then intern s else s |> of_utf8_bytes
-  | List sexps -> list (List.map sexps ~f:pretty_sexp)
-;;
-
 let non_local_exit_signal exn =
   let module M = struct
     (** [non_local_exit_signal] sets a [pending_error] flag in the Emacs environment that
@@ -408,33 +402,87 @@ let non_local_exit_signal exn =
     external non_local_exit_signal : t -> t -> unit = "ecaml_non_local_exit_signal"
   end
   in
+  let debug_on_error = debug_on_error () in
   let symbol, data =
-    let append_backtrace_if_debugging rest =
-      match debug_on_error () with
-      | true ->
-        [%sexp { backtrace = (Backtrace.Exn.most_recent () : Backtrace.t) }]
-        |> pretty_sexp
-        |> funcall2 Q.append rest
-      | false -> rest
-    in
     match exn with
     | Elisp_signal { symbol; data } ->
       (* This case preserves an Elisp signal as it crosses an OCaml boundary. *)
-      symbol, append_backtrace_if_debugging data
+      let data =
+        match debug_on_error with
+        | false -> data
+        | true ->
+          funcall2
+            Q.append
+            data
+            (list
+               [ list
+                   [ Q.backtrace
+                   ; Backtrace.Exn.most_recent () |> Backtrace.to_string |> of_utf8_bytes
+                   ]
+               ])
+      in
+      symbol, data
     | _ ->
-      let string, rest =
-        match [%sexp (exn : exn)] with
-        | Atom string -> string, []
-        | List [ Atom string ] -> string, []
-        | List [ Atom string; rest ] -> string, [ rest |> pretty_sexp ]
-        | List (Atom string :: rest) -> string, [ List rest |> pretty_sexp ]
-        | List rest -> "error", [ List rest |> pretty_sexp ]
+      let backtrace =
+        if debug_on_error then Some (Backtrace.Exn.most_recent ()) else None
+      in
+      let message =
+        [%message.omit_nil "" ~_:(exn : exn) (backtrace : Backtrace.t option)]
+      in
+      let message =
+        match message with
+        | Atom string -> string
+        | List _ as sexp -> Sexp.to_string_hum sexp
       in
       (* For the [error] symbol, the error data should be a list whose car is a string.
          See [(Info-goto-node "(elisp)Signaling Errors")]. *)
-      Q.error, append_backtrace_if_debugging (list ((string |> of_utf8_bytes) :: rest))
+      Q.error, list [ message |> of_utf8_bytes ]
   in
   M.non_local_exit_signal symbol data
+;;
+
+let prin1_to_string t = funcall1 Q.prin1_to_string t |> to_utf8_bytes_exn
+
+let text_has_properties t =
+  is_nil (funcall2 Q.equal_including_properties t (funcall1 Q.substring_no_properties t))
+;;
+
+let might_be_a_sexp string =
+  let string = string |> String.strip in
+  let n = String.length string in
+  n >= 2 && Char.equal string.[0] '(' && Char.equal string.[n - 1] ')'
+;;
+
+let rec sexp_of_t t : Sexp.t =
+  if is_string t && not (text_has_properties t)
+  then (
+    let string = t |> to_utf8_bytes_exn in
+    if not (might_be_a_sexp string)
+    then Atom string
+    else (
+      match string |> Sexp.of_string with
+      | x -> x
+      | exception _ -> Atom string))
+  else if is_cons t
+  then (
+    let car = sexp_of_t (car_exn t) in
+    let cdr = sexp_of_t (cdr_exn t) in
+    match cdr with
+    | Atom "nil" -> List [ car ]
+    | Atom _ -> List [ car; Atom "."; cdr ]
+    | List sexps -> List (car :: sexps))
+  else (
+    let sexp_string = prin1_to_string t in
+    let sexp_string =
+      (* Emacs prefixes some values (like buffers, markers, etc) with [#], which then
+         makes the sexp unparseable.  So in this case we strip the [#]. *)
+      if String.is_prefix sexp_string ~prefix:"#("
+      then String.chop_prefix_exn sexp_string ~prefix:"#"
+      else sexp_string
+    in
+    match Sexp.of_string sexp_string with
+    | sexp -> sexp
+    | exception _ -> Atom sexp_string)
 ;;
 
 let initialize_module =
@@ -448,19 +496,7 @@ let initialize_module =
       else [%message "" ~_:(symbol : t) ~_:(data : t)]
     | _ -> (* Reaching this branch indicates a bug in sexplib. *)
       assert false);
-  sexp_of_t_ref :=
-    fun t ->
-      let sexp_string = funcall1 Q.prin1_to_string t |> to_utf8_bytes_exn in
-      let sexp_string =
-        (* Emacs prefixes some values (like buffers, markers, etc) with [#], which then
-           makes the sexp unparseable. So in this case we strip the [#]. *)
-        if String.is_prefix sexp_string ~prefix:"#("
-        then String.chop_prefix_exn sexp_string ~prefix:"#"
-        else sexp_string
-      in
-      match Sexp.of_string sexp_string with
-      | sexp -> sexp
-      | exception _ -> Atom sexp_string
+  sexp_of_t_ref := sexp_of_t
 ;;
 
 let initialize_module =
@@ -503,6 +539,8 @@ module Type = struct
     }
   ;;
 
+  let with_of_value_exn t of_value_exn = { t with of_value_exn }
+
   module type Enum = Enum
 
   let enum (type a) name (module M : Enum with type t = a) to_value =
@@ -522,6 +560,10 @@ module Type = struct
 
   let string =
     create [%message "string"] [%sexp_of: string] to_utf8_bytes_exn of_utf8_bytes
+  ;;
+
+  let string_cached =
+    create [%message "string"] [%sexp_of: string] to_utf8_bytes_exn of_utf8_bytes_cached
   ;;
 
   let unit =
@@ -575,7 +617,27 @@ module Type = struct
       (fun (a1, a2) -> cons (t1.to_value a1) (cons (t2.to_value a2) nil))
   ;;
 
-  let option t =
+  let map t ~name ~of_ ~to_ =
+    create
+      name
+      (Fn.compose (to_sexp t) to_)
+      (Fn.compose of_ t.of_value_exn)
+      (Fn.compose t.to_value to_)
+  ;;
+
+  let map_id t name = map t ~name ~of_:Fn.id ~to_:Fn.id
+
+  let option ?(wrapped = false) t =
+    let t =
+      if not wrapped
+      then t
+      else
+        map
+          (tuple t unit)
+          ~name:[%message "wrapped" ~_:(name t : Sexp.t)]
+          ~of_:(fun (a, ()) -> a)
+          ~to_:(fun a -> a, ())
+    in
     create
       [%message "option" ~_:(name t : Sexp.t)]
       (sexp_of_option (to_sexp t))
@@ -601,16 +663,6 @@ module Type = struct
          Caml_embed.extract_exn embed type_id)
       (fun a -> Caml_embed.create type_id a |> Caml_embed.to_value)
   ;;
-
-  let map t ~name ~of_ ~to_ =
-    create
-      name
-      (Fn.compose (to_sexp t) to_)
-      (Fn.compose of_ t.of_value_exn)
-      (Fn.compose t.to_value to_)
-  ;;
-
-  let map_id t name = map t ~name ~of_:Fn.id ~to_:Fn.id
 
   let path_list =
     map
@@ -675,6 +727,8 @@ module Expert = struct
 end
 
 module For_testing = struct
+  exception Elisp_signal = Elisp_signal
+
   let map_elisp_signal g ~f =
     match g () with
     | a -> a

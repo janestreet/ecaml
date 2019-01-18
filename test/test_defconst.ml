@@ -4,9 +4,11 @@ open! Defconst
 
 let%expect_test "defconst" =
   let symbol = "foo" |> Symbol.intern in
-  let var = defconst symbol [%here] ~docstring:"_" Value.Type.string "foo-value" in
+  let var =
+    defconst symbol [%here] ~docstring:"_" ~type_:Value.Type.string ~value:"foo-value"
+  in
   Load_history.update_emacs_with_entries ~chop_prefix:"app/emacs/" ~in_dir:"<dir>";
-  print_endline (Describe.variable symbol);
+  print_endline (Help.describe_variable_text symbol);
   [%expect
     {|
     foo's value is "foo-value"

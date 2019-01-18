@@ -7,8 +7,11 @@ val initialize : unit -> unit
 module Expect_test_config : module type of Expect_test_config
 
 module Private : sig
-
-  val block_on_async : ?timeout:Time.Span.t option -> (unit -> 'a Deferred.t) -> 'a
+  val block_on_async
+    :  Source_code_position.t
+    -> ?context:Sexp.t Lazy.t
+    -> (unit -> 'a Deferred.t)
+    -> 'a
 
   (** [run_outside_async f] schedules [f] to run at some point in the future, outside of
       Async, i.e. not during an Async cycle and without holding the Async lock.

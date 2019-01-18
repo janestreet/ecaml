@@ -8,6 +8,7 @@ module Auto_mode_alist = Auto_mode_alist
 module Backup = Backup
 module Browse_url = Browse_url
 module Buffer = Buffer
+module Buffer_local = Buffer_local
 module Char_code = Char_code
 module Color = Color
 module Command = Command
@@ -16,10 +17,10 @@ module Compilation = Compilation
 module Completing = Completing
 module Current_buffer = Current_buffer
 module Customization = Customization
+module Debugger = Debugger
 module Defconst = Defconst
 module Defun = Defun
 module Defvar = Defvar
-module Describe = Describe
 module Directory = Directory
 module Display = Display
 module Display_property = Display_property
@@ -37,6 +38,7 @@ module Funcall = Funcall
 module Function = Ecaml_value.Function
 module Grep = Grep
 module Hash_table = Hash_table
+module Help = Help
 module Hook = Hook
 module Input_event = Input_event
 module Key_sequence = Key_sequence
@@ -47,8 +49,10 @@ module Major_mode = Major_mode
 module Marker = Marker
 module Minibuffer = Minibuffer
 module Minor_mode = Minor_mode
+module Modified_tick = Modified_tick
 module Obarray = Obarray
 module Obsolete = Obsolete
+module Ocaml_or_elisp_value = Ocaml_or_elisp_value
 module Org_table = Org_table
 module Overlay = Overlay
 module Plist = Plist
@@ -62,6 +66,7 @@ module Symbol = Symbol
 module Syntax_table = Syntax_table
 module System = System
 module Tabulated_list = Tabulated_list
+module Terminal = Terminal
 module Text = Text
 module Thing_at_point = Thing_at_point
 module Timer = Timer
@@ -96,7 +101,6 @@ and defun_nullary = Defun.defun_nullary
 and defun_nullary_nil = Defun.defun_nullary_nil
 and defvar = Defvar.defvar
 and defvaralias = Defvar.defvaralias
-and describe_function = Describe.function_
 and inhibit_messages = Echo_area.inhibit_messages
 and lambda = Defun.lambda
 and lambda_nullary = Defun.lambda_nullary
@@ -106,6 +110,8 @@ and messagef = Echo_area.messagef
 and message_s = Echo_area.message_s
 and print_s = print_s
 and raise_string = raise_string
+and sec_ns = sec_ns
+and wrap_message = Echo_area.wrap_message
 
 let provide =
   Ecaml_callback.(register end_of_module_initialization)
@@ -160,20 +166,13 @@ let () =
       ~interactive:No_arg
       Returns_unit_deferred
       (fun () ->
-         let test
-               ?default_value
-               ?history_list
-               ?history_list_pos
-               ?initial_contents
-               ()
-               ~prompt
-           =
+         let test ?default_value ?history ?history_pos ?initial_contents () ~prompt =
            let%bind result =
              Minibuffer.read_from
                ()
                ?default_value
-               ?history_list
-               ?history_list_pos
+               ?history
+               ?history_pos
                ?initial_contents
                ~prompt:(concat [ prompt; ": " ])
            in
@@ -183,7 +182,11 @@ let () =
          let%bind () = test () ~prompt:"test 1" in
          let%bind () = test () ~prompt:"test 2" ~default_value:"some-default" in
          let%bind () = test () ~prompt:"test 3" ~initial_contents:"some-contents" in
-         test () ~prompt:"test 4" ~history_list:("some-history-list" |> Symbol.intern)))
+         test
+           ()
+           ~prompt:"test 4"
+           ~history:
+             (Var.create ("some-history-list" |> Symbol.intern) Value.Type.(list string))))
 ;;
 
 let debug_embedded_caml_values () = Caml_embed.debug_sexp ()

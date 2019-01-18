@@ -52,8 +52,7 @@ let ocaml_raise =
 
 let%expect_test "raising from Emacs to OCaml" =
   show_raise emacs_raise;
-  [%expect {|
-    (raised 13) |}]
+  [%expect {| (raised 13) |}]
 ;;
 
 let%expect_test "raising from OCaml to Emacs" =
@@ -127,8 +126,7 @@ let%expect_test "raising from OCaml to OCaml through many layers of Emacs" =
        [%here]
        [%message "Backtrace has no frames from" Test_function_file1.filename]);
   [%expect {| |}];
-  let debug_on_error = Var.create ("debug-on-error" |> Symbol.intern) Value.Type.bool in
-  Current_buffer.set_value_temporarily debug_on_error true ~f:(fun () ->
+  Current_buffer.set_value_temporarily Debugger.debug_on_error true ~f:(fun () ->
     let show_errors = false in
     match show_errors with
     | true ->
@@ -137,10 +135,8 @@ let%expect_test "raising from OCaml to OCaml through many layers of Emacs" =
     | false -> require_does_raise [%here] (fun () -> loop 1));
   [%expect
     {|
-    (foo
-      (bar baz)
-      (backtrace ("<backtrace elided in test>"))
-      (backtrace ("<backtrace elided in test>"))) |}]
+    (((foo bar baz) (backtrace ("<backtrace elided in test>")))
+     (backtrace "<backtrace elided in test>")) |}]
 ;;
 
 let%expect_test "function descriptions" =
@@ -304,6 +300,5 @@ let%expect_test "raise in dispatch" =
   show_raise (fun () ->
     Ref.set_temporarily Expert.raise_in_dispatch true ~f:(fun () ->
       Value.funcall0_i (f |> Function.to_value)));
-  [%expect {|
-    (raised (uncaught-ocaml-exception Fdispatch)) |}]
+  [%expect {| (raised (uncaught-ocaml-exception Fdispatch)) |}]
 ;;

@@ -29,26 +29,28 @@ module Require_match : sig
   val default : t
 end
 
+module Collection : Ocaml_or_elisp_value.S with type ocaml = string list
+
 (** [(describe-function 'completing-read)] **)
 val read
   :  ?default:string
-  -> ?history:Symbol.t
+  -> ?history:string list Var.t
   -> ?initial_input:Initial_input.t (* default is Empty *)
   -> ?require_match:Require_match.t (* default is [Require_match.default] *)
   -> unit
-  -> collection:string list
+  -> collection:Collection.t
   -> prompt:string (* typically ends with ": " *)
   -> string Deferred.t
 
 (** [(describe-function 'completing-read-multiple)] **)
 val read_multiple
   :  ?default:string
-  -> ?history:Symbol.t
+  -> ?history:string list Var.t
   -> ?initial_input:Initial_input.t (* default is Empty *)
   -> ?require_match:Require_match.t (* default is False *)
   -> ?separator_regexp:string (* default is "[ \t]*,[ \t]*" *)
   -> unit
-  -> collection:string list
+  -> collection:Collection.t
   -> prompt:string (* typically ends with ": " *)
   -> string list Deferred.t
 
@@ -56,11 +58,11 @@ module Blocking : sig
   (** [(describe-function 'completing-read)] **)
   val read
     :  ?default:string
-    -> ?history:Symbol.t
+    -> ?history:string list Var.t
     -> ?initial_input:Initial_input.t (* default is Empty *)
     -> ?require_match:Require_match.t (* default is [Require_match.default] *)
     -> unit
-    -> collection:string list
+    -> collection:Collection.t
     -> prompt:string (* typically ends with ": " *)
     -> string
 end

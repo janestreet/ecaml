@@ -463,15 +463,17 @@ let%expect_test "[text_property_is_present]" =
 
 let%expect_test "[is_read_only], [set_read_only]" =
   set_temporarily_to_temp_buffer (fun () ->
-    let show () = print_s [%message "" ~is_read_only:(value_exn read_only : bool)] in
+    let show () =
+      print_s [%message "" ~is_read_only:(get_buffer_local read_only : bool)]
+    in
     show ();
     [%expect {|
       (is_read_only false) |}];
-    set_value read_only true;
+    set_buffer_local read_only true;
     show ();
     [%expect {|
       (is_read_only true) |}];
-    set_value read_only false;
+    set_buffer_local read_only false;
     show ();
     [%expect {|
       (is_read_only false) |}])
@@ -1123,4 +1125,14 @@ let%expect_test "[describe_mode]" =
     or "mark.*active" at the prompt.
 
     (fn &optional ARG) |}]
+;;
+
+let%expect_test "[chars_modified_tick]" =
+  set_temporarily_to_temp_buffer (fun () ->
+    print_s [%sexp (chars_modified_tick () : Modified_tick.t)];
+    Point.insert "foo";
+    print_s [%sexp (chars_modified_tick () : Modified_tick.t)]);
+  [%expect {|
+    1
+    2 |}]
 ;;

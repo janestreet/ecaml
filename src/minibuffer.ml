@@ -45,14 +45,17 @@ module Blocking = struct
     Symbol.funcall1 Q.yes_or_no_p (prompt |> Value.of_utf8_bytes) |> Value.to_bool
   ;;
 
+  let minibuffer_history = Var.create Q.minibuffer_history Value.Type.(list string)
+
   let read_from
         ?default_value
-        ?(history_list = Q.minibuffer_history)
-        ?history_list_pos
+        ?(history = minibuffer_history)
+        ?history_pos
         ?initial_contents
         ()
         ~prompt
     =
+    let history = history.symbol |> Symbol.to_value in
     Symbol.funcallN
       Q.read_from_minibuffer
       [ prompt |> Value.of_utf8_bytes
@@ -61,9 +64,9 @@ module Blocking = struct
          | Some s -> s |> Value.of_utf8_bytes)
       ; Value.nil
       ; Value.nil
-      ; (match history_list_pos with
-         | None -> history_list |> Symbol.to_value
-         | Some i -> Value.cons (history_list |> Symbol.to_value) (i |> Value.of_int_exn))
+      ; (match history_pos with
+         | None -> history
+         | Some i -> Value.cons history (i |> Value.of_int_exn))
       ; (match default_value with
          | None -> Value.nil
          | Some s -> s |> Value.of_utf8_bytes)
@@ -85,17 +88,16 @@ let yes_or_no ~prompt =
   Async_ecaml.Private.run_outside_async (fun () -> Blocking.yes_or_no ~prompt)
 ;;
 
-let read_from ?default_value ?history_list ?history_list_pos ?initial_contents () ~prompt
-  =
+let read_from ?default_value ?history ?history_pos ?initial_contents () ~prompt =
   Async_ecaml.Private.run_outside_async (fun () ->
     Blocking.read_from
       ?default_value
-      ?history_list
-      ?history_list_pos
+      ?history
+      ?history_pos
       ?initial_contents
       ()
       ~prompt)
 ;;
 
-let exit_hook = Hook.create Normal Q.minibuffer_exit_hook
-let setup_hook = Hook.create Normal Q.minibuffer_setup_hook
+let exit_hook = Hook.create Q.minibuffer_exit_hook ~hook_type:Normal
+let setup_hook = Hook.create Q.minibuffer_setup_hook ~hook_type:Normal

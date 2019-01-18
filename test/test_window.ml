@@ -64,10 +64,10 @@ let%expect_test "[delete_exn]" =
   show t;
   [%expect
     {|
-    ((body_height (Error (wrong-type-argument (window-live-p #<window 1>))))
+    ((body_height (Error (wrong-type-argument (window-live-p "#<window 1>"))))
      (buffer (Error ("[buffer]'s [of_value_exn] got value not in subtype" nil)))
-     (height (Error (wrong-type-argument (window-valid-p #<window 1>))))
+     (height (Error (wrong-type-argument (window-valid-p "#<window 1>"))))
      (is_live (Ok false))
-     (point (Error (wrong-type-argument (window-live-p #<window 1>))))
-     (width (Error (wrong-type-argument (window-live-p #<window 1>))))) |}]
+     (point (Error (wrong-type-argument (window-live-p "#<window 1>"))))
+     (width (Error (wrong-type-argument (window-live-p "#<window 1>"))))) |}]
 ;;

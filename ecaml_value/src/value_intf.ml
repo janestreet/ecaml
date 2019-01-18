@@ -65,17 +65,30 @@ module type Type = sig
   type 'a t
 
   val create : Sexp.t -> ('a -> Sexp.t) -> (value -> 'a) -> ('a -> value) -> 'a t
+  val with_of_value_exn : 'a t -> (value -> 'a) -> 'a t
   val to_sexp : 'a t -> 'a -> Sexp.t
   val bool : bool t
   val float : float t
   val ignored : unit t
   val int : int t
   val string : string t
+
+  (** [string_cached] is like [string], except it uses [of_utf8_bytes_cached]. *)
+  val string_cached : string t
+
   val unit : unit t
   val value : value t
   val list : 'a t -> 'a list t
   val vector : 'a t -> 'a array t
-  val option : 'a t -> 'a option t
+
+  (** The representation of an option type's values in Elisp can be "wrapped" or
+      "unwrapped".  In either case, [None] is represented as [nil].  The unrwapped
+      representation of [Some v] is the representation of [v], whereas the wrapped
+      representation is [cons v nil].  Wrapping is necessary if [nil] is a representation
+      of some value [v_nil], in order to distinguish between the representation of [None]
+      and [Some v_nil]. *)
+  val option : ?wrapped:bool (** default is [false] *) -> 'a t -> 'a option t
+
   val alist : 'a t -> 'b t -> ('a * 'b) list t
 
   (** Represent a tuple (a,b) as the elisp cons cell (a . b) *)
@@ -235,6 +248,12 @@ module type Value = sig
   val of_float : float -> t
   val to_float_exn : t -> float
   val of_utf8_bytes : string -> t
+
+  (** [of_utf8_bytes_cached] is like [of_utf8_bytes], except it keeps a hash table mapping
+      each OCaml string to the corresponding Elisp string.  This can be used to optimize
+      the conversion of OCaml values to Elisp values. *)
+  val of_utf8_bytes_cached : string -> t
+
   val to_utf8_bytes_exn : t -> string
   val vec_get : t -> int -> t
   val vec_set : t -> int -> t -> unit
@@ -243,6 +262,7 @@ module type Value = sig
   val message : string -> unit
   val messagef : ('a, unit, string, unit) format4 -> 'a
   val message_s : Sexp.t -> unit
+  val prin1_to_string : t -> string
 
   (** An ['a Type.t] is an isomorphism between ['a] and a subset of [Value.t]. *)
   module Type :
@@ -297,6 +317,8 @@ module type Value = sig
   end
 
   module For_testing : sig
+    exception Elisp_signal of { symbol : t; data : t }
+
     (** Used to edit non-deterministic stuff out of Elisp signals. *)
     val map_elisp_signal
       :  (unit -> 'a)

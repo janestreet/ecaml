@@ -84,10 +84,12 @@ module Require_match = struct
   let default = False
 end
 
+module Collection = (val Ocaml_or_elisp_value.make Value.Type.(list string_cached))
+
 module Blocking = struct
   let read
         ?default
-        ?history
+        ?(history : _ Var.t option)
         ?(initial_input = Initial_input.Empty)
         ?(require_match = Require_match.default)
         ()
@@ -103,11 +105,13 @@ module Blocking = struct
     Symbol.funcallN
       Q.completing_read
       [ prompt |> Value.of_utf8_bytes
-      ; collection |> List.map ~f:Value.of_utf8_bytes |> Value.list
+      ; collection |> Collection.to_value
       ; predicate
       ; require_match |> Require_match.to_value
       ; initial_input |> Initial_input.to_value
-      ; history |> Value.option Symbol.to_value
+      ; (match history with
+         | None -> Value.nil
+         | Some history -> history.symbol |> Symbol.to_value)
       ; default |> Value.option Value.of_utf8_bytes
       ]
     |> Value.to_utf8_bytes_exn
@@ -117,7 +121,7 @@ module Blocking = struct
 
   let read_multiple
         ?default
-        ?history
+        ?(history : _ Var.t option)
         ?(initial_input = Initial_input.Empty)
         ?(require_match = Require_match.False)
         ?(separator_regexp = "[ \t]*,[ \t]*")
@@ -130,11 +134,13 @@ module Blocking = struct
       Symbol.funcallN
         Q.completing_read_multiple
         [ prompt |> Value.of_utf8_bytes
-        ; collection |> Value.Type.(list string).to_value
+        ; collection |> Collection.to_value
         ; predicate
         ; require_match |> Require_match.to_value
         ; initial_input |> Initial_input.to_value
-        ; history |> Value.option Symbol.to_value
+        ; (match history with
+           | None -> Value.nil
+           | Some history -> history.symbol |> Symbol.to_value)
         ; default |> Value.option Value.of_utf8_bytes
         ]
       |> Value.to_list_exn ~f:Value.to_utf8_bytes_exn)

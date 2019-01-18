@@ -13,7 +13,7 @@ let alias_of =
 let%expect_test "obsolete functions already defined" =
   let obsolete = "foobar-2" |> Symbol.intern in
   defun_nullary_nil obsolete [%here] ~docstring:"_" ~interactive:No_arg (report obsolete);
-  print_endline (describe_function obsolete);
+  print_endline (Help.describe_function_text obsolete);
   [%expect {|
     foobar-2 is an interactive Lisp function.
 
@@ -21,7 +21,7 @@ let%expect_test "obsolete functions already defined" =
 
     _ |}];
   Defun.define_obsolete_alias obsolete [%here] ~alias_of ~since:"now" ();
-  print_endline (describe_function obsolete);
+  print_endline (Help.describe_function_text obsolete);
   [%expect
     {|
     foobar-2 is an alias for `current-function'.
@@ -37,7 +37,7 @@ let%expect_test "obsolete functions already defined" =
 let%expect_test "documentation for obsolete functions" =
   let obsolete = "foobar-2" |> Symbol.intern in
   Defun.define_obsolete_alias obsolete [%here] ~alias_of ~since:"version X.Y" ();
-  print_endline (describe_function obsolete);
+  print_endline (Help.describe_function_text obsolete);
   [%expect
     {|
     foobar-2 is an alias for `current-function'.
@@ -53,7 +53,7 @@ let%expect_test "documentation for obsolete functions" =
     ~alias_of
     ~since:"version X.Y"
     ();
-  print_endline (describe_function obsolete);
+  print_endline (Help.describe_function_text obsolete);
   [%expect
     {|
     foobar-2 is an alias for `current-function'.
@@ -71,7 +71,7 @@ let%expect_test "documentation for obsolete functions" =
     ~alias_of
     ~since:"now"
     ();
-  print_endline (describe_function obsolete);
+  print_endline (Help.describe_function_text obsolete);
   [%expect
     {|
     foobar-2 is an alias for `current-function'.
@@ -87,7 +87,7 @@ let%expect_test "documentation for obsolete functions" =
 let%expect_test "obsolete functions not yet defined" =
   let obsolete = "foobar" |> Symbol.intern in
   Defun.define_obsolete_alias obsolete [%here] ~alias_of ~since:"now" ();
-  print_endline (describe_function obsolete);
+  print_endline (Help.describe_function_text obsolete);
   [%expect
     {|
     foobar is an alias for `current-function'.
@@ -98,7 +98,7 @@ let%expect_test "obsolete functions not yet defined" =
     use `current-function' instead. |}];
   (* Later definitions override our obsolete. *)
   defun_nullary_nil obsolete [%here] ~docstring:"_" ~interactive:No_arg (report obsolete);
-  print_endline (describe_function obsolete);
+  print_endline (Help.describe_function_text obsolete);
   [%expect
     {|
     foobar is an interactive Lisp function.
@@ -117,9 +117,9 @@ let%expect_test "obsolete an undefined variable" =
   let obsolete = "obsolete1" |> Symbol.intern in
   let current = "current1" |> Symbol.intern in
   let show () =
-    print_endline (Describe.variable obsolete);
+    print_endline (Help.describe_variable_text obsolete);
     print_endline "";
-    print_endline (Describe.variable current)
+    print_endline (Help.describe_variable_text current)
   in
   show ();
   [%expect
@@ -154,11 +154,19 @@ let%expect_test "obsolete an undefined variable" =
 let%expect_test "obsolete an defined variable" =
   let obsolete = "obsolete2" |> Symbol.intern in
   let current = "current2" |> Symbol.intern in
-  defvar obsolete [%here] ~docstring:"an obsolete variable" ~initial_value:Value.nil ();
+  ignore
+    ( defvar
+        obsolete
+        [%here]
+        ~docstring:"an obsolete variable"
+        ~type_:Value.Type.bool
+        ~initial_value:false
+        ()
+      : _ Var.t );
   let show () =
-    print_endline (Describe.variable obsolete);
+    print_endline (Help.describe_variable_text obsolete);
     print_endline "";
-    print_endline (Describe.variable current)
+    print_endline (Help.describe_variable_text current)
   in
   show ();
   [%expect
@@ -194,8 +202,16 @@ let%expect_test "define an obsoleted variable" =
   let obsolete = "obsolete3" |> Symbol.intern in
   let current = "current3" |> Symbol.intern in
   make_variable_obsolete obsolete ~current ~since:"now";
-  defvar obsolete [%here] ~docstring:"an obsolete variable" ~initial_value:Value.nil ();
-  print_endline (Describe.variable obsolete);
+  ignore
+    ( defvar
+        obsolete
+        [%here]
+        ~docstring:"an obsolete variable"
+        ~type_:Value.Type.bool
+        ~initial_value:false
+        ()
+      : _ Var.t );
+  print_endline (Help.describe_variable_text obsolete);
   [%expect
     {|
     obsolete3's value is nil

@@ -3,7 +3,7 @@ open! Async_kernel
 open! Import
 open! Completing
 
-let collection = [ "foo"; "bar"; "baz" ]
+let collection = Collection.This [ "foo"; "bar"; "baz" ]
 let prompt = ""
 
 let%expect_test "completing_read" =
@@ -19,7 +19,8 @@ let%expect_test "completing_read" =
     let%bind response = read () ~collection ~prompt in
     print_s [%sexp (response : string)];
     return ());
-  [%expect {| foo |}]
+  [%expect {|
+    foo |}]
 ;;
 
 let%expect_test "completing_read_multiple" =

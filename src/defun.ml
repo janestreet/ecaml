@@ -160,13 +160,27 @@ module Returns = struct
   [@@deriving sexp_of]
 end
 
-let block_on_async : ((unit -> unit Deferred.t) -> unit) Set_once.t = Set_once.create ()
+let block_on_async
+  :
+    (Source_code_position.t
+     -> ?context:Sexp.t Lazy.t
+     -> (unit -> unit Deferred.t)
+     -> unit)
+      Set_once.t =
+  Set_once.create ()
+;;
 
-let get_fn (type a) (t : a t) (returns : a Returns.t) args =
+let call (type a) (t : a t) here ~function_ ~args ~(returns : a Returns.t) =
   match returns with
   | Returns returns -> returns.to_value (apply t args)
   | Returns_unit_deferred ->
-    Set_once.get_exn block_on_async [%here] (fun () -> apply t args);
+    let block_on_async = Set_once.get_exn block_on_async [%here] in
+    block_on_async
+      here
+      ~context:
+        (lazy
+          (List (function_ :: (args |> Array.map ~f:Value.sexp_of_t |> Array.to_list))))
+      (fun () -> apply t args);
     Value.nil
 ;;
 
@@ -223,11 +237,11 @@ let define_obsolete_alias obsolete here ?docstring ~alias_of ~since () =
   Obsolete.make_function_obsolete obsolete ~current:alias_of ~since
 ;;
 
-let defun_raw ?docstring ?interactive ?optional_args ?rest_arg here ~args symbol f =
+let defun_raw symbol here ?docstring ?interactive ~args ?optional_args ?rest_arg f =
   add_to_load_history symbol here;
   Symbol.set_function
     symbol
-    (Function.create ?docstring ?interactive ?optional_args ?rest_arg here ~args f
+    (Function.create here ?docstring ?interactive ~args ?optional_args ?rest_arg f
      |> Function.to_value)
 ;;
 
@@ -243,14 +257,14 @@ let defun_internal
   =
   let args = get_args t in
   defun_raw
+    symbol
+    here
     ?docstring
     ?interactive:(Option.map interactive ~f:Interactive.to_string)
+    ~args:args.required
     ~optional_args:args.optional
     ?rest_arg:args.rest
-    here
-    symbol
-    fn
-    ~args:args.required;
+    fn;
   List.iter define_keys ~f:(fun (keymap, keys) ->
     Keymap.define_key keymap (Key_sequence.create_exn keys) (Symbol symbol));
   Option.iter obsoletes ~f:(fun obsolete ->
@@ -258,6 +272,7 @@ let defun_internal
 ;;
 
 let defun symbol here ?docstring ?define_keys ?obsoletes ?interactive returns t =
+  let function_ = [%sexp (symbol : Symbol.t)] in
   defun_internal
     ?docstring
     ?define_keys
@@ -266,7 +281,7 @@ let defun symbol here ?docstring ?define_keys ?obsoletes ?interactive returns t 
     symbol
     here
     t
-    (get_fn t returns)
+    (fun args -> call t here ~function_ ~args ~returns)
 ;;
 
 let defun_nullary symbol here ?docstring ?define_keys ?obsoletes ?interactive returns f =
@@ -296,6 +311,7 @@ let defun_nullary_nil symbol here ?docstring ?define_keys ?obsoletes ?interactiv
 ;;
 
 let lambda here ?docstring ?interactive returns t =
+  let function_ = [%message "Defun.lambda"] in
   let args = get_args t in
   Function.create
     here
@@ -304,7 +320,7 @@ let lambda here ?docstring ?interactive returns t =
     ~optional_args:args.optional
     ?rest_arg:args.rest
     ~args:args.required
-    (get_fn t returns)
+    (fun args -> call t here ~function_ ~args ~returns)
 ;;
 
 let lambda_nullary here ?docstring ?interactive returns f =

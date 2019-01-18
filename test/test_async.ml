@@ -25,23 +25,10 @@ let%expect_test "disk IO" =
   [%expect {| (Ok "Hello world") |}]
 ;;
 
-let timeout =
-  Or_error.try_with (fun () ->
-    Async_ecaml.Private.block_on_async
-      ~timeout:(Some (sec 0.001))
-      (fun () -> Deferred.never ()))
-;;
-
-let%expect_test "[block_on_async] with a timeout" =
-  print_s [%sexp (timeout : _ Or_error.t)];
-  [%expect {|
-    (Error "Blocking operation timed out") |}]
-;;
-
 let quit =
   Or_error.try_with (fun () ->
     Clock.run_after (sec 0.01) Ecaml.Command.request_quit ();
-    Async_ecaml.Private.block_on_async (fun () -> Deferred.never ()))
+    Async_ecaml.Private.block_on_async [%here] (fun () -> Deferred.never ()))
 ;;
 
 let%expect_test "[block_on_async] with a quit" =
@@ -51,8 +38,15 @@ let%expect_test "[block_on_async] with a quit" =
 ;;
 
 let%expect_test "Nested calls to block_on_async raise" =
-  show_raise (fun () -> Async_ecaml.Private.block_on_async (fun () -> Deferred.unit));
-  [%expect {| (raised "Called [block_on_async] in the middle of an Async job!") |}]
+  show_raise ~hide_positions:true (fun () ->
+    Async_ecaml.Private.block_on_async [%here] (fun () -> Deferred.unit));
+  [%expect
+    {|
+    (raised (
+      "Called [block_on_async] in the middle of an Async job!"
+      (context_backtrace (
+        (app/emacs/lib/ecaml/test/test_async.ml:LINE:COL ())
+        (app/emacs/lib/ecaml/src/async_ecaml.ml:LINE:COL Expect_test_config.run))))) |}]
 ;;
 
 let%expect_test "[defun Returns_unit_deferred] where body returns" =
@@ -100,8 +94,14 @@ let%expect_test "Nested calls to block_on_async raise, even via elisp" =
     (let open Defun.Let_syntax in
      let%map_open () = return () in
      Deferred.unit);
-  show_raise (fun () -> Value.funcall0_i (symbol |> Symbol.to_value));
-  [%expect {| (raised ("Called [block_on_async] in the middle of an Async job!")) |}]
+  show_raise ~hide_positions:true (fun () -> Value.funcall0_i (symbol |> Symbol.to_value));
+  [%expect
+    {|
+    (raised ((
+      "Called [block_on_async] in the middle of an Async job!"
+      (context_backtrace (
+        (app/emacs/lib/ecaml/test/test_async.ml:LINE:COL (block-on-async))
+        (app/emacs/lib/ecaml/src/async_ecaml.ml:LINE:COL Expect_test_config.run)))))) |}]
 ;;
 
 (* We can't write a test of [block_on_async] succeeding because every test is already

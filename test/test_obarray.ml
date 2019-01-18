@@ -5,9 +5,10 @@ open! Obarray
 let%expect_test "[iter], [standard]" =
   let all = ref [] in
   iter standard ~f:(fun s -> all := Symbol.name s :: !all);
-  print_s [%sexp (List.length !all : int)];
+  (* We ignore the last two digits of the length to reduce noise. *)
+  print_s [%sexp (List.length !all / 100 * 100 : int)];
   [%expect {|
-    15_357 |}];
+    15_300 |}];
   print_s
     [%sexp
       ( !all |> List.sort ~compare:String.compare |> fun l -> List.take l 100
