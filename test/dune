@@ -1,3 +1,4 @@
 (library (name ecaml_test)
- (libraries async core ecaml expect_test_helpers_kernel sexp_pretty)
+ (libraries async core ecaml expect_test_helpers_kernel sexp_pretty
+  core_kernel.weak_pointer)
  (preprocess (pps ppx_jane)))
