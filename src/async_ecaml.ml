@@ -398,7 +398,7 @@ let start_scheduler () =
     (* The default [max_inter_cycle_timeout] is much smaller.  Setting it to 1s reduces
        load on emacs. *)
     Scheduler.set_max_inter_cycle_timeout
-      (max_inter_cycle_timeout |> Time_ns.Span.to_span);
+      (max_inter_cycle_timeout |> Time_ns.Span.to_span_float_round_nearest);
     (* [Async_unix] installs a handler for logging exceptions raised to try-with that has
        already returned.  That logs to stderr, which doesn't work well in Emacs.  So we
        install a handler that reports the error with [message_s]. *)
