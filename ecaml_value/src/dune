@@ -1,5 +1,5 @@
 (library (name ecaml_value) (public_name ecaml.ecaml_value)
- (libraries async_unix core_kernel)
+ (libraries async_unix core_kernel core_kernel.univ)
  (preprocess (pps ppx_jane -annotated-ignores)) (c_flags :standard -std=c99)
  (c_names ecaml_stubs generated_stubs))
 

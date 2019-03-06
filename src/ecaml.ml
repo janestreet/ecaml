@@ -27,6 +27,8 @@ module Display_property = Display_property
 module Documentation = Documentation
 module Echo_area = Echo_area
 module Elisp_time = Elisp_time
+module Eval = Eval
+module Evil = Evil
 module Face = Face
 module Feature = Feature
 module File = File
@@ -141,7 +143,7 @@ let () =
      let n = Option.value n ~default:0 in
      if n <= 0
      then raise_s [%message "foo" "bar" "baz"]
-     else Funcall.(symbol <: option int @-> return nil) (Some (n - 1));
+     else Funcall.(symbol <: nil_or int @-> return nil) (Some (n - 1));
      ());
   (* Replace [false] with [true] to define a function for testing
      [Minibuffer.read_from]. *)

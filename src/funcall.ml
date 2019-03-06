@@ -118,7 +118,14 @@ let wrap_unrolled : type a. a t -> Value.t -> a =
 
 let ( <: ) symbol t = wrap_unrolled t (symbol |> Symbol.to_value)
 
-let apply t f args =
+module On_parse_error = struct
+  type t =
+    | Allow_raise
+    | Call_inner_function
+  [@@deriving sexp_of]
+end
+
+let apply t f args ~on_parse_error =
   let wrong_number_of_args message =
     raise_s [%message message (arity t : int) (args : Value.t list)]
   in
@@ -127,8 +134,15 @@ let apply t f args =
       match t with
       | Cons (type_, t) ->
         (match args with
-         | arg :: args -> apply t (f (type_.of_value_exn arg)) args
-         | [] -> wrong_number_of_args "Missing args.")
+         | arg :: args ->
+           (match type_.of_value_exn arg with
+            | arg -> apply t (f arg) args
+            | exception exn -> on_parse_error exn)
+         | [] ->
+           (* Emacs convention: missing arguments are nil. *)
+           (match type_.of_value_exn Value.nil with
+            | arg -> apply t (f arg) args
+            | exception exn -> on_parse_error exn))
       | Return type_ ->
         (match args with
          | [] -> type_.to_value f
@@ -142,7 +156,24 @@ let apply t f args =
 ;;
 
 module Private = struct
-  let advice t f inner rest = apply t (f (wrap_unrolled t inner)) rest
+  let advice t f on_parse_error here inner rest =
+    apply
+      t
+      (f (wrap_unrolled t inner))
+      rest
+      ~on_parse_error:
+        (match (on_parse_error : On_parse_error.t) with
+         | Allow_raise -> raise
+         | Call_inner_function ->
+           fun exn ->
+             Echo_area.inhibit_messages (fun () ->
+               Echo_area.message_s
+                 [%message
+                   "Ignoring advice that failed to parse its arguments."
+                     ~_:(here : Source_code_position.t)
+                     ~_:(exn : exn)]);
+             Value.funcallN inner rest)
+  ;;
 end
 
 include (Value.Type : Value.Type.S)

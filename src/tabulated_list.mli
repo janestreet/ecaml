@@ -33,6 +33,16 @@ module Column : sig
     -> ('record -> string)
     -> 'record t
 
+  val text
+    :  ?align_right:bool
+    -> ?max_width:int
+    -> ?min_width:int
+    -> ?pad_right:int
+    -> ?sortable:bool
+    -> header:string
+    -> ('record -> Text.t)
+    -> 'record t
+
   (** [YYYY-MM-DD HH:mm:ss] *)
   val time
     :  ?align_right:bool

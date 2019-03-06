@@ -54,6 +54,7 @@ module type Buffer_local = sig
   val get : 'a t -> Buffer.t -> 'a
   val get_exn : 'a option t -> Buffer.t -> 'a
   val set : 'a t -> 'a -> Buffer.t -> unit
+  val update_exn : 'a option t -> Buffer.t -> f:('a -> 'a) -> unit
 
   module Private : sig
     val get_in_current_buffer : 'a t -> 'a

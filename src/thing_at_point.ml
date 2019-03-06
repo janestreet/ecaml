@@ -27,12 +27,12 @@ module F = struct
 
   and bounds_of_thing_at_point =
     Q.bounds_of_thing_at_point
-    <: Symbol.type_ @-> return (option (tuple Position.type_ Position.type_))
+    <: Symbol.type_ @-> return (nil_or (tuple Position.type_ Position.type_))
 
   and end_of_thing = Q.end_of_thing <: Symbol.type_ @-> return nil
   and forward_thing = Q.forward_thing <: Symbol.type_ @-> int @-> return bool
   and thing_at_point =
-    Q.thing_at_point <: Symbol.type_ @-> bool @-> return (option Text.type_)
+    Q.thing_at_point <: Symbol.type_ @-> bool @-> return (nil_or Text.type_)
   ;;
 end
 
@@ -120,7 +120,7 @@ let defthing symbol loc ~(bounds : unit -> (Position.t * Position.t) option) =
     symbol
     (Defun.lambda_nullary
        loc
-       (Returns Value.Type.(option (tuple Position.type_ Position.type_)))
+       (Returns Value.Type.(nil_or (tuple Position.type_ Position.type_)))
        bounds);
   Other symbol
 ;;

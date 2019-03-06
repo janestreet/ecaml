@@ -235,7 +235,15 @@ module Enum = struct
   module type Arg = Enum_arg
   module type S = Enum
 
-  let make (type t) symbol here (module T : Arg with type t = t) ~docstring ~group =
+  let make
+        (type t)
+        symbol
+        here
+        (module T : Arg with type t = t)
+        ~docstring
+        ~group
+        ~standard_value
+    =
     ( module struct
       type t = T.t
 
@@ -271,7 +279,7 @@ module Enum = struct
               ~group
               ~type_
               ~customization_type:(Type.enum T.all to_value)
-              ~standard_value:T.standard_value
+              ~standard_value
               ()
             : _ Var.t )
       ;;

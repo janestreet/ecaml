@@ -38,7 +38,7 @@ let files
       Q.directory_files
       (dirname |> Filename.to_value)
       (absolute |> Value.of_bool)
-      (matching |> (Value.Type.option Regexp.type_).to_value)
+      (matching |> (Value.Type.nil_or Regexp.type_).to_value)
       (sort |> not |> Value.of_bool)
     |> (Value.Type.list Filename.type_).of_value_exn
   in

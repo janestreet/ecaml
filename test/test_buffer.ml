@@ -140,7 +140,8 @@ let%expect_test "[display]" =
     show_displayed_in ();
     [%expect {|
       () |}];
-    display t;
+    print_s [%sexp (display t : Window.t option)];
+    [%expect {| ("#<window 4 on *temp-buffer*>") |}];
     show_displayed_in ();
     [%expect {|
       ("#<window 4 on *temp-buffer*>") |}])

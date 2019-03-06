@@ -12,7 +12,7 @@ module F = struct
   open! Value.Type
 
   let defvaralias =
-    Q.defvaralias <: Symbol.type_ @-> Symbol.type_ @-> option string @-> return nil
+    Q.defvaralias <: Symbol.type_ @-> Symbol.type_ @-> nil_or string @-> return nil
   ;;
 end
 

@@ -11,6 +11,7 @@ module Q = struct
   and match_string_no_properties = "match-string-no-properties" |> Symbol.intern
   and regexp_opt = "regexp-opt" |> Symbol.intern
   and regexp_quote = "regexp-quote" |> Symbol.intern
+  and replace_match = "replace-match" |> Symbol.intern
   and replace_regexp_in_string = "replace-regexp-in-string" |> Symbol.intern
   and set_match_data = "set-match-data" |> Symbol.intern
   and string_match = "string-match" |> Symbol.intern
@@ -27,10 +28,16 @@ include Value.Make_subtype (struct
 
 module F = struct
   open Funcall
+  open Value.Type
 
   let replace_regexp_in_string =
     Q.replace_regexp_in_string
     <: type_ @-> Text.type_ @-> Text.type_ @-> return Text.type_
+  ;;
+
+  let replace_match =
+    Q.replace_match
+    <: string @-> bool @-> bool @-> nil_or string @-> nil_or int @-> return nil
   ;;
 end
 
@@ -148,6 +155,7 @@ module Last_match = struct
 
   let start_exn = pos "start" Q.match_beginning
   let end_exn = pos "end" Q.match_end
+  let replace str = F.replace_match str false false None None
 end
 
 let match_ ?start ?(update_last_match = false) t text =

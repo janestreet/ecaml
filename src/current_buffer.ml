@@ -7,6 +7,7 @@ module Q = struct
   let buffer_chars_modified_tick = "buffer-chars-modified-tick" |> Symbol.intern
   and buffer_disable_undo = "buffer-disable-undo" |> Symbol.intern
   and buffer_enable_undo = "buffer-enable-undo" |> Symbol.intern
+  and buffer_file_coding_system = "buffer-file-coding-system" |> Symbol.intern
   and buffer_modified_p = "buffer-modified-p" |> Symbol.intern
   and buffer_restore_window_display_state =
     "Buffer.restore-window-display-state" |> Symbol.intern
@@ -98,11 +99,11 @@ module F = struct
   and buffer_local_variables =
     Q.buffer_local_variables <: nullary @-> return (list value)
   and buffer_modified_p = Q.buffer_modified_p <: nullary @-> return bool
-  and current_local_map = Q.current_local_map <: nullary @-> return (option Keymap.type_)
+  and current_local_map = Q.current_local_map <: nullary @-> return (nil_or Keymap.type_)
   and current_minor_mode_maps =
     Q.current_minor_mode_maps <: nullary @-> return (list Keymap.type_)
   and get_text_property =
-    Q.get_text_property <: Position.type_ @-> value @-> return (option value)
+    Q.get_text_property <: Position.type_ @-> value @-> return (nil_or value)
   and mark_marker = Q.mark_marker <: nullary @-> return Marker.type_
   and syntax_table = Q.syntax_table <: nullary @-> return Syntax_table.type_
   and delete_region = Q.delete_region <: Position.type_ @-> Position.type_ @-> return nil
@@ -116,7 +117,7 @@ module F = struct
   and revert_buffer = Q.revert_buffer <: value @-> bool @-> return nil
   and set_buffer_modified_p = Q.set_buffer_modified_p <: bool @-> return nil
   and set_buffer_multibyte = Q.set_buffer_multibyte <: bool @-> return nil
-  and set_auto_mode = Q.set_auto_mode <: option bool @-> return nil
+  and set_auto_mode = Q.set_auto_mode <: nil_or bool @-> return nil
   and set_mark = Q.set_mark <: Position.type_ @-> return nil
   and set_marker = Q.set_marker <: Marker.type_ @-> Position.type_ @-> return nil
   and set_syntax_table = Q.set_syntax_table <: Syntax_table.type_ @-> return nil
@@ -206,7 +207,33 @@ let name () =
 ;;
 
 let file_name_var =
-  Buffer_local.wrap_existing Q.buffer_file_name Value.Type.(option string)
+  Buffer_local.wrap_existing Q.buffer_file_name Value.Type.(nil_or string)
+;;
+
+module Coding_system = struct
+  module T = struct
+    type t =
+      | Utf_8
+      | Utf_8_unix
+    [@@deriving enumerate, sexp]
+  end
+
+  include T
+
+  let type_ =
+    Value.Type.enum
+      [%sexp "buffer-file-coding-system"]
+      (module T)
+      (function
+        | Utf_8 -> "utf-8" |> Value.intern
+        | Utf_8_unix -> "utf-8-unix" |> Value.intern)
+  ;;
+end
+
+let file_coding_system =
+  Buffer_local.wrap_existing
+    Q.buffer_file_coding_system
+    Value.Type.(nil_or Coding_system.type_)
 ;;
 
 let transient_mark_mode = Var.create Q.transient_mark_mode Value.Type.bool

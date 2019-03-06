@@ -12,7 +12,7 @@ module F = struct
   open! Value.Type
 
   let defalias =
-    Q.defalias <: Symbol.type_ @-> Symbol.type_ @-> option string @-> return nil
+    Q.defalias <: Symbol.type_ @-> Symbol.type_ @-> nil_or string @-> return nil
   ;;
 end
 
@@ -50,7 +50,7 @@ module T = struct
   include Applicative.Make (T0)
 
   let required name type_ = Required (name, type_)
-  let optional name type_ = Optional (name, Value.Type.option type_)
+  let optional name type_ = Optional (name, Value.Type.nil_or type_)
   let rest name type_ = Rest (name, type_)
 
   let optional_with_nil name type_ =
@@ -271,7 +271,17 @@ let defun_internal
     define_obsolete_alias obsolete here ~alias_of:symbol ~since:"who knows when" ())
 ;;
 
-let defun symbol here ?docstring ?define_keys ?obsoletes ?interactive returns t =
+let defun
+      symbol
+      here
+      ?docstring
+      ?define_keys
+      ?obsoletes
+      ?interactive
+      ?evil_config
+      returns
+      t
+  =
   let function_ = [%sexp (symbol : Symbol.t)] in
   defun_internal
     ?docstring
@@ -281,10 +291,22 @@ let defun symbol here ?docstring ?define_keys ?obsoletes ?interactive returns t 
     symbol
     here
     t
-    (fun args -> call t here ~function_ ~args ~returns)
+    (fun args -> call t here ~function_ ~args ~returns);
+  Option.iter evil_config ~f:(fun evil_config ->
+    Evil.Config.apply_to_defun evil_config symbol)
 ;;
 
-let defun_nullary symbol here ?docstring ?define_keys ?obsoletes ?interactive returns f =
+let defun_nullary
+      symbol
+      here
+      ?docstring
+      ?define_keys
+      ?obsoletes
+      ?interactive
+      ?evil_config
+      returns
+      f
+  =
   defun
     symbol
     here
@@ -292,13 +314,23 @@ let defun_nullary symbol here ?docstring ?define_keys ?obsoletes ?interactive re
     ?define_keys
     ?obsoletes
     ?interactive
+    ?evil_config
     returns
     (let open Let_syntax in
      let%map_open () = return () in
      f ())
 ;;
 
-let defun_nullary_nil symbol here ?docstring ?define_keys ?obsoletes ?interactive f =
+let defun_nullary_nil
+      symbol
+      here
+      ?docstring
+      ?define_keys
+      ?obsoletes
+      ?interactive
+      ?evil_config
+      f
+  =
   defun_nullary
     symbol
     here
@@ -306,6 +338,7 @@ let defun_nullary_nil symbol here ?docstring ?define_keys ?obsoletes ?interactiv
     ?define_keys
     ?obsoletes
     ?interactive
+    ?evil_config
     (Returns Value.Type.unit)
     f
 ;;

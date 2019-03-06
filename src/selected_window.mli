@@ -52,3 +52,9 @@ val quit : unit -> unit
 
 (** [(describe-function 'other-window)] *)
 val other_window : int -> unit
+
+(** [(describe-function 'window-height)] *)
+val height : unit -> int
+
+(** [(describe-function 'window-width)] *)
+val width : unit -> int

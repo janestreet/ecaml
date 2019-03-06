@@ -30,7 +30,7 @@ module F = struct
 
   let make_overlay =
     Q.make_overlay
-    <: Position.type_ @-> Position.type_ @-> option Buffer.type_ @-> return type_
+    <: Position.type_ @-> Position.type_ @-> nil_or Buffer.type_ @-> return type_
   ;;
 
   let move_overlay =
@@ -38,7 +38,7 @@ module F = struct
     <: type_
        @-> Position.type_
        @-> Position.type_
-       @-> option Buffer.type_
+       @-> nil_or Buffer.type_
        @-> return type_
   ;;
 
@@ -47,7 +47,7 @@ module F = struct
   let overlay_start = Q.overlay_start <: type_ @-> return Position.type_
 
   let overlays_at =
-    Q.overlays_at <: Position.type_ @-> option bool @-> return (list type_)
+    Q.overlays_at <: Position.type_ @-> nil_or bool @-> return (list type_)
   ;;
 
   let overlays_in =

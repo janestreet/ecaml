@@ -62,8 +62,8 @@ let of_time_ns time_ns =
         "[Elisp_time.of_time_ns]" (time_ns : Time_ns.Alternate_sexp.t) ~error:(exn : exn)]
 ;;
 
-let min_time_ns_value = lazy (of_time_ns Time_ns.min_value)
-let max_time_ns_value = lazy (of_time_ns Time_ns.max_value)
+let min_time_ns_value = lazy (of_time_ns Time_ns.min_value_for_1us_rounding)
+let max_time_ns_value = lazy (of_time_ns Time_ns.max_value_for_1us_rounding)
 
 let unexpected_time_value value =
   raise_s [%message "[Elisp_time] got unexpected time value" (value : Value.t)]

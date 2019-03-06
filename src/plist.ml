@@ -25,7 +25,7 @@ module F = struct
   open! Funcall
   open! Value.Type
 
-  let plist_get = Q.plist_get <: type_ @-> Symbol.type_ @-> return (option value)
+  let plist_get = Q.plist_get <: type_ @-> Symbol.type_ @-> return (nil_or value)
   let plist_put = Q.plist_put <: type_ @-> Symbol.type_ @-> value @-> return nil
   let symbol_plist = Q.symbol_plist <: Symbol.type_ @-> return type_
 end

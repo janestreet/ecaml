@@ -131,7 +131,7 @@ let exit_status t : Exit_status.t =
 
 let find_by_name name =
   Symbol.funcall1 Q.get_process (name |> Value.of_utf8_bytes)
-  |> Value.Type.(option type_).of_value_exn
+  |> Value.Type.(nil_or type_).of_value_exn
 ;;
 
 let all_emacs_children () =

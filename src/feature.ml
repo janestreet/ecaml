@@ -10,6 +10,8 @@ end
 
 include Ecaml_value.Feature
 
+type t = Symbol.t
+
 let provide t = Symbol.funcall1_i Q.provide (t |> Symbol.to_value)
 let is_provided t = Symbol.funcall1 Q.featurep (t |> Symbol.to_value) |> Value.to_bool
 let features = Var.create Q.features (Value.Type.list Symbol.type_)

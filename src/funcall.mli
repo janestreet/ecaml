@@ -30,7 +30,21 @@ val ( @-> ) : 'a Value.Type.t -> 'b t -> ('a -> 'b) t
 
 include Value.Type.S
 
+module On_parse_error : sig
+  type t =
+    | Allow_raise
+    | Call_inner_function
+  [@@deriving sexp_of]
+end
+
 module Private : sig
-  (** Exposed for the implementation of [Advice.add'] *)
-  val advice : 'a t -> ('a -> 'a) -> Value.t -> Value.t list -> Value.t
+  (** Exposed for the implementation of [Advice.around_funcall] *)
+  val advice
+    :  'a t
+    -> ('a -> 'a)
+    -> On_parse_error.t
+    -> Source_code_position.t
+    -> Value.t
+    -> Value.t list
+    -> Value.t
 end

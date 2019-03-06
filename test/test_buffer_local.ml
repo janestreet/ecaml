@@ -6,7 +6,7 @@ let int =
   defvar
     ("some-int" |> Symbol.intern)
     [%here]
-    ~type_:Value.Type.(option int ~wrapped:true)
+    ~type_:Value.Type.(option_ int)
     ~default_value:None
     ()
 ;;
@@ -29,7 +29,7 @@ let%expect_test "[get] with no value" =
   [%expect
     {|
     ("buffer has no value for variable"
-      (variable (some-int (option (wrapped int))))
+      (variable (some-int (option int)))
       (buffer "#<buffer *scratch*>")) |}]
 ;;
 
@@ -49,14 +49,14 @@ let%expect_test "[get] with strange value" =
   [%expect
     {|
     ("buffer has strange value for variable"
-      (variable (some-int (option (wrapped int))))
+      (variable (some-int (option int)))
       (buffer "#<buffer *scratch*>")
       (value  thirteen)) |}];
   require_does_raise [%here] (fun () -> Current_buffer.get_buffer_local_exn int);
   [%expect
     {|
     ("buffer has strange value for variable"
-      (variable (some-int (option (wrapped int))))
+      (variable (some-int (option int)))
       (buffer "#<buffer *scratch*>")
       (value  thirteen)) |}]
 ;;
@@ -79,7 +79,7 @@ let%expect_test "[get] with value represented as [nil]" =
     defvar
       ("some-bool" |> Symbol.intern)
       [%here]
-      ~type_:Value.Type.(option bool ~wrapped:true)
+      ~type_:Value.Type.(option_ bool)
       ~default_value:None
       ()
   in
@@ -122,7 +122,7 @@ let%expect_test "[defvar ~wrapped:false]" =
     defvar
       ("unwrapped" |> Symbol.intern)
       [%here]
-      ~type_:Value.Type.(option int ~wrapped:false)
+      ~type_:Value.Type.(nil_or int)
       ~default_value:None
       ()
   in

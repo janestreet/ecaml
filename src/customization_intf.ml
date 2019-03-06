@@ -6,9 +6,7 @@ open! Import
 module type Enum_arg = sig
   type t [@@deriving compare, enumerate, sexp_of]
 
-
   val docstring : t -> string
-  val standard_value : t
   val to_symbol : t -> Symbol.t
 end
 
@@ -118,6 +116,7 @@ module type Customization = sig
       -> (module Arg with type t = 'a)
       -> docstring:string
       -> group:Group.t
+      -> standard_value:'a
       -> (module S with type t = 'a)
   end
 

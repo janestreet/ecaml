@@ -31,7 +31,7 @@ let require_cl = Memo.unit (fun () -> Ecaml_value.Feature.require Q.cl)
 
 let gensym ?prefix () =
   require_cl ();
-  funcall1 Q.gensym (prefix |> Value.Type.(option string).to_value) |> of_value_exn
+  funcall1 Q.gensym (prefix |> Value.Type.(nil_or string).to_value) |> of_value_exn
 ;;
 
 let set_function t value = funcall2_i Q.fset (t |> to_value) value
@@ -49,7 +49,7 @@ module Property = struct
 
   let get { name; type_ } sym =
     funcall2 Q.get (sym |> to_value) (name |> to_value)
-    |> (Value.Type.option type_).of_value_exn
+    |> (Value.Type.nil_or type_).of_value_exn
   ;;
 
   let get_exn t symbol =

@@ -59,7 +59,7 @@ module F = struct
 
   let next_line = Q.next_line <: nullary @-> return nil
   let previous_line = Q.previous_line <: nullary @-> return nil
-  let recenter = Q.recenter <: option int @-> return nil
+  let recenter = Q.recenter <: nil_or int @-> return nil
   let scroll_up = Q.scroll_up <: int @-> return nil
 end
 

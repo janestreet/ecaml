@@ -41,7 +41,7 @@ let defvar_embedded
     here
     ?docstring
     ~type_:
-      (Value.Type.option
+      (Value.Type.nil_or
          (Value.Type.caml_embed
             (Type_equal.Id.create ~name:(Symbol.name symbol) [%sexp_of: Arg.t])))
     ~default_value:None
@@ -83,6 +83,11 @@ let get_in_current_buffer_exn t =
 
 let get_exn t buffer =
   Current_buffer.set_temporarily buffer ~f:(fun () -> get_in_current_buffer_exn t)
+;;
+
+let update_exn t buffer ~f =
+  Current_buffer.set_temporarily buffer ~f:(fun () ->
+    set_in_current_buffer t (Some (f (get_in_current_buffer_exn t))))
 ;;
 
 module Private = struct

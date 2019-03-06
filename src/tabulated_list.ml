@@ -18,7 +18,7 @@ module F = struct
   open! Value.Type
 
   let tabulated_list_get_id =
-    Q.tabulated_list_get_id <: nullary @-> return (option value)
+    Q.tabulated_list_get_id <: nullary @-> return (nil_or value)
   and tabulated_list_init_header = Q.tabulated_list_init_header <: nullary @-> return nil
   and tabulated_list_print = Q.tabulated_list_print <: bool @-> bool @-> return nil
 end
@@ -115,7 +115,7 @@ module Column = struct
 
     let to_fixed_width t values =
       let width =
-        List.map values ~f:String.length
+        List.map values ~f:Text.length
         |> List.max_elt ~compare:[%compare: int]
         |> Option.value ~default:0
       in
@@ -124,12 +124,12 @@ module Column = struct
   end
 
   type 'record t =
-    { field_of_record : 'record -> string
+    { field_of_record : 'record -> Text.t
     ; format : Variable_width.t Format.t
     }
   [@@deriving fields]
 
-  let create
+  let text
         ?align_right
         ?max_width
         ?min_width
@@ -144,6 +144,25 @@ module Column = struct
          let width = Variable_width.create ~max_width ~min_width in
          Format.create ?align_right ?pad_right ?sortable ~header ~width ())
     }
+  ;;
+
+  let create
+        ?align_right
+        ?max_width
+        ?min_width
+        ?pad_right
+        ?sortable
+        ~header
+        field_of_record
+    =
+    text
+      ?align_right
+      ?max_width
+      ?min_width
+      ?pad_right
+      ?sortable
+      ~header
+      (field_of_record >> Text.of_utf8_bytes)
   ;;
 
   let fixed_width_format t values =
@@ -201,7 +220,7 @@ let tabulated_list_format_var =
 let tabulated_list_sort_key_var =
   Buffer_local.wrap_existing
     Q.tabulated_list_sort_key
-    Value.Type.(option (tuple string bool))
+    Value.Type.(nil_or (tuple string bool))
 ;;
 
 let draw ?sort_by t rows =
@@ -246,7 +265,7 @@ let create major_mode columns ~id_equal ~id_type ~id_of_record =
     let entry_type =
       let open Value.Type in
       map
-        (tuple id_type (tuple (vector string) unit))
+        (tuple id_type (tuple (vector Text.type_) unit))
         ~name:[%message "tabulated-list-entries" (id_type : _ Value.Type.t)]
         ~of_:(fun _ -> raise_s [%sexp "reading tabulated-list-entries is not supported"])
         ~to_:(fun record ->

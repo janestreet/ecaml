@@ -8,16 +8,18 @@
 open! Core_kernel
 open! Import
 
+type t = Symbol.t
+
 (** [(describe-function 'provide)] *)
-val provide : Symbol.t -> unit
+val provide : t -> unit
 [@@deprecated
   "[since 2018-06] Requires additional initialization.  Use [Ecaml.provide] instead."]
 
 (** [(describe-function 'require)] *)
-val require : Symbol.t -> unit
+val require : t -> unit
 
 (** [(describe-function 'featurep)] *)
-val is_provided : Symbol.t -> bool
+val is_provided : t -> bool
 
 (** [(describe-variable 'features)] *)
-val all_provided : unit -> Symbol.t list
+val all_provided : unit -> t list

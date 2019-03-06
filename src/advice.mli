@@ -35,6 +35,7 @@ val around_funcall
   -> ?docstring:string
   -> for_function:Symbol.t
   -> ?interactive:Defun.Interactive.t
+  -> ?on_parse_error:Funcall.On_parse_error.t
   -> 'a Funcall.t
   -> ('a -> 'a)
   -> unit

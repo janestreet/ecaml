@@ -3,10 +3,10 @@ open! Import
 open! Elisp_time
 
 let times =
-  [ Time_ns.min_value
+  [ Time_ns.min_value_for_1us_rounding
   ; Time_ns.epoch
   ; Time_ns.of_string "2018-11-14 16:25:19.927203204-05:00"
-  ; Time_ns.max_value
+  ; Time_ns.max_value_for_1us_rounding
   ]
 ;;
 

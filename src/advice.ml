@@ -43,14 +43,23 @@ let around_values advice_name here ?docstring ~for_function ?interactive f =
     f (Value.funcallN inner) rest)
 ;;
 
-let around_funcall advice_name here ?docstring ~for_function ?interactive funcall f =
+let around_funcall
+      advice_name
+      here
+      ?docstring
+      ~for_function
+      ?interactive
+      ?(on_parse_error = Funcall.On_parse_error.Allow_raise)
+      funcall
+      f
+  =
   add_internal
     advice_name
     here
     ~for_function
     ?docstring
     ?interactive
-    (Funcall.Private.advice funcall f)
+    (Funcall.Private.advice funcall f on_parse_error here)
 ;;
 
 let remove advice_name ~for_function = F.advice_remove for_function advice_name

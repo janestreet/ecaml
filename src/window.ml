@@ -54,19 +54,19 @@ module F = struct
   open! Funcall
   open! Value.Type
 
-  let delete_other_windows = Q.delete_other_windows <: option type_ @-> return nil
-  and delete_window = Q.delete_window <: option type_ @-> return nil
+  let delete_other_windows = Q.delete_other_windows <: nil_or type_ @-> return nil
+  and delete_window = Q.delete_window <: nil_or type_ @-> return nil
   and get_buffer_window = Q.get_buffer_window <: Buffer.type_ @-> return type_
   and set_window_margins =
-    Q.set_window_margins <: type_ @-> option int @-> option int @-> return nil
+    Q.set_window_margins <: type_ @-> nil_or int @-> nil_or int @-> return nil
   and set_window_start = Q.set_window_start <: type_ @-> Position.type_ @-> return nil
   and window_frame = Q.window_frame <: type_ @-> return Frame.type_
 
   and window_list =
     Q.window_list
-    <: option Frame.type_
-       @-> option Include_minibuffer.type_
-       @-> option type_
+    <: nil_or Frame.type_
+       @-> nil_or Include_minibuffer.type_
+       @-> nil_or type_
        @-> return (list type_)
 
   and window_start = Q.window_start <: type_ @-> return Position.type_

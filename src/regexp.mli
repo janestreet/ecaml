@@ -73,6 +73,9 @@ module Last_match : sig
       [(Info-goto-node "(elisp)Simple Match Data")] *)
   val end_exn : ?subexp:int (** default is entire match *) -> unit -> int
 
+  (** [(describe-function 'replace-match)] *)
+  val replace : string -> unit
+
   (*_ See the Jane Street Style Guide for an explanation of [Private] submodules:
 
     https://opensource.janestreet.com/standards/#private-submodules *)

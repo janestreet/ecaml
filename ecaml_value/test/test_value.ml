@@ -423,6 +423,63 @@ let%expect_test "[funcallN_array{,_i}] with many arguments" =
     (num_args 3_500_000) |}]
 ;;
 
+let%expect_test "Elisp throw translated into OCaml and back" =
+  let sexp_of_throw = function
+    | Elisp_throw { tag; value } -> [%sexp "Elisp_throw", { tag : t; value : t }]
+    | exn -> [%sexp "Not a throw", (exn : exn)]
+  in
+  let fn =
+    Function.create_nullary [%here] (fun () ->
+      (* Catching an Elisp_throw here checks that throws are translated from elisp to
+         ecaml correctly. *)
+      try Value.funcall0_i (Value.intern "top-level") with
+      | exn ->
+        print_s
+          [%sexp
+            "Inner Ecaml function caught exception, reraising"
+          , (sexp_of_throw exn : Sexp.t)];
+        (* Raising the throw back to elisp and catching it below checks that throws are
+           translated from ecaml to elisp correctly. *)
+        raise exn)
+  in
+  let form =
+    Form.(list [ symbol (Symbol.intern "funcall"); quote (Function.to_value fn) ])
+  in
+  (try Form.eval_i form with
+   | exn ->
+     print_s [%sexp "Outer Ecaml function caught exception", (sexp_of_throw exn : Sexp.t)]);
+  [%expect
+    {|
+    ("Inner Ecaml function caught exception, reraising"
+     (Elisp_throw (
+       (tag   top-level)
+       (value nil))))
+    ("Outer Ecaml function caught exception" (
+      Elisp_throw (
+        (tag   top-level)
+        (value nil)))) |}]
+;;
+
+let%expect_test "[catch]ing a [throw] that travels through Ecaml" =
+  defun
+    ("some-ecaml-function" |> Symbol.intern)
+    [%here]
+    (Returns Value.Type.unit)
+    (let open Defun.Let_syntax in
+     let%map_open f = required ("f" |> Symbol.intern) value in
+     Value.funcall0_i f);
+  let value =
+    Form.eval_string
+      {|
+(catch 'some-tag
+  (some-ecaml-function (lambda () (throw 'some-tag 13))))
+|}
+  in
+  print_s [%sexp (value : Value.t)];
+  [%expect {|
+    13 |}]
+;;
+
 let%expect_test "rendering OCaml exceptions in Emacs and Ocaml" =
   let test ?(debug_on_error = false) message =
     try
@@ -558,27 +615,27 @@ module Type = struct
     [%expect {|
       ((v1 foo)
        (v2 foo)) |}];
-    test None (option int ~wrapped:false);
+    test None (nil_or int);
     [%expect {|
       ((v1 nil)
        (v2 nil)) |}];
-    test (Some 13) (option int ~wrapped:false);
+    test (Some 13) (nil_or int);
     [%expect {|
       ((v1 13)
        (v2 13)) |}];
-    test None (option int ~wrapped:true);
+    test None (option_ int);
     [%expect {|
       ((v1 nil)
        (v2 nil)) |}];
-    test (Some 13) (option int ~wrapped:true);
+    test (Some 13) (option_ int);
     [%expect {|
       ((v1 (13))
        (v2 (13))) |}];
-    test None (option bool ~wrapped:true);
+    test None (option_ bool);
     [%expect {|
       ((v1 nil)
        (v2 nil)) |}];
-    test (Some false) (option bool ~wrapped:true);
+    test (Some false) (option_ bool);
     [%expect {|
       ((v1 (nil))
        (v2 (nil))) |}];

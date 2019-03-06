@@ -81,13 +81,15 @@ module type Type = sig
   val list : 'a t -> 'a list t
   val vector : 'a t -> 'a array t
 
-  (** The representation of an option type's values in Elisp can be "wrapped" or
-      "unwrapped".  In either case, [None] is represented as [nil].  The unrwapped
-      representation of [Some v] is the representation of [v], whereas the wrapped
-      representation is [cons v nil].  Wrapping is necessary if [nil] is a representation
-      of some value [v_nil], in order to distinguish between the representation of [None]
-      and [Some v_nil]. *)
-  val option : ?wrapped:bool (** default is [false] *) -> 'a t -> 'a option t
+  (** [option_] represents [None] as [nil] and [Some a] as [cons v nil], where [v]
+      is the representation of [a]. *)
+  val option_ : 'a t -> 'a option t
+
+  (** [nil_or t] represents [None] as [nil] and [Some a] as [v], where [v] is the
+      representation of [a].  This is a common representation used by Elisp functions.
+      But it is only correct if [nil] is not a representation of any value in [t]; in that
+      situation use [Type.option_]. *)
+  val nil_or : 'a t -> 'a option t
 
   val alist : 'a t -> 'b t -> ('a * 'b) list t
 
@@ -144,7 +146,6 @@ module type Value = sig
   val to_list_exn : t -> f:(t -> 'a) -> 'a list
   val vector : t array -> t
   val to_array_exn : t -> f:(t -> 'a) -> 'a array
-  val option : ('a -> t) -> 'a option -> t
   val type_of : t -> t
 
   (** - [(Info-goto-node "(elisp)Type Predicates")] *)
@@ -318,6 +319,7 @@ module type Value = sig
 
   module For_testing : sig
     exception Elisp_signal of { symbol : t; data : t }
+    exception Elisp_throw of { tag : t; value : t }
 
     (** Used to edit non-deterministic stuff out of Elisp signals. *)
     val map_elisp_signal

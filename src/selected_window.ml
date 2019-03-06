@@ -25,8 +25,12 @@ module F = struct
   let other_window = Q.other_window <: int @-> return nil
   let quit_window = Q.quit_window <: nullary @-> return nil
   let split_window_sensibly = Q.split_window_sensibly <: nullary @-> return nil
+  let window_height = "window-height" |> Symbol.intern <: nullary @-> return int
+  let window_width = "window-width" |> Symbol.intern <: nullary @-> return int
 end
 
+let height = F.window_height
+let width = F.window_width
 let get () = Symbol.funcall0 Q.selected_window |> Window.of_value_exn
 
 let set ?(move_to_front_of_buffer_list = true) window =

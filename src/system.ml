@@ -12,7 +12,7 @@ module Q = struct
   and system_name = "system-name" |> Symbol.intern
 end
 
-let string_option = Value.Type.(option string)
+let string_option = Value.Type.(nil_or string)
 
 let getenv ~var =
   Symbol.funcall1 Q.getenv (var |> Value.of_utf8_bytes) |> string_option.of_value_exn

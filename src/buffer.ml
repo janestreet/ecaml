@@ -89,7 +89,12 @@ let displayed_in ?(current_frame_only = false) t =
   |> Value.to_list_exn ~f:Window.of_value_exn
 ;;
 
-let display t = Symbol.funcall1_i Q.display_buffer (t |> to_value)
+let display t =
+  Symbol.funcall1 Q.display_buffer (t |> to_value)
+  |> Value.Type.(nil_or Window0.type_).of_value_exn
+;;
+
+let display_i t = ignore (display t : Window0.t option)
 
 let buffer_local_value t (var : _ Var.t) =
   Symbol.funcall2 Q.buffer_local_value (var |> Var.symbol_as_value) (t |> to_value)

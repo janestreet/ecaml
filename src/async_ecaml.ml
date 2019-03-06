@@ -12,7 +12,7 @@ module Ecaml_filename = Filename
 open! Core_kernel
 open! Import
 module Ivar = Async.Ivar
-module Mutex = Core.Mutex
+module Mutex = Error_checking_mutex
 module Time = Core.Time
 module Unix = Core.Unix
 module Scheduler = Async_unix.Async_unix_private.Raw_scheduler

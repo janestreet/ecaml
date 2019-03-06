@@ -38,12 +38,13 @@ external non_local_exit_get_and_clear
   = "ecaml_non_local_exit_get_and_clear"
 
 exception Elisp_signal of { symbol : t; data : t }
+exception Elisp_throw of { tag : t; value : t }
 
 let raise_if_emacs_signaled () =
   match non_local_exit_get_and_clear () with
   | Return -> ()
-  | Signal (symbol, data)
-  | Throw (symbol, data) -> raise (Elisp_signal { symbol; data })
+  | Signal (symbol, data) -> raise (Elisp_signal { symbol; data })
+  | Throw (tag, value) -> raise (Elisp_throw { tag; value })
 ;;
 
 let wrap_raise1 f a =
@@ -335,7 +336,6 @@ let message_s : Sexp.t -> unit = function
 
 let nil = Q.nil
 let t = Q.t
-let option to_value = Option.value_map ~default:nil ~f:to_value
 let to_bool = is_not_nil
 let of_bool b = if b then t else nil
 let list ts = funcallN Q.list ts
@@ -400,45 +400,47 @@ let non_local_exit_signal exn =
         causes it to, after our C code returns to it, signal instead of returning a
         value. *)
     external non_local_exit_signal : t -> t -> unit = "ecaml_non_local_exit_signal"
+
+    (** [non_local_exit_throw] works like [non_local_exit_signal], except that it throws
+        instead of signaling when our code returns to emacs. *)
+    external non_local_exit_throw : t -> t -> unit = "ecaml_non_local_exit_throw"
   end
   in
   let debug_on_error = debug_on_error () in
-  let symbol, data =
-    match exn with
-    | Elisp_signal { symbol; data } ->
-      (* This case preserves an Elisp signal as it crosses an OCaml boundary. *)
-      let data =
-        match debug_on_error with
-        | false -> data
-        | true ->
-          funcall2
-            Q.append
-            data
-            (list
-               [ list
-                   [ Q.backtrace
-                   ; Backtrace.Exn.most_recent () |> Backtrace.to_string |> of_utf8_bytes
-                   ]
-               ])
-      in
-      symbol, data
-    | _ ->
-      let backtrace =
-        if debug_on_error then Some (Backtrace.Exn.most_recent ()) else None
-      in
-      let message =
-        [%message.omit_nil "" ~_:(exn : exn) (backtrace : Backtrace.t option)]
-      in
-      let message =
-        match message with
-        | Atom string -> string
-        | List _ as sexp -> Sexp.to_string_hum sexp
-      in
-      (* For the [error] symbol, the error data should be a list whose car is a string.
-         See [(Info-goto-node "(elisp)Signaling Errors")]. *)
-      Q.error, list [ message |> of_utf8_bytes ]
-  in
-  M.non_local_exit_signal symbol data
+  match exn with
+  | Elisp_throw { tag; value } -> M.non_local_exit_throw tag value
+  | Elisp_signal { symbol; data } ->
+    (* This case preserves an Elisp signal as it crosses an OCaml boundary. *)
+    let data =
+      match debug_on_error with
+      | false -> data
+      | true ->
+        funcall2
+          Q.append
+          data
+          (list
+             [ list
+                 [ Q.backtrace
+                 ; Backtrace.Exn.most_recent () |> Backtrace.to_string |> of_utf8_bytes
+                 ]
+             ])
+    in
+    M.non_local_exit_signal symbol data
+  | _ ->
+    let backtrace =
+      if debug_on_error then Some (Backtrace.Exn.most_recent ()) else None
+    in
+    let message =
+      [%message.omit_nil "" ~_:(exn : exn) (backtrace : Backtrace.t option)]
+    in
+    let message =
+      match message with
+      | Atom string -> string
+      | List _ as sexp -> Sexp.to_string_hum sexp
+    in
+    (* For the [error] symbol, the error data should be a list whose car is a string.
+       See [(Info-goto-node "(elisp)Signaling Errors")]. *)
+    M.non_local_exit_signal Q.error (list [ message |> of_utf8_bytes ])
 ;;
 
 let prin1_to_string t = funcall1 Q.prin1_to_string t |> to_utf8_bytes_exn
@@ -627,22 +629,26 @@ module Type = struct
 
   let map_id t name = map t ~name ~of_:Fn.id ~to_:Fn.id
 
-  let option ?(wrapped = false) t =
-    let t =
-      if not wrapped
-      then t
-      else
-        map
-          (tuple t unit)
-          ~name:[%message "wrapped" ~_:(name t : Sexp.t)]
-          ~of_:(fun (a, ()) -> a)
-          ~to_:(fun a -> a, ())
-    in
+  let nil_or t =
+    create
+      [%message "nil_or" ~_:(name t : Sexp.t)]
+      (function
+        | None -> Atom "nil"
+        | Some v -> to_sexp t v)
+      (fun v -> if is_nil v then None else Some (v |> t.of_value_exn))
+      (function
+        | None -> nil
+        | Some v -> t.to_value v)
+  ;;
+
+  let option_ t =
     create
       [%message "option" ~_:(name t : Sexp.t)]
       (sexp_of_option (to_sexp t))
-      (fun v -> if is_nil v then None else Some (v |> t.of_value_exn))
-      (option t.to_value)
+      (fun v -> if is_nil v then None else Some (car_exn v |> t.of_value_exn))
+      (function
+        | None -> nil
+        | Some v -> cons (t.to_value v) nil)
   ;;
 
   (* embed ocaml values as strings which are sexp representations *)
@@ -666,7 +672,7 @@ module Type = struct
 
   let path_list =
     map
-      (option string)
+      (nil_or string)
       ~name:[%message "path-list-element"]
       ~of_:(Option.value ~default:".")
       ~to_:Option.return
@@ -728,6 +734,7 @@ end
 
 module For_testing = struct
   exception Elisp_signal = Elisp_signal
+  exception Elisp_throw = Elisp_throw
 
   let map_elisp_signal g ~f =
     match g () with

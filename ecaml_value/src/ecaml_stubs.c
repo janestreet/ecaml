@@ -246,6 +246,17 @@ ecaml_non_local_exit_signal(value symbol, value data)
   CAMLreturn(Val_unit);
 }
 
+CAMLprim value
+ecaml_non_local_exit_throw(value tag, value throw_value)
+{
+  CAMLparam2(tag, throw_value);
+  emacs_env* env = ecaml_active_env_or_die();
+  emacs_value non_local_exit_tag = emacs_of_ocaml(env, tag);
+  emacs_value non_local_exit_value = emacs_of_ocaml(env, throw_value);
+  env->non_local_exit_throw(env, non_local_exit_tag, non_local_exit_value);
+  CAMLreturn(Val_unit);
+}
+
 /* This should be used in every place where Emacs calls OCaml and we use [caml_callback]
    (i.e. the place where we start by acquiring the OCaml lock) along with using the _exn
    variant of [caml_callback] (which is the one that doesn't raise), so that on exception,

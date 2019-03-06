@@ -42,6 +42,15 @@ val name : unit -> string
     [(Info-goto-node "(elisp)Buffer File Name")] *)
 val file_name_var : Filename.t option Buffer_local.t
 
+module Coding_system : sig
+  type t =
+    | Utf_8
+    | Utf_8_unix
+end
+
+(** [(describe-variable 'file-coding-system)] *)
+val file_coding_system : Coding_system.t option Buffer_local.t
+
 (** [(describe-function 'undo-boundary)]
     [(Info-goto-node "(elisp)Undo")] *)
 val add_undo_boundary : unit -> unit
@@ -332,5 +341,6 @@ val size : unit -> int
 (** [(describe-variable 'truncate-lines)] *)
 val truncate_lines : bool Buffer_local.t
 
-(** [(describe-function 'buffer-chars-modified-tick)] *)
+(** [(describe-function 'buffer-chars-modified-tick)]
+    [(Info-goto-node "(elisp)Buffer Modification")] *)
 val chars_modified_tick : unit -> Modified_tick.t

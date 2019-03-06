@@ -58,7 +58,10 @@ val displayed_in : ?current_frame_only:bool -> t -> Window0.t list
 
 (** [(Info-goto-node "(elisp)Choosing Window")]
     [(describe-function 'display-buffer)] *)
-val display : t -> unit
+val display : t -> Window0.t option
+
+(** Like [display], but ignores the result. *)
+val display_i : t -> unit
 
 (** [(describe-function 'buffer-local-value)]
     [(Info-goto-node "(elisp)Creating Buffer-Local")] *)

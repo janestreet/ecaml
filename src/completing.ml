@@ -112,7 +112,7 @@ module Blocking = struct
       ; (match history with
          | None -> Value.nil
          | Some history -> history.symbol |> Symbol.to_value)
-      ; default |> Value.option Value.of_utf8_bytes
+      ; default |> Value.Type.(nil_or string).to_value
       ]
     |> Value.to_utf8_bytes_exn
   ;;
@@ -141,7 +141,7 @@ module Blocking = struct
         ; (match history with
            | None -> Value.nil
            | Some history -> history.symbol |> Symbol.to_value)
-        ; default |> Value.option Value.of_utf8_bytes
+        ; default |> Value.Type.(nil_or string).to_value
         ]
       |> Value.to_list_exn ~f:Value.to_utf8_bytes_exn)
   ;;

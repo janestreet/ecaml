@@ -31,9 +31,9 @@ module F = struct
     Q.locate_file
     <: string
        @-> list string
-       @-> option (list string)
-       @-> option value
-       @-> return (option string)
+       @-> nil_or (list string)
+       @-> nil_or value
+       @-> return (nil_or string)
   ;;
 end
 

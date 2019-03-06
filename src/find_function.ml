@@ -28,7 +28,8 @@ let advise_for_ocaml () =
      Symbol.type_
      @-> Load_history.Type.type_
      @-> string
-     @-> return (tuple Buffer.type_ (option Position.type_)))
+     @-> return (tuple Buffer.type_ (nil_or Position.type_)))
+    ~on_parse_error:Call_inner_function
     (fun inner symbol type_ library ->
        (* [find-function-search-for-symbol] is used by both [find-function] and
           [find-variable], so [symbol] can be a function or a variable. *)

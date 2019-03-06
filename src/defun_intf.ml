@@ -82,6 +82,7 @@ module type Defun = sig
     -> ?define_keys:(Keymap.t * string) list
     -> ?obsoletes:Symbol.t
     -> ?interactive:Interactive.t
+    -> ?evil_config:Evil.Config.t
     -> 'a Returns.t
     -> 'a t
     -> unit
@@ -115,6 +116,7 @@ module type Defun = sig
     -> ?define_keys:(Keymap.t * string) list
     -> ?obsoletes:Symbol.t
     -> ?interactive:Interactive.t
+    -> ?evil_config:Evil.Config.t
     -> 'a Returns.t
     -> (unit -> 'a)
     -> unit
@@ -126,6 +128,7 @@ module type Defun = sig
     -> ?define_keys:(Keymap.t * string) list
     -> ?obsoletes:Symbol.t
     -> ?interactive:Interactive.t
+    -> ?evil_config:Evil.Config.t
     -> (unit -> unit)
     -> unit
 
