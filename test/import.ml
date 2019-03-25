@@ -86,7 +86,7 @@ let with_input_macro string f =
     keymap
     (Key_sequence.create_exn start_sequence)
     (Value
-       (lambda_nullary [%here] ~interactive:No_arg Returns_unit_deferred f
+       (lambda_nullary [%here] ~interactive:No_arg (Returns_deferred Value.Type.unit) f
         |> Function.to_value));
   Keymap.set_transient keymap;
   Key_sequence.execute keyseq

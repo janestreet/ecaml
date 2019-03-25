@@ -28,7 +28,7 @@ let%expect_test "" =
     print_s [%message "advice" (rest : Value.t list)];
     let inner_result = inner ((0 |> Value.of_int_exn) :: rest) in
     print_s [%message "advice" (inner_result : Value.t)];
-    Value.Type.int.to_value (1 + (inner_result |> Value.to_int_exn)));
+    Value.Type.(int |> to_value) (1 + (inner_result |> Value.to_int_exn)));
   call_test_function ();
   [%expect
     {|

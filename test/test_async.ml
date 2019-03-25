@@ -49,12 +49,13 @@ let%expect_test "Nested calls to block_on_async raise" =
         (app/emacs/lib/ecaml/src/async_ecaml.ml:LINE:COL Expect_test_config.run))))) |}]
 ;;
 
-let%expect_test "[defun Returns_unit_deferred] where body returns" =
+let%expect_test "[defun (Returns_deferred Value.Type.(deferred unit))] where body returns"
+  =
   let symbol = "defun-return-unit-deferred" |> Symbol.intern in
   Defun.defun
     symbol
     [%here]
-    Returns_unit_deferred
+    (Returns_deferred Value.Type.unit)
     (let open Defun.Let_syntax in
      let%map_open () = return () in
      message_s [%message "ran"];
@@ -67,12 +68,13 @@ let%expect_test "[defun Returns_unit_deferred] where body returns" =
     ran |}]
 ;;
 
-let%expect_test "[defun Returns_unit_deferred] where body raises" =
+let%expect_test "[defun (Returns_deferred Value.Type.(deferred unit))] where body raises"
+  =
   let symbol = "defun-return-unit-deferred" |> Symbol.intern in
   Defun.defun
     symbol
     [%here]
-    Returns_unit_deferred
+    (Returns_deferred Value.Type.unit)
     (let open Defun.Let_syntax in
      let%map_open () = return () in
      raise_s [%message "ran"]);
@@ -85,12 +87,32 @@ let%expect_test "[defun Returns_unit_deferred] where body raises" =
     (caught (exn (ran))) |}]
 ;;
 
+let%expect_test "defun returning non-unit deferred" =
+  let symbol = "defun-return-deferred" |> Symbol.intern in
+  Defun.defun
+    symbol
+    [%here]
+    (Returns_deferred Value.Type.int)
+    (let open Defun.Let_syntax in
+     let%map_open () = return () in
+     message_s [%message "ran"];
+     Deferred.return 23);
+  let%bind output =
+    Async_ecaml.Private.run_outside_async (fun () ->
+      Value.funcall0 (symbol |> Symbol.to_value) |> Value.Type.(of_value_exn int))
+  in
+  print_s [%sexp (output : int)];
+  [%expect {|
+    ran
+    23 |}]
+;;
+
 let%expect_test "Nested calls to block_on_async raise, even via elisp" =
   let symbol = "block-on-async" |> Symbol.intern in
   Defun.defun
     symbol
     [%here]
-    Returns_unit_deferred
+    (Returns_deferred Value.Type.unit)
     (let open Defun.Let_syntax in
      let%map_open () = return () in
      Deferred.unit);

@@ -231,7 +231,7 @@ let%expect_test "[save_some]" =
   save_some ();
   let file = "z.tmp" in
   let is_modified () = print_s [%sexp (Current_buffer.is_modified () : bool)] in
-  Selected_window.find_file file;
+  Selected_window.Blocking.find_file file;
   Point.insert "foo";
   save_some ();
   is_modified ();

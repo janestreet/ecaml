@@ -170,6 +170,13 @@ module Private = struct
   let all_defgroups () = !Group.all_defgroups |> List.sort ~compare:Symbol.compare_name
 end
 
+type 'a t = 'a Var.t [@@deriving sexp_of]
+
+let var t = t
+let symbol = Var.symbol
+let value = Current_buffer0.value_exn
+let standard_value = Var.default_value_exn
+
 let defcustom
       ?(show_form = false)
       symbol
@@ -188,10 +195,11 @@ let defcustom
          [ docstring |> String.strip
          ; "\n\n"
          ; concat [ "Customization group: "; group |> Group.to_string; "\n" ]
+         ; concat [ "Standard value: "; standard_value |> Value.prin1_to_string; "\n" ]
          ; concat
              [ "Customization type:"
              ; (let string =
-                  [%sexp (customization_type : Type.t)] |> Sexp.to_string_hum
+                  customization_type |> Type.to_value |> Value.prin1_to_string
                 in
                 if String.contains string '\n'
                 then concat [ "\n"; string ]
@@ -233,7 +241,7 @@ let defcustom
 
 module Enum = struct
   module type Arg = Enum_arg
-  module type S = Enum
+  module type S = Enum with type 'a customization := 'a t
 
   let make
         (type t)
@@ -247,14 +255,15 @@ module Enum = struct
     ( module struct
       type t = T.t
 
-      let ({ Value.Type.of_value_exn; to_value; id = _ } as type_) =
+      let type_ =
         Value.Type.enum
           [%sexp (Symbol.name symbol : string)]
           (module T)
           (T.to_symbol >> Symbol.to_value)
       ;;
 
-      let var = Var.create symbol type_
+      let of_value_exn = Value.Type.of_value_exn type_
+      let to_value = Value.Type.to_value type_
 
       let docstring =
         concat
@@ -270,18 +279,16 @@ module Enum = struct
              concat ("  - " :: (t |> T.to_symbol |> Symbol.name) :: docstring)))
       ;;
 
-      let initialize_defcustom () =
-        ignore
-          ( defcustom
-              symbol
-              here
-              ~docstring
-              ~group
-              ~type_
-              ~customization_type:(Type.enum T.all to_value)
-              ~standard_value
-              ()
-            : _ Var.t )
+      let customization =
+        defcustom
+          symbol
+          here
+          ~docstring
+          ~group
+          ~type_
+          ~customization_type:(Type.enum T.all to_value)
+          ~standard_value
+          ()
       ;;
     end
     : S

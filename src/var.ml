@@ -39,7 +39,7 @@ let create symbol type_ =
 let symbol_as_value t = t.symbol |> Symbol.to_value
 
 let default_value_exn t =
-  Symbol.funcall1 Q.default_value (symbol_as_value t) |> t.type_.of_value_exn
+  Symbol.funcall1 Q.default_value (symbol_as_value t) |> Value.Type.of_value_exn t.type_
 ;;
 
 let default_value_is_defined t =
@@ -47,7 +47,7 @@ let default_value_is_defined t =
 ;;
 
 let set_default_value t a =
-  Symbol.funcall2_i Q.set_default (symbol_as_value t) (a |> t.type_.to_value)
+  Symbol.funcall2_i Q.set_default (symbol_as_value t) (a |> Value.Type.to_value t.type_)
 ;;
 
 let make_buffer_local_always t =

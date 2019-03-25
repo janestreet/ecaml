@@ -47,4 +47,4 @@ val print_state_machine : bool ref
 
 (** A customization variable governing whether invalid ANSI escape sequences are flagged
     in output. *)
-val show_invalid_escapes : bool Var.t
+val show_invalid_escapes : bool Customization.t

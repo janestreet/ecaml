@@ -21,18 +21,18 @@ let nil = Value.Type.ignored
 let ( @-> ) (type a b) (type_ : a Value.Type.t) (t : b t) =
   match t with
   | Cons _ ->
-    (match Type_equal.Id.same type_.id nullary.id with
+    (match Type_equal.Id.same (Value.Type.id type_) (Value.Type.id nullary) with
      | true -> raise_s [%message "Function already has arguments, cannot be nullary."]
      | false -> Cons (type_, t))
   | Nullary _ -> raise_s [%message "Cannot add arguments to nullary function."]
   | Return return_type ->
-    (match Type_equal.Id.same_witness type_.id nullary.id with
+    (match Type_equal.Id.same_witness (Value.Type.id type_) (Value.Type.id nullary) with
      | Some Type_equal.T -> Nullary return_type
      | None -> Cons (type_, t))
 ;;
 
 let return_type_of_value symbol (type_ : 'a Value.Type.t) value =
-  match type_.of_value_exn value with
+  match Value.Type.of_value_exn type_ value with
   | x -> x
   | exception exn ->
     raise_s
@@ -61,7 +61,7 @@ let wrap : type a. a t -> Value.t -> a =
         match t with
         | Cons (type_, t) ->
           fun arg ->
-            args.(i) <- type_.to_value arg;
+            args.(i) <- Value.Type.to_value type_ arg;
             curry t symbol args (i + 1)
         | Nullary return_type ->
           assert (Int.( = ) i 0);
@@ -82,36 +82,40 @@ let wrap_unrolled : type a. a t -> Value.t -> a =
     | Return type_ -> Value.funcall0 symbol |> ret type_
     | Nullary return_type -> fun _ -> Value.funcall0 symbol |> ret return_type
     | Cons (type1, Return type_) ->
-      fun a1 -> Value.funcall1 symbol (a1 |> type1.to_value) |> ret type_
+      fun a1 -> Value.funcall1 symbol (a1 |> Value.Type.to_value type1) |> ret type_
     | Cons (type1, Cons (type2, Return type_)) ->
       fun a1 a2 ->
-        Value.funcall2 symbol (a1 |> type1.to_value) (a2 |> type2.to_value) |> ret type_
+        Value.funcall2
+          symbol
+          (a1 |> Value.Type.to_value type1)
+          (a2 |> Value.Type.to_value type2)
+        |> ret type_
     | Cons (type1, Cons (type2, Cons (type3, Return type_))) ->
       fun a1 a2 a3 ->
         Value.funcall3
           symbol
-          (a1 |> type1.to_value)
-          (a2 |> type2.to_value)
-          (a3 |> type3.to_value)
+          (a1 |> Value.Type.to_value type1)
+          (a2 |> Value.Type.to_value type2)
+          (a3 |> Value.Type.to_value type3)
         |> ret type_
     | Cons (type1, Cons (type2, Cons (type3, Cons (type4, Return type_)))) ->
       fun a1 a2 a3 a4 ->
         Value.funcall4
           symbol
-          (a1 |> type1.to_value)
-          (a2 |> type2.to_value)
-          (a3 |> type3.to_value)
-          (a4 |> type4.to_value)
+          (a1 |> Value.Type.to_value type1)
+          (a2 |> Value.Type.to_value type2)
+          (a3 |> Value.Type.to_value type3)
+          (a4 |> Value.Type.to_value type4)
         |> ret type_
     | Cons (type1, Cons (type2, Cons (type3, Cons (type4, Cons (type5, Return type_))))) ->
       fun a1 a2 a3 a4 a5 ->
         Value.funcall5
           symbol
-          (a1 |> type1.to_value)
-          (a2 |> type2.to_value)
-          (a3 |> type3.to_value)
-          (a4 |> type4.to_value)
-          (a5 |> type5.to_value)
+          (a1 |> Value.Type.to_value type1)
+          (a2 |> Value.Type.to_value type2)
+          (a3 |> Value.Type.to_value type3)
+          (a4 |> Value.Type.to_value type4)
+          (a5 |> Value.Type.to_value type5)
         |> ret type_
     | t -> wrap t symbol
 ;;
@@ -135,21 +139,21 @@ let apply t f args ~on_parse_error =
       | Cons (type_, t) ->
         (match args with
          | arg :: args ->
-           (match type_.of_value_exn arg with
+           (match Value.Type.of_value_exn type_ arg with
             | arg -> apply t (f arg) args
             | exception exn -> on_parse_error exn)
          | [] ->
            (* Emacs convention: missing arguments are nil. *)
-           (match type_.of_value_exn Value.nil with
+           (match Value.Type.of_value_exn type_ Value.nil with
             | arg -> apply t (f arg) args
             | exception exn -> on_parse_error exn))
       | Return type_ ->
         (match args with
-         | [] -> type_.to_value f
+         | [] -> Value.Type.to_value type_ f
          | _ :: _ -> wrong_number_of_args "Extra args.")
       | Nullary type_ ->
         (match args with
-         | [] -> type_.to_value (f ())
+         | [] -> Value.Type.to_value type_ (f ())
          | _ :: _ -> wrong_number_of_args "Extra args.")
   in
   apply t f args

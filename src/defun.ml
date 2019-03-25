@@ -55,7 +55,7 @@ module T = struct
 
   let optional_with_nil name type_ =
     map (optional name type_) ~f:(function
-      | None -> type_.of_value_exn Value.nil
+      | None -> Value.Type.of_value_exn type_ Value.nil
       | Some x -> x)
   ;;
 
@@ -78,7 +78,7 @@ let apply t args =
   let len = Array.length args in
   let pos = ref 0 in
   let consume_arg (type_ : _ Value.Type.t) =
-    let arg = type_.of_value_exn args.(!pos) in
+    let arg = Value.Type.of_value_exn type_ args.(!pos) in
     incr pos;
     arg
   in
@@ -102,7 +102,7 @@ let apply t args =
       | Rest (_, type_) ->
         let retval =
           Array.sub args ~pos:!pos ~len:(len - !pos)
-          |> Array.map ~f:type_.of_value_exn
+          |> Array.map ~f:(Value.Type.of_value_exn type_)
           |> Array.to_list
         in
         pos := len;
@@ -154,34 +154,31 @@ let get_args t =
 ;;
 
 module Returns = struct
-  type 'a t =
-    | Returns of 'a Value.Type.t
-    | Returns_unit_deferred : unit Deferred.t t
-  [@@deriving sexp_of]
+  type (_, _) t =
+    | Returns : 'a Value.Type.t -> ('a, 'a) t
+    | Returns_deferred : 'a Value.Type.t -> ('a, 'a Deferred.t) t
+
+  let sexp_of_t (type a b) _ _ (t : (a, b) t) =
+    match t with
+    | Returns type_ -> [%message "Returns" (type_ : _ Value.Type.t)]
+    | Returns_deferred type_ -> [%message "Returns_deferred" (type_ : _ Value.Type.t)]
+  ;;
 end
 
-let block_on_async
-  :
-    (Source_code_position.t
-     -> ?context:Sexp.t Lazy.t
-     -> (unit -> unit Deferred.t)
-     -> unit)
-      Set_once.t =
-  Set_once.create ()
-;;
-
-let call (type a) (t : a t) here ~function_ ~args ~(returns : a Returns.t) =
+let call (type a b) (t : a t) here ~function_ ~args ~(returns : (b, a) Returns.t) =
   match returns with
-  | Returns returns -> returns.to_value (apply t args)
-  | Returns_unit_deferred ->
-    let block_on_async = Set_once.get_exn block_on_async [%here] in
-    block_on_async
+  | Returns returns -> Value.Type.to_value returns (apply t args)
+  | Returns_deferred returns ->
+    let block_on_async =
+      Set_once.get_exn Value.Private.Block_on_async.set_once [%here]
+    in
+    block_on_async.f
       here
+      (fun () -> apply t args)
       ~context:
         (lazy
           (List (function_ :: (args |> Array.map ~f:Value.sexp_of_t |> Array.to_list))))
-      (fun () -> apply t args);
-    Value.nil
+    |> Value.Type.to_value returns
 ;;
 
 module Interactive = struct
@@ -200,7 +197,7 @@ module Interactive = struct
     | Region -> "r"
   ;;
 
-  let ({ Value.Type.of_value_exn; to_value; _ } as type_) =
+  let type_ =
     Value.Type.(
       map
         string
@@ -216,6 +213,9 @@ module Interactive = struct
              | None -> raise_s [%sexp "Unimplemented interactive code", (s : string)]))
         ~to_:to_string)
   ;;
+
+  let of_value_exn = Value.Type.of_value_exn type_
+  let to_value = Value.Type.to_value type_
 end
 
 module For_testing = struct
@@ -370,7 +370,3 @@ let lambda_nullary here ?docstring ?interactive returns f =
 let lambda_nullary_nil here ?docstring ?interactive f =
   lambda_nullary here ?docstring ?interactive (Returns Value.Type.unit) f
 ;;
-
-module Private = struct
-  let block_on_async = block_on_async
-end

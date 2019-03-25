@@ -16,11 +16,11 @@ let make (type ocaml) (type_ : ocaml Value.Type.t) =
       | This of ocaml
     [@@deriving sexp_of]
 
-    let create_elisp ocaml = Elisp (type_.to_value ocaml)
+    let create_elisp ocaml = Elisp (Value.Type.to_value type_ ocaml)
 
     let to_value = function
       | Elisp value -> value
-      | This ocaml -> type_.to_value ocaml
+      | This ocaml -> Value.Type.to_value type_ ocaml
     ;;
   end
   : S

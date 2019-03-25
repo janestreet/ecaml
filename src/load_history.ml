@@ -57,7 +57,7 @@ module Type = struct
 
   include T
 
-  let ({ Value.Type.of_value_exn; to_value; id = _ } as type_) =
+  let type_ =
     Value.Type.enum
       [%sexp "load-history type"]
       (module T)
@@ -66,6 +66,9 @@ module Type = struct
         | Fun -> Value.nil
         | Var -> Q.defvar |> Symbol.to_value)
   ;;
+
+  let of_value_exn = Value.Type.of_value_exn type_
+  let to_value = Value.Type.to_value type_
 end
 
 module Key = struct

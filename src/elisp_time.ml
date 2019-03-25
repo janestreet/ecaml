@@ -53,7 +53,7 @@ let of_time_ns time_ns =
     (if negate
      then [ -sec_high; -sec_low; -micros; -picos ]
      else [ sec_high; sec_low; micros; picos ])
-    |> Value.Type.(list int).to_value
+    |> Value.Type.(list int |> to_value)
     |> of_value_exn
   with
   | exn ->
@@ -93,7 +93,7 @@ let to_int_ns_since_epoch_exn t =
   then Float.iround_nearest_exn (1e9 *. (value |> Value.to_float_exn))
   else (
     let sec_high, sec_low, micros, picos =
-      match value |> Value.Type.(list int).of_value_exn with
+      match value |> Value.Type.(list int |> of_value_exn) with
       | exception _ -> unexpected_time_value value
       | [ sec_high ] -> sec_high, 0, 0, 0
       | [ sec_high; sec_low ] -> sec_high, sec_low, 0, 0

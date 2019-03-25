@@ -134,7 +134,7 @@ let%expect_test "[write]" =
   let file = "z.tmp" in
   write file "stuff\n";
   let show_contents () =
-    Selected_window.find_file file;
+    Selected_window.Blocking.find_file file;
     print_string (Current_buffer.contents () |> Text.to_utf8_bytes);
     Current_buffer.kill ()
   in

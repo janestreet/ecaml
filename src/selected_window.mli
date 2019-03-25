@@ -4,6 +4,7 @@
     [(Info-goto-node "(elisp)Selecting Windows")]. *)
 
 open! Core_kernel
+open! Async_kernel
 open! Import
 
 (** [(describe-function 'selected-window)] *)
@@ -28,7 +29,11 @@ val split_sensibly_exn : unit -> unit
 val split_vertically_exn : unit -> unit
 
 (** [(describe-function 'find-file)] *)
-val find_file : string -> unit
+val find_file : string -> unit Deferred.t
+
+module Blocking : sig
+  val find_file : string -> unit
+end
 
 (** [(describe-function 'find-file-other-window)] *)
 val find_file_other_window : string -> unit

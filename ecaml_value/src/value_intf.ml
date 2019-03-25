@@ -8,6 +8,7 @@
 
 open! Core_kernel
 open! Import
+open! Async_kernel
 
 module type Make_subtype_arg = sig
   type value
@@ -81,11 +82,11 @@ module type Type = sig
   val list : 'a t -> 'a list t
   val vector : 'a t -> 'a array t
 
-  (** [option_] represents [None] as [nil] and [Some a] as [cons v nil], where [v]
-      is the representation of [a]. *)
-  val option_ : 'a t -> 'a option t
+  (** [option] represents [None] as [nil] and [Some a] as [cons v nil], where [v] is the
+      representation of [a]. *)
+  val option : 'a t -> 'a option t
 
-  (** [nil_or t] represents [None] as [nil] and [Some a] as [v], where [v] is the
+  (** [nil_or t_] represents [None] as [nil] and [Some a] as [v], where [v] is the
       representation of [a].  This is a common representation used by Elisp functions.
       But it is only correct if [nil] is not a representation of any value in [t]; in that
       situation use [Type.option_]. *)
@@ -269,18 +270,15 @@ module type Value = sig
   module Type :
   sig
     type value
+    type 'a t [@@deriving sexp_of]
 
-    type 'a t =
-      { id : 'a Type_equal.Id.t
-      ; of_value_exn : value -> 'a
-      ; to_value : 'a -> value
-      }
-    [@@deriving fields, sexp_of]
-
-    module type S = Type with type 'a t := 'a t with type value := value
+    module type S = Type with type value := value with type 'a t := 'a t
 
     include S
 
+    val id : 'a t -> 'a Type_equal.Id.t
+    val to_value : 'a t -> 'a -> value
+    val of_value_exn : 'a t -> value -> 'a
     val name : _ t -> Sexp.t
     val map : 'a t -> name:Sexp.t -> of_:('a -> 'b) -> to_:('b -> 'a) -> 'b t
 
@@ -328,5 +326,23 @@ module type Value = sig
       -> 'a
 
     val map_elisp_signal_omit_data : (unit -> 'a) -> 'a
+  end
+
+  module Private : sig
+    module Block_on_async : sig
+      type t =
+        { f :
+            'a. Source_code_position.t -> ?context:Sexp.t Lazy.t
+            -> (unit -> 'a Deferred.t) -> 'a
+        }
+
+      val set_once : t Set_once.t
+    end
+
+    module Run_outside_async : sig
+      type t = { f : 'a. (unit -> 'a) -> 'a Deferred.t }
+
+      val set_once : t Set_once.t
+    end
   end
 end

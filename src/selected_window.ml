@@ -1,4 +1,5 @@
 open! Core_kernel
+open! Async_kernel
 open! Import
 
 module Q = struct
@@ -51,7 +52,6 @@ let switch_to_buffer_other_window buffer =
 let split_horizontally_exn () = Symbol.funcall0_i Q.split_window_horizontally
 let split_sensibly_exn = F.split_window_sensibly
 let split_vertically_exn () = Symbol.funcall0_i Q.split_window_vertically
-let find_file path = Symbol.funcall1_i Q.find_file (path |> Value.of_utf8_bytes)
 let find_file_other_window path = F.find_file_other_window path
 let view_file path = Symbol.funcall1_i Q.view_file (path |> Value.of_utf8_bytes)
 let quit = F.quit_window
@@ -61,4 +61,15 @@ let other_window = F.other_window
 
 let set_temporarily window ~f =
   Save_wrappers.with_selected_window (window |> Window.to_value) f
+;;
+
+module Blocking = struct
+  let find_file path = Symbol.funcall1_i Q.find_file (path |> Value.of_utf8_bytes)
+end
+
+let find_file path =
+  let run_outside_async =
+    Set_once.get_exn Value.Private.Run_outside_async.set_once [%here]
+  in
+  run_outside_async.f (fun () -> Blocking.find_file path)
 ;;

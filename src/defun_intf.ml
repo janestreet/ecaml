@@ -63,15 +63,14 @@ module type Defun = sig
     -> Function.Fn.t
     -> unit
 
+  (** An [Returns.t] states the return type of a function and whether the function returns
+      a value of that type directly or via a [Deferred.t].  An [(a, a) Returns.t] means
+      that the function returns [a] directly.  An [(a, a Deferred.t) Returns.t] means that
+      the function returns [a] via an [a Deferred.t]. *)
   module Returns : sig
-    type 'a t =
-      | Returns of 'a Value.Type.t
-      (** [Returns_unit_deferred] is meant to be used for interactive commands directly
-          called by the user.  It is restricted to functions returning [unit Deferred.t]
-          to encourage this use case.  Calling such a function from within async raises.
-          Restricting [Returns_unit_deferred] to top-level interactive commands makes it
-          less likely that this situation will occur. *)
-      | Returns_unit_deferred : unit Deferred.t t
+    type (_, _) t =
+      | Returns : 'a Value.Type.t -> ('a, 'a) t
+      | Returns_deferred : 'a Value.Type.t -> ('a, 'a Deferred.t) t
     [@@deriving sexp_of]
   end
 
@@ -83,7 +82,7 @@ module type Defun = sig
     -> ?obsoletes:Symbol.t
     -> ?interactive:Interactive.t
     -> ?evil_config:Evil.Config.t
-    -> 'a Returns.t
+    -> (_, 'a) Returns.t
     -> 'a t
     -> unit
 
@@ -117,7 +116,7 @@ module type Defun = sig
     -> ?obsoletes:Symbol.t
     -> ?interactive:Interactive.t
     -> ?evil_config:Evil.Config.t
-    -> 'a Returns.t
+    -> (_, 'a) Returns.t
     -> (unit -> 'a)
     -> unit
 
@@ -136,7 +135,7 @@ module type Defun = sig
     :  Source_code_position.t
     -> ?docstring:string
     -> ?interactive:Interactive.t
-    -> 'a Returns.t
+    -> (_, 'a) Returns.t
     -> 'a t
     -> Function.t
 
@@ -144,7 +143,7 @@ module type Defun = sig
     :  Source_code_position.t
     -> ?docstring:string
     -> ?interactive:Interactive.t
-    -> 'a Returns.t
+    -> (_, 'a) Returns.t
     -> (unit -> 'a)
     -> Function.t
 
@@ -154,13 +153,4 @@ module type Defun = sig
     -> ?interactive:Interactive.t
     -> (unit -> unit)
     -> Function.t
-
-  module Private : sig
-    val block_on_async :
-      (Source_code_position.t
-       -> ?context:Sexp.t Lazy.t
-       -> (unit -> unit Deferred.t)
-       -> unit)
-        Set_once.t
-  end
 end

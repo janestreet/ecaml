@@ -26,7 +26,7 @@ let test ?show_form type_ customization_type standard_value =
         ~standard_value
         ?show_form
         ()
-      : _ Var.t );
+      : _ Customization.t );
   ignoring_stderr (fun () -> customize_variable variable);
   Current_buffer.contents ()
   |> Text.to_utf8_bytes
@@ -44,7 +44,8 @@ let%expect_test "[Boolean] with default [nil]" =
       "\
      \n\
      \nCustomization group: test-customization-group\
-     \nCustomization type: Boolean" :group (quote test-customization-group) :type
+     \nStandard value: nil\
+     \nCustomization type: boolean" :group (quote test-customization-group) :type
      (quote boolean))
 
     Hide Test Customization Symbol 1: [Toggle]  off (nil)
@@ -52,7 +53,8 @@ let%expect_test "[Boolean] with default [nil]" =
         Hide
 
        Customization group: test-customization-group
-       Customization type: Boolean
+       Standard value: nil
+       Customization type: boolean
     Groups: [Test Customization Group] |}]
 ;;
 
@@ -65,13 +67,14 @@ let%expect_test "[Boolean] with default [t]" =
         Hide
 
        Customization group: test-customization-group
-       Customization type: Boolean
+       Standard value: t
+       Customization type: boolean
     Groups: [Test Customization Group] |}]
 ;;
 
 let%expect_test "[Const]" =
   (* The customize UI doesn't know how to handle [Const _] outside [Choice].  *)
-  test Value.Type.int (Choice [ Const (Value.Type.int.to_value 13) ]) 13;
+  test Value.Type.int (Choice [ Const (Value.Type.(to_value int) 13) ]) 13;
   [%expect
     {|
     Hide Test Customization Symbol 3: [Value Menu] 13
@@ -79,7 +82,8 @@ let%expect_test "[Const]" =
         Hide
 
        Customization group: test-customization-group
-       Customization type: (Choice ((Const 13)))
+       Standard value: 13
+       Customization type: (choice (const 13))
     Groups: [Test Customization Group] |}]
 ;;
 
@@ -108,12 +112,13 @@ let%expect_test "[enum]" =
         Hide
 
        Customization group: test-customization-group
-       Customization type: (Choice ((Const A) (Const B)))
+       Standard value: A
+       Customization type: (choice (const A) (const B))
     Groups: [Test Customization Group] |}]
 ;;
 
 let%expect_test "[defcustom] invalid-value error message" =
-  let var =
+  let customization =
     defcustom
       ("zzz" |> Symbol.intern)
       [%here]
@@ -124,8 +129,10 @@ let%expect_test "[defcustom] invalid-value error message" =
       ~standard_value:13
       ()
   in
-  Current_buffer.set_value { var with type_ = Value.Type.bool } false;
-  show_raise (fun () -> Current_buffer.value_exn var);
+  Current_buffer.set_value
+    { (Customization.var customization) with type_ = Value.Type.bool }
+    false;
+  show_raise (fun () -> Customization.value customization);
   [%expect
     {|
     (raised (

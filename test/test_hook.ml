@@ -155,7 +155,7 @@ let%expect_test "Blocking async hook" =
         ("f1" |> Symbol.intern)
         [%here]
         ~hook_type:File
-        Returns_unit_deferred
+        (Returns_deferred Value.Type.unit)
         (fun _ ->
            let%map.Async () = Async.Clock.after pause in
            print_s [%message "f1"])
@@ -172,7 +172,7 @@ let%expect_test "Blocking async hook" =
 
 let%expect_test "[after_save], [kill_buffer]" =
   let file = "test-after-save.tmp" in
-  Selected_window.find_file file;
+  Selected_window.Blocking.find_file file;
   add
     after_save
     ~buffer_local:true
@@ -222,7 +222,7 @@ let%expect_test "hook raise" =
        ("hook-raise2" |> Symbol.intern)
        [%here]
        ~hook_type
-       Returns_unit_deferred
+       (Returns_deferred Value.Type.unit)
        (fun () -> raise_s [%message "raise2"]));
   run t;
   [%expect

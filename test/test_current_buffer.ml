@@ -235,7 +235,7 @@ let%expect_test "[file_name]" =
   show_file_basename ();
   [%expect {|
     () |}];
-  Selected_window.find_file "test_current_buffer.ml";
+  Selected_window.Blocking.find_file "test_current_buffer.ml";
   show_file_basename ();
   [%expect {|
     (test_current_buffer.ml) |}];
@@ -321,7 +321,7 @@ let%expect_test "[kill]" =
 
 let%expect_test "[save]" =
   let file = Caml.Filename.temp_file "" "" in
-  Selected_window.find_file file;
+  Selected_window.Blocking.find_file file;
   Point.insert "foobar";
   save ();
   kill ();
@@ -909,7 +909,7 @@ let%expect_test "[indent_region]" =
 
 let%expect_test "[revert]" =
   Directory.with_temp_dir ~prefix:"test-revert" ~suffix:"" ~f:(fun dir ->
-    Selected_window.find_file (concat [ dir; "/file" ]);
+    Selected_window.Blocking.find_file (concat [ dir; "/file" ]);
     ignore
       ( Process.shell_command_exn "echo foo >file" ~working_directory:Of_current_buffer
         : string );

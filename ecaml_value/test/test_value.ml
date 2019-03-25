@@ -593,9 +593,9 @@ module Type = struct
 
   let%expect_test "round trip" =
     let test a t =
-      let v1 = a |> t.to_value in
-      let a2 = v1 |> t.of_value_exn in
-      let v2 = a2 |> t.to_value in
+      let v1 = a |> Value.Type.to_value t in
+      let a2 = v1 |> Value.Type.of_value_exn t in
+      let v2 = a2 |> Value.Type.to_value t in
       require [%here] (Value.equal v1 v2);
       print_s [%message (v1 : Value.t) (v2 : Value.t)]
     in
@@ -623,19 +623,19 @@ module Type = struct
     [%expect {|
       ((v1 13)
        (v2 13)) |}];
-    test None (option_ int);
+    test None (option int);
     [%expect {|
       ((v1 nil)
        (v2 nil)) |}];
-    test (Some 13) (option_ int);
+    test (Some 13) (option int);
     [%expect {|
       ((v1 (13))
        (v2 (13))) |}];
-    test None (option_ bool);
+    test None (option bool);
     [%expect {|
       ((v1 nil)
        (v2 nil)) |}];
-    test (Some false) (option_ bool);
+    test (Some false) (option bool);
     [%expect {|
       ((v1 (nil))
        (v2 (nil))) |}];

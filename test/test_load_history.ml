@@ -18,7 +18,7 @@ let%expect_test "[defcustom], [defvar], [defun], [update_emacs_with_entries], \
         ~customization_type:Boolean
         ~standard_value:false
         ()
-      : _ Var.t );
+      : _ Customization.t );
   ignore
     ( defvar var [%here] ~docstring:"foo" ~type_:Value.Type.bool ~initial_value:false ()
       : _ Var.t );

@@ -54,7 +54,7 @@ module Status = struct
 
   include T
 
-  let ({ Value.Type.id = _; of_value_exn; to_value } as type_) =
+  let type_ =
     Value.Type.enum
       [%sexp "process-status"]
       (module T)
@@ -70,6 +70,9 @@ module Status = struct
          | Signal -> Q.signal
          | Stop -> Q.stop)
   ;;
+
+  let of_value_exn = Value.Type.of_value_exn type_
+  let to_value = Value.Type.to_value type_
 end
 
 module F = struct
@@ -131,7 +134,7 @@ let exit_status t : Exit_status.t =
 
 let find_by_name name =
   Symbol.funcall1 Q.get_process (name |> Value.of_utf8_bytes)
-  |> Value.Type.(nil_or type_).of_value_exn
+  |> Value.Type.(nil_or type_ |> of_value_exn)
 ;;
 
 let all_emacs_children () =

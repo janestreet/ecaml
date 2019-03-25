@@ -28,9 +28,9 @@ include (
     include Hashable.S with type t := t
   end)
 
-let ({ Value.Type.id = _; of_value_exn; to_value } as type_) =
-  Value.Type.(map_id string) [%message "filename"]
-;;
+let type_ = Value.Type.(map_id string) [%message "filename"]
+let of_value_exn = Value.Type.of_value_exn type_
+let to_value = Value.Type.to_value type_
 
 let is_absolute t =
   Symbol.funcall1 Q.file_name_absolute_p (t |> to_value) |> Value.to_bool

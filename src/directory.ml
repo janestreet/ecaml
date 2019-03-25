@@ -38,9 +38,9 @@ let files
       Q.directory_files
       (dirname |> Filename.to_value)
       (absolute |> Value.of_bool)
-      (matching |> (Value.Type.nil_or Regexp.type_).to_value)
+      (matching |> Value.Type.(nil_or Regexp.type_ |> to_value))
       (sort |> not |> Value.of_bool)
-    |> (Value.Type.list Filename.type_).of_value_exn
+    |> Value.Type.(list Filename.type_ |> of_value_exn)
   in
   if include_dot_and_dotdot
   then files
@@ -61,7 +61,7 @@ let files_recursively
     (dirname |> Filename.to_value)
     (matching |> Regexp.to_value)
     (include_directories |> Value.of_bool)
-  |> (Value.Type.list Filename.type_).of_value_exn
+  |> Value.Type.(list Filename.type_ |> of_value_exn)
 ;;
 
 let make_temp_dir ~prefix ~suffix =

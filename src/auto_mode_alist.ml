@@ -73,6 +73,6 @@ let add entries =
     auto_mode_alist_value
     (Symbol.funcall2
        Q.append
-       (type_.to_value entries)
+       (Value.Type.to_value type_ entries)
        (Current_buffer.value_exn auto_mode_alist_value))
 ;;

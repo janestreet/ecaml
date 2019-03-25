@@ -9,6 +9,7 @@ module Q = struct
   and after_revert = "after-revert-hook" |> Symbol.intern
   and after_save_hook = "after-save-hook" |> Symbol.intern
   and before_save_hook = "before-save-hook" |> Symbol.intern
+  and emacs_startup_hook = "emacs-startup-hook" |> Symbol.intern
   and kill_buffer_hook = "kill-buffer-hook" |> Symbol.intern
   and post_command_hook = "post-command-hook" |> Symbol.intern
   and remove_hook = "remove-hook" |> Symbol.intern
@@ -76,25 +77,13 @@ module Function = struct
     }
   [@@deriving sexp_of]
 
-  module Returns = struct
-    type _ t =
-      | Returns : unit Value.Type.t -> unit t
-      | Returns_unit_deferred : unit Async.Deferred.t t
-    [@@deriving sexp_of]
-
-    let to_defun_returns : type a. a t -> a Defun.Returns.t = function
-      | Returns t -> Returns t
-      | Returns_unit_deferred -> Returns_unit_deferred
-    ;;
-  end
-
   let defun
         (type a b)
         symbol
         here
         ?docstring
         ~(hook_type : a Hook_type.t)
-        (returns : b Returns.t)
+        (returns : (unit, b) Defun.Returns.t)
         (f : a -> b)
     =
     let handle_result = function
@@ -106,7 +95,7 @@ module Function = struct
     let try_with (f : unit -> b) : b =
       match returns with
       | Returns (_ : unit Value.Type.t) -> Or_error.try_with f |> handle_result
-      | Returns_unit_deferred ->
+      | Returns_deferred (_ : unit Value.Type.t) ->
         let open Async in
         Deferred.Or_error.try_with f ~extract_exn:true >>| handle_result
     in
@@ -114,7 +103,7 @@ module Function = struct
       symbol
       here
       ?docstring
-      (returns |> Returns.to_defun_returns)
+      returns
       (match hook_type with
        | Normal ->
          let open Defun.Let_syntax in
@@ -174,6 +163,7 @@ let after_load = create Q.after_load_functions ~hook_type:File
 let after_revert = create Q.after_revert ~hook_type:Normal
 let after_save = create Q.after_save_hook ~hook_type:Normal
 let before_save = create Q.before_save_hook ~hook_type:Normal
+let emacs_startup = create Q.emacs_startup_hook ~hook_type:Normal
 let kill_buffer = create Q.kill_buffer_hook ~hook_type:Normal
 
 let after_load_once =

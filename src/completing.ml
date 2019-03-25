@@ -36,7 +36,7 @@ module Initial_input = struct
            | s -> Some (Point_at_end s)
            | exception _ -> None)
       ; (fun value ->
-           match Value.Type.(tuple string int).of_value_exn value with
+           match Value.Type.(tuple string int |> of_value_exn) value with
            | s, i -> Some (Point_at_pos (s, i))
            | exception _ -> None)
       ]
@@ -59,7 +59,7 @@ module Require_match = struct
     | Require_match_or_null
     | True
 
-  let ({ Value.Type.of_value_exn; to_value; _ } as type_) =
+  let type_ =
     Value.Type.map
       Symbol.type_
       ~name:[%sexp "completing", "require-match"]
@@ -81,6 +81,8 @@ module Require_match = struct
         | True -> Q.t)
   ;;
 
+  let of_value_exn = Value.Type.of_value_exn type_
+  let to_value = Value.Type.to_value type_
   let default = False
 end
 
@@ -112,7 +114,7 @@ module Blocking = struct
       ; (match history with
          | None -> Value.nil
          | Some history -> history.symbol |> Symbol.to_value)
-      ; default |> Value.Type.(nil_or string).to_value
+      ; (default |> Value.Type.(nil_or string |> to_value))
       ]
     |> Value.to_utf8_bytes_exn
   ;;
@@ -130,6 +132,11 @@ module Blocking = struct
         ~prompt
     =
     let predicate = Value.nil in
+    let prompt =
+      match default with
+      | None -> prompt
+      | Some d -> concat [ prompt; "(default = "; d; ") " ]
+    in
     Current_buffer.set_value_temporarily crm_separator separator_regexp ~f:(fun () ->
       Symbol.funcallN
         Q.completing_read_multiple
@@ -141,7 +148,7 @@ module Blocking = struct
         ; (match history with
            | None -> Value.nil
            | Some history -> history.symbol |> Symbol.to_value)
-        ; default |> Value.Type.(nil_or string).to_value
+        ; (default |> Value.Type.(nil_or string |> to_value))
         ]
       |> Value.to_list_exn ~f:Value.to_utf8_bytes_exn)
   ;;

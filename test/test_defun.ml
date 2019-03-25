@@ -6,7 +6,7 @@ let here = [%here]
 let return_type = Value.Type.sexpable (module Sexp) ~name:[%sexp "sexp"]
 
 let print_funcallN symbol args =
-  print_s (return_type.of_value_exn (Symbol.funcallN symbol args))
+  print_s (Value.Type.of_value_exn return_type (Symbol.funcallN symbol args))
 ;;
 
 let%expect_test "[defun]" =
@@ -26,11 +26,11 @@ let%expect_test "[defun]" =
        "Got args." (i : int) (s : string) (s_o : string option) (rest : string list)]);
   print_funcallN
     symbol
-    [ 1 |> Value.Type.int.to_value
-    ; "two" |> Value.Type.string.to_value
-    ; "three" |> Value.Type.string.to_value
-    ; "four" |> Value.Type.string.to_value
-    ; "five" |> Value.Type.string.to_value
+    [ (1 |> Value.Type.(int |> to_value))
+    ; ("two" |> Value.Type.(string |> to_value))
+    ; ("three" |> Value.Type.(string |> to_value))
+    ; ("four" |> Value.Type.(string |> to_value))
+    ; ("five" |> Value.Type.(string |> to_value))
     ];
   [%expect
     {|
@@ -64,7 +64,9 @@ let%expect_test "[defun] tuple ordering" =
        minuend - subtrahend
      in
      [%message (difference : int)]);
-  print_funcallN symbol [ 2 |> Value.Type.int.to_value; 1 |> Value.Type.int.to_value ];
+  print_funcallN
+    symbol
+    [ (2 |> Value.Type.(int |> to_value)); (1 |> Value.Type.(int |> to_value)) ];
   [%expect {|
     (difference 1) |}];
   print_endline (Help.describe_function_text ~obscure_symbol:true symbol);
@@ -85,16 +87,16 @@ let%expect_test "[defun] wrong number of arguments" =
      let%map_open () = return ()
      and arg = required ("arg" |> Symbol.intern) int in
      [%message (arg : int)]);
-  print_funcallN symbol (List.init 1 ~f:Value.Type.int.to_value);
+  print_funcallN symbol (List.init 1 ~f:Value.Type.(int |> to_value));
   [%expect {| (arg 0) |}];
   show_raise (fun () ->
     Value.For_testing.map_elisp_signal_omit_data (fun () ->
-      print_funcallN symbol (List.init 2 ~f:Value.Type.int.to_value)));
+      print_funcallN symbol (List.init 2 ~f:Value.Type.(int |> to_value))));
   [%expect {|
     (raised wrong-number-of-arguments) |}];
   show_raise (fun () ->
     Value.For_testing.map_elisp_signal_omit_data (fun () ->
-      print_funcallN symbol (List.init 0 ~f:Value.Type.int.to_value)));
+      print_funcallN symbol (List.init 0 ~f:Value.Type.(int |> to_value))));
   [%expect {|
     (raised wrong-number-of-arguments) |}]
 ;;
@@ -110,9 +112,9 @@ let%expect_test "[defun] omitted optional arguments" =
      let%map_open () = return ()
      and optional = optional ("optional" |> Symbol.intern) Value.Type.int in
      [%message (optional : int option)]);
-  print_funcallN symbol (List.init 1 ~f:Value.Type.int.to_value);
+  print_funcallN symbol (List.init 1 ~f:Value.Type.(int |> to_value));
   [%expect {| (optional (0)) |}];
-  print_funcallN symbol (List.init 0 ~f:Value.Type.int.to_value);
+  print_funcallN symbol (List.init 0 ~f:Value.Type.(int |> to_value));
   [%expect {| (optional ()) |}]
 ;;
 
@@ -127,14 +129,14 @@ let%expect_test "[lambda]" =
        i + 1)
   in
   let retval =
-    Value.funcall1 (fn |> Function.to_value) (1 |> Value.Type.int.to_value)
-    |> Value.Type.int.of_value_exn
+    Value.funcall1 (fn |> Function.to_value) (1 |> Value.Type.(int |> to_value))
+    |> Value.Type.(int |> of_value_exn)
   in
   print_s [%sexp (retval : int)];
   [%expect {| 2 |}];
   let docstring =
     Symbol.funcall1 ("documentation" |> Symbol.intern) (fn |> Function.to_value)
-    |> Value.Type.string.of_value_exn
+    |> Value.Type.(string |> of_value_exn)
   in
   if not (String.is_prefix docstring ~prefix:"Implemented at")
   then print_endline docstring;

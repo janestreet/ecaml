@@ -177,7 +177,7 @@ end = struct
             (Vector (List.init 8 ~f:(fun _ -> Customization.Type.Color)))
           ~standard_value
           ()
-        : _ Var.t )
+        : _ Customization.t )
   ;;
 
   let () =
@@ -1123,7 +1123,7 @@ and invalid_escape t ~why =
     ~verbose:
       (if Colorization_backend.end_of_input t.backend && t.allow_partial_trailing_escape
        then false
-       else Current_buffer.value_exn show_invalid_escapes);
+       else Customization.value show_invalid_escapes);
   let should_reset =
     match why with
     | `incomplete | `unsupported -> false

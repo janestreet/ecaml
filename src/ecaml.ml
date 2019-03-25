@@ -115,6 +115,8 @@ and raise_string = raise_string
 and sec_ns = sec_ns
 and wrap_message = Echo_area.wrap_message
 
+module Returns = Defun.Returns
+
 let provide =
   Ecaml_callback.(register end_of_module_initialization)
     ~should_run_holding_async_lock:true
@@ -153,7 +155,7 @@ let () =
       ("ecaml-test-minibuffer-y-or-n-with-timeout" |> Symbol.intern)
       [%here]
       ~interactive:No_arg
-      Returns_unit_deferred
+      (Returns_deferred Value.Type.unit)
       (fun () ->
          let%bind int =
            Minibuffer.y_or_n_with_timeout
@@ -166,7 +168,7 @@ let () =
       ("ecaml-test-minibuffer" |> Symbol.intern)
       [%here]
       ~interactive:No_arg
-      Returns_unit_deferred
+      (Returns_deferred Value.Type.unit)
       (fun () ->
          let test ?default_value ?history ?history_pos ?initial_contents () ~prompt =
            let%bind result =

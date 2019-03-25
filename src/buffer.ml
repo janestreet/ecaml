@@ -91,14 +91,14 @@ let displayed_in ?(current_frame_only = false) t =
 
 let display t =
   Symbol.funcall1 Q.display_buffer (t |> to_value)
-  |> Value.Type.(nil_or Window0.type_).of_value_exn
+  |> Value.Type.(nil_or Window0.type_ |> of_value_exn)
 ;;
 
 let display_i t = ignore (display t : Window0.t option)
 
 let buffer_local_value t (var : _ Var.t) =
   Symbol.funcall2 Q.buffer_local_value (var |> Var.symbol_as_value) (t |> to_value)
-  |> var.type_.of_value_exn
+  |> Value.Type.of_value_exn var.type_
 ;;
 
 let buffer_local_variables t =

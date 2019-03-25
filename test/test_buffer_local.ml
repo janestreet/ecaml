@@ -6,7 +6,7 @@ let int =
   defvar
     ("some-int" |> Symbol.intern)
     [%here]
-    ~type_:Value.Type.(option_ int)
+    ~type_:Value.Type.(option int)
     ~default_value:None
     ()
 ;;
@@ -79,7 +79,7 @@ let%expect_test "[get] with value represented as [nil]" =
     defvar
       ("some-bool" |> Symbol.intern)
       [%here]
-      ~type_:Value.Type.(option_ bool)
+      ~type_:Value.Type.(option bool)
       ~default_value:None
       ()
   in

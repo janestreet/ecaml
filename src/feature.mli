@@ -6,7 +6,7 @@
     [(Info-goto-node "(elisp)Named Features")]. *)
 
 open! Core_kernel
-open! Import
+open! Import0
 
 type t = Symbol.t
 

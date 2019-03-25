@@ -19,7 +19,7 @@ let defconst_i symbol here ~docstring ~(type_ : _ Value.Type.t) ~value =
   Form.list
     [ Form.symbol Q.defconst
     ; Form.symbol symbol
-    ; Form.quote (type_.to_value value)
+    ; Form.quote (Value.Type.to_value type_ value)
     ; Form.string (docstring |> String.strip)
     ]
   |> Form.eval_i

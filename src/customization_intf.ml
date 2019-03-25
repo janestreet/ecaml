@@ -12,11 +12,11 @@ end
 
 module type Enum = sig
   type t
+  type 'a customization
 
   include Valueable.S with type t := t
 
-  val var : t Var.t
-  val initialize_defcustom : unit -> unit
+  val customization : t customization
 end
 
 module type Customization = sig
@@ -84,6 +84,13 @@ module type Customization = sig
     val enum : 'a list -> ('a -> Value.t) -> t
   end
 
+  type 'a t [@@deriving sexp_of]
+
+  val value : 'a t -> 'a
+  val var : 'a t -> 'a Var.t
+  val symbol : _ t -> Symbol.t
+  val standard_value : 'a t -> 'a
+
   (** [(describe-function 'defcustom)]
       [(Info-goto-node "(elisp)Variable Definitions")] *)
   val defcustom
@@ -96,7 +103,7 @@ module type Customization = sig
     -> customization_type:Type.t
     -> standard_value:'a
     -> unit
-    -> 'a Var.t
+    -> 'a t
 
   (** [(describe-function 'customize-variable)]
       [(Info-goto-node "(emacs)Specific customization")] *)
@@ -108,7 +115,7 @@ module type Customization = sig
 
   module Enum : sig
     module type Arg = Enum_arg
-    module type S = Enum
+    module type S = Enum with type 'a customization := 'a t
 
     val make
       :  Symbol.t

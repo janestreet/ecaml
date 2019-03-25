@@ -10,4 +10,6 @@ include (
     include Hashable.S with type t := t
   end)
 
-let ({ Value.Type.of_value_exn; to_value; id = _ } as type_) = Value.Type.int
+let type_ = Value.Type.int
+let of_value_exn = Value.Type.of_value_exn type_
+let to_value = Value.Type.to_value type_

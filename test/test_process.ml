@@ -171,7 +171,7 @@ let%expect_test "[Call.Input.Dev_null]" =
 
 let%expect_test "[Call.Input.File]" =
   let file = Caml.Filename.temp_file "" "" in
-  Selected_window.find_file file;
+  Selected_window.Blocking.find_file file;
   Point.insert "foobar";
   Current_buffer.save ();
   Current_buffer.kill ();

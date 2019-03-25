@@ -52,12 +52,16 @@ let%expect_test "[message_s]" =
    (foobar 13) |}]
 ;;
 
-(* This test has only a single instance of the output, which shows that [inhibit_messages]
-   prevents [message] from displaying the data, but that it is still put in the *Messages*
-   buffer. *)
+let%expect_test "[message ~echo:false]" =
+  message "foo" ~echo:false;
+  [%expect {| |}];
+  show ();
+  [%expect {| foo |}]
+;;
+
 let%expect_test "[inhibit_messages]" =
   inhibit_messages (fun () -> message "hello");
+  [%expect {| |}];
   show ();
-  [%expect {|
-    hello |}]
+  [%expect {| hello |}]
 ;;

@@ -727,7 +727,7 @@ let%expect_test "rendering invalid escape sequences" =
 
 let%expect_test "customization to disable rendering invalid escape sequences" =
   Current_buffer.set_value_temporarily
-    Ansi_color.show_invalid_escapes
+    (Ansi_color.show_invalid_escapes |> Customization.var)
     false
     ~f:(fun () ->
       List.iter
@@ -765,7 +765,7 @@ let%expect_test "color region incrementally" =
   let color_incrementally input_string ~preserve_state ~chunk_size =
     Current_buffer.set_temporarily_to_temp_buffer (fun () ->
       Current_buffer.set_value_temporarily
-        Ansi_color.show_invalid_escapes
+        (Ansi_color.show_invalid_escapes |> Customization.var)
         false
         ~f:(fun () ->
           let rec loop s =

@@ -15,14 +15,15 @@ end
 let string_option = Value.Type.(nil_or string)
 
 let getenv ~var =
-  Symbol.funcall1 Q.getenv (var |> Value.of_utf8_bytes) |> string_option.of_value_exn
+  Symbol.funcall1 Q.getenv (var |> Value.of_utf8_bytes)
+  |> Value.Type.of_value_exn string_option
 ;;
 
 let setenv ~var ~value =
   Symbol.funcall2_i
     Q.setenv
     (var |> Value.of_utf8_bytes)
-    (value |> string_option.to_value)
+    (value |> Value.Type.to_value string_option)
 ;;
 
 let process_environment = Var.create Q.process_environment Value.Type.(list string)
@@ -47,7 +48,7 @@ let setenv_temporarily vars_and_values ~f =
        Q.append
        (vars_and_values
         |> List.map ~f:(fun { Var_and_value.var; value } -> concat [ var; "="; value ])
-        |> Value.Type.(list string).to_value)
+        |> Value.Type.(list string |> to_value))
        (Current_buffer.value_exn process_environment))
 ;;
 

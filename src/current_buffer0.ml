@@ -27,7 +27,11 @@ let value_is_defined (var : _ Var.t) =
 ;;
 
 let symbol_value symbol = Symbol.funcall1 Q.symbol_value (symbol |> Symbol.to_value)
-let value_internal (var : _ Var.t) = symbol_value var.symbol |> var.type_.of_value_exn
+
+let value_internal (var : _ Var.t) =
+  symbol_value var.symbol |> Value.Type.of_value_exn var.type_
+;;
+
 let value var = if not (value_is_defined var) then None else Some (value_internal var)
 
 let value_exn var =
@@ -54,7 +58,10 @@ let clear_value (var : _ Var.t) =
 ;;
 
 let set_value (var : _ Var.t) a =
-  Symbol.funcall2_i Q.set (var.symbol |> Symbol.to_value) (a |> var.type_.to_value)
+  Symbol.funcall2_i
+    Q.set
+    (var.symbol |> Symbol.to_value)
+    (a |> Value.Type.to_value var.type_)
 ;;
 
 let set_values vars_and_values =

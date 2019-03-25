@@ -281,7 +281,7 @@ let create major_mode columns ~id_equal ~id_type ~id_of_record =
 ;;
 
 let get_id_at_point_exn t =
-  Option.map (F.tabulated_list_get_id ()) ~f:t.id_type.of_value_exn
+  Option.map (F.tabulated_list_get_id ()) ~f:(Value.Type.of_value_exn t.id_type)
 ;;
 
 let move_point_to_id t id =

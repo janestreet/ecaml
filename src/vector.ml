@@ -50,6 +50,11 @@ let type_ (type a) (type_ : a Value.Type.t) =
   Value.Type.create
     [%message "vector" ~_:(type_ : _ Value.Type.t)]
     (sexp_of_array (Value.Type.to_sexp type_))
-    (fun v -> v |> of_value_exn |> to_array ~f:type_.of_value_exn)
-    (fun a -> a |> Array.map ~f:type_.to_value |> Array.to_list |> of_list |> to_value)
+    (fun v -> v |> of_value_exn |> to_array ~f:(Value.Type.of_value_exn type_))
+    (fun a ->
+       a
+       |> Array.map ~f:(Value.Type.to_value type_)
+       |> Array.to_list
+       |> of_list
+       |> to_value)
 ;;

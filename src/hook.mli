@@ -41,13 +41,6 @@ end
 module Function : sig
   type 'a t [@@deriving sexp_of]
 
-  module Returns : sig
-    type _ t =
-      | Returns : unit Value.Type.t -> unit t
-      | Returns_unit_deferred : unit Async.Deferred.t t
-    [@@deriving sexp_of]
-  end
-
   (** [create here return_type symbol f] defines an emacs function named [symbol]
       that runs [f] when called. It returns an ['a t] usable for modifying hooks. *)
   val create
@@ -55,7 +48,7 @@ module Function : sig
     -> Source_code_position.t
     -> ?docstring:string
     -> hook_type:'a Hook_type.t
-    -> 'r Returns.t
+    -> (unit, 'r) Defun.Returns.t
     -> ('a -> 'r)
     -> 'a t
 
@@ -69,7 +62,7 @@ module Function : sig
     -> Source_code_position.t
     -> ?docstring:string
     -> hook_type:'a Hook_type.t
-    -> 'r Returns.t
+    -> (unit, 'r) Defun.Returns.t
     -> ('a t -> 'a -> 'r)
     -> 'a t
 end
@@ -112,6 +105,13 @@ val after_save : normal t
 (** [(describe-variable 'before-save-hook)]
     [(Info-goto-node "(elisp)Saving Buffers")] *)
 val before_save : normal t
+
+(** [(describe-variable 'emacs-startup-hook)]
+
+    Use this instead of [(describe-variable 'after-init-hook)], since the latter occurs
+    before command-line arguments are handled (and therefore before the OCaml runtime is
+    initialized). *)
+val emacs_startup : normal t
 
 (** [(describe-variable 'kill-buffer-hook)]
     [(Info-goto-node "(elisp)Killing Buffers")] *)

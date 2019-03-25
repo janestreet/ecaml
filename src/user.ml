@@ -22,11 +22,11 @@ let real_login_name () =
 ;;
 
 let system_user_names () =
-  Symbol.funcall0 Q.system_users |> Value.Type.(list string).of_value_exn
+  Symbol.funcall0 Q.system_users |> Value.Type.(list string |> of_value_exn)
 ;;
 
 let system_group_names () =
-  Symbol.funcall0 Q.system_groups |> Value.Type.(list string).of_value_exn
+  Symbol.funcall0 Q.system_groups |> Value.Type.(list string |> of_value_exn)
 ;;
 
 let full_name () = Symbol.funcall0 Q.user_full_name |> Value.to_utf8_bytes_exn

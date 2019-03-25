@@ -467,8 +467,6 @@ module Private = struct
         | Error error -> Error.raise error)
   ;;
 
-  let () = Set_once.set_exn Defun.Private.block_on_async [%here] block_on_async
-
   let run_outside_async f =
     let open Async in
     Deferred.create (fun result ->
@@ -477,6 +475,14 @@ module Private = struct
          manner. *)
       Cycle_requester.request_cycle t.cycle_requester)
     >>| Result.ok_exn
+  ;;
+
+  let () =
+    Set_once.set_exn Value.Private.Block_on_async.set_once [%here] { f = block_on_async };
+    Set_once.set_exn
+      Value.Private.Run_outside_async.set_once
+      [%here]
+      { f = run_outside_async }
   ;;
 end
 
@@ -525,7 +531,7 @@ let initialize () =
       (name |> Symbol.intern)
       [%here]
       ~interactive:No_arg
-      Returns_unit_deferred
+      (Returns_deferred Value.Type.unit)
       (fun () ->
          let open Async in
          let%map time = f () in
@@ -541,7 +547,7 @@ let initialize () =
     ("ecaml-async-test-block-forever" |> Symbol.intern)
     [%here]
     ~interactive:No_arg
-    Returns_unit_deferred
+    (Returns_deferred Value.Type.unit)
     (fun () ->
        message_s [%message "blocking forever -- press C-g to interrupt"];
        Async.Deferred.never ());

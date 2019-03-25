@@ -207,7 +207,7 @@ module Inherit = struct
     | Face []
     | Unspecified -> Value.unspecified
     | Face [ face ] -> to_value face
-    | Face faces -> list_type.to_value faces
+    | Face faces -> Value.Type.to_value list_type faces
   ;;
 
   let of_value_exn value =
@@ -216,7 +216,7 @@ module Inherit = struct
     if Value.eq value Value.unspecified || Value.eq value Value.nil
     then Unspecified
     else if Value.is_cons value
-    then Face (list_type.of_value_exn value)
+    then Face (Value.Type.of_value_exn list_type value)
     else Face [ of_value_exn value ]
   ;;
 end
