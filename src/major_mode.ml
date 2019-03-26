@@ -36,7 +36,7 @@ type t =
   { wrapped_at : Source_code_position.t
   ; symbol : Symbol.t
   ; keymap_var : Keymap.t Var.t
-  ; name : Name.t sexp_opaque
+  ; name : (Name.t[@sexp.opaque])
   ; syntax_table_var : Syntax_table.t Var.t
   }
 [@@deriving fields, sexp_of]

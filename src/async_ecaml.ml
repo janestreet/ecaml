@@ -75,8 +75,8 @@ module Thread_safe_sleeper : sig
   val wake_up : t -> unit
 end = struct
   type t =
-    { mutex : Mutex.t sexp_opaque
-    ; wake_up : Condition.t sexp_opaque
+    { mutex : (Mutex.t[@sexp.opaque])
+    ; wake_up : (Condition.t[@sexp.opaque])
     ; scheduler : Scheduler.t
     }
   [@@deriving sexp_of]

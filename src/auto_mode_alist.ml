@@ -18,7 +18,7 @@ module Entry = struct
     [%message.omit_nil
       ""
         (filename_match : Regexp.t)
-        (function_ : Symbol.t sexp_option)
+        (function_ : (Symbol.t option[@sexp.option]))
         (delete_suffix_and_recur : bool)]
   ;;
 
