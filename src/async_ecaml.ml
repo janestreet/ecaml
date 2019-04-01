@@ -288,7 +288,7 @@ let in_emacs_have_lock_do_cycle () =
           let ran_pending_calls = run_pending_emacs_calls () in
           t.am_running_async_cycle <- true;
           Exn.protect
-            ~f:(fun () -> Async_kernel.Async_kernel_scheduler.(run_cycle (t ())))
+            ~f:(fun () -> Async_kernel.Async_kernel_scheduler.Private.(run_cycle (t ())))
             ~finally:(fun () -> t.am_running_async_cycle <- false);
           if max_cycles > 0 && (ran_pending_calls || Scheduler.num_pending_jobs () > 0)
           then run_cycles (max_cycles - 1)
@@ -393,7 +393,7 @@ let start_scheduler () =
     Set_once.set_exn Ecaml_callback.set_async_execution_context [%here] (fun () ->
       if not t.am_running_async_cycle
       then
-        Async_kernel.Async_kernel_scheduler.(
+        Async_kernel.Async_kernel_scheduler.Private.(
           set_execution_context (t ()) main_execution_context));
     (* The default [max_inter_cycle_timeout] is much smaller.  Setting it to 1s reduces
        load on emacs. *)
