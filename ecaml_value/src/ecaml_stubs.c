@@ -33,7 +33,7 @@ static emacs_env *active_env = NULL;
 
 #define CAML_NAMED_CALLBACK(val, name, arity_exn, ...)                        \
   do {                                                                        \
-    static value *name = NULL;                                                \
+    static const value *name = NULL;                                          \
     if (name == NULL) {                                                       \
       name = caml_named_value(#name);                                         \
       if (name == NULL) {                                                     \
