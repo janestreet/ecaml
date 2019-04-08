@@ -1,4 +1,5 @@
 open! Core_kernel
+open Poly
 open! Import
 
 let%test "list reverse inline test" = List.rev [ 1; 2; 3 ] = [ 3; 2; 1 ]
