@@ -35,7 +35,7 @@ external have_active_env : unit -> bool = "ecaml_have_active_env"
 
 external non_local_exit_get_and_clear
   :  unit
-    -> Funcall_exit.t
+  -> Funcall_exit.t
   = "ecaml_non_local_exit_get_and_clear"
 
 exception Elisp_signal of { symbol : t; data : t }
@@ -152,23 +152,23 @@ external funcall3 : t -> t -> t -> t -> bool -> t = "ecaml_funcall3"
 
 external funcall4
   :  t
-    -> t
-    -> t
-    -> t
-    -> t
-    -> bool
-    -> t
+  -> t
+  -> t
+  -> t
+  -> t
+  -> bool
+  -> t
   = "ecaml_funcall4_byte" "ecaml_funcall4"
 
 external funcall5
   :  t
-    -> t
-    -> t
-    -> t
-    -> t
-    -> t
-    -> bool
-    -> t
+  -> t
+  -> t
+  -> t
+  -> t
+  -> t
+  -> bool
+  -> t
   = "ecaml_funcall5_byte" "ecaml_funcall5"
 
 let funcall0 f ~should_return_result = funcall0 f should_return_result
@@ -252,10 +252,10 @@ let funcall5 f a1 a2 a3 a4 a5 =
 
 external funcall_int_int_value_unit
   :  t
-    -> int
-    -> int
-    -> t
-    -> unit
+  -> int
+  -> int
+  -> t
+  -> unit
   = "ecaml_funcall_int_int_value_unit"
 
 let funcall_int_int_value_unit f a1 a2 a3 =
@@ -265,11 +265,11 @@ let funcall_int_int_value_unit f a1 a2 a3 =
 
 external funcall_int_int_value_value_unit
   :  t
-    -> int
-    -> int
-    -> t
-    -> t
-    -> unit
+  -> int
+  -> int
+  -> t
+  -> t
+  -> unit
   = "ecaml_funcall_int_int_value_value_unit"
 
 let funcall_int_int_value_value_unit f a1 a2 a3 a4 =

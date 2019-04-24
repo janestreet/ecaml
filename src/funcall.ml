@@ -56,68 +56,68 @@ let arity t =
 
 let wrap : type a. a t -> Value.t -> a =
   fun t symbol ->
-    let rec curry : type a. a t -> Value.t -> Value.t array -> int -> a =
-      fun t symbol args i ->
-        match t with
-        | Cons (type_, t) ->
-          fun arg ->
-            args.(i) <- Value.Type.to_value type_ arg;
-            curry t symbol args (i + 1)
-        | Nullary return_type ->
-          assert (Int.( = ) i 0);
-          fun _ -> Value.funcall0 symbol |> return_type_of_value symbol return_type
-        | Return type_ ->
-          Value.funcallN_array symbol args |> return_type_of_value symbol type_
-    in
-    let args = Array.create ~len:(arity t) Value.nil in
-    curry t symbol args 0
+  let rec curry : type a. a t -> Value.t -> Value.t array -> int -> a =
+    fun t symbol args i ->
+      match t with
+      | Cons (type_, t) ->
+        fun arg ->
+          args.(i) <- Value.Type.to_value type_ arg;
+          curry t symbol args (i + 1)
+      | Nullary return_type ->
+        assert (Int.( = ) i 0);
+        fun _ -> Value.funcall0 symbol |> return_type_of_value symbol return_type
+      | Return type_ ->
+        Value.funcallN_array symbol args |> return_type_of_value symbol type_
+  in
+  let args = Array.create ~len:(arity t) Value.nil in
+  curry t symbol args 0
 ;;
 
 (* It's unclear how much this sort of unrolling matters, but the C bindings do it, so we
    might as well do it here. *)
 let wrap_unrolled : type a. a t -> Value.t -> a =
   fun t symbol ->
-    let ret type_ value = return_type_of_value symbol type_ value in
-    match t with
-    | Return type_ -> Value.funcall0 symbol |> ret type_
-    | Nullary return_type -> fun _ -> Value.funcall0 symbol |> ret return_type
-    | Cons (type1, Return type_) ->
-      fun a1 -> Value.funcall1 symbol (a1 |> Value.Type.to_value type1) |> ret type_
-    | Cons (type1, Cons (type2, Return type_)) ->
-      fun a1 a2 ->
-        Value.funcall2
-          symbol
-          (a1 |> Value.Type.to_value type1)
-          (a2 |> Value.Type.to_value type2)
-        |> ret type_
-    | Cons (type1, Cons (type2, Cons (type3, Return type_))) ->
-      fun a1 a2 a3 ->
-        Value.funcall3
-          symbol
-          (a1 |> Value.Type.to_value type1)
-          (a2 |> Value.Type.to_value type2)
-          (a3 |> Value.Type.to_value type3)
-        |> ret type_
-    | Cons (type1, Cons (type2, Cons (type3, Cons (type4, Return type_)))) ->
-      fun a1 a2 a3 a4 ->
-        Value.funcall4
-          symbol
-          (a1 |> Value.Type.to_value type1)
-          (a2 |> Value.Type.to_value type2)
-          (a3 |> Value.Type.to_value type3)
-          (a4 |> Value.Type.to_value type4)
-        |> ret type_
-    | Cons (type1, Cons (type2, Cons (type3, Cons (type4, Cons (type5, Return type_))))) ->
-      fun a1 a2 a3 a4 a5 ->
-        Value.funcall5
-          symbol
-          (a1 |> Value.Type.to_value type1)
-          (a2 |> Value.Type.to_value type2)
-          (a3 |> Value.Type.to_value type3)
-          (a4 |> Value.Type.to_value type4)
-          (a5 |> Value.Type.to_value type5)
-        |> ret type_
-    | t -> wrap t symbol
+  let ret type_ value = return_type_of_value symbol type_ value in
+  match t with
+  | Return type_ -> Value.funcall0 symbol |> ret type_
+  | Nullary return_type -> fun _ -> Value.funcall0 symbol |> ret return_type
+  | Cons (type1, Return type_) ->
+    fun a1 -> Value.funcall1 symbol (a1 |> Value.Type.to_value type1) |> ret type_
+  | Cons (type1, Cons (type2, Return type_)) ->
+    fun a1 a2 ->
+      Value.funcall2
+        symbol
+        (a1 |> Value.Type.to_value type1)
+        (a2 |> Value.Type.to_value type2)
+      |> ret type_
+  | Cons (type1, Cons (type2, Cons (type3, Return type_))) ->
+    fun a1 a2 a3 ->
+      Value.funcall3
+        symbol
+        (a1 |> Value.Type.to_value type1)
+        (a2 |> Value.Type.to_value type2)
+        (a3 |> Value.Type.to_value type3)
+      |> ret type_
+  | Cons (type1, Cons (type2, Cons (type3, Cons (type4, Return type_)))) ->
+    fun a1 a2 a3 a4 ->
+      Value.funcall4
+        symbol
+        (a1 |> Value.Type.to_value type1)
+        (a2 |> Value.Type.to_value type2)
+        (a3 |> Value.Type.to_value type3)
+        (a4 |> Value.Type.to_value type4)
+      |> ret type_
+  | Cons (type1, Cons (type2, Cons (type3, Cons (type4, Cons (type5, Return type_))))) ->
+    fun a1 a2 a3 a4 a5 ->
+      Value.funcall5
+        symbol
+        (a1 |> Value.Type.to_value type1)
+        (a2 |> Value.Type.to_value type2)
+        (a3 |> Value.Type.to_value type3)
+        (a4 |> Value.Type.to_value type4)
+        (a5 |> Value.Type.to_value type5)
+      |> ret type_
+  | t -> wrap t symbol
 ;;
 
 let ( <: ) symbol t = wrap_unrolled t (symbol |> Symbol.to_value)
