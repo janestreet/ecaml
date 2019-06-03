@@ -23,12 +23,14 @@ let add_predefined_function advice_name ~for_function =
   F.advice_add for_function Q.K.around advice_name
 ;;
 
-let add_internal advice_name here ~for_function ?docstring ?interactive f =
+let add_internal advice_name here ~for_function ?docstring ?interactive ?should_profile f
+  =
   Defun.defun
     advice_name
     here
     ?docstring
     ?interactive
+    ?should_profile
     (Returns Value.Type.value)
     (let open Defun.Let_syntax in
      let%map_open () = return ()
@@ -38,9 +40,23 @@ let add_internal advice_name here ~for_function ?docstring ?interactive f =
   add_predefined_function advice_name ~for_function
 ;;
 
-let around_values advice_name here ?docstring ~for_function ?interactive f =
-  add_internal advice_name here ?docstring ~for_function ?interactive (fun inner rest ->
-    f (Value.funcallN inner) rest)
+let around_values
+      advice_name
+      here
+      ?docstring
+      ~for_function
+      ?interactive
+      ?should_profile
+      f
+  =
+  add_internal
+    advice_name
+    here
+    ?docstring
+    ~for_function
+    ?interactive
+    ?should_profile
+    (fun inner rest -> f (Value.funcallN ?should_profile inner) rest)
 ;;
 
 let around_funcall
@@ -50,6 +66,7 @@ let around_funcall
       ~for_function
       ?interactive
       ?(on_parse_error = Funcall.On_parse_error.Allow_raise)
+      ?should_profile
       funcall
       f
   =
@@ -59,6 +76,7 @@ let around_funcall
     ~for_function
     ?docstring
     ?interactive
+    ?should_profile
     (Funcall.Private.advice funcall f on_parse_error here)
 ;;
 

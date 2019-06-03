@@ -73,9 +73,12 @@ let make_temp_dir ~prefix ~suffix =
   |> Filename.of_value_exn
 ;;
 
-let with_temp_dir ~f ~prefix ~suffix =
+let with_temp_dir sync_or_async ~f ~prefix ~suffix =
   let filename = make_temp_dir ~prefix ~suffix in
-  Exn.protect
+  Sync_or_async.protect
+    [%here]
+    ~allow_in_background:true
+    sync_or_async
     ~f:(fun () -> f filename)
     ~finally:(fun () -> delete filename ~recursive:true)
 ;;

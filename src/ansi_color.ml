@@ -1197,10 +1197,10 @@ let color_region ~start ~end_ ~use_temp_file ~preserve_state ~drop_unsupported_e
       (Colorization_backend.last_output t.backend);
     update_marker colorization_state.last_colorized last_colorized)
   else ignore (normal t : int);
-  let message = "Colorizing ..." in
+  let colorizing = "Colorizing ..." in
   if !print_state_machine
   then print_s [%message "" ~state_machine:(t.state_machine : State_machine.t)];
-  if t.saw_escape && show_messages then Echo_area.message message;
+  if t.saw_escape && show_messages then message colorizing;
   (match Colorization_backend.finished t.backend with
    | `In_place_colorization -> ()
    | `Use_temp_file temp_file_state ->
@@ -1223,9 +1223,13 @@ let color_region ~start ~end_ ~use_temp_file ~preserve_state ~drop_unsupported_e
   if show_messages && t.saw_escape && System.is_interactive ()
   then (
     let took = Time_ns.diff (Time_ns.now ()) before in
-    Echo_area.message
+    message
       (concat
-         [ message; " done (took "; took |> Time_ns.Span.to_sec |> sprintf "%.3f"; "s)" ]));
+         [ colorizing
+         ; " done (took "
+         ; took |> Time_ns.Span.to_sec |> sprintf "%.3f"
+         ; "s)"
+         ]));
   t.saw_escape
 ;;
 
@@ -1237,7 +1241,7 @@ let color_region_in_current_buffer
       ?(drop_unsupported_escapes = false)
       ()
   =
-  Current_buffer.save_excursion (fun () ->
+  Current_buffer.save_excursion Sync (fun () ->
     ignore
       ( color_region
           ~start

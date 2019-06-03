@@ -67,7 +67,7 @@ let is_buffer_local_if_set t buffer =
 let is_buffer_local_always var =
   let buffer = Buffer0.create ~name:"*for [Var.is_buffer_local_always]*" in
   let result = is_buffer_local_if_set var buffer in
-  Buffer0.kill buffer;
+  Buffer0.Blocking.kill buffer;
   result
 ;;
 

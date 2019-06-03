@@ -10,7 +10,7 @@ module M =
          [%here]
          ~docstring:"docstring"
          ~mode_line:"<test-mode mode line>"
-         ~initialize:(fun () -> print_s [%message "initialized"])
+         ~initialize:(Returns Value.Type.unit, fun () -> print_s [%message "initialized"])
          ())
 
 let%expect_test "duplicate [define_derived_mode]" =
@@ -20,7 +20,7 @@ let%expect_test "duplicate [define_derived_mode]" =
       [%here]
       ~docstring:"docstring"
       ~mode_line:"<test-mode mode line>"
-      ~initialize:(fun () -> print_s [%message "initialized"])
+      ~initialize:(Returns Value.Type.unit, fun () -> print_s [%message "initialized"])
       ());
   [%expect
     {|
@@ -33,6 +33,10 @@ let%expect_test "duplicate [define_derived_mode]" =
         (symbol test-major-mode)
         (keymap_var (test-major-mode-map keymap))
         (name <opaque>)
+        (hook (
+          (symbol    test-major-mode-hook)
+          (hook_type Normal)
+          (value (()))))
         (syntax_table_var (test-major-mode-syntax-table syntax-table)))))) |}]
 ;;
 
@@ -51,7 +55,7 @@ let%expect_test "[define_derived_mode]" =
   let show_major_mode () =
     print_s [%sexp (Current_buffer.major_mode () : t)] ~hide_positions:true
   in
-  Current_buffer.set_temporarily_to_temp_buffer (fun () ->
+  Current_buffer.set_temporarily_to_temp_buffer Sync (fun () ->
     show_major_mode ();
     [%expect
       {|
@@ -59,10 +63,13 @@ let%expect_test "[define_derived_mode]" =
        (symbol fundamental-mode)
        (keymap_var (fundamental-mode-map keymap))
        (name <opaque>)
+       (hook (
+         (symbol    fundamental-mode-hook)
+         (hook_type Normal)
+         (value ())))
        (syntax_table_var (fundamental-mode-syntax-table syntax-table))) |}];
-    Current_buffer.change_major_mode M.major_mode;
-    [%expect {|
-      initialized |}];
+    Current_buffer.Blocking.change_major_mode M.major_mode;
+    [%expect {| initialized |}];
     show_major_mode ();
     [%expect
       {|
@@ -70,8 +77,42 @@ let%expect_test "[define_derived_mode]" =
        (symbol test-major-mode)
        (keymap_var (test-major-mode-map keymap))
        (name <opaque>)
+       (hook (
+         (symbol    test-major-mode-hook)
+         (hook_type Normal)
+         (value (()))))
        (syntax_table_var (test-major-mode-syntax-table syntax-table))) |}])
 ;;
+
+module Async_testing = struct
+  open! Async_kernel
+  open! Async_testing
+
+  let%expect_test "[hook]" =
+    let module M =
+      (val define_derived_mode
+             ("for-testing-mode-hook" |> Symbol.intern)
+             [%here]
+             ~docstring:""
+             ~mode_line:""
+             ())
+    in
+    let t = M.major_mode in
+    Hook.add
+      (hook t)
+      (Hook.Function.create
+         ("my-hook" |> Symbol.intern)
+         [%here]
+         ~hook_type:Normal
+         (Returns Value.Type.unit)
+         (fun () -> print_s [%message "hook ran"]));
+    let%bind () =
+      Current_buffer.set_temporarily_to_temp_buffer Async (fun () ->
+        Current_buffer.change_major_mode t)
+    in
+    [%expect {| "hook ran" |}]
+  ;;
+end
 
 let%expect_test "[keymap]" =
   print_s [%sexp (keymap M.major_mode : Keymap.t)];
@@ -154,3 +195,26 @@ let%expect_test "[is_derived]" =
   print_s [%sexp (is_derived M.major_mode ~from:Text.major_mode : bool)];
   [%expect {| true |}]
 ;;
+
+module Async_tests = struct
+  open! Async
+  open! Async_ecaml
+
+  let%expect_test "Async initialization function" =
+    let module M =
+      (val define_derived_mode
+             ("test-major-mode-async-init-function" |> Symbol.intern)
+             [%here]
+             ~docstring:"docstring"
+             ~mode_line:"<test-mode mode line>"
+             ~initialize:
+               ( Returns_deferred Value.Type.unit
+               , fun () ->
+                 let%map () = Clock.after (Time.Span.of_ms 1.) in
+                 print_s [%message "initialized"] )
+             ())
+    in
+    let%bind () = Current_buffer.change_major_mode M.major_mode in
+    [%expect {| initialized |}]
+  ;;
+end

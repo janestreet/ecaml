@@ -1,5 +1,6 @@
 open! Core_kernel
 open! Import0
+open! Async_kernel
 
 module type Current_buffer0_public = sig
   (** [(describe-function 'current-buffer)] *)
@@ -10,7 +11,7 @@ module type Current_buffer0_public = sig
 
   (** [set_temporarily t ~f] runs [f] with the current buffer set to [t].
       [(describe-function 'with-current-buffer)]. *)
-  val set_temporarily : Buffer0.t -> f:(unit -> 'a) -> 'a
+  val set_temporarily : Buffer0.t -> (_, 'a) Sync_or_async.t -> f:(unit -> 'a) -> 'a
 
   (** [(describe-function 'symbol-value)] *)
   val symbol_value : Symbol.t -> Value.t
@@ -34,8 +35,18 @@ module type Current_buffer0_public = sig
   (** [(describe-function 'makunbound)] *)
   val clear_value : 'a Var.t -> unit
 
-  val set_value_temporarily : 'a Var.t -> 'a -> f:(unit -> 'b) -> 'b
-  val set_values_temporarily : Var.And_value.t list -> f:(unit -> 'a) -> 'a
+  val set_value_temporarily
+    :  'a Var.t
+    -> 'a
+    -> (_, 'b) Sync_or_async.t
+    -> f:(unit -> 'b)
+    -> 'b
+
+  val set_values_temporarily
+    :  Var.And_value.t list
+    -> (_, 'a) Sync_or_async.t
+    -> f:(unit -> 'a)
+    -> 'a
 
   (** [(describe-function 'bound-and-true-p]. *)
   val has_non_null_value : _ Var.t -> bool

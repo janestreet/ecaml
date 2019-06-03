@@ -41,6 +41,8 @@ let%expect_test "[all_provided]" =
      charscript
      chinese
      cl-generic
+     cl-lib
+     cl-loaddefs
      cl-preloaded
      code-pages
      cp51932
@@ -48,9 +50,11 @@ let%expect_test "[all_provided]" =
      custom
      cyrillic
      czech
+     derived
      dnd
      dynamic-setting
      ediff-hook
+     edmacro
      eldoc
      electric
      elisp-mode
@@ -83,6 +87,7 @@ let%expect_test "[all_provided]" =
      japanese
      jit-lock
      jka-cmpr-hook
+     kmacro
      korean
      lao
      lisp-float-type

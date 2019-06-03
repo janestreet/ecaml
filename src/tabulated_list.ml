@@ -191,11 +191,11 @@ module Column = struct
       |> String.strip)
   ;;
 
-  let time ?align_right ?pad_right ?sortable ~header ~zone field_of_record =
+  let time_ns ?align_right ?pad_right ?sortable ~header ~zone field_of_record =
     create ?align_right ?pad_right ?sortable ~header (fun record ->
       let time = field_of_record record in
-      let date, ofday = Time.to_date_ofday ~zone time in
-      concat ~sep:" " [ Date.to_string date; Time.Ofday.to_sec_string ofday ])
+      let date, ofday = Time_ns.to_date_ofday ~zone time in
+      concat ~sep:" " [ Date.to_string date; Time_ns.Ofday.to_millisecond_string ofday ])
   ;;
 end
 

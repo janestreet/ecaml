@@ -17,7 +17,7 @@ module Time = Core.Time
 module Unix = Core.Unix
 module Scheduler = Async_unix.Async_unix_private.Raw_scheduler
 
-let message_s = Echo_area.message_s
+let message_s = message_s
 
 module Q = struct
   let ecaml_async_take_lock_do_cycle = "ecaml-async-take-lock-do-cycle" |> Symbol.intern
@@ -40,7 +40,7 @@ module Cycle_report = struct
 
   let generate_report () =
     let open Async in
-    Echo_area.message "Collecting 10 seconds of cycle data...";
+    message "Collecting 10 seconds of cycle data...";
     measuring := true;
     let%map () = Clock_ns.after (sec_ns 10.) in
     measuring := false;
@@ -214,6 +214,7 @@ module Pending_emacs_call = struct
   type 'a call =
     { f : unit -> 'a
     ; result : ('a, exn) Result.t Ivar.t
+    ; running_in_background : Source_code_position.t option
     }
 
   type t = T : 'a call -> t
@@ -255,7 +256,12 @@ let run_pending_emacs_calls () =
     t.pending_emacs_calls <- Queue.create ();
     Queue.iter pending_calls ~f:(fun (Pending_emacs_call.T pending_emacs_call) ->
       Scheduler.unlock t.scheduler;
-      let result = Result.try_with pending_emacs_call.f in
+      let run_job () = Result.try_with pending_emacs_call.f in
+      let result =
+        match pending_emacs_call.running_in_background with
+        | Some location -> Background.run_in_background location ~f:run_job
+        | None -> run_job ()
+      in
       Scheduler.lock t.scheduler;
       Ivar.fill pending_emacs_call.result result));
   has_work_to_do
@@ -276,7 +282,7 @@ let in_emacs_have_lock_do_cycle () =
     if debug
     then Debug.eprint_s [%message "running a cycle" ~time:(Time.now () : Time.t)];
     List.iter t.exceptions_raised_outside_emacs_env ~f:(fun exn ->
-      Echo_area.message_s [%sexp (exn : exn)]);
+      message_s [%sexp (exn : exn)]);
     t.exceptions_raised_outside_emacs_env <- [];
     let time = Time.now () in
     Exn.protect
@@ -388,8 +394,7 @@ let start_scheduler () =
                   Cycle_requester.byte_was_probably_lost t.cycle_requester;
                   in_emacs_have_lock_do_cycle ())
               with
-              | exn ->
-                Echo_area.message_s [%sexp "Error in async keepalive timer", (exn : exn)]));
+              | exn -> message_s [%sexp "Error in async keepalive timer", (exn : exn)]));
     Set_once.set_exn Ecaml_callback.set_async_execution_context [%here] (fun () ->
       if not t.am_running_async_cycle
       then
@@ -415,12 +420,25 @@ let start_scheduler () =
       if Value.Expert.have_active_env ()
       then
         (* We really want to see the error, so we inhibit quit while displaying it. *)
-        Current_buffer.set_value_temporarily Command.inhibit_quit true ~f:(fun () ->
-          message_s [%sexp (exn : exn)])
+        Current_buffer.set_value_temporarily
+          Command.inhibit_quit
+          true
+          Sync
+          ~f:(fun () -> message_s [%sexp (exn : exn)])
       else
         t.exceptions_raised_outside_emacs_env
         <- exn :: t.exceptions_raised_outside_emacs_env)
 ;;
+
+module Import = struct
+  module Clock = Async.Clock
+
+  let don't_wait_for = Async.don't_wait_for
+
+  module Async_process = Async.Process
+  module Async = Async
+  module Async_kernel = Async_kernel
+end
 
 module Private = struct
   module Context_backtrace = struct
@@ -467,10 +485,21 @@ module Private = struct
         | Error error -> Error.raise error)
   ;;
 
-  let run_outside_async f =
+  let run_outside_async here ?(allowed_in_background = false) f =
+    if not allowed_in_background
+    then
+      Background.assert_foreground
+        ~message:[%sexp "[run_oustide_async] called unsafely in background"]
+        here;
     let open Async in
     Deferred.create (fun result ->
-      Queue.enqueue t.pending_emacs_calls (T { f; result });
+      Queue.enqueue
+        t.pending_emacs_calls
+        (T
+           { f
+           ; result
+           ; running_in_background = Background.currently_running_in_background ()
+           });
       (* We request an Async cycle to ensure the pending call is run in a timely
          manner. *)
       Cycle_requester.request_cycle t.cycle_requester)
@@ -535,7 +564,7 @@ let initialize () =
       (fun () ->
          let open Async in
          let%map time = f () in
-         Echo_area.message_s time)
+         message_s time)
   in
   defun_benchmark
     ~name:"ecaml-async-benchmark-small-pings"
@@ -563,7 +592,7 @@ let initialize () =
          if not (phys_equal execution_context Execution_context.main)
          then (
            test_passed := false;
-           Echo_area.message_s
+           message_s
              [%message
                "Ecaml callback not running in main execution context"
                  (execution_context : Execution_context.t)])
@@ -583,7 +612,7 @@ let initialize () =
               let%bind () = Clock.after (sec 0.1) in
               let%bind () = Clock.after (sec 2.) in
               Timer.cancel timer;
-              Echo_area.messagef
+              messagef
                 "Execution-context test %s"
                 (if !test_passed then "passed" else "failed");
               return ())

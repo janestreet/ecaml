@@ -24,6 +24,7 @@ val around_values
   -> ?docstring:string
   -> for_function:Symbol.t
   -> ?interactive:Defun.Interactive.t
+  -> ?should_profile:bool
   -> ((Value.t list -> Value.t) -> Value.t list -> Value.t)
   -> unit
 
@@ -36,6 +37,7 @@ val around_funcall
   -> for_function:Symbol.t
   -> ?interactive:Defun.Interactive.t
   -> ?on_parse_error:Funcall.On_parse_error.t
+  -> ?should_profile:bool
   -> 'a Funcall.t
   -> ('a -> 'a)
   -> unit

@@ -74,6 +74,14 @@ module Group = struct
   let to_string = Symbol.name
   let to_symbol t = t
   let emacs = of_string "emacs"
+
+  let ecaml =
+    defgroup
+      ("ecaml" |> of_string)
+      [%here]
+      ~docstring:{|Customization of Ecaml|}
+      ~parents:[ emacs ]
+  ;;
 end
 
 module Type = struct
@@ -222,7 +230,7 @@ let defcustom
        |> Value.list
        |> Form.of_value_exn
      in
-     if show_form then Echo_area.message_s [%sexp (form : Form.t)];
+     if show_form then message_s [%sexp (form : Form.t)];
      ignore (Form.eval form : Value.t)
    with
    | exn ->
@@ -239,59 +247,42 @@ let defcustom
   Var.create symbol type_
 ;;
 
-module Enum = struct
-  module type Arg = Enum_arg
-  module type S = Enum with type 'a customization := 'a t
-
-  let make
-        (type t)
-        symbol
-        here
-        (module T : Arg with type t = t)
-        ~docstring
-        ~group
-        ~standard_value
-    =
-    ( module struct
-      type t = T.t
-
-      let type_ =
-        Value.Type.enum
-          [%sexp (Symbol.name symbol : string)]
-          (module T)
-          (T.to_symbol >> Symbol.to_value)
-      ;;
-
-      let of_value_exn = Value.Type.of_value_exn type_
-      let to_value = Value.Type.to_value type_
-
-      let docstring =
-        concat
-          ~sep:"\n"
-          (docstring
-           :: ""
-           :: List.map T.all ~f:(fun t ->
-             let docstring =
-               match T.docstring t with
-               | "" -> []
-               | docstring -> [ ": "; docstring ]
-             in
-             concat ("  - " :: (t |> T.to_symbol |> Symbol.name) :: docstring)))
-      ;;
-
-      let customization =
-        defcustom
-          symbol
-          here
-          ~docstring
-          ~group
-          ~type_
-          ~customization_type:(Type.enum T.all to_value)
-          ~standard_value
-          ()
-      ;;
-    end
-    : S
-      with type t = t )
-  ;;
-end
+let defcustom_enum
+      (type t)
+      symbol
+      here
+      (module T : Enum_arg with type t = t)
+      ~docstring
+      ~group
+      ~standard_value
+      ()
+  =
+  let type_ =
+    Value.Type.enum
+      [%sexp (Symbol.name symbol : string)]
+      (module T)
+      (T.to_symbol >> Symbol.to_value)
+  in
+  let docstring =
+    concat
+      ~sep:"\n"
+      ((docstring |> String.strip)
+       :: ""
+       :: List.map T.all ~f:(fun t ->
+         let docstring =
+           match T.docstring t with
+           | "" -> []
+           | docstring -> [ ": "; docstring ]
+         in
+         concat ("  - " :: (t |> T.to_symbol |> Symbol.name) :: docstring)))
+  in
+  defcustom
+    symbol
+    here
+    ~docstring
+    ~group
+    ~type_
+    ~customization_type:(Type.enum T.all (Value.Type.to_value type_))
+    ~standard_value
+    ()
+;;

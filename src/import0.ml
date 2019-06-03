@@ -7,6 +7,9 @@ module Generated_bindings = Ecaml_value.Generated_bindings
 module Value = Ecaml_value.Value
 module Valueable = Ecaml_value.Valueable
 
+let message = Ecaml_value.message
+let messagef = Ecaml_value.messagef
+let message_s = Ecaml_value.message_s
 let ( << ) f g x = f (g x)
 let ( >> ) f g x = g (f x)
 
@@ -19,7 +22,7 @@ let concat = String.concat
 let debug = false
 let print_s = Expect_test_helpers_kernel.print_s
 let eprint_s = Core_kernel.Debug.eprint_s
-let raise_string s = raise_s [%sexp (concat s : string)]
+let raise_string s = raise_s [%sexp (String.strip (concat s) : string)]
 let sec_ns = Time_ns.Span.of_sec
 
 (* Buffer local variables can cause emacs to segfault when gc'ed. So we use these
@@ -33,6 +36,12 @@ let add_gc_root =
 ;;
 
 let add_gc_root a = add_gc_root (fun () -> Gc.keep_alive a)
+
+type 'a opaque_in_test = 'a
+
+let sexp_of_opaque_in_test sexp_of_a a =
+  if am_running_test then [%sexp "_"] else [%sexp (a : a)]
+;;
 
 (* included last so it can't be shadowed *)
 include Int.Replace_polymorphic_compare

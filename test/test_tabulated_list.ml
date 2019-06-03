@@ -44,14 +44,14 @@ let entries =
 ;;
 
 let draw_and_print ?sort_by entries =
-  Current_buffer.change_major_mode (major_mode t);
+  Current_buffer.Blocking.change_major_mode (major_mode t);
   draw ?sort_by t entries;
   printf "%s" (Current_buffer.contents () |> Text.to_utf8_bytes)
 ;;
 
 (* The header is drawn in an overlay, and so is not part of the buffer contents. *)
 let%expect_test "draw table" =
-  Current_buffer.set_temporarily_to_temp_buffer (fun () ->
+  Current_buffer.set_temporarily_to_temp_buffer Sync (fun () ->
     draw_and_print entries;
     [%expect {|
       b    1   y
@@ -60,7 +60,7 @@ let%expect_test "draw table" =
 ;;
 
 let%expect_test "sort" =
-  Current_buffer.set_temporarily_to_temp_buffer (fun () ->
+  Current_buffer.set_temporarily_to_temp_buffer Sync (fun () ->
     draw_and_print ~sort_by:("s1", `Ascending) entries;
     [%expect {|
       a    2   z
@@ -88,7 +88,7 @@ let%expect_test "sort" =
 ;;
 
 let%expect_test "id at point" =
-  Current_buffer.set_temporarily_to_temp_buffer (fun () ->
+  Current_buffer.set_temporarily_to_temp_buffer Sync (fun () ->
     draw_and_print entries;
     [%expect {|
       b    1   y
@@ -106,7 +106,7 @@ let%expect_test "id at point" =
 ;;
 
 let%expect_test "move_point_to_id" =
-  Current_buffer.set_temporarily_to_temp_buffer (fun () ->
+  Current_buffer.set_temporarily_to_temp_buffer Sync (fun () ->
     draw_and_print entries;
     [%expect {|
       b    1   y

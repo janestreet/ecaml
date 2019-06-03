@@ -181,3 +181,34 @@ let%expect_test "[wrap_existing]" =
   [%expect {|
     true |}]
 ;;
+
+module Async = struct
+  open! Async
+  open! Async_ecaml
+
+  let%expect_test "non-permanent buffer-locals cleared on changing major modes" =
+    Current_buffer.set_temporarily_to_temp_buffer Async (fun () ->
+      Current_buffer.set_buffer_local int (Some 23);
+      show_in_current_buffer ();
+      let%bind () = [%expect {| (23) |}] in
+      let%bind () = Current_buffer.change_major_mode Major_mode.Prog.major_mode in
+      show_in_current_buffer ();
+      [%expect {| () |}])
+  ;;
+
+  let%expect_test "permanent buffer-locals not cleared on changing major modes" =
+    Current_buffer.set_temporarily_to_temp_buffer Async (fun () ->
+      Buffer_local.set_permanent int true;
+      Current_buffer.set_buffer_local int (Some 23);
+      show_in_current_buffer ();
+      let%bind () = [%expect {| (23) |}] in
+      let%bind () = Current_buffer.change_major_mode Major_mode.Prog.major_mode in
+      show_in_current_buffer ();
+      let%bind () = [%expect {| (23) |}] in
+      Buffer_local.set_permanent int false;
+      let%bind () = Current_buffer.change_major_mode Major_mode.Prog.major_mode in
+      show_in_current_buffer ();
+      let%bind () = [%expect {| () |}] in
+      return ())
+  ;;
+end

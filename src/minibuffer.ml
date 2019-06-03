@@ -21,6 +21,33 @@ module Y_or_n_with_timeout = struct
   [@@deriving sexp_of]
 end
 
+module History = struct
+  type t = T of string list Var.t [@@deriving sexp_of]
+
+  let symbol (T t) = Var.symbol t
+
+  let create symbol here =
+    T
+      (Defvar.defvar
+         symbol
+         here
+         ~docstring:"A minibuffer history list."
+         ~type_:Value.Type.(list string)
+         ~initial_value:[]
+         ~include_in_all_defvar_symbols:false
+         ())
+  ;;
+
+  let all_by_symbol_name = Hashtbl.create (module String)
+
+  let find_or_create symbol here =
+    Hashtbl.find_or_add all_by_symbol_name (Symbol.name symbol) ~default:(fun () ->
+      create symbol here)
+  ;;
+end
+
+let history : History.t = T (Var.create Q.minibuffer_history Value.Type.(list string))
+
 module Blocking = struct
   let y_or_n ~prompt =
     Symbol.funcall1 Q.y_or_n_p (prompt |> Value.of_utf8_bytes) |> Value.to_bool
@@ -45,17 +72,8 @@ module Blocking = struct
     Symbol.funcall1 Q.yes_or_no_p (prompt |> Value.of_utf8_bytes) |> Value.to_bool
   ;;
 
-  let minibuffer_history = Var.create Q.minibuffer_history Value.Type.(list string)
-
-  let read_from
-        ?default_value
-        ?(history = minibuffer_history)
-        ?history_pos
-        ?initial_contents
-        ()
-        ~prompt
-    =
-    let history = history.symbol |> Symbol.to_value in
+  let read_from ~prompt ?initial_contents ?default_value ~history ?history_pos () =
+    let history = History.symbol history |> Symbol.to_value in
     Symbol.funcallN
       Q.read_from_minibuffer
       [ prompt |> Value.of_utf8_bytes
@@ -76,27 +94,27 @@ module Blocking = struct
 end
 
 let y_or_n ~prompt =
-  Async_ecaml.Private.run_outside_async (fun () -> Blocking.y_or_n ~prompt)
+  Async_ecaml.Private.run_outside_async [%here] (fun () -> Blocking.y_or_n ~prompt)
 ;;
 
 let y_or_n_with_timeout ~prompt ~timeout =
-  Async_ecaml.Private.run_outside_async (fun () ->
+  Async_ecaml.Private.run_outside_async [%here] (fun () ->
     Blocking.y_or_n_with_timeout ~prompt ~timeout)
 ;;
 
 let yes_or_no ~prompt =
-  Async_ecaml.Private.run_outside_async (fun () -> Blocking.yes_or_no ~prompt)
+  Async_ecaml.Private.run_outside_async [%here] (fun () -> Blocking.yes_or_no ~prompt)
 ;;
 
-let read_from ?default_value ?history ?history_pos ?initial_contents () ~prompt =
-  Async_ecaml.Private.run_outside_async (fun () ->
+let read_from ~prompt ?initial_contents ?default_value ~history ?history_pos () =
+  Async_ecaml.Private.run_outside_async [%here] (fun () ->
     Blocking.read_from
-      ?default_value
-      ?history
-      ?history_pos
+      ~prompt
       ?initial_contents
-      ()
-      ~prompt)
+      ?default_value
+      ~history
+      ?history_pos
+      ())
 ;;
 
 let exit_hook = Hook.create Q.minibuffer_exit_hook ~hook_type:Normal

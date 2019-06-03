@@ -56,7 +56,7 @@ let%expect_test "[get]" =
 ;;
 
 let%expect_test "[execute]" =
-  Current_buffer.set_temporarily_to_temp_buffer (fun () ->
+  Current_buffer.set_temporarily_to_temp_buffer Sync (fun () ->
     execute (create_exn "foo RET bar RET");
     print_s [%sexp (Current_buffer.contents () : Text.t)];
     [%expect {| "foo\nbar\n" |}])

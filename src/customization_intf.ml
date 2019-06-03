@@ -26,6 +26,7 @@ module type Customization = sig
     include Valueable.S with type t := t
 
     val emacs : t
+    val ecaml : t
 
     (** Define a new customization group.
 
@@ -113,19 +114,17 @@ module type Customization = sig
       [(Info-goto-node "(emacs)Specific customization")] *)
   val customize_group : Group.t -> unit
 
-  module Enum : sig
-    module type Arg = Enum_arg
-    module type S = Enum with type 'a customization := 'a t
+  module type Enum_arg = Enum_arg
 
-    val make
-      :  Symbol.t
-      -> Source_code_position.t
-      -> (module Arg with type t = 'a)
-      -> docstring:string
-      -> group:Group.t
-      -> standard_value:'a
-      -> (module S with type t = 'a)
-  end
+  val defcustom_enum
+    :  Symbol.t
+    -> Source_code_position.t
+    -> (module Enum_arg with type t = 'a)
+    -> docstring:string
+    -> group:Group.t
+    -> standard_value:'a
+    -> unit
+    -> 'a t
 
   module Private : sig
     val all_defcustom_symbols : unit -> Symbol.t list

@@ -5,11 +5,13 @@ module Advice = Advice
 module Ansi_color = Ansi_color
 module Async_ecaml = Async_ecaml
 module Auto_mode_alist = Auto_mode_alist
+module Background = Background
 module Backup = Backup
 module Browse_url = Browse_url
 module Buffer = Buffer
 module Buffer_local = Buffer_local
 module Char_code = Char_code
+module Col_and_row = Col_and_row
 module Color = Color
 module Command = Command
 module Comment = Comment
@@ -26,6 +28,7 @@ module Display = Display
 module Display_property = Display_property
 module Documentation = Documentation
 module Echo_area = Echo_area
+module Elisp_gc = Elisp_gc
 module Elisp_time = Elisp_time
 module Eval = Eval
 module Evil = Evil
@@ -65,6 +68,7 @@ module Regexp = Regexp
 module Rx = Rx
 module Selected_window = Selected_window
 module Symbol = Symbol
+module Sync_or_async = Sync_or_async
 module Syntax_table = Syntax_table
 module System = System
 module Tabulated_list = Tabulated_list
@@ -82,12 +86,7 @@ module Working_directory = Working_directory
 open! Core_kernel
 open! Async_kernel
 open! Import
-
-module Q = struct
-  include Q
-
-  let inhibit_read_only = "inhibit-read-only" |> Symbol.intern
-end
+module Q = Q
 
 let ( << ) = ( << )
 and ( >> ) = ( >> )
@@ -124,14 +123,14 @@ let provide =
   Async_ecaml.initialize ();
   Caml_embed.initialize;
   Import.initialize_module;
+  Ecaml_profile.initialize ();
   Find_function.initialize ();
   User.initialize ();
   Value.initialize_module;
   (Feature.provide [@warning "-3"])
 ;;
 
-let inhibit_read_only = Var.create Q.inhibit_read_only Value.Type.bool
-let inhibit_read_only f = Current_buffer.set_value_temporarily inhibit_read_only true ~f
+let inhibit_read_only = Current_buffer.inhibit_read_only
 
 let () =
   let symbol = "ecaml-test-raise" |> Symbol.intern in
@@ -170,15 +169,22 @@ let () =
       ~interactive:No_arg
       (Returns_deferred Value.Type.unit)
       (fun () ->
-         let test ?default_value ?history ?history_pos ?initial_contents () ~prompt =
-           let%bind result =
-             Minibuffer.read_from
-               ()
+         let test
                ?default_value
-               ?history
+               ?(history = Minibuffer.history)
                ?history_pos
                ?initial_contents
+               ()
+               ~prompt
+           =
+           let%bind result =
+             Minibuffer.read_from
                ~prompt:(concat [ prompt; ": " ])
+               ?initial_contents
+               ?default_value
+               ~history
+               ?history_pos
+               ()
            in
            message (concat [ "result: "; result ]);
            return ()
@@ -190,7 +196,21 @@ let () =
            ()
            ~prompt:"test 4"
            ~history:
-             (Var.create ("some-history-list" |> Symbol.intern) Value.Type.(list string))))
+             (Minibuffer.History.find_or_create
+                ("some-history-list" |> Symbol.intern)
+                [%here])))
 ;;
 
 let debug_embedded_caml_values () = Caml_embed.debug_sexp ()
+
+module Ref = struct
+  include Ref
+
+  let set_temporarily_async r a ~f =
+    let old = !r in
+    r := a;
+    Monitor.protect f ~finally:(fun () ->
+      r := old;
+      return ())
+  ;;
+end

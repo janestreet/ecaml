@@ -29,7 +29,15 @@ let add symbol here =
   Load_history.add_entry here (Var symbol)
 ;;
 
-let defvar symbol here ~docstring ~type_ ~initial_value () =
+let defvar
+      symbol
+      here
+      ~docstring
+      ~type_
+      ~initial_value
+      ?(include_in_all_defvar_symbols = true)
+      ()
+  =
   ignore
     ( Form.eval
         ([ Q.defvar |> Symbol.to_value
@@ -41,7 +49,7 @@ let defvar symbol here ~docstring ~type_ ~initial_value () =
          |> Value.list
          |> Form.of_value_exn)
       : Value.t );
-  add symbol here;
+  if include_in_all_defvar_symbols then add symbol here;
   Var.create symbol type_
 ;;
 

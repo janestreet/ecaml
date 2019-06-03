@@ -67,7 +67,7 @@ let%expect_test "quit" =
 
 let%expect_test "inhibit-quit" =
   show_raise (fun () ->
-    Current_buffer.set_value_temporarily inhibit_quit true ~f:(fun () ->
+    Current_buffer.set_value_temporarily inhibit_quit true Sync ~f:(fun () ->
       Command.request_quit ();
       give_emacs_chance_to_signal ()));
   [%expect {| "did not raise" |}];

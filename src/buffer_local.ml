@@ -3,6 +3,10 @@ open! Import
 include Buffer_local_intf
 module Current_buffer = Current_buffer0
 
+module Q = struct
+  let permanent_local = "permanent-local" |> Symbol.intern
+end
+
 type 'a t = 'a Var.t [@@deriving sexp_of]
 
 let symbol = Var.symbol
@@ -51,7 +55,7 @@ let defvar_embedded
 let set_in_current_buffer t a = Current_buffer.set_value t a
 
 let set t a buffer =
-  Current_buffer.set_temporarily buffer ~f:(fun () -> set_in_current_buffer t a)
+  Current_buffer.set_temporarily buffer Sync ~f:(fun () -> set_in_current_buffer t a)
 ;;
 
 let get_in_current_buffer t =
@@ -67,7 +71,7 @@ let get_in_current_buffer t =
 ;;
 
 let get t buffer =
-  Current_buffer.set_temporarily buffer ~f:(fun () -> get_in_current_buffer t)
+  Current_buffer.set_temporarily buffer Sync ~f:(fun () -> get_in_current_buffer t)
 ;;
 
 let get_in_current_buffer_exn t =
@@ -82,12 +86,22 @@ let get_in_current_buffer_exn t =
 ;;
 
 let get_exn t buffer =
-  Current_buffer.set_temporarily buffer ~f:(fun () -> get_in_current_buffer_exn t)
+  Current_buffer.set_temporarily buffer Sync ~f:(fun () -> get_in_current_buffer_exn t)
 ;;
 
 let update_exn t buffer ~f =
-  Current_buffer.set_temporarily buffer ~f:(fun () ->
+  Current_buffer.set_temporarily buffer Sync ~f:(fun () ->
     set_in_current_buffer t (Some (f (get_in_current_buffer_exn t))))
+;;
+
+let permanent_property = Symbol.Property.create Q.permanent_local Value.Type.bool
+
+let set_permanent t permanent =
+  Symbol.Property.put permanent_property (symbol t) permanent
+;;
+
+let is_permanent t =
+  Symbol.Property.get permanent_property (symbol t) |> Option.value ~default:false
 ;;
 
 module Private = struct

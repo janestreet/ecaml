@@ -90,13 +90,13 @@ module Collection = (val Ocaml_or_elisp_value.make Value.Type.(list string_cache
 
 module Blocking = struct
   let read
-        ?default
-        ?(history : _ Var.t option)
-        ?(initial_input = Initial_input.Empty)
-        ?(require_match = Require_match.default)
-        ()
-        ~collection
         ~prompt
+        ~collection
+        ?(require_match = Require_match.default)
+        ?(initial_input = Initial_input.Empty)
+        ?default
+        ~history
+        ()
     =
     let predicate = Value.nil in
     let prompt =
@@ -111,9 +111,7 @@ module Blocking = struct
       ; predicate
       ; require_match |> Require_match.to_value
       ; initial_input |> Initial_input.to_value
-      ; (match history with
-         | None -> Value.nil
-         | Some history -> history.symbol |> Symbol.to_value)
+      ; Minibuffer.History.symbol history |> Symbol.to_value
       ; (default |> Value.Type.(nil_or string |> to_value))
       ]
     |> Value.to_utf8_bytes_exn
@@ -122,14 +120,14 @@ module Blocking = struct
   let crm_separator = Var.create ("crm-separator" |> Symbol.intern) Value.Type.string
 
   let read_multiple
-        ?default
-        ?(history : _ Var.t option)
-        ?(initial_input = Initial_input.Empty)
+        ~prompt
+        ~collection
         ?(require_match = Require_match.False)
         ?(separator_regexp = "[ \t]*,[ \t]*")
+        ?(initial_input = Initial_input.Empty)
+        ?default
+        ~history
         ()
-        ~collection
-        ~prompt
     =
     let predicate = Value.nil in
     let prompt =
@@ -137,53 +135,55 @@ module Blocking = struct
       | None -> prompt
       | Some d -> concat [ prompt; "(default = "; d; ") " ]
     in
-    Current_buffer.set_value_temporarily crm_separator separator_regexp ~f:(fun () ->
-      Symbol.funcallN
-        Q.completing_read_multiple
-        [ prompt |> Value.of_utf8_bytes
-        ; collection |> Collection.to_value
-        ; predicate
-        ; require_match |> Require_match.to_value
-        ; initial_input |> Initial_input.to_value
-        ; (match history with
-           | None -> Value.nil
-           | Some history -> history.symbol |> Symbol.to_value)
-        ; (default |> Value.Type.(nil_or string |> to_value))
-        ]
-      |> Value.to_list_exn ~f:Value.to_utf8_bytes_exn)
+    Current_buffer.set_value_temporarily
+      crm_separator
+      separator_regexp
+      Sync
+      ~f:(fun () ->
+        Symbol.funcallN
+          Q.completing_read_multiple
+          [ prompt |> Value.of_utf8_bytes
+          ; collection |> Collection.to_value
+          ; predicate
+          ; require_match |> Require_match.to_value
+          ; initial_input |> Initial_input.to_value
+          ; Minibuffer.History.symbol history |> Symbol.to_value
+          ; (default |> Value.Type.(nil_or string |> to_value))
+          ]
+        |> Value.to_list_exn ~f:Value.to_utf8_bytes_exn)
   ;;
 end
 
-let read ?default ?history ?initial_input ?require_match () ~collection ~prompt =
-  Async_ecaml.Private.run_outside_async (fun () ->
+let read ~prompt ~collection ?require_match ?initial_input ?default ~history () =
+  Async_ecaml.Private.run_outside_async [%here] (fun () ->
     Blocking.read
-      ?default
-      ?history
-      ?initial_input
-      ?require_match
-      ()
+      ~prompt
       ~collection
-      ~prompt)
+      ?require_match
+      ?initial_input
+      ?default
+      ~history
+      ())
 ;;
 
 let read_multiple
-      ?default
-      ?history
-      ?initial_input
-      ?require_match
-      ?separator_regexp
-      ()
-      ~collection
       ~prompt
-  =
-  Async_ecaml.Private.run_outside_async (fun () ->
-    Blocking.read_multiple
-      ?default
-      ?history
-      ?initial_input
+      ~collection
       ?require_match
       ?separator_regexp
+      ?initial_input
+      ?default
+      ~history
       ()
+  =
+  Async_ecaml.Private.run_outside_async [%here] (fun () ->
+    Blocking.read_multiple
+      ~prompt
       ~collection
-      ~prompt)
+      ?require_match
+      ?separator_regexp
+      ?initial_input
+      ?default
+      ~history
+      ())
 ;;

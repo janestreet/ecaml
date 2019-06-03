@@ -1,8 +1,9 @@
 open! Core_kernel
-open Poly
 open! Import
 
-let%test "list reverse inline test" = List.rev [ 1; 2; 3 ] = [ 3; 2; 1 ]
+let%test "list reverse inline test" =
+  [%equal: int list] (List.rev [ 1; 2; 3 ]) [ 3; 2; 1 ]
+;;
 
 let%test "should raise" =
   does_raise (fun () -> List.find_exn [ 1; 2; 3 ] ~f:(Int.equal 4))

@@ -11,9 +11,7 @@ let%expect_test "[all_my_children], [name]" =
   [%expect {| (name "Async scheduler") |}]
 ;;
 
-let sleep ?buffer () =
-  create ?buffer () ~name:"sleeper" ~prog:"/bin/sleep" ~args:[ "100" ]
-;;
+let sleep ?buffer () = create "/bin/sleep" [ "100" ] ~name:"sleeper" ?buffer ()
 
 let show t =
   print_s
@@ -64,7 +62,7 @@ let%expect_test "[start], [buffer], [name], [command], [pid], [status], [exit_st
 
 let%expect_test "[exit_status]" =
   let test prog =
-    let t = create ~prog ~args:[] ~name:"t" () in
+    let t = create prog [] ~name:"t" () in
     while Process.is_alive t do
       Timer.sleep_for (0.01 |> sec_ns)
     done;
@@ -76,8 +74,102 @@ let%expect_test "[exit_status]" =
   [%expect {| (("status t" Exit) ("exit_status t" (Exited 1))) |}]
 ;;
 
+let%expect_test "[extend_sentinel]" =
+  let test prog =
+    let t = create prog [] ~name:"t" () in
+    let sentinels_ran = ref false in
+    extend_sentinel [%here] t (Returns Value.Type.unit) ~sentinel:(fun ~event ->
+      print_endline event);
+    extend_sentinel [%here] t (Returns Value.Type.unit) ~sentinel:(fun ~event:_ ->
+      print_s [%sexp "I'm another sentinel!"];
+      sentinels_ran := true);
+    let timeout_at = Time.(add (now ()) (Span.of_sec 1.)) in
+    while not !sentinels_ran && Time.(now () < timeout_at) do
+      Timer.sleep_for (0.01 |> sec_ns)
+    done
+  in
+  test "true";
+  [%expect {|
+    finished
+
+    "I'm another sentinel!" |}];
+  test "false";
+  [%expect {|
+    exited abnormally with code 1
+
+    "I'm another sentinel!" |}]
+;;
+
+module Async = struct
+  open! Async
+  open! Async_ecaml
+
+  let%expect_test "Async [extend_sentinel]" =
+    let test prog =
+      let t = create prog [] ~name:"t" () in
+      let sentinels_ran = ref false in
+      extend_sentinel
+        [%here]
+        t
+        (Returns_deferred Value.Type.unit)
+        ~sentinel:(fun ~event ->
+          let%map () = Clock.after (sec 0.01) in
+          print_endline event);
+      extend_sentinel
+        [%here]
+        t
+        (Returns_deferred Value.Type.unit)
+        ~sentinel:(fun ~event:_ ->
+          let%map () = Clock.after (sec 0.01) in
+          print_s [%sexp "I'm another sentinel!"];
+          sentinels_ran := true);
+      let timeout_at = Time.(add (now ()) (Span.of_sec 1.)) in
+      let rec loop () =
+        if not !sentinels_ran && Time.(now () < timeout_at)
+        then (
+          let%bind () =
+            Async_ecaml.Private.run_outside_async [%here] (fun () ->
+              Timer.sleep_for (0.01 |> sec_ns))
+          in
+          loop ())
+        else return ()
+      in
+      loop ()
+    in
+    let%bind () = test "true" in
+    let%bind () = [%expect {|
+      finished
+
+      "I'm another sentinel!" |}] in
+    let%bind () = test "false" in
+    [%expect {|
+      exited abnormally with code 1
+
+      "I'm another sentinel!" |}]
+  ;;
+
+  let%expect_test "[exited]" =
+    let t = create "true" [] ~name:"z" () in
+    let exited = exited t in
+    let rec loop () =
+      if Deferred.is_determined exited
+      then return ()
+      else (
+        let%bind () =
+          Async_ecaml.Private.run_outside_async [%here] (fun () ->
+            Timer.sleep_for (0.01 |> sec_ns))
+        in
+        loop ())
+    in
+    let%bind () = loop () in
+    print_s [%sexp (exited : Exited.t Deferred.t)];
+    [%expect {|
+      (Full (Exited 0)) |}]
+  ;;
+end
+
 let%expect_test "[buffer]" =
-  Current_buffer.set_temporarily_to_temp_buffer (fun () ->
+  Current_buffer.set_temporarily_to_temp_buffer Sync (fun () ->
     let t = sleep () ~buffer:(Current_buffer.get ()) in
     print_s [%sexp (buffer t : Buffer.t option)];
     kill t);
@@ -126,7 +218,7 @@ let test_call_result_exn
       ~args
       ~prog
   =
-  Current_buffer.set_temporarily_to_temp_buffer (fun () ->
+  Current_buffer.set_temporarily_to_temp_buffer Sync (fun () ->
     let result = call_result_exn prog args ?input ~output ?working_directory in
     print_s [%message (result : Call.Result.t)];
     print_endline "output:";
@@ -134,7 +226,7 @@ let test_call_result_exn
 ;;
 
 let show_file_contents file =
-  Current_buffer.set_temporarily_to_temp_buffer (fun () ->
+  Current_buffer.set_temporarily_to_temp_buffer Sync (fun () ->
     Point.insert_file_contents_exn file;
     print_current_buffer_contents ())
 ;;
@@ -173,8 +265,8 @@ let%expect_test "[Call.Input.File]" =
   let file = Caml.Filename.temp_file "" "" in
   Selected_window.Blocking.find_file file;
   Point.insert "foobar";
-  Current_buffer.save ();
-  Current_buffer.kill ();
+  Current_buffer.Blocking.save ();
+  Buffer.Blocking.kill (Current_buffer.get ());
   test_call_result_exn () ~prog:"cat" ~args:[ file ];
   [%expect {|
     (result (Exit_status 0))
@@ -231,7 +323,7 @@ let%expect_test "[Call.Output.File]" =
 ;;
 
 let%expect_test "[Call.Output.Split]" =
-  Current_buffer.set_temporarily_to_temp_buffer (fun () ->
+  Current_buffer.set_temporarily_to_temp_buffer Sync (fun () ->
     test_call_result_exn
       ()
       ~prog:"echo"
@@ -462,4 +554,17 @@ exit 1
       (args   (-c          "\necho '(\"foo bar\" baz)'\nexit 1\n"))
       (result (Exit_status 1))
       (output ("foo bar"   baz)))) |}]
+;;
+
+let%expect_test "[get_property] and [set_property]" =
+  let t = Process.create "true" [] ~name:"z" () in
+  let property = "foo" |> Symbol.intern in
+  let show () = print_s [%sexp (get_property t property : Value.t option)] in
+  show ();
+  [%expect {|
+    () |}];
+  set_property t property (13 |> Value.of_int_exn);
+  show ();
+  [%expect {|
+    (13) |}]
 ;;

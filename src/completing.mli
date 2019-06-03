@@ -33,36 +33,36 @@ module Collection : Ocaml_or_elisp_value.S with type ocaml = string list
 
 (** [(describe-function 'completing-read)] **)
 val read
-  :  ?default:string
-  -> ?history:string list Var.t
-  -> ?initial_input:Initial_input.t (* default is Empty *)
-  -> ?require_match:Require_match.t (* default is [Require_match.default] *)
-  -> unit
+  :  prompt:string (** typically ends with ": " *)
   -> collection:Collection.t
-  -> prompt:string (* typically ends with ": " *)
+  -> ?require_match:Require_match.t (** default is [Require_match.default] *)
+  -> ?initial_input:Initial_input.t (** default is Empty *)
+  -> ?default:string
+  -> history:Minibuffer.History.t
+  -> unit
   -> string Deferred.t
 
 (** [(describe-function 'completing-read-multiple)] **)
 val read_multiple
-  :  ?default:string
-  -> ?history:string list Var.t
-  -> ?initial_input:Initial_input.t (* default is Empty *)
-  -> ?require_match:Require_match.t (* default is False *)
-  -> ?separator_regexp:string (* default is "[ \t]*,[ \t]*" *)
-  -> unit
+  :  prompt:string (** typically ends with ": " *)
   -> collection:Collection.t
-  -> prompt:string (* typically ends with ": " *)
+  -> ?require_match:Require_match.t (** default is False *)
+  -> ?separator_regexp:string (** default is "[ \t]*,[ \t]*" *)
+  -> ?initial_input:Initial_input.t (** default is Empty *)
+  -> ?default:string
+  -> history:Minibuffer.History.t
+  -> unit
   -> string list Deferred.t
 
 module Blocking : sig
   (** [(describe-function 'completing-read)] **)
   val read
-    :  ?default:string
-    -> ?history:string list Var.t
-    -> ?initial_input:Initial_input.t (* default is Empty *)
-    -> ?require_match:Require_match.t (* default is [Require_match.default] *)
-    -> unit
+    :  prompt:string (** typically ends with ": " *)
     -> collection:Collection.t
-    -> prompt:string (* typically ends with ": " *)
+    -> ?require_match:Require_match.t (** default is [Require_match.default] *)
+    -> ?initial_input:Initial_input.t (** default is Empty *)
+    -> ?default:string
+    -> history:Minibuffer.History.t
+    -> unit
     -> string
 end

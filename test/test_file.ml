@@ -101,26 +101,30 @@ let%expect_test "[copy], [rename], [delete]" =
 ;;
 
 let%expect_test "[locate_dominating_file]" =
-  Directory.with_temp_dir ~prefix:"test-locate_dominating_file" ~suffix:"" ~f:(fun dir ->
-    Directory.create (concat [ dir; "/b/c" ]) ~parents:true;
-    let basename = "foo" in
-    touch (concat [ dir; "/"; basename ]);
-    let test ~above =
-      print_s
-        [%sexp
-          ( locate_dominating_file ~above:(concat [ dir; "/"; above ]) ~basename
-            |> Option.map ~f:(fun x ->
-              x |> File.truename |> String.chop_prefix_exn ~prefix:dir)
-            : string option )]
-    in
-    test ~above:"b/c";
-    [%expect {|
+  Directory.with_temp_dir
+    Sync
+    ~prefix:"test-locate_dominating_file"
+    ~suffix:""
+    ~f:(fun dir ->
+      Directory.create (concat [ dir; "/b/c" ]) ~parents:true;
+      let basename = "foo" in
+      touch (concat [ dir; "/"; basename ]);
+      let test ~above =
+        print_s
+          [%sexp
+            ( locate_dominating_file ~above:(concat [ dir; "/"; above ]) ~basename
+              |> Option.map ~f:(fun x ->
+                x |> File.truename |> String.chop_prefix_exn ~prefix:dir)
+              : string option )]
+      in
+      test ~above:"b/c";
+      [%expect {|
       (/) |}];
-    test ~above:"b";
-    [%expect {|
+      test ~above:"b";
+      [%expect {|
       (/) |}];
-    test ~above:"";
-    [%expect {|
+      test ~above:"";
+      [%expect {|
       (/) |}])
 ;;
 
@@ -130,21 +134,26 @@ let%expect_test "[locate_dominating_file_exn] raise" =
     (raised "Unable to find [zzz] in directory above [/].") |}]
 ;;
 
-let%expect_test "[write]" =
-  let file = "z.tmp" in
-  write file "stuff\n";
-  let show_contents () =
-    Selected_window.Blocking.find_file file;
-    print_string (Current_buffer.contents () |> Text.to_utf8_bytes);
-    Current_buffer.kill ()
-  in
-  show_contents ();
-  [%expect {|
-    stuff |}];
-  write file "more stuff\n" ~append:true;
-  show_contents ();
-  [%expect {|
-    stuff
-    more stuff |}];
-  File.delete file
-;;
+module Async_test = struct
+  open! Async
+  open! Async_ecaml
+
+  let%expect_test "[write]" =
+    let file = "z.tmp" in
+    write file "stuff\n";
+    let show_contents () =
+      Selected_window.Blocking.find_file file;
+      print_string (Current_buffer.contents () |> Text.to_utf8_bytes);
+      Current_buffer.kill ()
+    in
+    let%bind () = show_contents () in
+    let%bind () = [%expect {| stuff |}] in
+    write file "more stuff\n" ~append:true;
+    let%bind () = show_contents () in
+    let%bind () = [%expect {|
+      stuff
+      more stuff |}] in
+    File.delete file;
+    return ()
+  ;;
+end

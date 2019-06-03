@@ -7,9 +7,9 @@ open! Echo_area
    copy of the output. *)
 let show () =
   let buffer = Buffer.find_or_create ~name:"*Messages*" in
-  Current_buffer.set_temporarily buffer ~f:(fun () ->
+  Current_buffer.set_temporarily buffer Sync ~f:(fun () ->
     print_string (Current_buffer.contents () |> Text.to_utf8_bytes));
-  Buffer.kill buffer
+  Buffer.Blocking.kill buffer
 ;;
 
 let%expect_test "[message_s] of a value" =
@@ -60,7 +60,7 @@ let%expect_test "[message ~echo:false]" =
 ;;
 
 let%expect_test "[inhibit_messages]" =
-  inhibit_messages (fun () -> message "hello");
+  inhibit_messages Sync (fun () -> message "hello");
   [%expect {| |}];
   show ();
   [%expect {| hello |}]

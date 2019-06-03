@@ -247,6 +247,16 @@ let%expect_test "[to_list_exn]" =
     (0 1 2) |}]
 ;;
 
+let%expect_test "[list_to_array_exn]" =
+  let show list = print_s [%sexp (list_to_array_exn list ~f:to_int_exn : int array)] in
+  show nil;
+  [%expect {|
+    () |}];
+  show (list (List.init 3 ~f:of_int_exn));
+  [%expect {|
+    (0 1 2) |}]
+;;
+
 let%expect_test "[to_list_exn] raise" =
   require_does_raise [%here] (fun () ->
     to_list_exn (13 |> of_int_exn) ~f:(fun _ -> assert false));
@@ -486,6 +496,7 @@ let%expect_test "rendering OCaml exceptions in Emacs and Ocaml" =
       Current_buffer.set_value_temporarily
         Debugger.debug_on_error
         debug_on_error
+        Sync
         ~f:(fun () ->
           ignore
             ( Value.funcall1

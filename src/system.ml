@@ -50,6 +50,7 @@ let setenv_temporarily vars_and_values ~f =
         |> List.map ~f:(fun { Var_and_value.var; value } -> concat [ var; "="; value ])
         |> Value.Type.(list string |> to_value))
        (Current_buffer.value_exn process_environment))
+    Sync
 ;;
 
 let hostname () = Symbol.funcall0 Q.system_name |> Value.to_utf8_bytes_exn

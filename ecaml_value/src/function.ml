@@ -55,6 +55,7 @@ let create =
        |> Sexp.to_string)
   in
   fun here ?docstring ?interactive ~args ?optional_args ?rest_arg callback ->
+    let docstring = Option.map docstring ~f:String.capitalize in
     let callback = Value.Type.to_value Fn.ecaml_type callback in
     (* We wrap [callback] with a lambda expression that, when called, calls [dispatch]
        with the [callback] and the same arguments. This way, lambda expression holds on to

@@ -1,5 +1,5 @@
 open! Core_kernel
-open! Import
+open! Import0
 
 type _ t =
   | Cons : 'a Value.Type.t * 'b t -> ('a -> 'b) t
@@ -170,8 +170,8 @@ module Private = struct
          | Allow_raise -> raise
          | Call_inner_function ->
            fun exn ->
-             Echo_area.inhibit_messages (fun () ->
-               Echo_area.message_s
+             Echo_area.inhibit_messages Sync (fun () ->
+               message_s
                  [%message
                    "Ignoring advice that failed to parse its arguments."
                      ~_:(here : Source_code_position.t)

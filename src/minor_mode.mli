@@ -18,6 +18,7 @@ val is_enabled : t -> bool
 
 val disable : t -> unit
 val enable : t -> unit
+val temporarily_disable : t -> f:(unit -> unit) -> unit
 
 (** [(describe-variable 'abbrev-mode)]
     [(describe-function 'abbrev-mode)] *)
@@ -38,6 +39,10 @@ val view : t
 (** [(describe-variable 'visual-line-mode)]
     [(describe-function 'visual-line-mode)]*)
 val visual_line : t
+
+(** [(describe-variable 'url-handler-mode)]
+    [(describe-function 'url-handler-mode)]*)
+val url_handler : t
 
 (** Find the keymap that is active when the given minor mode is enabled, if such a keymap
     exists.

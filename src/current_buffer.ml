@@ -32,6 +32,7 @@ module Q = struct
   and get_text_property = "get-text-property" |> Symbol.intern
   and ignore_auto = "ignore-auto" |> Symbol.intern
   and indent_region = "indent-region" |> Symbol.intern
+  and inhibit_read_only = "inhibit-read-only" |> Symbol.intern
   and kill_local_variable = "kill-local-variable" |> Symbol.intern
   and kill_region = "kill-region" |> Symbol.intern
   and local_variable_if_set_p = "local-variable-if-set-p" |> Symbol.intern
@@ -45,7 +46,6 @@ module Q = struct
   and region_beginning = "region-beginning" |> Symbol.intern
   and region_end = "region-end" |> Symbol.intern
   and rename_buffer = "rename-buffer" |> Symbol.intern
-  and revert_buffer = "revert-buffer" |> Symbol.intern
   and revert_buffer_function = "revert-buffer-function" |> Symbol.intern
   and save_buffer = "save-buffer" |> Symbol.intern
   and set_auto_mode = "set-auto-mode" |> Symbol.intern
@@ -78,6 +78,14 @@ module Window_display_state = struct
           ~cdr:(is_cons ~car:Position.is_in_subtype ~cdr:Position.is_in_subtype)
       ;;
     end)
+
+  let get = Funcall.(Q.buffer_window_display_state <: nullary @-> return type_)
+  let restore = Funcall.(Q.buffer_restore_window_display_state <: type_ @-> return nil)
+
+  let save f =
+    let t = get () in
+    Exn.protect ~f ~finally:(fun () -> restore t)
+  ;;
 end
 
 module F = struct
@@ -114,7 +122,6 @@ module F = struct
   and region_beginning = Q.region_beginning <: nullary @-> return Position.type_
   and region_end = Q.region_end <: nullary @-> return Position.type_
   and rename_buffer = Q.rename_buffer <: string @-> bool @-> return nil
-  and revert_buffer = Q.revert_buffer <: value @-> bool @-> return nil
   and set_buffer_modified_p = Q.set_buffer_modified_p <: bool @-> return nil
   and set_buffer_multibyte = Q.set_buffer_multibyte <: bool @-> return nil
   and set_auto_mode = Q.set_auto_mode <: nil_or bool @-> return nil
@@ -126,10 +133,6 @@ module F = struct
   and char_syntax = Q.char_syntax <: Char_code.type_ @-> return Char_code.type_
   and local_variable_p = Q.local_variable_p <: Symbol.type_ @-> return bool
   and local_variable_if_set_p = Q.local_variable_if_set_p <: Symbol.type_ @-> return bool
-  and buffer_window_display_state =
-    Q.buffer_window_display_state <: nullary @-> return Window_display_state.type_
-  and buffer_restore_window_display_state =
-    Q.buffer_restore_window_display_state <: Window_display_state.type_ @-> return nil
 
   and add_text_properties =
     Q.add_text_properties
@@ -169,17 +172,17 @@ let get_buffer_local = Buffer_local.Private.get_in_current_buffer
 let get_buffer_local_exn = Buffer_local.Private.get_in_current_buffer_exn
 let set_buffer_local = Buffer_local.Private.set_in_current_buffer
 
-let set_temporarily_to_temp_buffer f =
+let set_temporarily_to_temp_buffer sync_or_async f =
   let t = Buffer.create ~name:"*temp-buffer*" in
-  protect ~f:(fun () -> set_temporarily t ~f) ~finally:(fun () -> Buffer.kill t)
+  Sync_or_async.protect
+    [%here]
+    sync_or_async
+    ~f:(fun () -> set_temporarily t sync_or_async ~f)
+    ~finally:(fun () -> Buffer.Blocking.kill t)
 ;;
 
 let major_mode () =
   Major_mode.find_or_wrap_existing [%here] (get_buffer_local Major_mode.major_mode_var)
-;;
-
-let change_major_mode major_mode =
-  Funcall.(Major_mode.symbol major_mode <: nullary @-> return nil) ()
 ;;
 
 let set_auto_mode ?keep_mode_if_same () = F.set_auto_mode keep_mode_if_same
@@ -266,8 +269,14 @@ let contents ?start ?end_ ?(text_properties = false) () =
     (or_point_max end_)
 ;;
 
-let kill = F.kill_buffer
-let save = F.save_buffer
+let kill () =
+  Value.Private.run_outside_async [%here] ~allowed_in_background:true F.kill_buffer
+;;
+
+let save () =
+  Value.Private.run_outside_async [%here] ~allowed_in_background:true F.save_buffer
+;;
+
 let erase = F.erase_buffer
 let delete_region ~start ~end_ = F.delete_region start end_
 let kill_region ~start ~end_ = F.kill_region start end_
@@ -276,13 +285,7 @@ let save_current_buffer f = Save_wrappers.save_current_buffer f
 let save_excursion f = Save_wrappers.save_excursion f
 let save_mark_and_excursion f = Save_wrappers.save_mark_and_excursion f
 let save_restriction f = Save_wrappers.save_restriction f
-
-let save_window_display_state f =
-  let window_display_state = F.buffer_window_display_state () in
-  Exn.protect ~f ~finally:(fun () ->
-    F.buffer_restore_window_display_state window_display_state)
-;;
-
+let save_window_display_state = Window_display_state.save
 let set_multibyte = F.set_buffer_multibyte
 
 let enable_multibyte_characters =
@@ -406,11 +409,17 @@ let delete_duplicate_lines ?start ?end_ () =
 ;;
 
 let indent_region ?start ?end_ () =
-  Echo_area.inhibit_messages (fun () ->
+  Echo_area.inhibit_messages Sync (fun () ->
     F.indent_region (or_point_min start) (or_point_max end_))
 ;;
 
-let revert ?(confirm = false) () = F.revert_buffer Value.nil (not confirm)
+module Blocking = struct
+  let change_major_mode = Major_mode.Blocking.change_in_current_buffer
+  let save = F.save_buffer
+end
+
+let change_major_mode major_mode = Major_mode.change_to major_mode ~in_:(get ())
+let revert ?confirm () = Buffer.revert ?confirm (get ())
 
 let revert_buffer_function =
   Buffer_local.wrap_existing
@@ -419,14 +428,16 @@ let revert_buffer_function =
     ~make_buffer_local_always:true
 ;;
 
-let set_revert_buffer_function f =
+let set_revert_buffer_function here returns f =
   set_buffer_local
     revert_buffer_function
-    (Function.create [%here] ~args:[ Q.ignore_auto; Q.noconfirm ] (function
-       | [| _; noconfirm |] ->
-         f ~confirm:(noconfirm |> Value.to_bool |> not);
-         Value.nil
-       | _ -> assert false))
+    (Defun.lambda
+       here
+       returns
+       (let%map_open.Defun.Let_syntax () = return ()
+        and () = required Q.ignore_auto Value.Type.ignored
+        and noconfirm = required Q.noconfirm Value.Type.bool in
+        f ~confirm:(not noconfirm)))
 ;;
 
 let replace_buffer_contents =
@@ -444,3 +455,23 @@ let truncate_lines =
 ;;
 
 let chars_modified_tick = F.buffer_chars_modified_tick
+
+let append_to string =
+  let point_max_before = Point.max () in
+  save_excursion Sync (fun () ->
+    Point.goto_max ();
+    Point.insert string);
+  let point_max_after = Point.max () in
+  if Position.equal (Point.get ()) point_max_before then Point.goto_max ();
+  List.iter
+    (Buffer.displayed_in (get ()))
+    ~f:(fun window ->
+      if Position.equal (Window.point_exn window) point_max_before
+      then Window.set_point_exn window point_max_after)
+;;
+
+let inhibit_read_only = Var.create Q.inhibit_read_only Value.Type.bool
+
+let inhibit_read_only sync_or_async f =
+  set_value_temporarily inhibit_read_only true sync_or_async ~f
+;;

@@ -36,4 +36,9 @@ val make_temp_dir : prefix:string -> suffix:string -> Filename.t
     even if [f] returns by raising.
 
     N.B. This is not the behavior of [(describe-function 'with-temp-file)]. *)
-val with_temp_dir : f:(Filename.t -> 'a) -> prefix:string -> suffix:string -> 'a
+val with_temp_dir
+  :  (_, 'a) Sync_or_async.t
+  -> f:(Filename.t -> 'a)
+  -> prefix:string
+  -> suffix:string
+  -> 'a

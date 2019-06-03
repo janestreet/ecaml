@@ -126,7 +126,7 @@ let%expect_test "raising from OCaml to OCaml through many layers of Emacs" =
        [%here]
        [%message "Backtrace has no frames from" Test_function_file1.filename]);
   [%expect {| |}];
-  Current_buffer.set_value_temporarily Debugger.debug_on_error true ~f:(fun () ->
+  Current_buffer.set_value_temporarily Debugger.debug_on_error true Sync ~f:(fun () ->
     let show_errors = false in
     match show_errors with
     | true ->
@@ -228,7 +228,7 @@ let%expect_test "function descriptions" =
 
     (test-function W &optional X Y &rest Z)
 
-    custom doc
+    Custom doc
 
     Implemented at [app/emacs/lib/ecaml_value/test/test_function.ml:LINE:COL]. |}]
 ;;

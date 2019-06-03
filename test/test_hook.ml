@@ -24,27 +24,27 @@ let%expect_test "[add]" =
   [%expect {|
     ((symbol    some-hook)
      (hook_type Normal)
-     (value ())) |}];
+     (value (()))) |}];
   add t f1;
   show t;
   [%expect {|
     ((symbol    some-hook)
      (hook_type Normal)
-     (value (f1))) |}];
+     (value ((f1)))) |}];
   add t f2;
   show t;
   [%expect
     {|
     ((symbol    some-hook)
      (hook_type Normal)
-     (value (f2 f1))) |}];
+     (value ((f2 f1)))) |}];
   add t f3 ~where:End;
   show t;
   [%expect
     {|
     ((symbol    some-hook)
      (hook_type Normal)
-     (value (f2 f1 f3))) |}];
+     (value ((f2 f1 f3)))) |}];
   clear t
 ;;
 
@@ -55,7 +55,7 @@ let%expect_test "[add] when present" =
   [%expect {|
     ((symbol    some-hook)
      (hook_type Normal)
-     (value (f1))) |}];
+     (value ((f1)))) |}];
   clear t
 ;;
 
@@ -67,19 +67,19 @@ let%expect_test "[remove]" =
     {|
     ((symbol    some-hook)
      (hook_type Normal)
-     (value (f1 f2))) |}];
+     (value ((f1 f2)))) |}];
   remove t f2;
   show t;
   [%expect {|
     ((symbol    some-hook)
      (hook_type Normal)
-     (value (f1))) |}];
+     (value ((f1)))) |}];
   remove t f1;
   show t;
   [%expect {|
     ((symbol    some-hook)
      (hook_type Normal)
-     (value ())) |}];
+     (value (()))) |}];
   clear t
 ;;
 
@@ -89,19 +89,19 @@ let%expect_test "[remove] when absent" =
   [%expect {|
     ((symbol    some-hook)
      (hook_type Normal)
-     (value ())) |}];
+     (value (()))) |}];
   add t f2;
   show t;
   [%expect {|
     ((symbol    some-hook)
      (hook_type Normal)
-     (value (f2))) |}];
+     (value ((f2)))) |}];
   remove t f1;
   show t;
   [%expect {|
     ((symbol    some-hook)
      (hook_type Normal)
-     (value (f2))) |}];
+     (value ((f2)))) |}];
   clear t
 ;;
 
@@ -170,39 +170,42 @@ let%expect_test "Blocking async hook" =
   [%expect {| f1 |}]
 ;;
 
-let%expect_test "[after_save], [kill_buffer]" =
-  let file = "test-after-save.tmp" in
-  Selected_window.Blocking.find_file file;
-  add
-    after_save
-    ~buffer_local:true
-    (Function.create
-       ("test-after-save-hook" |> Symbol.intern)
-       [%here]
-       ~hook_type:Normal
-       (Returns Value.Type.unit)
-       (fun () -> print_s [%message "after-save hook ran"]));
-  print_s [%sexp (Current_buffer.is_buffer_local (var after_save) : bool)];
-  [%expect {|
-    true |}];
-  add
-    kill_buffer
-    ~buffer_local:true
-    (Function.create
-       ("test-kill-buffer-hook" |> Symbol.intern)
-       [%here]
-       ~hook_type:Normal
-       (Returns Value.Type.unit)
-       (fun () -> print_s [%message "kill-buffer hook ran"]));
-  Point.insert "foo";
-  Current_buffer.save ();
-  [%expect {|
-    "after-save hook ran" |}];
-  Current_buffer.kill ();
-  [%expect {|
-    "kill-buffer hook ran" |}];
-  File.delete file
-;;
+module Async_test = struct
+  open! Async
+  open! Async_ecaml
+
+  let%expect_test "[after_save], [kill_buffer]" =
+    let file = "test-after-save.tmp" in
+    let%bind () = Selected_window.find_file file in
+    add
+      after_save
+      ~buffer_local:true
+      (Function.create
+         ("test-after-save-hook" |> Symbol.intern)
+         [%here]
+         ~hook_type:Normal
+         (Returns Value.Type.unit)
+         (fun () -> print_s [%message "after-save hook ran"]));
+    print_s [%sexp (Current_buffer.is_buffer_local (var after_save) : bool)];
+    let%bind () = [%expect {| true |}] in
+    add
+      kill_buffer
+      ~buffer_local:true
+      (Function.create
+         ("test-kill-buffer-hook" |> Symbol.intern)
+         [%here]
+         ~hook_type:Normal
+         (Returns Value.Type.unit)
+         (fun () -> print_s [%message "kill-buffer hook ran"]));
+    Point.insert "foo";
+    let%bind () = Current_buffer.save () in
+    let%bind () = [%expect {| "after-save hook ran" |}] in
+    let%bind () = Current_buffer.kill () in
+    let%bind () = [%expect {| "kill-buffer hook ran" |}] in
+    File.delete file;
+    return ()
+  ;;
+end
 
 let%expect_test "hook raise" =
   let hook_type = Hook_type.Normal in

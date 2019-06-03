@@ -49,7 +49,7 @@ let%expect_test "[set_default_value]" =
 let%expect_test "[make_buffer_local_always]" =
   let t = int_var "z" in
   make_buffer_local_always t;
-  Current_buffer.set_temporarily_to_temp_buffer (fun () ->
+  Current_buffer.set_temporarily_to_temp_buffer Sync (fun () ->
     print_s [%sexp (Current_buffer.is_buffer_local t : bool)];
     [%expect {|
       false |}];
@@ -74,19 +74,19 @@ let%expect_test "sexpable value in a var" =
   in
   make_buffer_local_always t;
   let setup buf ~a ~b =
-    Current_buffer.set_temporarily buf ~f:(fun () ->
+    Current_buffer.set_temporarily buf Sync ~f:(fun () ->
       Point.goto_min ();
       let marker = Point.marker_at () in
       Marker.set_insertion_type marker After_inserted_text;
       Current_buffer.set_value t ({ A.a; b }, marker))
   in
   let move_marker buf ~by =
-    Current_buffer.set_temporarily buf ~f:(fun () ->
+    Current_buffer.set_temporarily buf Sync ~f:(fun () ->
       Point.goto_min ();
       Point.insert (String.init by ~f:(fun _ -> 'A')))
   in
   let read buf =
-    Current_buffer.set_temporarily buf ~f:(fun () ->
+    Current_buffer.set_temporarily buf Sync ~f:(fun () ->
       let v = Current_buffer.value_exn t in
       print_s
         [%message
@@ -100,8 +100,8 @@ let%expect_test "sexpable value in a var" =
   move_marker buf2 ~by:5;
   read buf1;
   read buf2;
-  Buffer.kill buf1;
-  Buffer.kill buf2;
+  Buffer.Blocking.kill buf1;
+  Buffer.Blocking.kill buf2;
   [%expect
     {|
     ((buffer (buf1))

@@ -3,7 +3,7 @@ open! Import
 open! Syntax_table
 
 let show t =
-  Current_buffer.set_temporarily_to_temp_buffer (fun () ->
+  Current_buffer.set_temporarily_to_temp_buffer Sync (fun () ->
     Current_buffer.set_syntax_table t;
     let by_class = Class.Table.create () in
     for i = 0 to 127 do
@@ -67,7 +67,7 @@ let%expect_test "[create]" =
 ;;
 
 let%expect_test "[set_char]" =
-  Current_buffer.set_temporarily_to_temp_buffer (fun () ->
+  Current_buffer.set_temporarily_to_temp_buffer Sync (fun () ->
     let t = create () in
     Current_buffer.set_syntax_table t;
     let char = 'a' in

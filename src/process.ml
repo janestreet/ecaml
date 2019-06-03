@@ -1,4 +1,5 @@
 open! Core_kernel
+open! Async_kernel
 open! Import
 
 module Q = struct
@@ -27,8 +28,10 @@ module Q = struct
   and process_mark = "process-mark" |> Symbol.intern
   and process_name = "process-name" |> Symbol.intern
   and process_query_on_exit_flag = "process-query-on-exit-flag" |> Symbol.intern
+  and process_sentinel = "process-sentinel" |> Symbol.intern
   and process_status = "process-status" |> Symbol.intern
   and run = "run" |> Symbol.intern
+  and set_process_sentinel = "set-process-sentinel" |> Symbol.intern
   and set_process_query_on_exit_flag = "set-process-query-on-exit-flag" |> Symbol.intern
   and signal = "signal" |> Symbol.intern
   and start_process = "start-process" |> Symbol.intern
@@ -80,7 +83,12 @@ module F = struct
 
   let is_alive = Q.process_live_p <: type_ @-> return bool
   let process_exit_status = Q.process_exit_status <: type_ @-> return int
+  let process_sentinel = Q.process_sentinel <: type_ @-> return (nil_or Function.type_)
   let process_status = Q.process_status <: type_ @-> return Status.type_
+
+  let set_process_sentinel =
+    Q.set_process_sentinel <: type_ @-> Function.type_ @-> return nil
+  ;;
 end
 
 let equal = eq
@@ -115,6 +123,16 @@ let set_query_on_exit t b =
   Symbol.funcall2_i Q.set_process_query_on_exit_flag (t |> to_value) (b |> Value.of_bool)
 ;;
 
+let get_property =
+  Funcall.(
+    "process-get" |> Symbol.intern <: type_ @-> Symbol.type_ @-> return (nil_or value))
+;;
+
+let set_property =
+  Funcall.(
+    "process-put" |> Symbol.intern <: type_ @-> Symbol.type_ @-> value @-> return nil)
+;;
+
 let status = F.process_status
 
 module Exit_status = struct
@@ -141,7 +159,7 @@ let all_emacs_children () =
   Symbol.funcall0 Q.process_list |> Value.to_list_exn ~f:of_value_exn
 ;;
 
-let create ?buffer () ~args ~name ~prog =
+let create prog args ~name ?buffer () =
   Symbol.funcallN
     Q.start_process
     ([ name |> Value.of_utf8_bytes
@@ -334,7 +352,7 @@ let call_exn
       prog
       args
   =
-  Current_buffer.set_temporarily_to_temp_buffer (fun () ->
+  Current_buffer.set_temporarily_to_temp_buffer Sync (fun () ->
     match
       call_result_exn
         prog
@@ -401,4 +419,74 @@ let shell_command_exn ?input ?working_directory ?verbose_exn command =
 
 let shell_command_expect_no_output_exn ?input ?working_directory ?verbose_exn command =
   call_expect_no_output_exn bash [ "-c"; command ] ?input ?working_directory ?verbose_exn
+;;
+
+let extend_sentinel
+      (type a)
+      here
+      t
+      (returns : (unit, a) Defun.Returns.t)
+      ~(sentinel : event:string -> a)
+  =
+  let previous_sentinel = F.process_sentinel t in
+  F.set_process_sentinel
+    t
+    (Defun.lambda
+       here
+       returns
+       (let%map_open.Defun.Let_syntax () = return ()
+        and process = required ("process" |> Symbol.intern) Value.Type.value
+        and event = required ("event" |> Symbol.intern) Value.Type.value in
+        let run_previous_sentinel () =
+          match previous_sentinel with
+          | None -> ()
+          | Some previous_sentinel ->
+            Value.funcall2_i (previous_sentinel |> Function.to_value) process event
+        in
+        match returns with
+        | Returns _ ->
+          run_previous_sentinel ();
+          (sentinel ~event:(event |> Value.to_utf8_bytes_exn) : a)
+        | Returns_deferred _ ->
+          let%bind.Async () =
+            Value.Private.run_outside_async
+              [%here]
+              ~allowed_in_background:true
+              run_previous_sentinel
+          in
+          sentinel ~event:(event |> Value.to_utf8_bytes_exn)))
+;;
+
+module Exited = struct
+  type t =
+    | Exited of int
+    | Fatal_signal of int
+  [@@deriving sexp_of]
+end
+
+let exited =
+  let property = "exited" |> Symbol.intern in
+  let type_ =
+    Value.Type.caml_embed
+      (Type_equal.Id.create ~name:"exited" [%sexp_of: Exited.t Deferred.t])
+  in
+  fun t ->
+    let check_status () : Exited.t option =
+      match exit_status t with
+      | Not_exited -> None
+      | Exited i -> Some (Exited i)
+      | Fatal_signal i -> Some (Fatal_signal i)
+    in
+    match get_property t property with
+    | Some v -> v |> Value.Type.of_value_exn type_
+    | None ->
+      (match check_status () with
+       | Some x -> return x
+       | None ->
+         let ivar : Exited.t Ivar.t = Ivar.create () in
+         extend_sentinel [%here] t (Returns Value.Type.unit) ~sentinel:(fun ~event:_ ->
+           Option.iter (check_status ()) ~f:(Ivar.fill_if_empty ivar));
+         let exited = Ivar.read ivar in
+         set_property t property (exited |> Value.Type.to_value type_);
+         exited)
 ;;

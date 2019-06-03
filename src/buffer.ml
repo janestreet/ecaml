@@ -1,4 +1,5 @@
 open! Core_kernel
+open! Async_kernel
 open! Import0
 
 module Q = struct
@@ -14,8 +15,16 @@ module Q = struct
   and get_buffer_process = "get-buffer-process" |> Symbol.intern
   and get_buffer_window_list = "get-buffer-window-list" |> Symbol.intern
   and get_file_buffer = "get-file-buffer" |> Symbol.intern
+  and revert_buffer = "revert-buffer" |> Symbol.intern
   and save_some_buffers = "save-some-buffers" |> Symbol.intern
   and visible = "visible" |> Symbol.intern
+end
+
+module F = struct
+  open Funcall
+  open Value.Type
+
+  let revert_buffer = Q.revert_buffer <: bool @-> bool @-> bool @-> return bool
 end
 
 module Process = Process0
@@ -138,21 +147,28 @@ module Which_buffers = struct
 end
 
 let save_some ?(query = true) ?(which_buffers = Which_buffers.File_visiting) () =
-  try
-    Symbol.funcall2_i
-      Q.save_some_buffers
-      (not query |> Value.of_bool)
-      (which_buffers |> Which_buffers.to_value)
-  with
-  | exn -> raise_s [%message "[Buffer.save_some]" (exn : exn)]
+  Value.Private.run_outside_async [%here] (fun () ->
+    try
+      Symbol.funcall2_i
+        Q.save_some_buffers
+        (not query |> Value.of_bool)
+        (which_buffers |> Which_buffers.to_value)
+    with
+    | exn -> raise_s [%message "[Buffer.save_some]" (exn : exn)])
 ;;
 
 let with_temp_buffer f =
   let temp_buffer = create ~name:" *temp*" in
-  Exn.protect
-    ~f:(fun () -> f temp_buffer)
+  Monitor.protect
+    (fun () -> f temp_buffer)
     ~finally:(fun () ->
-      match kill temp_buffer with
-      | () -> ()
-      | exception _ -> ())
+      match%map Monitor.try_with (fun () -> kill temp_buffer) with
+      | _ -> ())
+;;
+
+let revert ?(confirm = false) t =
+  let noconfirm = not confirm in
+  Value.Private.run_outside_async [%here] ~allowed_in_background:noconfirm (fun () ->
+    Current_buffer0.set_temporarily t Sync ~f:(fun () ->
+      ignore (F.revert_buffer false noconfirm false : bool)))
 ;;

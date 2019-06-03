@@ -1,7 +1,7 @@
 open! Core_kernel
 open! Import
 open! Async
-open! Expect_test_helpers_kernel
+open! Expect_test_helpers
 open! Async_testing
 
 let%expect_test "test basic async" =
@@ -61,7 +61,7 @@ let%expect_test "[defun (Returns_deferred Value.Type.(deferred unit))] where bod
      message_s [%message "ran"];
      Deferred.unit);
   let%bind () =
-    Async_ecaml.Private.run_outside_async (fun () ->
+    Async_ecaml.Private.run_outside_async [%here] (fun () ->
       Value.funcall0_i (symbol |> Symbol.to_value))
   in
   [%expect {|
@@ -79,7 +79,7 @@ let%expect_test "[defun (Returns_deferred Value.Type.(deferred unit))] where bod
      let%map_open () = return () in
      raise_s [%message "ran"]);
   let%bind () =
-    Async_ecaml.Private.run_outside_async (fun () ->
+    Async_ecaml.Private.run_outside_async [%here] (fun () ->
       try Value.funcall0_i (symbol |> Symbol.to_value) with
       | exn -> message_s [%message "caught" (exn : exn)])
   in
@@ -98,7 +98,7 @@ let%expect_test "defun returning non-unit deferred" =
      message_s [%message "ran"];
      Deferred.return 23);
   let%bind output =
-    Async_ecaml.Private.run_outside_async (fun () ->
+    Async_ecaml.Private.run_outside_async [%here] (fun () ->
       Value.funcall0 (symbol |> Symbol.to_value) |> Value.Type.(of_value_exn int))
   in
   print_s [%sexp (output : int)];
@@ -145,4 +145,107 @@ let%expect_test "raising to a try-with that has already returned" =
       {|
     ("Exception raised to [Monitor.try_with] that already returned."
      (monitor.ml.Error raising ("<backtrace elided in test>"))) |}]
+;;
+
+let%expect_test "assert_foreground" =
+  Background.assert_foreground [%here] ~message:[%message "should not raise"];
+  let%bind () = [%expect {||}] in
+  let%bind () =
+    Deferred.create (fun background_job_complete ->
+      Background.don't_wait_for [%here] (fun () ->
+        show_raise ~hide_positions:true (fun () ->
+          Background.assert_foreground [%here] ~message:[%message "should raise"]);
+        Ivar.fill background_job_complete ();
+        return ()))
+  in
+  [%expect
+    {|
+      (raised (
+        "Assertion failed -- running in background job"
+        ((background_job_started_at app/emacs/lib/ecaml/test/test_async.ml:LINE:COL)
+         (assertion_failed_at app/emacs/lib/ecaml/test/test_async.ml:LINE:COL))
+        "should raise")) |}]
+;;
+
+let%expect_test "raise in run_outside_async" =
+  let%bind result =
+    Monitor.try_with_or_error (fun () ->
+      Async_ecaml.Private.run_outside_async [%here] (fun () ->
+        raise_s [%sexp "Hello world"]))
+  in
+  print_s [%sexp (result : unit Or_error.t)];
+  [%expect
+    {|
+    (Error (
+      monitor.ml.Error "Hello world" (
+        "<backtrace elided in test>" "Caught by monitor try_with_or_error"))) |}]
+;;
+
+let%expect_test "assert_foreground in run_outside_async" =
+  let%bind () =
+    Deferred.create (fun background_job_complete ->
+      Background.don't_wait_for [%here] (fun () ->
+        let%bind () =
+          Async_ecaml.Private.run_outside_async
+            [%here]
+            ~allowed_in_background:true
+            (fun () ->
+               require_does_raise [%here] ~hide_positions:true (fun () ->
+                 Background.assert_foreground
+                   [%here]
+                   ~message:[%message "should raise"]))
+        in
+        Ivar.fill background_job_complete ();
+        return ()))
+  in
+  [%expect
+    {|
+    ("Assertion failed -- running in background job"
+     ((background_job_started_at app/emacs/lib/ecaml/test/test_async.ml:LINE:COL)
+      (assertion_failed_at app/emacs/lib/ecaml/test/test_async.ml:LINE:COL))
+     "should raise") |}]
+;;
+
+let%expect_test "[run_outside_async ~allowed_in_background:false]" =
+  let%bind () =
+    Deferred.create (fun background_job_complete ->
+      Background.don't_wait_for [%here] (fun () ->
+        let%bind () =
+          Expect_test_helpers.require_does_raise_async
+            [%here]
+            ~hide_positions:true
+            (fun () ->
+               Async_ecaml.Private.run_outside_async
+                 [%here]
+                 ~allowed_in_background:false
+                 (fun () -> ()))
+        in
+        Ivar.fill background_job_complete ();
+        return ()))
+  in
+  [%expect
+    {|
+    ("Assertion failed -- running in background job"
+     ((background_job_started_at app/emacs/lib/ecaml/test/test_async.ml:LINE:COL)
+      (assertion_failed_at app/emacs/lib/ecaml/test/test_async.ml:LINE:COL))
+     "[run_oustide_async] called unsafely in background") |}]
+;;
+
+let%expect_test "raise in [Background.don't_wait_for]" =
+  let%bind () =
+    require_does_not_raise_async [%here] (fun () ->
+      let ready_to_raise = Ivar.create () in
+      let background_job_ran =
+        Deferred.create (fun background_job_ran ->
+          Background.don't_wait_for [%here] (fun () ->
+            let%bind () = Ivar.read ready_to_raise in
+            Ivar.fill background_job_ran ();
+            raise_s [%message "something bad happened"]))
+      in
+      Ivar.fill ready_to_raise ();
+      background_job_ran)
+  in
+  [%expect
+    {|
+    ("background job raised" (job_created_at _) "something bad happened") |}]
 ;;

@@ -56,6 +56,13 @@ module type Buffer_local = sig
   val set : 'a t -> 'a -> Buffer.t -> unit
   val update_exn : 'a option t -> Buffer.t -> f:('a -> 'a) -> unit
 
+  (** A permanent buffer-local variable is unaffected by [kill-all-local-variables], and
+      so it is not cleared by changing major modes.
+      See [(Info-goto-node "(elisp)Creating Buffer-Local")]. *)
+  val set_permanent : _ t -> bool -> unit
+
+  val is_permanent : _ t -> bool
+
   module Private : sig
     val get_in_current_buffer : 'a t -> 'a
     val get_in_current_buffer_exn : 'a option t -> 'a

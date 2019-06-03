@@ -1,6 +1,8 @@
 open! Core_kernel
 open! Import
+open! Async_kernel
 open Major_mode_intf
+module Hook = Hook0
 
 module Q = struct
   include Q
@@ -37,6 +39,7 @@ type t =
   ; symbol : Symbol.t
   ; keymap_var : Keymap.t Var.t
   ; name : (Name.t[@sexp.opaque])
+  ; hook : Hook.normal Hook.t
   ; syntax_table_var : Syntax_table.t Var.t
   }
 [@@deriving fields, sexp_of]
@@ -44,6 +47,16 @@ type t =
 let equal t1 t2 = Symbol.equal t1.symbol t2.symbol
 let compare_name t1 t2 = Symbol.compare_name t1.symbol t2.symbol
 let t_by_symbol : t String.Table.t = Hashtbl.create (module String)
+
+module Blocking = struct
+  let change_in_current_buffer t = Funcall.(symbol t <: nullary @-> return nil) ()
+end
+
+let change_to t ~in_:buffer =
+  Value.Private.run_outside_async [%here] ~allowed_in_background:true (fun () ->
+    Current_buffer.set_temporarily buffer Sync ~f:(fun () ->
+      Blocking.change_in_current_buffer t))
+;;
 
 let add wrapped_at name symbol =
   let t =
@@ -54,6 +67,10 @@ let add wrapped_at name symbol =
           (Symbol.intern (concat [ symbol |> Symbol.name; "-map" ]))
           Keymap.type_
     ; name
+    ; hook =
+        Hook.create
+          (Symbol.intern (concat [ symbol |> Symbol.name; "-hook" ]))
+          ~hook_type:Normal
     ; syntax_table_var =
         Var.create
           (Symbol.intern (concat [ symbol |> Symbol.name; "-syntax-table" ]))
@@ -113,15 +130,21 @@ module For_testing = struct
 end
 
 let define_derived_mode
+      (type a)
       symbol
       here
       ~docstring
       ?(define_keys = [])
       ~mode_line
       ?parent
-      ?(initialize = fun () -> ())
+      ?(initialize : ((unit, a) Defun.Returns.t * (unit -> a)) option)
       ()
   =
+  let initialize_fn =
+    match initialize with
+    | None -> Defun.lambda_nullary_nil here ident
+    | Some (returns, f) -> Defun.lambda_nullary here returns f
+  in
   Form.eval_i
     (Form.list
        [ Q.define_derived_mode |> Form.symbol
@@ -132,13 +155,7 @@ let define_derived_mode
        ; mode_line |> Form.string
        ; docstring |> String.strip |> Form.string
        ; Form.list
-           [ Q.funcall |> Form.symbol
-           ; Form.quote
-               (Function.create here ~args:[] (fun _ ->
-                  initialize ();
-                  Value.nil)
-                |> Function.to_value)
-           ]
+           [ Q.funcall |> Form.symbol; Form.quote (initialize_fn |> Function.to_value) ]
        ]);
   Load_history.add_entry here (Fun symbol);
   List.iter [ "abbrev-table"; "hook"; "map"; "syntax-table" ] ~f:(fun suffix ->
@@ -160,5 +177,6 @@ let major_mode_var =
 
 let is_derived t ~from =
   Current_buffer0.(set_value_temporarily (major_mode_var |> Buffer_local.var) (symbol t))
+    Sync
     ~f:(fun () -> F.derived_mode_p (symbol from))
 ;;

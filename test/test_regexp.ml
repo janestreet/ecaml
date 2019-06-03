@@ -339,7 +339,7 @@ let%expect_test "[of_rx]" =
      (matches true))
     ((input   bar)
      (matches false)) |}];
-  Current_buffer.set_temporarily_to_temp_buffer (fun () ->
+  Current_buffer.set_temporarily_to_temp_buffer Sync (fun () ->
     Point.insert "foobar";
     Point.goto_min ();
     let matches =

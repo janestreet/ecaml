@@ -55,12 +55,16 @@ let split_vertically_exn () = Symbol.funcall0_i Q.split_window_vertically
 let find_file_other_window path = F.find_file_other_window path
 let view_file path = Symbol.funcall1_i Q.view_file (path |> Value.of_utf8_bytes)
 let quit = F.quit_window
-let save_window_excursion f = Save_wrappers.save_window_excursion f
+
+let save_window_excursion sync_or_async f =
+  Save_wrappers.save_window_excursion sync_or_async f
+;;
+
 let save_selected_window f = Save_wrappers.save_selected_window f
 let other_window = F.other_window
 
-let set_temporarily window ~f =
-  Save_wrappers.with_selected_window (window |> Window.to_value) f
+let set_temporarily window sync_or_async ~f =
+  Save_wrappers.with_selected_window (window |> Window.to_value) sync_or_async f
 ;;
 
 module Blocking = struct
@@ -68,8 +72,5 @@ module Blocking = struct
 end
 
 let find_file path =
-  let run_outside_async =
-    Set_once.get_exn Value.Private.Run_outside_async.set_once [%here]
-  in
-  run_outside_async.f (fun () -> Blocking.find_file path)
+  Value.Private.run_outside_async [%here] (fun () -> Blocking.find_file path)
 ;;

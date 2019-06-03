@@ -39,8 +39,9 @@ module type Defun = sig
 
   module Interactive : sig
     type t =
-      | No_arg
+      | Function_name of { prompt : string }
       | Ignored
+      | No_arg
       | Prompt of string
       | Raw_prefix
       | Region
@@ -78,6 +79,7 @@ module type Defun = sig
     :  Symbol.t
     -> Source_code_position.t
     -> ?docstring:string
+    -> ?should_profile:bool
     -> ?define_keys:(Keymap.t * string) list
     -> ?obsoletes:Symbol.t
     -> ?interactive:Interactive.t

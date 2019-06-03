@@ -5,6 +5,11 @@ include Defun_intf
 
 module Q = struct
   let defalias = "defalias" |> Symbol.intern
+
+  module A = struct
+    let optional = "&optional" |> Symbol.intern
+    let rest = "&rest" |> Symbol.intern
+  end
 end
 
 module F = struct
@@ -127,6 +132,18 @@ module Args = struct
     ; rest : Symbol.t option
     }
 
+  let sexp_of_t { required; optional; rest } =
+    [%sexp
+      ( List.concat
+          [ required
+          ; (if List.is_empty optional then [] else Q.A.optional :: optional)
+          ; (match rest with
+             | None -> []
+             | Some rest -> [ Q.A.rest; rest ])
+          ]
+        : Symbol.t list )]
+  ;;
+
   let empty = { required = []; optional = []; rest = None }
   let add_required t s = { t with required = s :: t.required }
   let add_optional t s = { t with optional = s :: t.optional }
@@ -165,33 +182,42 @@ module Returns = struct
   ;;
 end
 
-let call (type a b) (t : a t) here ~function_ ~args ~(returns : (b, a) Returns.t) =
-  match returns with
-  | Returns returns -> Value.Type.to_value returns (apply t args)
-  | Returns_deferred returns ->
-    let block_on_async =
-      Set_once.get_exn Value.Private.Block_on_async.set_once [%here]
-    in
-    block_on_async.f
+let call
+      (type a b)
+      (t : a t)
       here
-      (fun () -> apply t args)
-      ~context:
-        (lazy
-          (List (function_ :: (args |> Array.map ~f:Value.sexp_of_t |> Array.to_list))))
-    |> Value.Type.to_value returns
+      ~function_
+      ~args
+      ~(returns : (b, a) Returns.t)
+      ~should_profile
+  =
+  let should_profile = Option.value should_profile ~default:true in
+  let context : Sexp.t Lazy.t =
+    lazy (List (function_ :: (args |> Array.map ~f:Value.sexp_of_t |> Array.to_list)))
+  in
+  let doit () =
+    match returns with
+    | Returns returns -> Value.Type.to_value returns (apply t args)
+    | Returns_deferred returns ->
+      Value.Private.block_on_async here (fun () -> apply t args) ~context
+      |> Value.Type.to_value returns
+  in
+  if should_profile then profile Sync context doit else doit ()
 ;;
 
 module Interactive = struct
   type t =
-    | No_arg
+    | Function_name of { prompt : string }
     | Ignored
+    | No_arg
     | Prompt of string
     | Raw_prefix
     | Region
 
   let to_string = function
-    | No_arg -> ""
+    | Function_name { prompt } -> sprintf "a%s" prompt
     | Ignored -> "i"
+    | No_arg -> ""
     | Prompt prompt -> sprintf "s%s" prompt
     | Raw_prefix -> "P"
     | Region -> "r"
@@ -203,13 +229,21 @@ module Interactive = struct
         string
         ~name:[%message "interactive-code"]
         ~of_:(function
-          | "" -> No_arg
           | "i" -> Ignored
+          | "" -> No_arg
           | "P" -> Raw_prefix
           | "r" -> Region
           | s ->
-            (match String.chop_prefix s ~prefix:"s" with
-             | Some prompt -> Prompt prompt
+            let prefixes =
+              [ ("s", fun prompt -> Prompt prompt)
+              ; ("a", fun prompt -> Function_name { prompt })
+              ]
+            in
+            (match
+               List.find_map prefixes ~f:(fun (prefix, f) ->
+                 Option.map (String.chop_prefix s ~prefix) ~f)
+             with
+             | Some result -> result
              | None -> raise_s [%sexp "Unimplemented interactive code", (s : string)]))
         ~to_:to_string)
   ;;
@@ -275,6 +309,7 @@ let defun
       symbol
       here
       ?docstring
+      ?should_profile
       ?define_keys
       ?obsoletes
       ?interactive
@@ -291,7 +326,7 @@ let defun
     symbol
     here
     t
-    (fun args -> call t here ~function_ ~args ~returns);
+    (fun args -> call t here ~function_ ~args ~returns ~should_profile);
   Option.iter evil_config ~f:(fun evil_config ->
     Evil.Config.apply_to_defun evil_config symbol)
 ;;
@@ -344,8 +379,10 @@ let defun_nullary_nil
 ;;
 
 let lambda here ?docstring ?interactive returns t =
-  let function_ = [%message "Defun.lambda"] in
   let args = get_args t in
+  let function_ =
+    [%message "lambda" ~_:(args : Args.t) ~created_at:(here : Source_code_position.t)]
+  in
   Function.create
     here
     ?docstring
@@ -353,7 +390,7 @@ let lambda here ?docstring ?interactive returns t =
     ~optional_args:args.optional
     ?rest_arg:args.rest
     ~args:args.required
-    (fun args -> call t here ~function_ ~args ~returns)
+    (fun args -> call t here ~function_ ~args ~returns ~should_profile:None)
 ;;
 
 let lambda_nullary here ?docstring ?interactive returns f =

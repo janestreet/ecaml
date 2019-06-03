@@ -37,7 +37,11 @@ let all_visible () =
 
 let all_live () = Symbol.funcall0 Q.frame_list |> Value.to_list_exn ~f:of_value_exn
 let set_selected t = Symbol.funcall1_i Q.select_frame (t |> to_value)
-let set_selected_temporarily t ~f = Save_wrappers.with_selected_frame (to_value t) f
+
+let set_selected_temporarily t sync_or_async ~f =
+  Save_wrappers.with_selected_frame (to_value t) sync_or_async f
+;;
+
 let is_live = F.frame_live_p
 let other_frame = F.other_frame
 let terminal = F.frame_terminal

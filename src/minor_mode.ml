@@ -8,6 +8,7 @@ module Q = struct
   and define_minor_mode = "define-minor-mode" |> Symbol.intern
   and goto_address_mode = "goto-address-mode" |> Symbol.intern
   and read_only_mode = "read-only-mode" |> Symbol.intern
+  and url_handler_mode = "url-handler-mode" |> Symbol.intern
   and view_mode = "view-mode" |> Symbol.intern
   and visual_line_mode = "visual-line-mode" |> Symbol.intern
 end
@@ -29,6 +30,10 @@ let goto_address =
 let read_only = { function_name = Q.read_only_mode; variable_name = Q.buffer_read_only }
 let view = { function_name = Q.view_mode; variable_name = Q.view_mode }
 
+let url_handler =
+  { function_name = Q.url_handler_mode; variable_name = Q.url_handler_mode }
+;;
+
 let visual_line =
   { function_name = Q.visual_line_mode; variable_name = Q.visual_line_mode }
 ;;
@@ -40,6 +45,15 @@ let is_enabled t =
 
 let disable t = Symbol.funcall1_i t.function_name (0 |> Value.of_int_exn)
 let enable t = Symbol.funcall1_i t.function_name (1 |> Value.of_int_exn)
+
+let temporarily_disable t ~f =
+  if is_enabled t
+  then (
+    disable t;
+    protect ~f ~finally:(fun () -> enable t))
+  else f ()
+;;
+
 let all_minor_modes = ref []
 
 module Private = struct

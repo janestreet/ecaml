@@ -82,7 +82,8 @@ let file_name_chars = Var.create Q.thing_at_point_file_name_chars Value.Type.str
 
 let with_settings t ~f =
   match t with
-  | String_of { chars } -> Current_buffer.set_value_temporarily file_name_chars chars ~f
+  | String_of { chars } ->
+    Current_buffer.set_value_temporarily file_name_chars chars Sync ~f
   | _ -> f ()
 ;;
 

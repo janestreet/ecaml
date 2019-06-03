@@ -8,7 +8,7 @@ let%expect_test "[iter], [standard]" =
   (* We ignore the last two digits of the length to reduce noise. *)
   print_s [%sexp (List.length !all / 100 * 100 : int)];
   [%expect {|
-    15_300 |}];
+    15_800 |}];
   print_s
     [%sexp
       ( !all |> List.sort ~compare:String.compare |> fun l -> List.take l 100
@@ -56,6 +56,7 @@ let%expect_test "[iter], [standard]" =
      8-bit-level-4
      :
      :Tag
+     :abbrev-table
      :abbrev-table-modiff
      :adstyle
      :advertised-binding
@@ -113,6 +114,5 @@ let%expect_test "[iter], [standard]" =
      :count
      :crlfiles
      :crop
-     :data
-     :decode-translation-table) |}]
+     :data) |}]
 ;;

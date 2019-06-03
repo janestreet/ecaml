@@ -18,28 +18,33 @@ module type Make_subtype_arg = sig
   val is_in_subtype : value -> bool
 end
 
+type 'a funcall = ?should_profile:bool -> 'a
+
 module type Funcall = sig
   type t
   type value
 
-  val funcall0 : t -> value
-  val funcall1 : t -> value -> value
-  val funcall2 : t -> value -> value -> value
-  val funcall3 : t -> value -> value -> value -> value
-  val funcall4 : t -> value -> value -> value -> value -> value
-  val funcall5 : t -> value -> value -> value -> value -> value -> value
-  val funcallN : t -> value list -> value
-  val funcallN_array : t -> value array -> value
-  val funcall0_i : t -> unit
-  val funcall1_i : t -> value -> unit
-  val funcall2_i : t -> value -> value -> unit
-  val funcall3_i : t -> value -> value -> value -> unit
-  val funcall4_i : t -> value -> value -> value -> value -> unit
-  val funcall5_i : t -> value -> value -> value -> value -> value -> unit
-  val funcallN_i : t -> value list -> unit
-  val funcallN_array_i : t -> value array -> unit
-  val funcall_int_int_value_value_unit : t -> int -> int -> value -> value -> unit
-  val funcall_int_int_value_unit : t -> int -> int -> value -> unit
+  val funcall0 : (t -> value) funcall
+  val funcall1 : (t -> value -> value) funcall
+  val funcall2 : (t -> value -> value -> value) funcall
+  val funcall3 : (t -> value -> value -> value -> value) funcall
+  val funcall4 : (t -> value -> value -> value -> value -> value) funcall
+  val funcall5 : (t -> value -> value -> value -> value -> value -> value) funcall
+  val funcallN : (t -> value list -> value) funcall
+  val funcallN_array : (t -> value array -> value) funcall
+  val funcall0_i : (t -> unit) funcall
+  val funcall1_i : (t -> value -> unit) funcall
+  val funcall2_i : (t -> value -> value -> unit) funcall
+  val funcall3_i : (t -> value -> value -> value -> unit) funcall
+  val funcall4_i : (t -> value -> value -> value -> value -> unit) funcall
+  val funcall5_i : (t -> value -> value -> value -> value -> value -> unit) funcall
+  val funcallN_i : (t -> value list -> unit) funcall
+  val funcallN_array_i : (t -> value array -> unit) funcall
+
+  val funcall_int_int_value_value_unit :
+    (t -> int -> int -> value -> value -> unit) funcall
+
+  val funcall_int_int_value_unit : (t -> int -> int -> value -> unit) funcall
 end
 
 module type Subtype = sig
@@ -81,6 +86,10 @@ module type Type = sig
   val value : value t
   val list : 'a t -> 'a list t
   val vector : 'a t -> 'a array t
+
+  (** Represent an ocaml array as an elisp list, without creating an intermediate ocaml
+      list. *)
+  val array_as_list : 'a t -> 'a array t
 
   (** [option] represents [None] as [nil] and [Some a] as [cons v nil], where [v] is the
       representation of [a]. *)
@@ -148,6 +157,9 @@ module type Value = sig
   val vector : t array -> t
   val to_array_exn : t -> f:(t -> 'a) -> 'a array
   val type_of : t -> t
+
+  (** Convert an elisp list to an ocaml array *)
+  val list_to_array_exn : t -> f:(t -> 'a) -> 'a array
 
   (** - [(Info-goto-node "(elisp)Type Predicates")] *)
 
@@ -329,6 +341,8 @@ module type Value = sig
   end
 
   module Private : sig
+    (** These functions are defined in Async_ecaml. This module exists to avoid
+        dependency cycles. *)
     module Block_on_async : sig
       type t =
         { f :
@@ -340,9 +354,25 @@ module type Value = sig
     end
 
     module Run_outside_async : sig
-      type t = { f : 'a. (unit -> 'a) -> 'a Deferred.t }
+      type t =
+        { f :
+            'a. Source_code_position.t -> ?allowed_in_background:bool -> (unit -> 'a)
+            -> 'a Deferred.t
+        }
 
       val set_once : t Set_once.t
     end
+
+    val block_on_async
+      :  Source_code_position.t
+      -> ?context:Sexp.t Lazy.t
+      -> (unit -> 'a Deferred.t)
+      -> 'a
+
+    val run_outside_async
+      :  Source_code_position.t
+      -> ?allowed_in_background:bool
+      -> (unit -> 'a)
+      -> 'a Deferred.t
   end
 end

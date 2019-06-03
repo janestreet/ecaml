@@ -4,7 +4,9 @@
     [(Info-goto-node "(elisp)Major Modes")] *)
 
 open! Core_kernel
+open! Async_kernel
 open! Import
+module Hook = Hook0
 
 module type S = sig
   type t
@@ -31,6 +33,7 @@ module type Major_mode = sig
   end
 
   val name : t -> Name.t
+  val hook : t -> Hook.normal Hook.t
   val keymap : t -> Keymap.t
   val keymap_var : t -> Keymap.t Var.t
   val syntax_table : t -> Syntax_table.t
@@ -45,6 +48,12 @@ module type Major_mode = sig
   (** [find_or_wrap_existing] looks up the major mode associated with this symbol by a
       previous call to [wrap_existing] or creates one with the [Undistinguished] name. *)
   val find_or_wrap_existing : Source_code_position.t -> Symbol.t -> t
+
+  module Blocking : sig
+    val change_in_current_buffer : t -> unit
+  end
+
+  val change_to : t -> in_:Buffer.t -> unit Deferred.t
 
   (** [(describe-function 'fundamental-mode)]
       [(Info-goto-node "(elisp)Major Modes")] *)
@@ -92,7 +101,7 @@ module type Major_mode = sig
     -> ?define_keys:(string * Symbol.t) list
     -> mode_line:string
     -> ?parent:t
-    -> ?initialize:(unit -> unit)
+    -> ?initialize:(unit, 'a) Defun.Returns.t * (unit -> 'a)
     -> unit
     -> (module S)
 
@@ -105,3 +114,4 @@ module type Major_mode = sig
     val all_derived_modes : unit -> t list
   end
 end
+

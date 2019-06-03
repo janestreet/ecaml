@@ -3,7 +3,7 @@ open! Import
 open! Ansi_color
 
 let color_text' ?drop_unsupported_escapes ~use_temp_file text =
-  Current_buffer.set_temporarily_to_temp_buffer (fun () ->
+  Current_buffer.set_temporarily_to_temp_buffer Sync (fun () ->
     Point.insert_text text;
     color_region_in_current_buffer
       ~start:(Point.min ())
@@ -729,6 +729,7 @@ let%expect_test "customization to disable rendering invalid escape sequences" =
   Current_buffer.set_value_temporarily
     (Ansi_color.show_invalid_escapes |> Customization.var)
     false
+    Sync
     ~f:(fun () ->
       List.iter
         [ "\027"; "\027["; "\027[foo"; "\027[31foo"; "\027Жm"; "\027[K" ]
@@ -763,10 +764,11 @@ let%expect_test "drop unsupported escape sequences" =
 let%expect_test "color region incrementally" =
   let show text = print_s [%sexp (text : Text.t)] in
   let color_incrementally input_string ~preserve_state ~chunk_size =
-    Current_buffer.set_temporarily_to_temp_buffer (fun () ->
+    Current_buffer.set_temporarily_to_temp_buffer Sync (fun () ->
       Current_buffer.set_value_temporarily
         (Ansi_color.show_invalid_escapes |> Customization.var)
         false
+        Sync
         ~f:(fun () ->
           let rec loop s =
             if String.length s > 0
@@ -910,7 +912,7 @@ let%expect_test "color region incrementally" =
 ;;
 
 let%expect_test "color region twice" =
-  Current_buffer.set_temporarily_to_temp_buffer (fun () ->
+  Current_buffer.set_temporarily_to_temp_buffer Sync (fun () ->
     Point.insert (concat [ escape [ 31 ]; "foo" ]);
     let show () =
       print_s [%sexp (Current_buffer.contents ~text_properties:true () : Text.t)]
@@ -928,7 +930,7 @@ let%expect_test "color region twice" =
 ;;
 
 let%expect_test "color buffer twice" =
-  Current_buffer.set_temporarily_to_temp_buffer (fun () ->
+  Current_buffer.set_temporarily_to_temp_buffer Sync (fun () ->
     Point.insert (concat [ escape [ 31 ]; "foo" ]);
     let show () =
       print_s [%sexp (Current_buffer.contents ~text_properties:true () : Text.t)]
@@ -945,7 +947,7 @@ let%expect_test "color buffer twice" =
 ;;
 
 let test_point_preservation ~left ~right ~colorize =
-  Current_buffer.set_temporarily_to_temp_buffer (fun () ->
+  Current_buffer.set_temporarily_to_temp_buffer Sync (fun () ->
     Point.insert left;
     let middle = Point.get () in
     Point.insert right;
@@ -1006,7 +1008,7 @@ let%expect_test "[color_region_in_current_buffer] and point" =
 ;;
 
 let%expect_test "multibyte character handling" =
-  Current_buffer.set_temporarily_to_temp_buffer (fun () ->
+  Current_buffer.set_temporarily_to_temp_buffer Sync (fun () ->
     Point.insert "Ж";
     let middle = Point.get () in
     Point.insert (concat [ escape [ 31 ]; "x"; escape [ 0 ] ]);

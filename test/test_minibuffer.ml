@@ -60,7 +60,7 @@ let%expect_test "[yes_or_no]" =
 
 let%expect_test "[read_from]" =
   with_input "foo" (fun () ->
-    let%bind response = read_from () ~prompt:"" in
+    let%bind response = read_from ~prompt:"" ~history:Minibuffer.history () in
     print_s [%sexp (response : string)];
     return ());
   [%expect {|
@@ -73,7 +73,7 @@ let%expect_test "[exit_hook]" =
     {|
     ((symbol    minibuffer-exit-hook)
      (hook_type Normal)
-     (value ())) |}]
+     (value (()))) |}]
 ;;
 
 let%expect_test "[setup_hook]" =
@@ -82,10 +82,10 @@ let%expect_test "[setup_hook]" =
     {|
     ((symbol    minibuffer-setup-hook)
      (hook_type Normal)
-     (value (
+     (value ((
        rfn-eshadow-setup-minibuffer
        minibuffer-history-isearch-setup
-       minibuffer-history-initialize))) |}]
+       minibuffer-history-initialize)))) |}]
 ;;
 
 let%expect_test "[setup_hook] [exit_hook] don't run in batch mode" =
@@ -108,7 +108,7 @@ let%expect_test "[setup_hook] [exit_hook] don't run in batch mode" =
        (Returns Value.Type.unit)
        (fun () -> print_s [%message "running exit hook"]));
   with_input "foo" (fun () ->
-    let%bind response = read_from () ~prompt:"" in
+    let%bind response = read_from ~prompt:"" ~history:Minibuffer.history () in
     print_s [%sexp (response : string)];
     return ());
   [%expect {|

@@ -43,6 +43,7 @@ let grep ~command =
     (* Prevent [grep] from appending [/dev/null] to the command. *)
     use_null_device
     false
+    Sync
     ~f:(fun () -> Symbol.funcall1_i Q.grep (command |> Value.of_utf8_bytes))
 ;;
 

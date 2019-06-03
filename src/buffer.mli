@@ -6,6 +6,7 @@
 open! Core_kernel
 open! Import0
 open! Ecaml_filename
+open! Async_kernel
 include Value.Subtype with type t = Buffer0.t
 
 type buffer = t
@@ -49,7 +50,11 @@ val find_visiting : file:Filename.t -> t option
 val find_or_create : name:string -> t
 
 (** [kill t] kills [t], so that [not (is_live t)].  [(describe-function 'kill-buffer)]. *)
-val kill : t -> unit
+val kill : t -> unit Deferred.t
+
+module Blocking : sig
+  val kill : t -> unit
+end
 
 (** Return a list of all windows on the current terminal that are displaying the given buffer.
 
@@ -100,6 +105,10 @@ val save_some
   :  ?query:bool (** default is [true] *)
   -> ?which_buffers:Which_buffers.t (** default is [File_visiting] *)
   -> unit
-  -> unit
+  -> unit Deferred.t
 
-val with_temp_buffer : (t -> 'a) -> 'a
+val with_temp_buffer : (t -> 'a Deferred.t) -> 'a Deferred.t
+
+(** [(describe-function 'revert-buffer)]
+    [(Info-goto-node "(elisp)Reverting")] *)
+val revert : ?confirm:bool (** default is [false] *) -> t -> unit Deferred.t

@@ -10,11 +10,11 @@ let%expect_test "[set_transient_mark_mode], [transient_mark_mode_is_enabled]" =
   show ();
   [%expect {|
     false |}];
-  Current_buffer.set_temporarily_to_temp_buffer (fun () ->
+  Current_buffer.set_temporarily_to_temp_buffer Sync (fun () ->
     show ();
     [%expect {|
       false |}];
-    Current_buffer.set_temporarily_to_temp_buffer (fun () ->
+    Current_buffer.set_temporarily_to_temp_buffer Sync (fun () ->
       show ();
       [%expect {|
         false |}];
@@ -54,12 +54,12 @@ let%expect_test "[set]" =
   show ();
   [%expect {|
     "#<buffer *scratch*>" |}];
-  Buffer.kill t
+  Buffer.Blocking.kill t
 ;;
 
 let%expect_test "[set_temporarily]" =
   let t = Buffer.create ~name:"foo" in
-  set_temporarily t ~f:(fun () ->
+  set_temporarily t Sync ~f:(fun () ->
     set t;
     show ();
     [%expect {|
@@ -67,23 +67,23 @@ let%expect_test "[set_temporarily]" =
   show ();
   [%expect {|
     "#<buffer *scratch*>" |}];
-  Buffer.kill t
+  Buffer.Blocking.kill t
 ;;
 
 let%expect_test "[set_temporarily] when [~f] raises" =
   let t = Buffer.create ~name:"foo" in
   show_raise ~hide_positions:true (fun () ->
-    set_temporarily t ~f:(fun () -> raise_s [%message [%here]]));
+    set_temporarily t Sync ~f:(fun () -> raise_s [%message [%here]]));
   [%expect {|
     (raised app/emacs/lib/ecaml/test/test_current_buffer.ml:LINE:COL) |}];
   show ();
   [%expect {|
     "#<buffer *scratch*>" |}];
-  Buffer.kill t
+  Buffer.Blocking.kill t
 ;;
 
 let%expect_test "[set_temporarily_to_temp_buffer]" =
-  set_temporarily_to_temp_buffer (fun () -> show ());
+  set_temporarily_to_temp_buffer Sync (fun () -> show ());
   [%expect {|
     "#<buffer *temp-buffer*>" |}];
   show ();
@@ -156,7 +156,7 @@ let%expect_test "[set_value_temporarily]" =
   show ();
   [%expect {|
     13 |}];
-  set_value_temporarily var 14 ~f:(fun () ->
+  set_value_temporarily var 14 Sync ~f:(fun () ->
     show ();
     [%expect {|
       14 |}]);
@@ -171,7 +171,7 @@ let%expect_test "[set_value_temporarily] with an unbound var" =
   show ();
   [%expect {|
     () |}];
-  set_value_temporarily var 13 ~f:(fun () ->
+  set_value_temporarily var 13 Sync ~f:(fun () ->
     show ();
     [%expect {|
       (13) |}]);
@@ -193,12 +193,12 @@ let%expect_test "[set_value_temporarily] with a buffer-local and changed buffer"
   [%expect {|
     ((b1 ())
      (b2 ())) |}];
-  Current_buffer.set_temporarily b1 ~f:(fun () ->
+  Current_buffer.set_temporarily b1 Sync ~f:(fun () ->
     set_value var (Some 13);
     show_values ();
     [%expect {|
       ((b1 (13)) (b2 ())) |}];
-    set_value_temporarily var (Some 14) ~f:(fun () ->
+    set_value_temporarily var (Some 14) Sync ~f:(fun () ->
       show_values ();
       [%expect {|
         ((b1 (14)) (b2 ())) |}];
@@ -219,6 +219,7 @@ let%expect_test "[set_values_temporarily]" =
     (13 14) |}];
   set_values_temporarily
     [ T (v1, 15); T (v2, 16) ]
+    Sync
     ~f:(fun () ->
       show ();
       [%expect {|
@@ -239,18 +240,18 @@ let%expect_test "[file_name]" =
   show_file_basename ();
   [%expect {|
     (test_current_buffer.ml) |}];
-  kill ()
+  Buffer.Blocking.kill (get ())
 ;;
 
 let%expect_test "[file_name_exn] raise" =
-  set_temporarily_to_temp_buffer (fun () -> show_raise (fun () -> file_name_exn ()));
+  set_temporarily_to_temp_buffer Sync (fun () -> show_raise (fun () -> file_name_exn ()));
   [%expect
     {|
     (raised ("buffer does not have a file name" "#<buffer *temp-buffer*>")) |}]
 ;;
 
 let%expect_test "[is_modified], [set_modified]" =
-  set_temporarily_to_temp_buffer (fun () ->
+  set_temporarily_to_temp_buffer Sync (fun () ->
     print_s [%sexp (is_modified () : bool)];
     [%expect {|
       false |}];
@@ -265,7 +266,7 @@ let%expect_test "[is_modified], [set_modified]" =
 ;;
 
 let%expect_test "[contents]" =
-  set_temporarily_to_temp_buffer (fun () ->
+  set_temporarily_to_temp_buffer Sync (fun () ->
     print_s [%sexp (contents () : Text.t)];
     [%expect {|
       "" |}];
@@ -282,7 +283,7 @@ let%expect_test "[contents]" =
 ;;
 
 let%expect_test "[contents_text ~text_properties:true], [insert_text]" =
-  set_temporarily_to_temp_buffer (fun () ->
+  set_temporarily_to_temp_buffer Sync (fun () ->
     let show () = print_s [%sexp (contents ~text_properties:true () : Text.t)] in
     show ();
     [%expect {|
@@ -306,35 +307,8 @@ let%expect_test "[contents_text ~text_properties:true], [insert_text]" =
       (f 0 1 (face (:background red))) |}])
 ;;
 
-let%expect_test "[kill]" =
-  let buffer = Buffer.create ~name:"z" in
-  let show_live () = print_s [%sexp (Buffer.is_live buffer : bool)] in
-  show_live ();
-  [%expect {|
-    true |}];
-  set buffer;
-  kill ();
-  show_live ();
-  [%expect {|
-    false |}]
-;;
-
-let%expect_test "[save]" =
-  let file = Caml.Filename.temp_file "" "" in
-  Selected_window.Blocking.find_file file;
-  Point.insert "foobar";
-  save ();
-  kill ();
-  set_temporarily_to_temp_buffer (fun () ->
-    Point.insert_file_contents_exn file;
-    print_s [%sexp (contents () : Text.t)];
-    [%expect {|
-      foobar |}]);
-  Sys.remove file
-;;
-
 let%expect_test "[erase]" =
-  set_temporarily_to_temp_buffer (fun () ->
+  set_temporarily_to_temp_buffer Sync (fun () ->
     erase ();
     Point.insert "foo";
     erase ();
@@ -344,7 +318,7 @@ let%expect_test "[erase]" =
 ;;
 
 let%expect_test "[kill_region]" =
-  set_temporarily_to_temp_buffer (fun () ->
+  set_temporarily_to_temp_buffer Sync (fun () ->
     Point.insert "foobar";
     kill_region ~start:(2 |> Position.of_int_exn) ~end_:(4 |> Position.of_int_exn);
     print_s [%sexp (contents () : Text.t)];
@@ -353,16 +327,16 @@ let%expect_test "[kill_region]" =
 ;;
 
 let%expect_test "[save_excursion]" =
-  let i = save_excursion (fun () -> 13) in
+  let i = save_excursion Sync (fun () -> 13) in
   print_s [%sexp (i : int)];
   [%expect {|
     13 |}]
 ;;
 
 let%expect_test "[save_excursion] preserves point" =
-  set_temporarily_to_temp_buffer (fun () ->
+  set_temporarily_to_temp_buffer Sync (fun () ->
     show_point ();
-    save_excursion (fun () ->
+    save_excursion Sync (fun () ->
       Point.insert "foo";
       show_point ());
     show_point ());
@@ -374,7 +348,7 @@ let%expect_test "[save_excursion] preserves point" =
 
 let%expect_test "[save_excursion] preserves current buffer" =
   let t = Buffer.find_or_create ~name:"zzz" in
-  save_excursion (fun () ->
+  save_excursion Sync (fun () ->
     set t;
     show ());
   show ();
@@ -400,45 +374,45 @@ let%expect_test "[set_multibyte], [is_multibyte]" =
 
 let%expect_test "[rename_exn]" =
   let t = Buffer.create ~name:"foo" in
-  set_temporarily t ~f:(fun () ->
+  set_temporarily t Sync ~f:(fun () ->
     rename_exn () ~name:"bar";
     show ());
   [%expect {|
     "#<buffer bar>" |}];
-  Buffer.kill t
+  Buffer.Blocking.kill t
 ;;
 
 let%expect_test "[rename_exn] raise" =
   let t1 = Buffer.create ~name:"foo" in
   let t2 = Buffer.create ~name:"bar" in
   require_does_raise [%here] (fun () ->
-    set_temporarily t1 ~f:(fun () ->
+    set_temporarily t1 Sync ~f:(fun () ->
       rename_exn () ~name:(Buffer.name t2 |> Option.value_exn)));
   [%expect {|
     ("Buffer name `bar' is in use") |}];
-  Buffer.kill t1;
-  Buffer.kill t2
+  Buffer.Blocking.kill t1;
+  Buffer.Blocking.kill t2
 ;;
 
 let%expect_test "[rename_exn ~unique:true]" =
   let t1 = Buffer.create ~name:"foo" in
-  set_temporarily t1 ~f:(fun () ->
+  set_temporarily t1 Sync ~f:(fun () ->
     rename_exn () ~name:"bar" ~unique:true;
     show ());
   [%expect {|
     "#<buffer bar>" |}];
   let t2 = Buffer.create ~name:"foo" in
-  set_temporarily t2 ~f:(fun () ->
+  set_temporarily t2 Sync ~f:(fun () ->
     rename_exn () ~name:"bar" ~unique:true;
     show ());
   [%expect {|
     "#<buffer bar<2>>" |}];
-  Buffer.kill t1;
-  Buffer.kill t2
+  Buffer.Blocking.kill t1;
+  Buffer.Blocking.kill t2
 ;;
 
 let%expect_test "[text_property_is_present]" =
-  set_temporarily_to_temp_buffer (fun () ->
+  set_temporarily_to_temp_buffer Sync (fun () ->
     let show () =
       print_s [%sexp (text_property_is_present Text.Property_name.face : bool)]
     in
@@ -462,7 +436,7 @@ let%expect_test "[text_property_is_present]" =
 ;;
 
 let%expect_test "[is_read_only], [set_read_only]" =
-  set_temporarily_to_temp_buffer (fun () ->
+  set_temporarily_to_temp_buffer Sync (fun () ->
     let show () =
       print_s [%message "" ~is_read_only:(get_buffer_local read_only : bool)]
     in
@@ -484,7 +458,7 @@ let font_lock_face = Text.Property_name.font_lock_face
 let show () = print_s [%sexp (contents ~text_properties:true () : Text.t)]
 
 let%expect_test "[set_text_property]" =
-  set_temporarily_to_temp_buffer (fun () ->
+  set_temporarily_to_temp_buffer Sync (fun () ->
     Point.insert "foo";
     set_text_property face foreground_red;
     show ();
@@ -497,7 +471,7 @@ let%expect_test "[set_text_property]" =
 ;;
 
 let%expect_test "[set_text_property_staged]" =
-  set_temporarily_to_temp_buffer (fun () ->
+  set_temporarily_to_temp_buffer Sync (fun () ->
     Point.insert "foo";
     let set = unstage (set_text_property_staged face foreground_red) in
     set ~start:1 ~end_:2;
@@ -509,7 +483,7 @@ let%expect_test "[set_text_property_staged]" =
 ;;
 
 let%expect_test "[set_text_properties]" =
-  set_temporarily_to_temp_buffer (fun () ->
+  set_temporarily_to_temp_buffer Sync (fun () ->
     Point.insert "foo";
     set_text_properties [ T (face, foreground_red) ];
     show ();
@@ -522,7 +496,7 @@ let%expect_test "[set_text_properties]" =
 ;;
 
 let%expect_test "[set_text_properties_staged]" =
-  set_temporarily_to_temp_buffer (fun () ->
+  set_temporarily_to_temp_buffer Sync (fun () ->
     let show () = print_s [%sexp (contents ~text_properties:true () : Text.t)] in
     Point.insert "foo";
     let set = unstage (set_text_properties_staged [ T (face, foreground_red) ]) in
@@ -548,7 +522,7 @@ let%expect_test "[set_text_properties_staged]" =
 ;;
 
 let%expect_test "[add_text_properties]" =
-  set_temporarily_to_temp_buffer (fun () ->
+  set_temporarily_to_temp_buffer Sync (fun () ->
     Point.insert "foo";
     add_text_properties [ T (face, foreground_red) ];
     show ();
@@ -562,7 +536,7 @@ let%expect_test "[add_text_properties]" =
 ;;
 
 let%expect_test "[add_text_properties_staged]" =
-  set_temporarily_to_temp_buffer (fun () ->
+  set_temporarily_to_temp_buffer Sync (fun () ->
     Point.insert "foo";
     set_text_property font_lock_face foreground_blue;
     let add = unstage (add_text_properties_staged [ T (face, foreground_red) ]) in
@@ -582,7 +556,7 @@ let%expect_test "[add_text_properties_staged]" =
 ;;
 
 let%expect_test "[is_undo_enabled] [set_undo_enabled]" =
-  set_temporarily_to_temp_buffer (fun () ->
+  set_temporarily_to_temp_buffer Sync (fun () ->
     let show () = print_s [%message "" ~is_undo_enabled:(is_undo_enabled () : bool)] in
     show ();
     [%expect {|
@@ -599,7 +573,7 @@ let%expect_test "[is_undo_enabled] [set_undo_enabled]" =
 
 let%expect_test "[undo], [add_undo_boundary]" =
   let restore_stderr = unstage (ignore_stderr ()) in
-  set_temporarily_to_temp_buffer (fun () ->
+  set_temporarily_to_temp_buffer Sync (fun () ->
     let show () =
       print_s
         [%message
@@ -681,7 +655,7 @@ let%expect_test "[undo], [add_undo_boundary]" =
 
 let%expect_test "[mark], [set_mark]" =
   let show () = print_s [%sexp (mark () : Marker.t)] in
-  set_temporarily_to_temp_buffer (fun () ->
+  set_temporarily_to_temp_buffer Sync (fun () ->
     show ();
     [%expect {|
       "#<marker in no buffer>" |}];
@@ -692,7 +666,7 @@ let%expect_test "[mark], [set_mark]" =
 ;;
 
 let%expect_test "[mark_is_active], [deactivate_mark]" =
-  set_temporarily_to_temp_buffer (fun () ->
+  set_temporarily_to_temp_buffer Sync (fun () ->
     let show () = print_s [%sexp (mark_is_active () : bool)] in
     show ();
     [%expect {|
@@ -710,7 +684,7 @@ let%expect_test "[mark_is_active], [deactivate_mark]" =
 ;;
 
 let%expect_test "[set_marker_position]" =
-  set_temporarily_to_temp_buffer (fun () ->
+  set_temporarily_to_temp_buffer Sync (fun () ->
     let marker = Marker.create () in
     let set i =
       set_marker_position marker (i |> Position.of_int_exn);
@@ -740,7 +714,7 @@ let show_var var =
 
 let%expect_test "[make_buffer_local], [is_buffer_local], [is_buffer_local_if_set]" =
   let var = int_var "s" in
-  set_temporarily_to_temp_buffer (fun () ->
+  set_temporarily_to_temp_buffer Sync (fun () ->
     make_buffer_local var;
     Current_buffer.set_value var 13;
     show_var var;
@@ -760,7 +734,7 @@ let%expect_test "[make_buffer_local], [is_buffer_local], [is_buffer_local_if_set
 let%expect_test "[kill_buffer_local]" =
   let var = int_var "z" in
   Current_buffer.set_value var 13;
-  set_temporarily_to_temp_buffer (fun () ->
+  set_temporarily_to_temp_buffer Sync (fun () ->
     make_buffer_local var;
     Current_buffer.set_value var 14;
     show_var var;
@@ -780,7 +754,7 @@ let%expect_test "[kill_buffer_local]" =
 
 let%expect_test "[local_keymap], [set_local_keymap]" =
   let show_local_keymap () = print_s [%sexp (local_keymap () : Keymap.t option)] in
-  set_temporarily_to_temp_buffer (fun () ->
+  set_temporarily_to_temp_buffer Sync (fun () ->
     show_local_keymap ();
     [%expect {|
       () |}];
@@ -793,7 +767,7 @@ let%expect_test "[local_keymap], [set_local_keymap]" =
 ;;
 
 let%expect_test "[minor_mode_keymaps]" =
-  set_temporarily_to_temp_buffer (fun () ->
+  set_temporarily_to_temp_buffer Sync (fun () ->
     Minor_mode.(enable view);
     print_s [%sexp (minor_mode_keymaps () : Keymap.t list)];
     [%expect
@@ -851,7 +825,7 @@ let%expect_test "[minor_mode_keymaps]" =
 ;;
 
 let%expect_test "[delete_duplicate_lines]" =
-  set_temporarily_to_temp_buffer (fun () ->
+  set_temporarily_to_temp_buffer Sync (fun () ->
     Point.insert "a\na\nb\nb\nc\na\n";
     delete_duplicate_lines ();
     print_string (contents () |> Text.to_utf8_bytes);
@@ -862,7 +836,7 @@ let%expect_test "[delete_duplicate_lines]" =
 ;;
 
 let%expect_test "[delete_lines_matching]" =
-  set_temporarily_to_temp_buffer (fun () ->
+  set_temporarily_to_temp_buffer Sync (fun () ->
     Point.insert "a\na\nb\nb\nc\na\n";
     delete_lines_matching ("b" |> Regexp.quote);
     print_string (contents () |> Text.to_utf8_bytes);
@@ -874,7 +848,7 @@ let%expect_test "[delete_lines_matching]" =
 ;;
 
 let%expect_test "[sort_lines]" =
-  set_temporarily_to_temp_buffer (fun () ->
+  set_temporarily_to_temp_buffer Sync (fun () ->
     Point.insert "a\nd\nb\nc\n";
     sort_lines ();
     print_string (contents () |> Text.to_utf8_bytes);
@@ -886,7 +860,7 @@ let%expect_test "[sort_lines]" =
 ;;
 
 let%expect_test "[delete_region]" =
-  set_temporarily_to_temp_buffer (fun () ->
+  set_temporarily_to_temp_buffer Sync (fun () ->
     Point.insert "123456789";
     delete_region ~start:(3 |> Position.of_int_exn) ~end_:(5 |> Position.of_int_exn);
     print_string (contents () |> Text.to_utf8_bytes);
@@ -895,7 +869,7 @@ let%expect_test "[delete_region]" =
 ;;
 
 let%expect_test "[indent_region]" =
-  set_temporarily_to_temp_buffer (fun () ->
+  set_temporarily_to_temp_buffer Sync (fun () ->
     Symbol.funcall0_i ("c-mode" |> Symbol.intern);
     Point.insert "void f () {\n      foo;\n      bar;\n      }";
     indent_region ();
@@ -907,31 +881,245 @@ let%expect_test "[indent_region]" =
       } |}])
 ;;
 
-let%expect_test "[revert]" =
-  Directory.with_temp_dir ~prefix:"test-revert" ~suffix:"" ~f:(fun dir ->
-    Selected_window.Blocking.find_file (concat [ dir; "/file" ]);
-    ignore
-      ( Process.shell_command_exn "echo foo >file" ~working_directory:Of_current_buffer
-        : string );
-    print_s [%sexp (contents () : Text.t)];
-    [%expect {| "" |}];
-    revert ();
-    print_s [%sexp (contents () : Text.t)];
-    [%expect {| "foo\n" |}];
-    kill ())
-;;
+module Async_test = struct
+  open Async
+  open Expect_test_helpers
+  open Async_ecaml
+  open Async_ecaml.Import
 
-let%expect_test "[set_revert_buffer_function]" =
-  set_temporarily_to_temp_buffer (fun () ->
-    set_revert_buffer_function (fun ~confirm ->
-      print_s [%message "called" (confirm : bool)]);
-    revert ();
+  let%expect_test "[set_revert_buffer_function (Returns_deferred Value.Type.unit)]" =
+    let buffer = Buffer.create ~name:"test buffer" in
+    let previous_current_buffer = get () in
+    set buffer;
+    set_revert_buffer_function
+      [%here]
+      (Returns_deferred Value.Type.unit)
+      (fun ~confirm ->
+         let%map () = Clock.after (sec 0.01) in
+         print_s [%message "called after pause" (confirm : bool)]);
+    let%bind () = revert () in
+    let%bind () = [%expect {| ("called after pause" (confirm false)) |}] in
+    let%bind () = revert () ~confirm:true in
+    let%bind () = [%expect {|
+      ("called after pause" (confirm true)) |}] in
+    set previous_current_buffer;
+    Buffer.kill buffer
+  ;;
+
+  let%expect_test "[set_values_temporarily async]" =
+    let v1 = int_var "z1" in
+    let v2 = int_var "z2" in
+    let show () =
+      print_s [%message "" ~_:(value_exn v1 : int) ~_:(value_exn v2 : int)]
+    in
+    set_value v1 13;
+    set_value v2 14;
+    show ();
+    let%bind () = [%expect {|
+    (13 14) |}] in
+    (* Incorrectly using [set_values_temporarily _ _ Sync] on an Async value, we get the
+       wrong result *)
+    let%bind () =
+      set_values_temporarily
+        [ T (v1, 15); T (v2, 16) ]
+        Sync
+        ~f:(fun () ->
+          let%bind () = Clock.after (Time.Span.of_ms 1.) in
+          show ();
+          [%expect {|
+      (13 14) |}])
+    in
+    (* Correctly using [set_values_temporarily _ _ Async], we get a correct result. *)
+    let%bind () =
+      set_values_temporarily
+        [ T (v1, 15); T (v2, 16) ]
+        Async
+        ~f:(fun () ->
+          let%bind () = Clock.after (Time.Span.of_ms 1.) in
+          show ();
+          [%expect {|
+      (15 16) |}])
+    in
+    show ();
     [%expect {|
-      (called (confirm false)) |}];
-    revert () ~confirm:true;
+    (13 14) |}]
+  ;;
+
+  let%expect_test "[set_value_temporarily async]" =
+    let var = int_var "z" in
+    let show () = print_s [%sexp (value_exn var : int)] in
+    set_value var 13;
+    show ();
+    let%bind () = [%expect {|
+    13 |}] in
+    (* Incorrectly using [set_value_temporarily _ _ Sync] on an Async value, we get the
+       wrong result *)
+    let%bind () =
+      set_value_temporarily var 14 Sync ~f:(fun () ->
+        let%bind () = Clock.after (Time.Span.of_ms 1.) in
+        show ();
+        [%expect {|
+      13 |}])
+    in
+    (* Correctly using [set_value_temporarily _ _ Async], we get a correct result. *)
+    let%bind () =
+      set_value_temporarily var 14 Async ~f:(fun () ->
+        let%bind () = Clock.after (Time.Span.of_ms 1.) in
+        show ();
+        [%expect {|
+      14 |}])
+    in
+    show ();
     [%expect {|
-      (called (confirm true)) |}])
-;;
+    13 |}]
+  ;;
+
+  let show () = print_s [%sexp (get () : Buffer.t)]
+
+  let%expect_test "[set_temporarily async]" =
+    let t = Buffer.create ~name:"foo" in
+    let%bind () =
+      set_temporarily t Async ~f:(fun () ->
+        let%bind () = Clock.after (sec 0.001) in
+        set t;
+        show ();
+        [%expect {|
+    "#<buffer foo>" |}])
+    in
+    show ();
+    let%bind () = [%expect {|
+    "#<buffer *scratch*>" |}] in
+    Buffer.kill t
+  ;;
+
+  let%expect_test "[set_temporarily_to_temp_buffer async]" =
+    let%bind () =
+      set_temporarily_to_temp_buffer Async (fun () ->
+        let%map () = Clock.after (sec 0.001) in
+        show ())
+    in
+    let%bind () = [%expect {|
+    "#<buffer *temp-buffer*>" |}] in
+    show ();
+    [%expect {|
+    "#<buffer *scratch*>" |}]
+  ;;
+
+  let%expect_test "[set_temporarily_to_temp_buffer Async] from background job" =
+    let%bind () =
+      Deferred.create (fun background_job_done ->
+        Background.don't_wait_for [%here] (fun () ->
+          let%bind () =
+            show_raise_async ~hide_positions:true (fun () ->
+              set_temporarily_to_temp_buffer Async return)
+          in
+          Ivar.fill background_job_done ();
+          return ()))
+    in
+    [%expect
+      {|
+      (raised (
+        "Assertion failed -- running in background job"
+        ((background_job_started_at
+          app/emacs/lib/ecaml/test/test_current_buffer.ml:LINE:COL)
+         (assertion_failed_at app/emacs/lib/ecaml/src/current_buffer.ml:LINE:COL)))) |}]
+  ;;
+
+  let%expect_test "[save_excursion] Async" =
+    set_temporarily_to_temp_buffer Async (fun () ->
+      Point.insert "some random text so we have space to work with";
+      let show_point () = print_s [%sexp (Point.get () : Position.t)] in
+      show_point ();
+      let%bind () = [%expect {| 47 |}] in
+      let%bind () =
+        save_excursion Async (fun () ->
+          Point.goto_char (Position.of_int_exn 5);
+          let%bind () = Clock.after (sec 0.001) in
+          show_point ();
+          [%expect {| 5 |}])
+      in
+      show_point ();
+      [%expect {| 47 |}])
+  ;;
+
+  let%expect_test "[save_excursion Async] from background job" =
+    let%bind () =
+      Deferred.create (fun background_job_done ->
+        Background.don't_wait_for [%here] (fun () ->
+          let%bind () =
+            show_raise_async ~hide_positions:true (fun () ->
+              save_excursion Async return)
+          in
+          Ivar.fill background_job_done ();
+          return ()))
+    in
+    [%expect
+      {|
+      (raised (
+        "Assertion failed -- running in background job"
+        ((background_job_started_at
+          app/emacs/lib/ecaml/test/test_current_buffer.ml:LINE:COL)
+         (assertion_failed_at app/emacs/lib/ecaml/src/save_wrappers.ml:LINE:COL))
+        "save-excursion called asynchronously in background job")) |}]
+  ;;
+
+  let%expect_test "[set_revert_buffer_function]" =
+    set_temporarily_to_temp_buffer Async (fun () ->
+      set_revert_buffer_function [%here] (Returns Value.Type.unit) (fun ~confirm ->
+        print_s [%message "called" (confirm : bool)]);
+      let%bind () = revert () in
+      let%bind () = [%expect {| (called (confirm false)) |}] in
+      let%bind () = revert () ~confirm:true in
+      [%expect {| (called (confirm true)) |}])
+  ;;
+
+  let%expect_test "[kill]" =
+    let buffer = Buffer.create ~name:"z" in
+    let show_live () = print_s [%sexp (Buffer.is_live buffer : bool)] in
+    show_live ();
+    let%bind () = [%expect {| true |}] in
+    set buffer;
+    let%bind () = kill () in
+    show_live ();
+    [%expect {|
+    false |}]
+  ;;
+
+  let%expect_test "[kill] with deferred kill hook" =
+    let buffer = Buffer.create ~name:"z" in
+    set buffer;
+    Ecaml.Hook.add
+      ~buffer_local:true
+      Ecaml.Hook.kill_buffer
+      (Ecaml.Hook.Function.create
+         ("test-deferred-kill-hook" |> Symbol.intern)
+         [%here]
+         ~hook_type:Normal
+         (Returns_deferred Value.Type.unit)
+         (fun () ->
+            let%bind () = Clock.after (sec 0.001) in
+            print_s [%sexp "deferred hook ran"];
+            return ()));
+    let%bind () = kill () in
+    [%expect {|
+    "deferred hook ran" |}]
+  ;;
+
+  let%expect_test "[save]" =
+    let file = Caml.Filename.temp_file "" "" in
+    Selected_window.Blocking.find_file file;
+    Point.insert "foobar";
+    let%bind () = save () in
+    let%bind () = kill () in
+    let%bind () =
+      set_temporarily_to_temp_buffer Async (fun () ->
+        Point.insert_file_contents_exn file;
+        print_s [%sexp (contents () : Text.t)];
+        [%expect {| foobar |}])
+    in
+    Sys.remove file
+  ;;
+end
 
 let%expect_test "[bury]" =
   print_s [%sexp (Buffer.all_live () : Buffer.t list)];
@@ -968,8 +1156,8 @@ let%expect_test "[paragraph_start], [paragraph_separate]" =
 ;;
 
 let%expect_test "[describe_mode]" =
-  Current_buffer.set_temporarily_to_temp_buffer (fun () ->
-    Current_buffer.change_major_mode Major_mode.Fundamental.major_mode;
+  Current_buffer.set_temporarily_to_temp_buffer Sync (fun () ->
+    Current_buffer.Blocking.change_major_mode Major_mode.Fundamental.major_mode;
     describe_mode ();
     Selected_window.other_window 1;
     print_endline
@@ -1128,7 +1316,7 @@ let%expect_test "[describe_mode]" =
 ;;
 
 let%expect_test "[chars_modified_tick]" =
-  set_temporarily_to_temp_buffer (fun () ->
+  set_temporarily_to_temp_buffer Sync (fun () ->
     print_s [%sexp (chars_modified_tick () : Modified_tick.t)];
     Point.insert "foo";
     print_s [%sexp (chars_modified_tick () : Modified_tick.t)]);

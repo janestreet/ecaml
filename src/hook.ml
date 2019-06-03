@@ -32,43 +32,7 @@ module F = struct
   and run_hooks = Q.run_hooks <: Symbol.type_ @-> return nil
 end
 
-type file = { file : string } [@@deriving sexp_of]
-type normal = unit [@@deriving sexp_of]
-
-type window =
-  { window : Window.t
-  ; start : Position.t
-  }
-[@@deriving sexp_of]
-
-module Hook_type = struct
-  type 'a t =
-    | File : file t
-    | Normal : normal t
-    | Window : window t
-  [@@deriving sexp_of]
-end
-
-type 'a t =
-  { var : Function.t list Var.t
-  ; hook_type : 'a Hook_type.t
-  }
-[@@deriving fields]
-
-let symbol t = t.var.symbol
-let value_exn t = Current_buffer.value_exn t.var
-
-let sexp_of_t _ t =
-  [%message
-    ""
-      ~symbol:(symbol t : Symbol.t)
-      ~hook_type:(t.hook_type : _ Hook_type.t)
-      ~value:(value_exn t : Function.t list)]
-;;
-
-let create symbol ~hook_type =
-  { var = { symbol; type_ = Value.Type.(list Function.type_) }; hook_type }
-;;
+include Hook0
 
 module Function = struct
   type 'a t =
@@ -82,6 +46,7 @@ module Function = struct
         symbol
         here
         ?docstring
+        ?should_profile
         ~(hook_type : a Hook_type.t)
         (returns : (unit, b) Defun.Returns.t)
         (f : a -> b)
@@ -89,8 +54,7 @@ module Function = struct
     let handle_result = function
       | Ok () -> ()
       | Error err ->
-        Echo_area.message_s
-          [%message "Error in hook" ~_:(symbol : Symbol.t) ~_:(err : Error.t)]
+        message_s [%message "Error in hook" ~_:(symbol : Symbol.t) ~_:(err : Error.t)]
     in
     let try_with (f : unit -> b) : b =
       match returns with
@@ -103,6 +67,7 @@ module Function = struct
       symbol
       here
       ?docstring
+      ?should_profile
       returns
       (match hook_type with
        | Normal ->
@@ -122,8 +87,8 @@ module Function = struct
          try_with (fun () -> f { file }))
   ;;
 
-  let create symbol here ?docstring ~hook_type returns f =
-    defun symbol here ?docstring ~hook_type returns f;
+  let create symbol here ?docstring ?should_profile ~hook_type returns f =
+    defun symbol here ?docstring ?should_profile ~hook_type returns f;
     { symbol; hook_type }
   ;;
 

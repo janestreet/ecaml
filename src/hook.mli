@@ -10,18 +10,18 @@
 open! Core_kernel
 open! Import
 
-type 'a t [@@deriving sexp_of]
-type file = { file : string } [@@deriving sexp_of]
+type 'a t = 'a Hook0.t [@@deriving sexp_of]
+type file = Hook0.file = { file : string } [@@deriving sexp_of]
 type normal = unit [@@deriving sexp_of]
 
-type window =
+type window = Hook0.window =
   { window : Window.t
   ; start : Position.t
   }
 [@@deriving sexp_of]
 
 module Hook_type : sig
-  type 'a t =
+  type 'a t = 'a Hook0.Hook_type.t =
     | File : file t
     | Normal : normal t
     | Window : window t
@@ -47,6 +47,7 @@ module Function : sig
     :  Symbol.t
     -> Source_code_position.t
     -> ?docstring:string
+    -> ?should_profile:bool
     -> hook_type:'a Hook_type.t
     -> (unit, 'r) Defun.Returns.t
     -> ('a -> 'r)

@@ -15,7 +15,7 @@
     ]} The [F] convention is borrowed from the Emacs C source. *)
 
 open! Core_kernel
-open! Import
+open! Import0
 
 type 'a t
 

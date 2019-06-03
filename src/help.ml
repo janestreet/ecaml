@@ -21,16 +21,14 @@ let describe_minor_mode = F.describe_minor_mode
 let describe_variable = F.describe_variable
 
 let get_text_of_help ~invoke_help =
-  Echo_area.inhibit_messages invoke_help;
-  Buffer.find ~name:"*Help*"
-  |> Option.value_exn
-  |> Current_buffer.set_temporarily ~f:(fun () ->
+  Echo_area.inhibit_messages Sync invoke_help;
+  let help_buf = Buffer.find ~name:"*Help*" |> Option.value_exn in
+  Current_buffer.set_temporarily help_buf Sync ~f:(fun () ->
     Current_buffer.contents ()
     |> Text.to_utf8_bytes
     |> String.split_lines
     |> List.filter_map ~f:(fun line ->
-      if (am_running_inline_test
-          && String.is_prefix line ~prefix:"Implemented at")
+      if (am_running_inline_test && String.is_prefix line ~prefix:"Implemented at")
       || String.( = ) "[back]" (String.strip line)
       then None
       else Some line)

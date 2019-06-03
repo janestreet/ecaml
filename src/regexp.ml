@@ -185,7 +185,7 @@ let does_match ?start ?update_last_match t text =
 let save_match_data = Save_wrappers.save_match_data
 
 let extract ?start ?subexp t text =
-  save_match_data (fun () ->
+  save_match_data Sync (fun () ->
     match does_match ?start ~update_last_match:true t text with
     | false -> None
     | true ->

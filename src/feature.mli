@@ -8,15 +8,14 @@
 open! Core_kernel
 open! Import0
 
-type t = Symbol.t
+include module type of struct
+  include Ecaml_value.Feature
+end
 
 (** [(describe-function 'provide)] *)
 val provide : t -> unit
 [@@deprecated
   "[since 2018-06] Requires additional initialization.  Use [Ecaml.provide] instead."]
-
-(** [(describe-function 'require)] *)
-val require : t -> unit
 
 (** [(describe-function 'featurep)] *)
 val is_provided : t -> bool

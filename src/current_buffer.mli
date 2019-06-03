@@ -9,6 +9,7 @@
     [(Info-goto-node "(elisp)Current Buffer")]. *)
 
 open! Core_kernel
+open! Async_kernel
 open! Import
 open! Ecaml_filename
 include Current_buffer0_intf.Current_buffer0_public
@@ -64,7 +65,7 @@ val describe_mode : unit -> unit
 
 (** [set_temporarily_to_temp_buffer f] creates a temporary buffer and runs [f] with the
     current buffer set to the temporary buffer.  [(describe-function 'with-temp-buffer)]. *)
-val set_temporarily_to_temp_buffer : (unit -> 'a) -> 'a
+val set_temporarily_to_temp_buffer : (_, 'a) Sync_or_async.t -> (unit -> 'a) -> 'a
 
 (** [(describe-function 'bury-buffer)]
     [(Info-goto-node "(elisp)Buffer List")] *)
@@ -101,7 +102,7 @@ val transient_mark_mode : bool Var.t
     [(Info-goto-node "(elisp)Auto Major Mode")] *)
 val major_mode : unit -> Major_mode.t
 
-val change_major_mode : Major_mode.t -> unit
+val change_major_mode : Major_mode.t -> unit Deferred.t
 
 (** [(describe-function 'set-auto-mode)] *)
 val set_auto_mode : ?keep_mode_if_same:bool -> unit -> unit
@@ -149,11 +150,11 @@ val contents
 
 (** [(Info-goto-node "(elisp)Killing Buffers")]
     [(describe-function 'kill-buffer)] *)
-val kill : unit -> unit
+val kill : unit -> unit Deferred.t
 
 (** [(Info-goto-node "(elisp)Saving Buffers")]
     [(describe-function 'save-buffer)] *)
-val save : unit -> unit
+val save : unit -> unit Deferred.t
 
 (** [(describe-function 'erase-buffer)] *)
 val erase : unit -> unit
@@ -170,16 +171,16 @@ val kill_region : start:Position.t -> end_:Position.t -> unit
 val widen : unit -> unit
 
 (** [(describe-function 'save-current-buffer)] *)
-val save_current_buffer : (unit -> 'a) -> 'a
+val save_current_buffer : (_, 'a) Sync_or_async.t -> (unit -> 'a) -> 'a
 
 (** [(describe-function 'save-excursion)] *)
-val save_excursion : (unit -> 'a) -> 'a
+val save_excursion : (_, 'a) Sync_or_async.t -> (unit -> 'a) -> 'a
 
 (** [(describe-function 'save-mark-and-excursion)] *)
-val save_mark_and_excursion : (unit -> 'a) -> 'a
+val save_mark_and_excursion : (_, 'a) Sync_or_async.t -> (unit -> 'a) -> 'a
 
 (** [(describe-function 'save-restriction)] *)
-val save_restriction : (unit -> 'a) -> 'a
+val save_restriction : (_, 'a) Sync_or_async.t -> (unit -> 'a) -> 'a
 
 (** Preserve the buffer's point and first displayed visual line. *)
 val save_window_display_state : (unit -> 'a) -> 'a
@@ -325,10 +326,19 @@ val indent_region
 
 (** [(describe-function 'revert-buffer)]
     [(Info-goto-node "(elisp)Reverting")] *)
-val revert : ?confirm:bool (** default is [false] *) -> unit -> unit
+val revert : ?confirm:bool (** default is [false] *) -> unit -> unit Deferred.t
+
+module Blocking : sig
+  val change_major_mode : Major_mode.t -> unit
+  val save : unit -> unit
+end
 
 (** [(describe-variable 'revert-buffer-function)] *)
-val set_revert_buffer_function : (confirm:bool -> unit) -> unit
+val set_revert_buffer_function
+  :  Source_code_position.t
+  -> (unit, 'a) Defun.Returns.t
+  -> (confirm:bool -> 'a)
+  -> unit
 
 (** [(describe-function 'replace-buffer-contents)]
     This function was introduced in Emacs 26 and the value is an error if an earlier
@@ -344,3 +354,16 @@ val truncate_lines : bool Buffer_local.t
 (** [(describe-function 'buffer-chars-modified-tick)]
     [(Info-goto-node "(elisp)Buffer Modification")] *)
 val chars_modified_tick : unit -> Modified_tick.t
+
+(** [append_to string] appends [string] to the end of the current buffer, and preserves
+    point-at-max for windows that display it. *)
+val append_to : string -> unit
+
+val inhibit_read_only : (_, 'a) Sync_or_async.t -> (unit -> 'a) -> 'a
+
+module Window_display_state : sig
+  type t [@@deriving sexp_of]
+
+  val get : unit -> t
+  val restore : t -> unit
+end

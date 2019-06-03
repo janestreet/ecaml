@@ -3,7 +3,7 @@ open! Import
 open! Thing_at_point
 
 let in_test_buffer f =
-  Current_buffer.set_temporarily_to_temp_buffer (fun () ->
+  Current_buffer.set_temporarily_to_temp_buffer Sync (fun () ->
     Point.insert "This is/a test!buffer with\nvarious|things to match*against";
     Point.goto_min ();
     f ())

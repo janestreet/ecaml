@@ -27,14 +27,14 @@ let%expect_test "[create]" =
   show t2;
   [%expect {|
     "#<buffer foo<2>>" |}];
-  kill t1;
-  kill t2;
+  Blocking.kill t1;
+  Blocking.kill t2;
   require_clean ()
 ;;
 
-let%expect_test "[kill]" =
+let%expect_test "[Blocking.kill]" =
   let t = find_or_create ~name:"test-buffer" in
-  kill t;
+  Blocking.kill t;
   show t;
   [%expect {|
     "#<killed buffer>" |}];
@@ -46,8 +46,8 @@ let%expect_test "[equal]" =
   let t2 = create ~name:"2" in
   require [%here] (equal t1 t1);
   require [%here] (not (equal t1 t2));
-  kill t1;
-  kill t2;
+  Blocking.kill t1;
+  Blocking.kill t2;
   require_clean ()
 ;;
 
@@ -56,7 +56,7 @@ let%expect_test "[name]" =
   print_s [%sexp (name t : string option)];
   [%expect {|
     (some-name) |}];
-  kill t;
+  Blocking.kill t;
   print_s [%sexp (name t : string option)];
   [%expect {|
     () |}];
@@ -68,7 +68,7 @@ let%expect_test "[file_name]" =
   print_s [%sexp (file_name t : string option)];
   [%expect {|
     () |}];
-  kill t;
+  Blocking.kill t;
   print_s [%sexp (file_name t : string option)];
   [%expect {|
     () |}];
@@ -81,7 +81,7 @@ let%expect_test "[is_live]" =
   show ();
   [%expect {|
     (is_live true) |}];
-  kill t;
+  Blocking.kill t;
   show ();
   [%expect {|
     (is_live false) |}];
@@ -93,7 +93,7 @@ let%expect_test "[find] Some" =
   print_s [%sexp (find ~name:"foo" : t option)];
   [%expect {|
     ("#<buffer foo>") |}];
-  kill t;
+  Blocking.kill t;
   require_clean ()
 ;;
 
@@ -111,12 +111,12 @@ let%expect_test "[find_or_create]" =
   [%expect {|
     "#<buffer test-buffer>" |}];
   require [%here] (equal t (f ()));
-  kill t;
+  Blocking.kill t;
   require_clean ()
 ;;
 
 let%expect_test "[displayed_in]" =
-  Current_buffer.set_temporarily_to_temp_buffer (fun () ->
+  Current_buffer.set_temporarily_to_temp_buffer Sync (fun () ->
     let t = Current_buffer.get () in
     let show_displayed_in () = print_s [%sexp (displayed_in t : Window.t list)] in
     show_displayed_in ();
@@ -134,7 +134,7 @@ let%expect_test "[displayed_in]" =
 ;;
 
 let%expect_test "[display]" =
-  Current_buffer.set_temporarily_to_temp_buffer (fun () ->
+  Current_buffer.set_temporarily_to_temp_buffer Sync (fun () ->
     let t = Current_buffer.get () in
     let show_displayed_in () = print_s [%sexp (displayed_in t : Window.t list)] in
     show_displayed_in ();
@@ -152,7 +152,7 @@ let%expect_test "[buffer_local_value]" =
   let var = int_var "v" in
   Var.make_buffer_local_always var;
   Current_buffer.set_value var 13;
-  Current_buffer.set_temporarily t ~f:(fun () -> Current_buffer.set_value var 14);
+  Current_buffer.set_temporarily t Sync ~f:(fun () -> Current_buffer.set_value var 14);
   print_s [%sexp (buffer_local_value (Current_buffer.get ()) var : int)];
   [%expect {|
     13 |}];
@@ -164,7 +164,7 @@ let%expect_test "[buffer_local_value]" =
 let%expect_test "[buffer_local_variables]" =
   let var = int_var "s" in
   Var.make_buffer_local_always var;
-  Current_buffer.set_temporarily_to_temp_buffer (fun () ->
+  Current_buffer.set_temporarily_to_temp_buffer Sync (fun () ->
     show_current_buffer_local_variables ();
     [%expect
       {|
@@ -214,7 +214,7 @@ let%expect_test "[find_file_noselect] on a file that exists" =
   show t;
   [%expect {|
     "#<buffer test_buffer.ml>" |}];
-  kill t
+  Blocking.kill t
 ;;
 
 let%expect_test "[find_file_noselect] on a non-existent file" =
@@ -222,39 +222,62 @@ let%expect_test "[find_file_noselect] on a non-existent file" =
   show t;
   [%expect {|
     "#<buffer zzz>" |}];
-  kill t
+  Blocking.kill t
 ;;
 
-let%expect_test "[save_some]" =
-  let restore = unstage (ignore_stderr ()) in
-  let save_some ?which_buffers () = save_some () ?which_buffers ~query:false in
-  save_some ();
-  let file = "z.tmp" in
-  let is_modified () = print_s [%sexp (Current_buffer.is_modified () : bool)] in
-  Selected_window.Blocking.find_file file;
-  Point.insert "foo";
-  save_some ();
-  is_modified ();
-  [%expect {|
-    false |}];
-  Current_buffer.erase ();
-  let print_buffer_and_return bool b =
-    print_s [%sexp (b : Buffer.t)];
-    bool
-  in
-  save_some () ~which_buffers:(These (print_buffer_and_return false));
-  [%expect {|
-    "#<buffer z.tmp>" |}];
-  is_modified ();
-  [%expect {|
-    true |}];
-  save_some () ~which_buffers:(These (print_buffer_and_return true));
-  [%expect {|
-    "#<buffer z.tmp>" |}];
-  is_modified ();
-  [%expect {|
-    false |}];
-  Current_buffer.kill ();
-  File.delete file;
-  restore ()
-;;
+module Async_tests = struct
+  open Async_kernel
+  open Async_ecaml
+
+  let%expect_test "[save_some]" =
+    let restore = unstage (ignore_stderr ()) in
+    let save_some ?which_buffers () = save_some () ?which_buffers ~query:false in
+    let%bind () = save_some () in
+    let file = "z.tmp" in
+    let is_modified () = print_s [%sexp (Current_buffer.is_modified () : bool)] in
+    let%bind () = Selected_window.find_file file in
+    Point.insert "foo";
+    let%bind () = save_some () in
+    is_modified ();
+    let%bind () = [%expect {|
+    false |}] in
+    Current_buffer.erase ();
+    let print_buffer_and_return bool b =
+      print_s [%sexp (b : Buffer.t)];
+      bool
+    in
+    let%bind () = save_some () ~which_buffers:(These (print_buffer_and_return false)) in
+    let%bind () = [%expect {|
+    "#<buffer z.tmp>" |}] in
+    is_modified ();
+    let%bind () = [%expect {|
+    true |}] in
+    let%bind () = save_some () ~which_buffers:(These (print_buffer_and_return true)) in
+    let%bind () = [%expect {|
+    "#<buffer z.tmp>" |}] in
+    is_modified ();
+    let%bind () = [%expect {|
+    false |}] in
+    let%bind () = Current_buffer.kill () in
+    File.delete file;
+    restore ();
+    return ()
+  ;;
+
+  let%expect_test "[revert]" =
+    Directory.with_temp_dir Async ~prefix:"test-revert" ~suffix:"" ~f:(fun dir ->
+      let%bind () = Selected_window.find_file (concat [ dir; "/file" ]) in
+      ignore
+        ( Process.shell_command_exn
+            "echo foo >file"
+            ~working_directory:Of_current_buffer
+          : string );
+      print_s [%sexp (Current_buffer.contents () : Text.t)];
+      let%bind () = [%expect {| "" |}] in
+      let%bind () = revert (Current_buffer.get ()) in
+      print_s [%sexp (Current_buffer.contents () : Text.t)];
+      let%bind () = [%expect {| "foo\n" |}] in
+      let%bind () = Current_buffer.kill () in
+      return ())
+  ;;
+end

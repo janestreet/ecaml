@@ -43,7 +43,7 @@ let initialize () =
     ~interactive:""
     ~args:[]
     (fun _ ->
-       Echo_area.message_s
+       message_s
          [%message
            ""
              (login_name () : string)

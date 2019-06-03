@@ -8,7 +8,7 @@ let prompt = ""
 
 let%expect_test "completing_read" =
   with_input_macro "bar TAB RET" (fun () ->
-    let%bind response = read () ~collection ~prompt in
+    let%bind response = read ~prompt ~collection ~history:Minibuffer.history () in
     print_s [%sexp (response : string)];
     return ());
   [%expect {| bar |}]
@@ -16,7 +16,7 @@ let%expect_test "completing_read" =
 
 let%expect_test "completing_read" =
   with_input_macro "f TAB RET" (fun () ->
-    let%bind response = read () ~collection ~prompt in
+    let%bind response = read ~prompt ~collection ~history:Minibuffer.history () in
     print_s [%sexp (response : string)];
     return ());
   [%expect {|
@@ -25,7 +25,9 @@ let%expect_test "completing_read" =
 
 let%expect_test "completing_read_multiple" =
   with_input_macro "bar,f TAB RET" (fun () ->
-    let%bind response = read_multiple () ~collection ~prompt in
+    let%bind response =
+      read_multiple ~prompt ~collection ~history:Minibuffer.history ()
+    in
     print_s [%sexp (response : string list)];
     return ());
   [%expect {| (bar foo) |}]
@@ -33,7 +35,9 @@ let%expect_test "completing_read_multiple" =
 
 let%expect_test "completing_read_multiple in the other order" =
   with_input_macro "f TAB ,bar RET" (fun () ->
-    let%bind response = read_multiple () ~collection ~prompt in
+    let%bind response =
+      read_multiple ~prompt ~collection ~history:Minibuffer.history ()
+    in
     print_s [%sexp (response : string list)];
     return ());
   [%expect {| (foo bar) |}]

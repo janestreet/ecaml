@@ -15,7 +15,7 @@ module Q = struct
   and with_selected_window = "with-selected-window" |> Symbol.intern
 end
 
-let save_ save_function args f =
+let save_sync save_function args f =
   let r = ref None in
   let f =
     Function.create [%here] ~args:[] (function
@@ -40,12 +40,50 @@ let save_ save_function args f =
   | Some a -> a
 ;;
 
-let save_current_buffer f = save_ Q.save_current_buffer [] f
-let save_excursion f = save_ Q.save_excursion [] f
-let save_mark_and_excursion f = save_ Q.save_mark_and_excursion [] f
-let save_match_data f = save_ Q.save_match_data [] f
-let save_restriction f = save_ Q.save_restriction [] f
-let save_window_excursion f = save_ Q.save_window_excursion [] f
-let save_selected_window f = save_ Q.save_selected_window [] f
-let with_selected_frame frame f = save_ Q.with_selected_frame [ frame ] f
-let with_selected_window window f = save_ Q.with_selected_window [ window ] f
+let save_
+      (type a b)
+      (sync_or_async : (a, b) Sync_or_async.t)
+      save_function
+      args
+      (f : unit -> b)
+  : b =
+  match sync_or_async with
+  | Sync -> save_sync save_function args f
+  | Async ->
+    Background.assert_foreground
+      [%here]
+      ~message:
+        [%sexp
+          ( sprintf
+              "%s called asynchronously in background job"
+              (Symbol.name save_function)
+            : string )];
+    Value.Private.run_outside_async [%here] (fun () ->
+      save_sync save_function args (fun () -> Value.Private.block_on_async [%here] f))
+;;
+
+let save_current_buffer sync_or_async f = save_ sync_or_async Q.save_current_buffer [] f
+let save_excursion sync_or_async f = save_ sync_or_async Q.save_excursion [] f
+
+let save_mark_and_excursion sync_or_async f =
+  save_ sync_or_async Q.save_mark_and_excursion [] f
+;;
+
+let save_match_data sync_or_async f = save_ sync_or_async Q.save_match_data [] f
+let save_restriction sync_or_async f = save_ sync_or_async Q.save_restriction [] f
+
+let save_window_excursion sync_or_async f =
+  save_ sync_or_async Q.save_window_excursion [] f
+;;
+
+let save_selected_window sync_or_async f =
+  save_ sync_or_async Q.save_selected_window [] f
+;;
+
+let with_selected_frame frame sync_or_async f =
+  save_ sync_or_async Q.with_selected_frame [ frame ] f
+;;
+
+let with_selected_window window sync_or_async f =
+  save_ sync_or_async Q.with_selected_window [ window ] f
+;;

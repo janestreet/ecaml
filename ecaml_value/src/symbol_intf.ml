@@ -7,4 +7,5 @@ module type Symbol = sig
   include Value.Funcall with type t := t
 
   val intern : string -> t
+  val name : t -> string
 end

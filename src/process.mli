@@ -11,6 +11,7 @@
     [(Info-goto-node "(elisp)Processes")]. *)
 
 open! Core_kernel
+open! Async_kernel
 open! Import
 
 type t = Process0.t [@@deriving sexp_of]
@@ -65,6 +66,15 @@ end
 (** [(describe-function 'process-exit-status)] *)
 val exit_status : t -> Exit_status.t
 
+module Exited : sig
+  type t =
+    | Exited of int
+    | Fatal_signal of int
+  [@@deriving sexp_of]
+end
+
+val exited : t -> Exited.t Deferred.t
+
 (** [(describe-function 'process-live-p)] *)
 val is_alive : t -> bool
 
@@ -78,15 +88,15 @@ val set_query_on_exit : t -> bool -> unit
 (** [(describe-function 'process-list)] *)
 val all_emacs_children : unit -> t list
 
+(** [(describe-function 'process-get)] *)
+val get_property : t -> Symbol.t -> Value.t option
+
+(** [(describe-function 'process-put)] *)
+val set_property : t -> Symbol.t -> Value.t -> unit
+
 (** [(Info-goto-node "(elisp)Asynchronous Processes")]
     [(describe-function 'start-process)] *)
-val create
-  :  ?buffer:Buffer.t
-  -> unit
-  -> args:string list
-  -> name:string
-  -> prog:string
-  -> t
+val create : string -> string list -> name:string -> ?buffer:Buffer.t -> unit -> t
 
 (** [(describe-function 'get-process)]
     [(Info-goto-node "(elisp)Process Information")] *)
@@ -223,6 +233,17 @@ val create_unix_network_process
   -> socket_path:string
   -> t
 
-(** [(Info-goto-node "(elisp)Deleting Processes")], [(describe-function
-    'delete-process)]. *)
+(** [(Info-goto-node "(elisp)Deleting Processes")]
+    [(describe-function 'delete-process)]. *)
 val kill : t -> unit
+
+(** [(Info-goto-node "(elisp)Sentinels")]
+
+    Register [sentinel] as a process sentinel for the specified process.
+    [sentinel] runs after any other processes sentinels set for that process. *)
+val extend_sentinel
+  :  Source_code_position.t
+  -> t
+  -> (unit, 'a) Defun.Returns.t
+  -> sentinel:(event:string -> 'a)
+  -> unit

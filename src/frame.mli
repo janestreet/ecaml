@@ -35,7 +35,7 @@ val selected : unit -> t
 val set_selected : t -> unit
 
 (** [(describe-function 'with-selected-frame)] *)
-val set_selected_temporarily : t -> f:(unit -> 'a) -> 'a
+val set_selected_temporarily : t -> (_, 'a) Sync_or_async.t -> f:(unit -> 'a) -> 'a
 
 (** [(describe-function 'visible-frame-list)] *)
 val all_visible : unit -> t list

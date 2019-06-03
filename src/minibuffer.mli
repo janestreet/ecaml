@@ -18,15 +18,25 @@ module Y_or_n_with_timeout : sig
   [@@deriving sexp_of]
 end
 
+module History : sig
+  type t [@@deriving sexp_of]
+
+  val find_or_create : Symbol.t -> Source_code_position.t -> t
+  val symbol : t -> Symbol.t
+end
+
+(** [history] is the default history list used when reading from the minibuffer. *)
+val history : History.t
+
 (** [(describe-function 'read-from-minibuffer)]
     [(Info-goto-node "(elisp)Text from Minibuffer")] *)
 val read_from
-  :  ?default_value:string
-  -> ?history:string list Var.t
-  -> ?history_pos:int
+  :  prompt:string
   -> ?initial_contents:string
+  -> ?default_value:string
+  -> history:History.t
+  -> ?history_pos:int
   -> unit
-  -> prompt:string
   -> string Deferred.t
 
 (** [(describe-function 'y-or-n-p)]

@@ -92,6 +92,7 @@ module Q = struct
   and functionp = "functionp" |> intern
   and hash_table_p = "hash-table-p" |> intern
   and keymapp = "keymapp" |> intern
+  and length = "length" |> intern
   and list = "list" |> intern
   and markerp = "markerp" |> intern
   and message = "message" |> intern
@@ -122,28 +123,44 @@ module Block_on_async = struct
 end
 
 module Run_outside_async = struct
-  type t = { f : 'a. (unit -> 'a) -> 'a Deferred.t }
+  type t =
+    { f :
+        'a. Source_code_position.t -> ?allowed_in_background:bool -> (unit -> 'a)
+        -> 'a Deferred.t
+    }
 
   let set_once : t Set_once.t = Set_once.create ()
 end
 
+let maybe_profile ~should_profile context f =
+  if Option.value should_profile ~default:true then profile Sync context f else f ()
+;;
+
 external funcall_array : t -> t array -> bool -> t = "ecaml_funcall_array"
 
-let funcall_array t ts ~should_return_result = funcall_array t ts should_return_result
+let funcall_array ?should_profile t ts ~should_return_result =
+  maybe_profile
+    ~should_profile
+    (lazy [%sexp (t :: (ts |> Array.to_list) : t list)])
+    (fun () -> funcall_array t ts should_return_result)
+;;
 
-let funcallN_array t ts =
-  let r = funcall_array t ts ~should_return_result:true in
+let funcallN_array ?should_profile t ts =
+  let r = funcall_array ?should_profile t ts ~should_return_result:true in
   raise_if_emacs_signaled ();
   r
 ;;
 
-let funcallN_array_i t ts =
-  ignore (funcall_array t ts ~should_return_result:false : t);
+let funcallN_array_i ?should_profile t ts =
+  ignore (funcall_array ?should_profile t ts ~should_return_result:false : t);
   raise_if_emacs_signaled ()
 ;;
 
-let funcallN t ts = funcallN_array t (ts |> Array.of_list)
-let funcallN_i t ts = funcallN_array_i t (ts |> Array.of_list)
+let funcallN ?should_profile t ts = funcallN_array ?should_profile t (ts |> Array.of_list)
+
+let funcallN_i ?should_profile t ts =
+  funcallN_array_i ?should_profile t (ts |> Array.of_list)
+;;
 
 external funcall0 : t -> bool -> t = "ecaml_funcall0"
 external funcall1 : t -> t -> bool -> t = "ecaml_funcall1"
@@ -171,81 +188,110 @@ external funcall5
   -> t
   = "ecaml_funcall5_byte" "ecaml_funcall5"
 
-let funcall0 f ~should_return_result = funcall0 f should_return_result
-let funcall1 f a1 ~should_return_result = funcall1 f a1 should_return_result
-let funcall2 f a1 a2 ~should_return_result = funcall2 f a1 a2 should_return_result
-let funcall3 f a1 a2 a3 ~should_return_result = funcall3 f a1 a2 a3 should_return_result
-
-let funcall4 f a1 a2 a3 a4 ~should_return_result =
-  funcall4 f a1 a2 a3 a4 should_return_result
+let funcall0 f ~should_profile ~should_return_result =
+  maybe_profile
+    ~should_profile
+    (lazy [%sexp ([ f ] : t list)])
+    (fun () -> funcall0 f should_return_result)
 ;;
 
-let funcall5 f a1 a2 a3 a4 a5 ~should_return_result =
-  funcall5 f a1 a2 a3 a4 a5 should_return_result
+let funcall1 f a1 ~should_profile ~should_return_result =
+  maybe_profile
+    ~should_profile
+    (lazy [%sexp ([ f; a1 ] : t list)])
+    (fun () -> funcall1 f a1 should_return_result)
 ;;
 
-let funcall0_i f =
-  ignore (funcall0 f ~should_return_result:false : t);
+let funcall2 f a1 a2 ~should_profile ~should_return_result =
+  maybe_profile
+    ~should_profile
+    (lazy [%sexp ([ f; a1; a2 ] : t list)])
+    (fun () -> funcall2 f a1 a2 should_return_result)
+;;
+
+let funcall3 f a1 a2 a3 ~should_profile ~should_return_result =
+  maybe_profile
+    ~should_profile
+    (lazy [%sexp ([ f; a1; a2; a3 ] : t list)])
+    (fun () -> funcall3 f a1 a2 a3 should_return_result)
+;;
+
+let funcall4 f a1 a2 a3 a4 ~should_profile ~should_return_result =
+  maybe_profile
+    ~should_profile
+    (lazy [%sexp ([ f; a1; a2; a3; a4 ] : t list)])
+    (fun () -> funcall4 f a1 a2 a3 a4 should_return_result)
+;;
+
+let funcall5 f a1 a2 a3 a4 a5 ~should_profile ~should_return_result =
+  maybe_profile
+    ~should_profile
+    (lazy [%sexp ([ f; a1; a2; a3; a4; a5 ] : t list)])
+    (fun () -> funcall5 f a1 a2 a3 a4 a5 should_return_result)
+;;
+
+let funcall0_i ?should_profile f =
+  ignore (funcall0 f ~should_profile ~should_return_result:false : t);
   raise_if_emacs_signaled ()
 ;;
 
-let funcall0 f =
-  let r = funcall0 f ~should_return_result:true in
+let funcall0 ?should_profile f =
+  let r = funcall0 f ~should_profile ~should_return_result:true in
   raise_if_emacs_signaled ();
   r
 ;;
 
-let funcall1_i f a =
-  ignore (funcall1 f a ~should_return_result:false : t);
+let funcall1_i ?should_profile f a =
+  ignore (funcall1 f a ~should_profile ~should_return_result:false : t);
   raise_if_emacs_signaled ()
 ;;
 
-let funcall1 f a =
-  let r = funcall1 f a ~should_return_result:true in
+let funcall1 ?should_profile f a =
+  let r = funcall1 f a ~should_profile ~should_return_result:true in
   raise_if_emacs_signaled ();
   r
 ;;
 
-let funcall2_i f a1 a2 =
-  ignore (funcall2 f a1 a2 ~should_return_result:false : t);
+let funcall2_i ?should_profile f a1 a2 =
+  ignore (funcall2 f a1 a2 ~should_profile ~should_return_result:false : t);
   raise_if_emacs_signaled ()
 ;;
 
-let funcall2 f a1 a2 =
-  let r = funcall2 f a1 a2 ~should_return_result:true in
+let funcall2 ?should_profile f a1 a2 =
+  let r = funcall2 f a1 a2 ~should_profile ~should_return_result:true in
   raise_if_emacs_signaled ();
   r
 ;;
 
-let funcall3_i f a1 a2 a3 =
-  ignore (funcall3 f a1 a2 a3 ~should_return_result:false : t);
+let funcall3_i ?should_profile f a1 a2 a3 =
+  ignore (funcall3 f a1 a2 a3 ~should_profile ~should_return_result:false : t);
   raise_if_emacs_signaled ()
 ;;
 
-let funcall3 f a1 a2 a3 =
-  let r = funcall3 f a1 a2 a3 ~should_return_result:true in
+let funcall3 ?should_profile f a1 a2 a3 =
+  let r = funcall3 f a1 a2 a3 ~should_profile ~should_return_result:true in
   raise_if_emacs_signaled ();
   r
 ;;
 
-let funcall4_i f a1 a2 a3 a4 =
-  ignore (funcall4 f a1 a2 a3 a4 ~should_return_result:false : t);
+let funcall4_i ?should_profile f a1 a2 a3 a4 =
+  ignore (funcall4 f a1 a2 a3 a4 ~should_profile ~should_return_result:false : t);
   raise_if_emacs_signaled ()
 ;;
 
-let funcall4 f a1 a2 a3 a4 =
-  let r = funcall4 f a1 a2 a3 a4 ~should_return_result:true in
+let funcall4 ?should_profile f a1 a2 a3 a4 =
+  let r = funcall4 f a1 a2 a3 a4 ~should_profile ~should_return_result:true in
   raise_if_emacs_signaled ();
   r
 ;;
 
-let funcall5_i f a1 a2 a3 a4 a5 =
-  ignore (funcall5 f a1 a2 a3 a4 a5 ~should_return_result:false : t);
+let funcall5_i ?should_profile f a1 a2 a3 a4 a5 =
+  ignore (funcall5 f a1 a2 a3 a4 a5 ~should_profile ~should_return_result:false : t);
   raise_if_emacs_signaled ()
 ;;
 
-let funcall5 f a1 a2 a3 a4 a5 =
-  let r = funcall5 f a1 a2 a3 a4 a5 ~should_return_result:true in
+let funcall5 ?should_profile f a1 a2 a3 a4 a5 =
+  let r = funcall5 f a1 a2 a3 a4 a5 ~should_profile ~should_return_result:true in
   raise_if_emacs_signaled ();
   r
 ;;
@@ -258,8 +304,11 @@ external funcall_int_int_value_unit
   -> unit
   = "ecaml_funcall_int_int_value_unit"
 
-let funcall_int_int_value_unit f a1 a2 a3 =
-  funcall_int_int_value_unit f a1 a2 a3;
+let funcall_int_int_value_unit ?should_profile f a1 a2 a3 =
+  maybe_profile
+    ~should_profile
+    (lazy [%sexp (f : t), (a1 : int), (a2 : int), (a3 : t)])
+    (fun () -> funcall_int_int_value_unit f a1 a2 a3);
   raise_if_emacs_signaled ()
 ;;
 
@@ -272,8 +321,11 @@ external funcall_int_int_value_value_unit
   -> unit
   = "ecaml_funcall_int_int_value_value_unit"
 
-let funcall_int_int_value_value_unit f a1 a2 a3 a4 =
-  funcall_int_int_value_value_unit f a1 a2 a3 a4;
+let funcall_int_int_value_value_unit ?should_profile f a1 a2 a3 a4 =
+  maybe_profile
+    ~should_profile
+    (lazy [%sexp (f : t), (a1 : int), (a2 : int), (a3 : t), (a4 : t)])
+    (fun () -> funcall_int_int_value_value_unit f a1 a2 a3 a4);
   raise_if_emacs_signaled ()
 ;;
 
@@ -402,6 +454,24 @@ let to_list_exn (t : t) ~f =
     else raise_s [%message "[Value.to_list] got strange value" ~_:(t : t)]
   in
   loop t []
+;;
+
+let list_to_array_exn t ~f =
+  let length = funcall1 Q.length t |> to_int_exn in
+  if length = 0
+  then Array.of_list []
+  else (
+    let elt0 = f (car_exn t) in
+    let array = Array.create ~len:length elt0 in
+    let rec fill_array_loop t i =
+      if is_nil t
+      then ()
+      else (
+        array.(i) <- f (car_exn t);
+        fill_array_loop (cdr_exn t) (i + 1))
+    in
+    fill_array_loop (cdr_exn t) 1;
+    array)
 ;;
 
 let to_array_exn (t : t) ~f =
@@ -617,6 +687,15 @@ module Type = struct
       (fun l -> list (List.map l ~f:(to_value t)))
   ;;
 
+  let array_as_list t =
+    create
+      [%message "array-as-list" ~_:(name t : Sexp.t)]
+      (sexp_of_array (to_sexp t))
+      (list_to_array_exn ~f:(of_value_exn t))
+      (Array.fold_right ~init:nil ~f:(fun elt elisp_list ->
+         cons (to_value t elt) elisp_list))
+  ;;
+
   let vector t =
     create
       [%message "vector" ~_:(name t : Sexp.t)]
@@ -775,4 +854,12 @@ end
 module Private = struct
   module Block_on_async = Block_on_async
   module Run_outside_async = Run_outside_async
+
+  let block_on_async here ?context f =
+    (Set_once.get_exn Block_on_async.set_once here).f here ?context f
+  ;;
+
+  let run_outside_async here ?allowed_in_background f =
+    (Set_once.get_exn Run_outside_async.set_once here).f here ?allowed_in_background f
+  ;;
 end

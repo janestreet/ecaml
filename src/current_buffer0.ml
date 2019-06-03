@@ -1,5 +1,6 @@
 open! Core_kernel
 open! Import0
+open! Async_kernel
 
 module Q = struct
   include Q
@@ -16,10 +17,10 @@ module Buffer = Buffer0
 let get () = Symbol.funcall0 Q.current_buffer |> Buffer.of_value_exn
 let set t = Symbol.funcall1_i Q.set_buffer (t |> Buffer.to_value)
 
-let set_temporarily t ~f =
+let set_temporarily t sync_or_async ~f =
   let old = get () in
   set t;
-  protect ~f ~finally:(fun () -> set old)
+  Sync_or_async.protect [%here] sync_or_async ~f ~finally:(fun () -> set old)
 ;;
 
 let value_is_defined (var : _ Var.t) =
@@ -68,14 +69,14 @@ let set_values vars_and_values =
   List.iter vars_and_values ~f:(fun (Var.And_value.T (var, value)) -> set_value var value)
 ;;
 
-let set_values_temporarily vars_and_values ~f =
+let set_values_temporarily vars_and_values sync_or_async ~f =
   let old_buffer = get () in
   let olds =
     List.map vars_and_values ~f:(fun (Var.And_value.T (var, _)) ->
       Var.And_value_option.T (var, value var))
   in
   List.iter vars_and_values ~f:(fun (Var.And_value.T (var, value)) -> set_value var value);
-  protect ~f ~finally:(fun () ->
+  Sync_or_async.protect [%here] sync_or_async ~f ~finally:(fun () ->
     let new_buffer = get () in
     let buffer_changed = not (Buffer.equal old_buffer new_buffer) in
     if buffer_changed then set old_buffer;
@@ -86,7 +87,9 @@ let set_values_temporarily vars_and_values ~f =
     if buffer_changed then set new_buffer)
 ;;
 
-let set_value_temporarily var value ~f = set_values_temporarily [ T (var, value) ] ~f
+let set_value_temporarily var value sync_or_async ~f =
+  set_values_temporarily [ T (var, value) ] sync_or_async ~f
+;;
 
 let has_non_null_value var =
   match value { var with type_ = Value.Type.bool } with

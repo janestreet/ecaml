@@ -19,4 +19,11 @@ let create ~name =
   Symbol.funcall1 Q.generate_new_buffer (name |> Value.of_utf8_bytes) |> of_value_exn
 ;;
 
-let kill t = Symbol.funcall1_i Q.kill_buffer (t |> to_value)
+module Blocking = struct
+  let kill t = Symbol.funcall1_i Q.kill_buffer (t |> to_value)
+end
+
+let kill t =
+  Value.Private.run_outside_async [%here] ~allowed_in_background:true (fun () ->
+    Blocking.kill t)
+;;

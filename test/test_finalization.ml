@@ -24,23 +24,20 @@ let emacs_garbage_collect =
 ;;
 
 let%expect_test "finalization of embedded ocaml values" =
-  print_s (Ecaml.debug_embedded_caml_values ());
-  [%expect
-    {|
-    ((0  <fun>)
-     (1  <fun>)
-     (2  <fun>)
-     (3  <fun>)
-     (4  <fun>)
-     (5  <fun>)
-     (6  <fun>)
-     (7  <fun>)
-     (8  <fun>)
-     (9  <fun>)
-     (10 <fun>)
-     (11 <fun>)
-     (12 <fun>)
-     (13 <fun>)) |}];
+  let dump_embedded_values () =
+    (* Each call to [defun] puts an entry in this table, which is just noise here. *)
+    Ecaml.debug_embedded_caml_values ()
+    |> [%of_sexp: (int * Sexp.t) list]
+    |> List.filter_map ~f:(fun (_, sexp) ->
+      match sexp with
+      | Atom "<fun>" -> None
+      | _ -> Some sexp)
+    |> [%sexp_of: Sexp.t list]
+    |> print_s
+  in
+  dump_embedded_values ();
+  [%expect {|
+    () |}];
   let module A = struct
     type t =
       { a : string
@@ -57,48 +54,19 @@ let%expect_test "finalization of embedded ocaml values" =
   Var.make_buffer_local_always var;
   let v1 : A.t = { a = "V1"; b = 1 } in
   let v2 : A.t = { a = "V2"; b = 2 } in
-  Current_buffer.set_temporarily_to_temp_buffer (fun () ->
+  Current_buffer.set_temporarily_to_temp_buffer Sync (fun () ->
     Current_buffer.set_value var v1;
     Current_buffer.set_value var v2;
-    print_s (Ecaml.debug_embedded_caml_values ()));
-  [%expect
-    {|
-    ((0  <fun>)
-     (1  <fun>)
-     (2  <fun>)
-     (3  <fun>)
-     (4  <fun>)
-     (5  <fun>)
-     (6  <fun>)
-     (7  <fun>)
-     (8  <fun>)
-     (9  <fun>)
-     (10 <fun>)
-     (11 <fun>)
-     (12 <fun>)
-     (13 <fun>)
-     (14 ((a V1) (b 1)))
-     (15 ((a V2) (b 2)))) |}];
+    dump_embedded_values ());
+  [%expect {|
+    (((a V1) (b 1))
+     ((a V2) (b 2))) |}];
   make_ocaml_garbage_not_keep_emacs_values_alive ();
   emacs_garbage_collect ();
   make_ocaml_garbage_not_keep_emacs_values_alive ();
-  print_s (Ecaml.debug_embedded_caml_values ());
-  [%expect
-    {|
-    ((0  <fun>)
-     (1  <fun>)
-     (2  <fun>)
-     (3  <fun>)
-     (4  <fun>)
-     (5  <fun>)
-     (6  <fun>)
-     (7  <fun>)
-     (8  <fun>)
-     (9  <fun>)
-     (10 <fun>)
-     (11 <fun>)
-     (12 <fun>)
-     (13 <fun>)) |}]
+  dump_embedded_values ();
+  [%expect {|
+    () |}]
 ;;
 
 let%expect_test "Emacs objects no longer referenced from OCaml can be gc'ed by Emacs" =
