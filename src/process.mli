@@ -71,6 +71,8 @@ module Exited : sig
     | Exited of int
     | Fatal_signal of int
   [@@deriving sexp_of]
+
+  val successfully : t -> bool
 end
 
 val exited : t -> Exited.t Deferred.t

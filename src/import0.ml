@@ -42,6 +42,3 @@ type 'a opaque_in_test = 'a
 let sexp_of_opaque_in_test sexp_of_a a =
   if am_running_test then [%sexp "_"] else [%sexp (a : a)]
 ;;
-
-(* included last so it can't be shadowed *)
-include Int.Replace_polymorphic_compare

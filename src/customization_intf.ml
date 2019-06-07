@@ -88,6 +88,7 @@ module type Customization = sig
   type 'a t [@@deriving sexp_of]
 
   val value : 'a t -> 'a
+  val set_value : 'a t -> 'a -> unit
   val var : 'a t -> 'a Var.t
   val symbol : _ t -> Symbol.t
   val standard_value : 'a t -> 'a

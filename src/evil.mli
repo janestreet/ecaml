@@ -15,3 +15,18 @@ module Config : sig
 
   val apply_to_defun : t -> Symbol.t -> unit
 end
+
+module Escape : sig
+  (** [(describe-variable 'evil-escape-inhibit-functions)] *)
+  val inhibit_functions : Function.t list Var.t
+end
+
+module State : sig
+  type t =
+    | Evilified
+    | Other of Symbol.t
+  [@@deriving equal, sexp_of]
+
+  (** [(describe-variable 'evil-state)] *)
+  val get : unit -> t
+end

@@ -100,6 +100,31 @@ let%expect_test "[extend_sentinel]" =
     "I'm another sentinel!" |}]
 ;;
 
+let%expect_test "[extend_sentinel] runs sentinel in the background" =
+  let test (type a) (sync_or_async : (unit, a) Sync_or_async.t) =
+    let t = create "true" [] ~name:"t" () in
+    let sentinel_ran = ref false in
+    extend_sentinel
+      [%here]
+      t
+      (Returns.returns sync_or_async Value.Type.unit)
+      ~sentinel:(fun ~event:_ ->
+        sentinel_ran := true;
+        print_s [%message "sentinel ran"];
+        require [%here] (Background.am_running_in_background ());
+        Sync_or_async.return sync_or_async ());
+    while not !sentinel_ran do
+      Timer.sleep_for (0.01 |> sec_ns)
+    done
+  in
+  test Sync;
+  [%expect {|
+    "sentinel ran" |}];
+  test Async;
+  [%expect {|
+    "sentinel ran" |}]
+;;
+
 module Async = struct
   open! Async
   open! Async_ecaml

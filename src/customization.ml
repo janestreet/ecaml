@@ -57,7 +57,10 @@ module Group = struct
       Form.[ Q.K.group |> symbol; parent |> Symbol.to_value |> quote ]
     in
     let docstring =
-      sprintf "%s\n\nDefined at %s" docstring (here |> Source_code_position.to_string)
+      sprintf
+        "%s\n\nDefined at %s"
+        (docstring |> String.strip)
+        (here |> Source_code_position.to_string)
     in
     Form.(
       eval_i
@@ -183,6 +186,7 @@ type 'a t = 'a Var.t [@@deriving sexp_of]
 let var t = t
 let symbol = Var.symbol
 let value = Current_buffer0.value_exn
+let set_value = Current_buffer0.set_value
 let standard_value = Var.default_value_exn
 
 let defcustom

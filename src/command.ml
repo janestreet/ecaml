@@ -17,6 +17,12 @@ include Value.Make_subtype (struct
     let is_in_subtype = Value.is_command
   end)
 
+let history_var =
+  Var.create ("command-history" |> Symbol.intern) (Value.Type.list Form.type_)
+;;
+
+let history () = Current_buffer0.value_exn history_var
+
 module Raw_prefix_argument = struct
   type t =
     | Absent
@@ -60,9 +66,13 @@ module Raw_prefix_argument = struct
   ;;
 end
 
-let call_interactively value raw_prefix_argument =
+let call_interactively
+      ?(raw_prefix_argument = Raw_prefix_argument.Absent)
+      ?(record = false)
+      command
+  =
   Current_buffer.set_value Raw_prefix_argument.for_current_command raw_prefix_argument;
-  Symbol.funcall1_i Q.call_interactively value
+  Symbol.funcall2_i Q.call_interactively command (record |> Value.of_bool)
 ;;
 
 let inhibit_quit = Var.create ("inhibit-quit" |> Symbol.intern) Value.Type.bool

@@ -13,6 +13,7 @@ module Q = struct
   and file_name_nondirectory = "file-name-nondirectory" |> Symbol.intern
   and file_name_sans_extension = "file-name-sans-extension" |> Symbol.intern
   and file_relative_name = "file-relative-name" |> Symbol.intern
+  and temporary_file_directory = "temporary-file-directory" |> Symbol.intern
 end
 
 include (
@@ -64,4 +65,8 @@ let make_relative t ~relative_to =
 
 let expand t ~in_dir =
   Symbol.funcall2 Q.expand_file_name (t |> to_value) (in_dir |> to_value) |> of_value_exn
+;;
+
+let temporary_file_directory () =
+  Symbol.funcall0 Q.temporary_file_directory |> of_value_exn
 ;;

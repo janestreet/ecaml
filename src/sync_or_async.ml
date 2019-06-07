@@ -12,6 +12,12 @@ let async_protect ~f ~finally =
     return ())
 ;;
 
+let return (type a b) (t : (a, b) t) (a : a) : b =
+  match t with
+  | Sync -> a
+  | Async -> return a
+;;
+
 let protect
       (type a b)
       ?(allow_in_background = false)

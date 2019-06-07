@@ -4,6 +4,9 @@
     [Buffer_local] is like [Var], with the additional guarantee that the variable is
     buffer local.
 
+    Where a module defines a type [t] and a value of type [t Buffer_local.t], the
+    conventional name for that value is [in_buffer].
+
     [(Info-goto-node "(elisp)Buffer-Local Variables")]. *)
 
 open! Core

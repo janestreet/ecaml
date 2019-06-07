@@ -119,3 +119,27 @@ let enqueue_unread_command_input ts =
        (unread_command_events |> Current_buffer.value_exn)
        ((ts : t list :> Value.t list) |> Value.list))
 ;;
+
+let recent_keys_internal =
+  Funcall.(
+    "recent-keys" |> Symbol.intern <: bool @-> return (Vector.type_ Value.Type.value))
+;;
+
+let recent_keys () = recent_keys_internal false |> Array.map ~f:of_value_exn
+
+module Command_or_key = struct
+  type t =
+    | Command of Command.t
+    | Key of Input_event0.t
+  [@@deriving sexp_of]
+
+  let of_value_exn v =
+    if Value.is_cons v
+    then Command (Value.cdr_exn v |> Command.of_value_exn)
+    else Key (of_value_exn v)
+  ;;
+end
+
+let recent_commands_and_keys () =
+  recent_keys_internal true |> Array.map ~f:Command_or_key.of_value_exn
+;;

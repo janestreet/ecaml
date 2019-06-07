@@ -11,7 +11,6 @@ module Browse_url = Browse_url
 module Buffer = Buffer
 module Buffer_local = Buffer_local
 module Char_code = Char_code
-module Col_and_row = Col_and_row
 module Color = Color
 module Command = Command
 module Comment = Comment
@@ -27,6 +26,7 @@ module Directory = Directory
 module Display = Display
 module Display_property = Display_property
 module Documentation = Documentation
+module Ecaml_profile = Ecaml_profile
 module Echo_area = Echo_area
 module Elisp_gc = Elisp_gc
 module Elisp_time = Elisp_time
@@ -48,6 +48,7 @@ module Hook = Hook
 module Input_event = Input_event
 module Key_sequence = Key_sequence
 module Keymap = Keymap
+module Line_and_column = Line_and_column
 module Load = Load
 module Load_history = Load_history
 module Major_mode = Major_mode
@@ -95,6 +96,7 @@ and defalias = Defun.defalias
 and defconst = Defconst.defconst
 and defconst_i = Defconst.defconst_i
 and defcustom = Customization.defcustom
+and defgroup = Customization.Group.defgroup
 and define_derived_mode = Major_mode.define_derived_mode
 and define_minor_mode = Minor_mode.define_minor_mode
 and defun = Defun.defun
@@ -131,6 +133,38 @@ let provide =
 ;;
 
 let inhibit_read_only = Current_buffer.inhibit_read_only
+
+let () =
+  if not am_running_inline_test
+  then (
+    let reported_recent_keys = ref false in
+    Background.Clock.every [%here] Time.Span.second (fun () ->
+      match Unix.fstat Unix.stdin with
+      | _ -> ()
+      | exception _ ->
+        let recent_keys =
+          if !reported_recent_keys
+          then [||]
+          else (
+            reported_recent_keys := true;
+            Input_event.recent_commands_and_keys ())
+        in
+        message_s
+          [%message.omit_nil
+            "stdin is closed" (recent_keys : Input_event.Command_or_key.t array)]))
+;;
+
+let () =
+  defun_nullary_nil
+    ("ecaml-close-stdin" |> Symbol.intern)
+    [%here]
+    ~docstring:
+      {|
+Close file descriptor zero, aka stdin.  For testing a bug in `call-process-region'.
+|}
+    ~interactive:No_arg
+    (fun () -> Unix.close Unix.stdin)
+;;
 
 let () =
   let symbol = "ecaml-test-raise" |> Symbol.intern in
@@ -199,6 +233,17 @@ let () =
              (Minibuffer.History.find_or_create
                 ("some-history-list" |> Symbol.intern)
                 [%here])))
+;;
+
+let () =
+  defun_nullary_nil
+    ("ecaml-show-recent-commands-and-keys" |> Symbol.intern)
+    [%here]
+    ~interactive:No_arg
+    (fun () ->
+       message_s
+         [%sexp
+           (Input_event.recent_commands_and_keys () : Input_event.Command_or_key.t array)])
 ;;
 
 let debug_embedded_caml_values () = Caml_embed.debug_sexp ()

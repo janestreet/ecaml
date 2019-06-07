@@ -73,6 +73,8 @@ module type Defun = sig
       | Returns : 'a Value.Type.t -> ('a, 'a) t
       | Returns_deferred : 'a Value.Type.t -> ('a, 'a Deferred.t) t
     [@@deriving sexp_of]
+
+    val returns : ('a, 'b) Sync_or_async.t -> 'a Value.Type.t -> ('a, 'b) t
   end
 
   val defun

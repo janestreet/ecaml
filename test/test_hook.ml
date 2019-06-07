@@ -124,21 +124,21 @@ let create_after_load_fun s =
     [%here]
     ~hook_type:File
     (Returns Value.Type.unit)
-    (fun _ -> print_s [%message s])
+    (fun _ -> print_endline s)
 ;;
 
 let%expect_test "[after_load] hooks" =
   let f1 = create_after_load_fun "f1" in
   let f2 = create_after_load_fun "f2" in
   add after_load f1;
-  after_load_once (fun _ -> print_endline "after_load_once hook");
+  add after_load ~one_shot:true (create_after_load_fun "after_load one_shot hook");
   add after_load f2;
   let file = Caml.Filename.temp_file "ecamltest" ".el" in
   Out_channel.write_all file ~data:"'()";
   Load.load ~message:false file;
   [%expect {|
     f2
-    after_load_once hook
+    after_load one_shot hook
     f1 |}];
   Load.load ~message:false file;
   [%expect {|

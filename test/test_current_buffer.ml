@@ -888,22 +888,18 @@ module Async_test = struct
   open Async_ecaml.Import
 
   let%expect_test "[set_revert_buffer_function (Returns_deferred Value.Type.unit)]" =
-    let buffer = Buffer.create ~name:"test buffer" in
-    let previous_current_buffer = get () in
-    set buffer;
-    set_revert_buffer_function
-      [%here]
-      (Returns_deferred Value.Type.unit)
-      (fun ~confirm ->
-         let%map () = Clock.after (sec 0.01) in
-         print_s [%message "called after pause" (confirm : bool)]);
-    let%bind () = revert () in
-    let%bind () = [%expect {| ("called after pause" (confirm false)) |}] in
-    let%bind () = revert () ~confirm:true in
-    let%bind () = [%expect {|
-      ("called after pause" (confirm true)) |}] in
-    set previous_current_buffer;
-    Buffer.kill buffer
+    set_temporarily_to_temp_buffer Async (fun () ->
+      set_revert_buffer_function
+        [%here]
+        (Returns_deferred Value.Type.unit)
+        (fun ~confirm ->
+           let%map () = Clock.after (sec 0.01) in
+           print_s [%message "called after pause" (confirm : bool)]);
+      let%bind () = revert () in
+      let%bind () = [%expect {| ("called after pause" (confirm false)) |}] in
+      let%bind () = revert () ~confirm:true in
+      [%expect {|
+      ("called after pause" (confirm true)) |}])
   ;;
 
   let%expect_test "[set_values_temporarily async]" =

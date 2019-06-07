@@ -446,7 +446,8 @@ let extend_sentinel
         match returns with
         | Returns _ ->
           run_previous_sentinel ();
-          (sentinel ~event:(event |> Value.to_utf8_bytes_exn) : a)
+          Background.run_in_background [%here] ~f:(fun () ->
+            (sentinel ~event:(event |> Value.to_utf8_bytes_exn) : a))
         | Returns_deferred _ ->
           let%bind.Async () =
             Value.Private.run_outside_async
@@ -454,7 +455,8 @@ let extend_sentinel
               ~allowed_in_background:true
               run_previous_sentinel
           in
-          sentinel ~event:(event |> Value.to_utf8_bytes_exn)))
+          Background.run_in_background [%here] ~f:(fun () ->
+            sentinel ~event:(event |> Value.to_utf8_bytes_exn))))
 ;;
 
 module Exited = struct
@@ -462,6 +464,11 @@ module Exited = struct
     | Exited of int
     | Fatal_signal of int
   [@@deriving sexp_of]
+
+  let successfully = function
+    | Exited 0 -> true
+    | Exited _ | Fatal_signal _ -> false
+  ;;
 end
 
 let exited =

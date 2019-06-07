@@ -110,6 +110,15 @@ let is_end_of_buffer = F.eobp
 let column_number () = Symbol.funcall0 Q.current_column |> Value.to_int_exn
 let goto_column n = Symbol.funcall1_i Q.move_to_column (n |> Value.of_int_exn)
 
+let get_line_and_column () =
+  { Line_and_column.line = line_number (); column = column_number () }
+;;
+
+let goto_line_and_column { Line_and_column.line; column } =
+  goto_line line;
+  goto_column column
+;;
+
 let indent_line_to ~column =
   Symbol.funcall1_i Q.indent_line_to (column |> Value.of_int_exn)
 ;;

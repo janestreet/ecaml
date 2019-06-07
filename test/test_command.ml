@@ -35,7 +35,7 @@ let%expect_test "[Raw_prefix_argument]" =
       print_s [%message (prefix_arg : Value.t)];
       Command.call_interactively
         (f |> Symbol.to_value)
-        (prefix_arg |> Raw_prefix_argument.of_value_exn));
+        ~raw_prefix_argument:(prefix_arg |> Raw_prefix_argument.of_value_exn));
   [%expect
     {|
     (prefix_arg nil)
@@ -54,6 +54,25 @@ let%expect_test "[Raw_prefix_argument]" =
     ((arg                 -)
      (for_current_command Minus)
      (raw_prefix_argument Minus)) |}]
+;;
+
+let%expect_test "[call_interactively ~record:true]" =
+  let f1 = "test-f1" |> Symbol.intern in
+  defun_nullary_nil f1 [%here] ~interactive:No_arg Fn.ignore;
+  let f2 = "test-f2" |> Symbol.intern in
+  defun_nullary_nil f2 [%here] ~interactive:No_arg Fn.ignore;
+  let most_recent_command () =
+    print_s [%sexp (List.hd_exn (Command.history ()) : Form.t)]
+  in
+  call_interactively (f1 |> Symbol.to_value) ~record:true;
+  most_recent_command ();
+  [%expect {| (test-f1) |}];
+  call_interactively (f2 |> Symbol.to_value) ~record:false;
+  most_recent_command ();
+  [%expect {| (test-f1) |}];
+  call_interactively (f2 |> Symbol.to_value) ~record:true;
+  most_recent_command ();
+  [%expect {| (test-f2) |}]
 ;;
 
 let give_emacs_chance_to_signal () = ignore (Text.of_utf8_bytes "ignoreme")

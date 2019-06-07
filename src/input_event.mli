@@ -61,3 +61,18 @@ val modifiers : t -> Modifier.t list
 val unread_command_input : t list Var.t
 
 val enqueue_unread_command_input : t list -> unit
+
+(** [(describe-function 'recent-keys)]
+    [(Info-goto-node "(elisp)Recording Input")] *)
+val recent_keys : unit -> t array
+
+module Command_or_key : sig
+  type t =
+    | Command of Command.t
+    | Key of Input_event0.t
+  [@@deriving sexp_of]
+end
+
+(** [(describe-function 'recent-keys)]
+    [(Info-goto-node "(elisp)Recording Input")] *)
+val recent_commands_and_keys : unit -> Command_or_key.t array

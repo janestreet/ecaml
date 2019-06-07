@@ -51,3 +51,6 @@ val make_relative : t -> relative_to:t -> t
 (** [(describe-function 'expand-file-name)]
     [(Info-goto-node "(elisp)File Name Expansion")] *)
 val expand : t -> in_dir:t -> t
+
+(** [(describe-function 'temporary-file-directory)] *)
+val temporary_file_directory : unit -> t

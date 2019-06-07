@@ -69,9 +69,12 @@ module Function : sig
 end
 
 (** [(describe-function 'add-hook)]
-    [(Info-goto-node "(elisp)Setting Hooks")] *)
+    [(Info-goto-node "(elisp)Setting Hooks")]
+
+    If [one_shot] is [true], the hook will be removed after the first time it runs. *)
 val add
   :  ?buffer_local:bool (** default is [false] *)
+  -> ?one_shot:bool (** default is [false] *)
   -> ?where:Where.t (** default is [Start] *)
   -> 'a t
   -> 'a Function.t
@@ -91,10 +94,6 @@ val run : normal t -> unit
     [(Info-goto-node "(elisp)Hooks for Loading")] *)
 val after_load : file t
 
-(** [after_load_once f] adds [f] to [after_load], and then removes it when it runs,
-    so that [f] only runs once. *)
-val after_load_once : (file -> unit) -> unit
-
 (** [(describe-variable 'after-revert-hook)]
     [(Info-goto-node "(elisp)Reverting")] *)
 val after_revert : normal t
@@ -113,6 +112,10 @@ val before_save : normal t
     before command-line arguments are handled (and therefore before the OCaml runtime is
     initialized). *)
 val emacs_startup : normal t
+
+(** [(describe-variable 'focus-in-hook)]
+    [(Info-goto-node "(elisp)Input Focus")] *)
+val focus_in : normal t
 
 (** [(describe-variable 'kill-buffer-hook)]
     [(Info-goto-node "(elisp)Killing Buffers")] *)

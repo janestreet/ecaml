@@ -84,3 +84,32 @@ let%expect_test "[read]" =
   print_s [%sexp (read () : t)];
   [%expect {| a |}]
 ;;
+
+let%expect_test "[recent_keys]" =
+  print_s [%sexp (recent_keys () : t array)];
+  [%expect {|
+    (a) |}];
+  Key_sequence.enqueue_unread_command_input (Key_sequence.create_exn "b");
+  ignore (read () : t);
+  print_s [%sexp (recent_keys () : t array)];
+  [%expect {|
+    (a b) |}];
+  print_s [%sexp (recent_commands_and_keys () : Command_or_key.t array)];
+  [%expect {|
+    ((Key a)
+     (Key b)) |}];
+  let f = "add-recent-command" |> Symbol.intern in
+  defun_nullary_nil
+    f
+    [%here]
+    ~interactive:No_arg
+    ~define_keys:[ Keymap.global (), "c" ]
+    (fun () -> message_s [%message "ran"]);
+  Key_sequence.execute (Key_sequence.create_exn "c");
+  [%expect {| ran |}];
+  print_s [%sexp (recent_commands_and_keys () : Command_or_key.t array)];
+  [%expect {|
+    ((Key     a)
+     (Key     b)
+     (Command add-recent-command)) |}]
+;;

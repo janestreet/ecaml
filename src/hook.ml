@@ -10,6 +10,7 @@ module Q = struct
   and after_save_hook = "after-save-hook" |> Symbol.intern
   and before_save_hook = "before-save-hook" |> Symbol.intern
   and emacs_startup_hook = "emacs-startup-hook" |> Symbol.intern
+  and focus_in_hook = "focus-in-hook" |> Symbol.intern
   and kill_buffer_hook = "kill-buffer-hook" |> Symbol.intern
   and post_command_hook = "post-command-hook" |> Symbol.intern
   and remove_hook = "remove-hook" |> Symbol.intern
@@ -98,6 +99,15 @@ module Function = struct
     self
   ;;
 
+  let funcall (type a) ({ symbol; hook_type } : a t) (x : a) =
+    let open Funcall in
+    match hook_type, x with
+    | Normal, () -> (symbol <: nullary @-> return nil) ()
+    | Window, { window; start } ->
+      (symbol <: Window.type_ @-> Position.type_ @-> return nil) window start
+    | File, { file } -> (symbol <: Value.Type.string @-> return nil) file
+  ;;
+
   let symbol t = t.symbol
 end
 
@@ -108,18 +118,47 @@ module Where = struct
   [@@deriving sexp_of]
 end
 
-let add ?(buffer_local = false) ?(where = Where.Start) t function_ =
-  F.add_hook
-    (t |> symbol)
-    (Function.symbol function_)
-    (match where with
-     | End -> true
-     | Start -> false)
-    buffer_local
-;;
-
 let remove ?(buffer_local = false) t function_ =
   F.remove_hook (t |> symbol) (Function.symbol function_) buffer_local
+;;
+
+module Id = Unique_id.Int ()
+
+let make_one_shot_function_symbol function_ =
+  Symbol.intern
+    (concat
+       [ function_ |> Function.symbol |> Symbol.name
+       ; "-one-shot-"
+       ; Id.create () |> Id.to_string
+       ])
+;;
+
+let add ?(buffer_local = false) ?(one_shot = false) ?(where = Where.Start) t function_ =
+  let add function_ =
+    F.add_hook
+      (t |> symbol)
+      (Function.symbol function_)
+      (match where with
+       | End -> true
+       | Start -> false)
+      buffer_local
+  in
+  match one_shot with
+  | false -> add function_
+  | true ->
+    let hook_function_ref = ref None in
+    let hook_function =
+      Function.create
+        (make_one_shot_function_symbol function_)
+        [%here]
+        ~hook_type:function_.hook_type
+        (Returns Value.Type.unit)
+        (fun x ->
+           remove t (Option.value_exn !hook_function_ref);
+           Function.funcall function_ x)
+    in
+    hook_function_ref := Some hook_function;
+    add hook_function
 ;;
 
 let clear t = Current_buffer.set_value t.var []
@@ -130,25 +169,7 @@ let after_save = create Q.after_save_hook ~hook_type:Normal
 let before_save = create Q.before_save_hook ~hook_type:Normal
 let emacs_startup = create Q.emacs_startup_hook ~hook_type:Normal
 let kill_buffer = create Q.kill_buffer_hook ~hook_type:Normal
-
-let after_load_once =
-  let counter = ref 0 in
-  fun f ->
-    incr counter;
-    let hook_function_ref = ref None in
-    let hook_function =
-      Function.create
-        (Symbol.intern (concat [ "ecaml-after-load-"; !counter |> Int.to_string ]))
-        [%here]
-        ~hook_type:File
-        (Returns Value.Type.unit)
-        (fun file ->
-           remove after_load (Option.value_exn !hook_function_ref);
-           f file)
-    in
-    hook_function_ref := Some hook_function;
-    add after_load hook_function
-;;
+let focus_in = create Q.focus_in_hook ~hook_type:Normal
 
 let window_configuration_change =
   create Q.window_configuration_change_hook ~hook_type:Normal

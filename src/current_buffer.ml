@@ -475,3 +475,15 @@ let inhibit_read_only = Var.create Q.inhibit_read_only Value.Type.bool
 let inhibit_read_only sync_or_async f =
   set_value_temporarily inhibit_read_only true sync_or_async ~f
 ;;
+
+let position_of_line_and_column line_and_column =
+  save_excursion Sync (fun () ->
+    Point.goto_line_and_column line_and_column;
+    Point.get ())
+;;
+
+let line_and_column_of_position position =
+  save_excursion Sync (fun () ->
+    Point.goto_char position;
+    Point.get_line_and_column ())
+;;

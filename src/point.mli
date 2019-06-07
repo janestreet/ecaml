@@ -18,6 +18,8 @@ open! Import
 (** [(describe-function 'point)]. *)
 val get : unit -> Position.t
 
+val get_line_and_column : unit -> Line_and_column.t
+
 (** [(describe-function 'point-min)]. *)
 val min : unit -> Position.t
 
@@ -26,6 +28,8 @@ val max : unit -> Position.t
 
 (** [(describe-function 'goto-char)]. *)
 val goto_char : Position.t -> unit
+
+val goto_line_and_column : Line_and_column.t -> unit
 
 (** [goto_max () = goto_char (max ())] *)
 val goto_max : unit -> unit
