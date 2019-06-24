@@ -82,7 +82,10 @@ end = struct
   [@@deriving sexp_of]
 
   let create () =
-    { mutex = Mutex.create (); wake_up = Condition.create (); scheduler = Scheduler.t () }
+    { mutex = Mutex.create ()
+    ; wake_up = Condition.create ()
+    ; scheduler = Scheduler.t ()
+    }
   ;;
 
   let critical_section t ~f =
@@ -154,7 +157,8 @@ end = struct
     then (
       try
         ignore
-          (Unix.single_write t.write_to_request_cycle ~buf:(Bytes.of_string "\x05") : int);
+          (Unix.single_write t.write_to_request_cycle ~buf:(Bytes.of_string "\x05")
+           : int);
         t.exists_unread_byte <- true
       with
       | _ ->
@@ -270,7 +274,8 @@ let run_pending_emacs_calls () =
 (* When the scheduler requests an Async cycle, [in_emacs_have_lock_do_cycle] runs the
    cycle inside the emacs thread and notifies the scheduler when it is finished. *)
 let in_emacs_have_lock_do_cycle () =
-  if not (Value.Expert.have_active_env ()) || not (Scheduler.am_holding_lock t.scheduler)
+  if (not (Value.Expert.have_active_env ()))
+  || not (Scheduler.am_holding_lock t.scheduler)
   then raise_s [%sexp "[in_emacs_have_lock_do_cycle] should only be called by emacs"];
   (* If we are already running an Async cycle, then we can't start a new one, so we do
      nothing.  We can reach here with [t.am_running_async_cycle = true] if Ecaml calls a
@@ -347,7 +352,7 @@ let start_scheduler () =
     then Debug.eprint_s [%message "initializing async" [%here] (Time.now () : Time.t)];
     (* We hold the Async lock, so it should be impossible for the scheduler to try to run
        a cycle. *)
-    (t.scheduler).have_lock_do_cycle
+    t.scheduler.have_lock_do_cycle
     <- Some (fun () -> raise_s [%message "BUG in Async_ecaml" [%here]]);
     let scheduler_thread =
       Thread.create
@@ -363,7 +368,7 @@ let start_scheduler () =
     in
     (* We set [have_lock_do_cycle] as early as possible so that the Async scheduler runs
        cycles in the desired way, even if later parts of initialization raise. *)
-    (t.scheduler).have_lock_do_cycle
+    t.scheduler.have_lock_do_cycle
     <- Some (request_emacs_run_cycle (Thread.id scheduler_thread));
     Defun.defun
       Q.ecaml_async_take_lock_do_cycle
@@ -407,12 +412,12 @@ let start_scheduler () =
     (* [Async_unix] installs a handler for logging exceptions raised to try-with that has
        already returned.  That logs to stderr, which doesn't work well in Emacs.  So we
        install a handler that reports the error with [message_s]. *)
-    (Async_kernel.Monitor.Expert.try_with_log_exn :=
-       fun exn ->
-         message_s
-           [%message
-             "Exception raised to [Monitor.try_with] that already returned."
-               ~_:(exn : exn)]);
+    (Async_kernel.Monitor.Expert.try_with_log_exn
+     := fun exn ->
+       message_s
+         [%message
+           "Exception raised to [Monitor.try_with] that already returned."
+             ~_:(exn : exn)]);
     (* Async would normally deal with errors that reach the main monitor by printing to
        stderr and then exiting 1.  This would look like an emacs crash to the user, so we
        instead output the error to the minibuffer. *)
@@ -535,7 +540,7 @@ let shutdown () =
   match status with
   | Uninitialized | Stopped -> ()
   | Running ->
-    (t.scheduler).have_lock_do_cycle
+    t.scheduler.have_lock_do_cycle
     <- Some
          (fun () ->
             Scheduler.unlock t.scheduler;

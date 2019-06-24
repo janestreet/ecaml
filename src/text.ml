@@ -191,9 +191,7 @@ module Display_spec = struct
   (* We expect values to be of the form ['((margin MARGIN) TEXT)]. *)
   let of_value_exn value : t =
     match Value.to_list_exn value ~f:ident with
-    | []
-    | [ _ ]
-    | _ :: _ :: _ :: _ ->
+    | [] | [ _ ] | _ :: _ :: _ :: _ ->
       raise_s [%sexp "Display_spec: Could not convert value", (value : Value.t)]
     | [ prop; txt ] ->
       { property =

@@ -196,8 +196,7 @@ module Attribute : sig
   val to_value : 'a t -> 'a -> Value.t
   val unspecified_value : 'a t -> 'a
 
-  module Packed :
-  sig
+  module Packed : sig
     type 'a attribute = 'a t
     type t = T : _ attribute -> t
 

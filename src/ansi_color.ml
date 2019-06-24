@@ -87,25 +87,28 @@ end = struct
 end
 
 module Color_index_standard =
-  Bounded_int (struct
-    let max_value = 7
-    let name = "color index"
-  end)
+  Bounded_int
+    (struct
+      let max_value = 7
+      let name = "color index"
+    end)
     ()
 
 (** 8-bit color component value *)
 module Color_value_8bit =
-  Bounded_int (struct
-    let max_value = 255
-    let name = "color value"
-  end)
+  Bounded_int
+    (struct
+      let max_value = 255
+      let name = "color value"
+    end)
     ()
 
 module Color_index_256 =
-  Bounded_int (struct
-    let max_value = 255
-    let name = "color index"
-  end)
+  Bounded_int
+    (struct
+      let max_value = 255
+      let name = "color index"
+    end)
     ()
 
 module By_color_index : sig
@@ -167,17 +170,17 @@ end = struct
       |> Vector.to_value
     in
     ignore
-      ( Customization.defcustom
-          symbol
-          here
-          ~docstring
-          ~group:customization_group
-          ~type_:Value.Type.value
-          ~customization_type:
-            (Vector (List.init 8 ~f:(fun _ -> Customization.Type.Color)))
-          ~standard_value
-          ()
-        : _ Customization.t )
+      (Customization.defcustom
+         symbol
+         here
+         ~docstring
+         ~group:customization_group
+         ~type_:Value.Type.value
+         ~customization_type:
+           (Vector (List.init 8 ~f:(fun _ -> Customization.Type.Color)))
+         ~standard_value
+         ()
+       : _ Customization.t)
   ;;
 
   let () =
@@ -332,7 +335,7 @@ module Code : sig
     (* there are some single-code color specs; those currently come with [Single_code]
        constructor and not with [Set_color] *)
     | Single_code of int
-    | Set_color of { subject : [`background | `foreground]; color : Color_spec.t }
+    | Set_color of { subject : [ `background | `foreground ]; color : Color_spec.t }
   [@@deriving compare, hash, sexp_of]
 
   module Incomplete_param : sig
@@ -353,7 +356,7 @@ end = struct
       (* there are some single-code color specs; those come with [Single_code]
          constructor *)
       | Single_code of int
-      | Set_color of { subject : [`background | `foreground]; color : Color_spec.t }
+      | Set_color of { subject : [ `background | `foreground ]; color : Color_spec.t }
     [@@deriving compare, hash, sexp_of]
   end
 
@@ -363,13 +366,13 @@ end = struct
 
   module Incomplete_param = struct
     type t =
-      | Complex_color of [`background | `foreground]
+      | Complex_color of [ `background | `foreground ]
       | Rgb_color of
-          { subject : [`background | `foreground]
+          { subject : [ `background | `foreground ]
           ; (* incomplete list of rgb components of length up to 2 (3 would be complete) *)
             components : Color_value_8bit.t list
           }
-      | Indexed_256_color of [`background | `foreground]
+      | Indexed_256_color of [ `background | `foreground ]
       | None
     [@@deriving compare, sexp_of, hash]
 
@@ -405,9 +408,7 @@ end = struct
          (match components with
           | [ r; g; b ] -> Done (Set_color { subject; color = Rgb { r; g; b } })
           | _ :: _ :: _ :: _ :: _ -> failwith "impossible: too many rgb components"
-          | []
-          | [ _ ]
-          | [ _; _ ] -> Incomplete (Rgb_color { subject; components })))
+          | [] | [ _ ] | [ _; _ ] -> Incomplete (Rgb_color { subject; components })))
     | Indexed_256_color subject ->
       (match Color_index_256.of_int_exn code with
        | exception exn -> Invalid (Error.of_exn exn)
@@ -606,7 +607,7 @@ module State_machine : sig
   end
 
   val create : unit -> t
-  val transition : t -> raw_code:int -> [`Ok | `Invalid_escape | `Incomplete_escape]
+  val transition : t -> raw_code:int -> [ `Ok | `Invalid_escape | `Incomplete_escape ]
   val reset : t -> unit
   val reset_to_state : t -> State.t -> unit
   val current_text_properties : t -> Add_text_properties.t
@@ -649,7 +650,11 @@ end = struct
     ;;
 
     let sexp_of_t
-          { attributes_state; next_state_by_code; text_properties; add_text_properties = _ }
+          { attributes_state
+          ; next_state_by_code
+          ; text_properties
+          ; add_text_properties = _
+          }
       =
       [%message.omit_nil
         ""
@@ -792,17 +797,19 @@ module Colorization_backend : sig
   val print_invalid_escape
     :  t
     -> drop_unsupported_escapes:bool
-    -> why:[`incomplete | `invalid | `invalid_sgr | `too_long | `unsupported]
+    -> why:[ `incomplete | `invalid | `invalid_sgr | `too_long | `unsupported ]
     -> verbose:bool
     -> unit
 
   val end_of_input : t -> bool
 
   val create
-    :  mode:[`Use_temp_file of string | `In_place_colorization of Char_code.t array * int]
+    :  mode:[ `Use_temp_file of string
+            | `In_place_colorization of Char_code.t array * int
+            ]
     -> t
 
-  val finished : t -> [`Use_temp_file of Temp_file_state.t | `In_place_colorization]
+  val finished : t -> [ `Use_temp_file of Temp_file_state.t | `In_place_colorization ]
   val last_output : t -> int
   val rewind_input : t -> unit
 end = struct
@@ -1066,7 +1073,7 @@ and finish_reading_csi_sequence_and_fail t =
     | '@' .. '~' as c -> `final (if Char.(c = 'm') then `sgr else `non_sgr)
     | _ -> `other
   in
-  let rec loop ~at_most ~(state : [`parameters | `intermediates]) =
+  let rec loop ~at_most ~(state : [ `parameters | `intermediates ]) =
     if Int.( = ) at_most 0
     then `too_long
     else (
@@ -1243,13 +1250,13 @@ let color_region_in_current_buffer
   =
   Current_buffer.save_excursion Sync (fun () ->
     ignore
-      ( color_region
-          ~start
-          ~end_
-          ~use_temp_file
-          ~preserve_state
-          ~drop_unsupported_escapes
-        : bool ))
+      (color_region
+         ~start
+         ~end_
+         ~use_temp_file
+         ~preserve_state
+         ~drop_unsupported_escapes
+       : bool))
 ;;
 
 let color_current_buffer () =
@@ -1257,13 +1264,13 @@ let color_current_buffer () =
   Current_buffer.(set_buffer_local read_only) false;
   Current_buffer.set_undo_enabled false;
   ignore
-    ( color_region
-        ~start:(Point.min ())
-        ~end_:(Point.max ())
-        ~use_temp_file:true
-        ~preserve_state:false
-        ~drop_unsupported_escapes:false
-      : bool );
+    (color_region
+       ~start:(Point.min ())
+       ~end_:(Point.max ())
+       ~use_temp_file:true
+       ~preserve_state:false
+       ~drop_unsupported_escapes:false
+     : bool);
   if not buffer_was_modified then Current_buffer.set_modified false;
   Current_buffer.(set_buffer_local read_only) true;
   Point.goto_char (Point.min ())

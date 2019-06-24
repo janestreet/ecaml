@@ -499,11 +499,11 @@ let%expect_test "rendering OCaml exceptions in Emacs and Ocaml" =
         Sync
         ~f:(fun () ->
           ignore
-            ( Value.funcall1
-                ("(lambda (f) (funcall f))" |> Form.eval_string)
-                (Function.create_nullary [%here] (fun () -> raise_s message)
-                 |> Function.to_value)
-              : Value.t ));
+            (Value.funcall1
+               ("(lambda (f) (funcall f))" |> Form.eval_string)
+               (Function.create_nullary [%here] (fun () -> raise_s message)
+                |> Function.to_value)
+             : Value.t));
       assert false
     with
     | exn ->

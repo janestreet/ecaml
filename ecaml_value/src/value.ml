@@ -376,7 +376,8 @@ let of_utf8_bytes = wrap_raise1 of_utf8_bytes
 let of_utf8_bytes_cache = Hashtbl.create (module String)
 
 let of_utf8_bytes_cached string =
-  Hashtbl.find_or_add of_utf8_bytes_cache string ~default:(fun () -> of_utf8_bytes string)
+  Hashtbl.find_or_add of_utf8_bytes_cache string ~default:(fun () ->
+    of_utf8_bytes string)
 ;;
 
 external to_utf8_bytes_exn : t -> string = "ecaml_to_string"
@@ -583,7 +584,8 @@ let initialize_module =
       else if is_nil data
       then [%sexp (symbol : t)]
       else [%message "" ~_:(symbol : t) ~_:(data : t)]
-    | _ -> (* Reaching this branch indicates a bug in sexplib. *)
+    | _ ->
+      (* Reaching this branch indicates a bug in sexplib. *)
       assert false);
   sexp_of_t_ref := sexp_of_t
 ;;
@@ -676,7 +678,8 @@ module Type = struct
       (sexp_of_list (Tuple2.sexp_of_t (to_sexp t1) (to_sexp t2)))
       (to_list_exn ~f:(fun cons_cell ->
          of_value_exn t1 (car_exn cons_cell), of_value_exn t2 (cdr_exn cons_cell)))
-      (fun l -> list (List.map l ~f:(fun (a, b) -> cons (to_value t1 a) (to_value t2 b))))
+      (fun l ->
+         list (List.map l ~f:(fun (a, b) -> cons (to_value t1 a) (to_value t2 b))))
   ;;
 
   let list t =
@@ -796,7 +799,8 @@ module Make_subtype (M : Make_subtype_arg) = struct
     then
       raise_s
         [%message
-          (concat [ "["; name; "]'s [of_value_exn] got value not in subtype" ]) ~_:(t : t)];
+          (concat [ "["; name; "]'s [of_value_exn] got value not in subtype" ])
+            ~_:(t : t)];
     t
   ;;
 

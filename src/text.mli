@@ -102,8 +102,7 @@ module Property_name : sig
       [M.name] and the associated [Value.t] to a [Property.t]. *)
   val create_and_register : (module S with type Property_value.t = 'a) -> 'a t
 
-  module Packed :
-  sig
+  module Packed : sig
     type 'a property_name
     type t = T : _ property_name -> t [@@deriving sexp_of]
 

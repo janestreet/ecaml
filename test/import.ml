@@ -69,9 +69,9 @@ let int_var name = Var.create (Symbol.create ~name) Value.Type.int
 let show_current_buffer_local_variables () =
   print_s
     [%sexp
-      ( Buffer.buffer_local_variables (Current_buffer.get ())
-        |> List.sort ~compare:(fun (s1, _) (s2, _) -> Symbol.compare_name s1 s2)
-        : (Symbol.t * _ option) list )]
+      (Buffer.buffer_local_variables (Current_buffer.get ())
+       |> List.sort ~compare:(fun (s1, _) (s2, _) -> Symbol.compare_name s1 s2)
+       : (Symbol.t * _ option) list)]
 ;;
 
 (* [with_input_macro keystrokes f] simulates typing [keystrokes] into [f] by defining a

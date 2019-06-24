@@ -41,8 +41,8 @@ module type Funcall = sig
   val funcallN_i : (t -> value list -> unit) funcall
   val funcallN_array_i : (t -> value array -> unit) funcall
 
-  val funcall_int_int_value_value_unit :
-    (t -> int -> int -> value -> value -> unit) funcall
+  val funcall_int_int_value_value_unit
+    : (t -> int -> int -> value -> value -> unit) funcall
 
   val funcall_int_int_value_unit : (t -> int -> int -> value -> unit) funcall
 end
@@ -279,8 +279,7 @@ module type Value = sig
   val prin1_to_string : t -> string
 
   (** An ['a Type.t] is an isomorphism between ['a] and a subset of [Value.t]. *)
-  module Type :
-  sig
+  module Type : sig
     type value
     type 'a t [@@deriving sexp_of]
 

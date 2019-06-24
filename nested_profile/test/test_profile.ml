@@ -189,7 +189,8 @@ let%expect_test "calling [profile] within [output_profile]" =
     (fun string ->
        call_profile ();
        print_endline string)
-    ~f:(fun () -> Ref.set_temporarily hide_if_less_than Time_ns.Span.zero ~f:call_profile);
+    ~f:(fun () ->
+      Ref.set_temporarily hide_if_less_than Time_ns.Span.zero ~f:call_profile);
   [%expect
     {|
     function supplied to [profile] ran
@@ -239,7 +240,8 @@ let%expect_test "[start_location := Line_preceding_profile]" =
   Ref.set_temporarily
     start_location
     (fun () -> Line_preceding_profile)
-    ~f:(fun () -> profile Sync (lazy [%sexp "foo"]) (fun () -> advance_clock_by (sec 1.)));
+    ~f:(fun () ->
+      profile Sync (lazy [%sexp "foo"]) (fun () -> advance_clock_by (sec 1.)));
   [%expect {|
     ("1970-01-01 00:00:10.11Z"
      (1_000_000us foo)) |}]

@@ -39,16 +39,16 @@ let defvar
       ()
   =
   ignore
-    ( Form.eval
-        ([ Q.defvar |> Symbol.to_value
-         ; symbol |> Symbol.to_value
-         ; Value.list
-             [ Symbol.to_value Q.quote; initial_value |> Value.Type.to_value type_ ]
-         ; docstring |> String.strip |> Value.of_utf8_bytes
-         ]
-         |> Value.list
-         |> Form.of_value_exn)
-      : Value.t );
+    (Form.eval
+       ([ Q.defvar |> Symbol.to_value
+        ; symbol |> Symbol.to_value
+        ; Value.list
+            [ Symbol.to_value Q.quote; initial_value |> Value.Type.to_value type_ ]
+        ; docstring |> String.strip |> Value.of_utf8_bytes
+        ]
+        |> Value.list
+        |> Form.of_value_exn)
+     : Value.t);
   if include_in_all_defvar_symbols then add symbol here;
   Var.create symbol type_
 ;;

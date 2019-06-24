@@ -90,7 +90,7 @@ module Record = struct
     let emit string = Buffer.add_string buffer string in
     let over_the_limit = ref false in
     let can_emit additional =
-      not !over_the_limit
+      (not !over_the_limit)
       &&
       (if Buffer.length buffer + additional > !approximate_line_length_limit
        then (
@@ -154,7 +154,8 @@ module Record = struct
   let rec max_took_width t =
     Int.max
       (took_width t)
-      (List.fold t.children ~init:0 ~f:(fun ac child -> Int.max ac (max_took_width child)))
+      (List.fold t.children ~init:0 ~f:(fun ac child ->
+         Int.max ac (max_took_width child)))
   ;;
 
   let rec insert_gap_frames t =
@@ -356,7 +357,8 @@ let profile
       (sync_or_async : a Sync_or_async.t)
       message
       (f : unit -> a)
-  : a =
+  : a
+  =
   if not (!profiling_is_allowed && !should_profile)
   then f ()
   else (

@@ -18,8 +18,8 @@ let%expect_test "[Raw_prefix_argument]" =
          ""
            (arg : Value.t)
            ~for_current_command:
-             ( Current_buffer.value_exn Raw_prefix_argument.for_current_command
-               : Raw_prefix_argument.t )
+             (Current_buffer.value_exn Raw_prefix_argument.for_current_command
+              : Raw_prefix_argument.t)
            ~raw_prefix_argument:
              (arg |> Raw_prefix_argument.of_value_exn : Raw_prefix_argument.t)]);
   is_command (f |> Symbol.to_value);

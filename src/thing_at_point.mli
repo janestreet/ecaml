@@ -52,6 +52,7 @@ val end_exn : t -> unit
 (** [end_] tries [end_exn] and returns false if it would have raised. *)
 val end_ : t -> bool
 
+
 (** Define [symbol] as a "thing" so that [Other symbol] works as the argument to [find],
     etc (but not [forward]). The effect is to define a property of the symbol; so long as
     that property isn't otherwise used, the symbol can be used for other purposes as well.

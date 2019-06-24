@@ -69,7 +69,7 @@ val keymap : _ t -> Keymap.t
 val major_mode : _ t -> Major_mode.t
 
 val draw
-  :  ?sort_by:string * [`Ascending | `Descending]
+  :  ?sort_by:string * [ `Ascending | `Descending ]
   -> ('record, 'id) t
   -> 'record list
   -> unit

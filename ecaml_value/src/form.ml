@@ -65,8 +65,7 @@ let lambda =
     let args =
       [ args
       ; (match optional_args with
-         | None
-         | Some [] -> []
+         | None | Some [] -> []
          | Some optional_args -> Q.A.optional :: optional_args)
       ; rest_arg
         |> Option.value_map ~default:[] ~f:(fun rest_arg -> [ Q.A.rest; rest_arg ])

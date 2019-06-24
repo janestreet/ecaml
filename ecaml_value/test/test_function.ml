@@ -15,12 +15,12 @@ let%expect_test "mutual recursion between Emacs and OCaml" =
         Value.of_int_exn
           (1 + Value.to_int_exn (Value.funcall1 v (i - 1 |> Value.of_int_exn))))
   in
-  r :=
-    Some
-      (Function.to_value
-         (Function.create [%here] ~args:[ "int" |> Symbol.intern ] (function
-            | [| v |] -> loop (v |> Value.to_int_exn)
-            | _ -> assert false)));
+  r
+  := Some
+       (Function.to_value
+          (Function.create [%here] ~args:[ "int" |> Symbol.intern ] (function
+             | [| v |] -> loop (v |> Value.to_int_exn)
+             | _ -> assert false)));
   print_s [%message "result" ~_:(loop 5 : Value.t)];
   [%expect {|
     (i 5)

@@ -134,14 +134,14 @@ module Args = struct
 
   let sexp_of_t { required; optional; rest } =
     [%sexp
-      ( List.concat
-          [ required
-          ; (if List.is_empty optional then [] else Q.A.optional :: optional)
-          ; (match rest with
-             | None -> []
-             | Some rest -> [ Q.A.rest; rest ])
-          ]
-        : Symbol.t list )]
+      (List.concat
+         [ required
+         ; (if List.is_empty optional then [] else Q.A.optional :: optional)
+         ; (match rest with
+            | None -> []
+            | Some rest -> [ Q.A.rest; rest ])
+         ]
+       : Symbol.t list)]
   ;;
 
   let empty = { required = []; optional = []; rest = None }
@@ -185,7 +185,8 @@ module Returns = struct
         (type a b)
         (sync_or_async : (a, b) Sync_or_async.t)
         (type_ : a Value.Type.t)
-    : (a, b) t =
+    : (a, b) t
+    =
     match sync_or_async with
     | Sync -> Returns type_
     | Async -> Returns_deferred type_

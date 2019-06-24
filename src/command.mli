@@ -5,7 +5,8 @@ open! Import0
 
 (** A [Command.t] is an Elisp value satsifying [commandp].
     [(describe-function 'commandp)] *)
-include Value.Subtype
+include
+  Value.Subtype
 
 (** [(Info-goto-node "(elisp)Prefix Command Arguments")] *)
 module Raw_prefix_argument : sig

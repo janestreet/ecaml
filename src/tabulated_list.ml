@@ -95,7 +95,8 @@ module Column = struct
           ~name:[%sexp "Column.Format"]
           ~of_:(fun (header, (width, (sortable, props))) ->
             let t = format ~header ~sortable ~width () in
-            List.fold props ~init:t ~f:(fun t -> function
+            List.fold props ~init:t ~f:(fun t ->
+              function
               | Align_right align_right -> { t with align_right }
               | Pad_right pad_right -> { t with pad_right }))
           ~to_:(fun { align_right; header; pad_right; sortable; width } ->
@@ -186,8 +187,7 @@ module Column = struct
       let str = field_of_record record in
       (match String.split_lines str with
        | line :: _ :: _ -> sprintf "%s..." (String.rstrip line)
-       | []
-       | [ _ ] -> str)
+       | [] | [ _ ] -> str)
       |> String.strip)
   ;;
 

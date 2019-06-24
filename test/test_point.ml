@@ -408,8 +408,8 @@ let%expect_test "[search_forward_regexp] and [Regexp.Last_match]" =
     goto_char (min ());
     print_s
       [%sexp
-        ( search_forward_regexp ("z" |> Regexp.of_pattern) ~update_last_match:true
-          : bool )];
+        (search_forward_regexp ("z" |> Regexp.of_pattern) ~update_last_match:true
+         : bool)];
     [%expect {|
       false |}];
     show_last_match ();
@@ -420,8 +420,8 @@ let%expect_test "[search_forward_regexp] and [Regexp.Last_match]" =
        (end_  (Error "Prior [Regexp] match did not match"))) |}];
     print_s
       [%sexp
-        ( search_forward_regexp ({|\(b\)|} |> Regexp.of_pattern) ~update_last_match:true
-          : bool )];
+        (search_forward_regexp ({|\(b\)|} |> Regexp.of_pattern) ~update_last_match:true
+         : bool)];
     [%expect {|
       true |}];
     show_last_match ();

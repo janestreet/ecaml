@@ -111,7 +111,11 @@ let beginning_exn thing =
 ;;
 
 let beginning = did_not_raise beginning_exn
-let end_exn thing = with_settings thing ~f:(fun () -> F.end_of_thing (thing |> to_symbol))
+
+let end_exn thing =
+  with_settings thing ~f:(fun () -> F.end_of_thing (thing |> to_symbol))
+;;
+
 let end_ = did_not_raise end_exn
 let bounds_prop = Symbol.Property.create Q.bounds_of_thing_at_point Function.type_
 

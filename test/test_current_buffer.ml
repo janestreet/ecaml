@@ -276,8 +276,8 @@ let%expect_test "[contents]" =
       foo |}];
     print_s
       [%sexp
-        ( contents () ~start:(1 |> Position.of_int_exn) ~end_:(2 |> Position.of_int_exn)
-          : Text.t )];
+        (contents () ~start:(1 |> Position.of_int_exn) ~end_:(2 |> Position.of_int_exn)
+         : Text.t)];
     [%expect {|
       f |}])
 ;;
@@ -297,12 +297,12 @@ let%expect_test "[contents_text ~text_properties:true], [insert_text]" =
        (foo 0 3 (face (:background red))) |}];
     print_s
       [%sexp
-        ( contents
-            ()
-            ~start:(1 |> Position.of_int_exn)
-            ~end_:(2 |> Position.of_int_exn)
-            ~text_properties:true
-          : Text.t )];
+        (contents
+           ()
+           ~start:(1 |> Position.of_int_exn)
+           ~end_:(2 |> Position.of_int_exn)
+           ~text_properties:true
+         : Text.t)];
     [%expect {|
       (f 0 1 (face (:background red))) |}])
 ;;

@@ -108,25 +108,25 @@ let initialize () =
   (* When not in test, we start initializing the profile buffer, so that it exists when we
      need it. *)
   if not am_running_test then ignore (Profile_buffer.profile_buffer () : Buffer.t option);
-  (Profile.sexp_of_time_ns :=
-     fun time_ns ->
-       match [%sexp (time_ns : Core.Time_ns.t)] with
-       | List [ date; ofday ] -> List [ ofday; date ]
-       | sexp -> sexp);
-  (Profile.output_profile :=
-     fun string ->
-       (* If [output_profile] raises, then Nested_profile use [eprint_s] to print the
-          exception, which doesn't work well in Emacs.  So we do our own exception
-          handling. *)
-       try
-         match Profile_buffer.profile_buffer () with
-         | None -> ()
-         | Some buffer ->
-           Current_buffer.set_temporarily buffer Sync ~f:(fun () ->
-             Current_buffer.inhibit_read_only Sync (fun () ->
-               Current_buffer.append_to string))
-       with
-       | exn -> message_s [%message "unable to output profile" ~_:(exn : exn)]);
+  (Profile.sexp_of_time_ns
+   := fun time_ns ->
+     match [%sexp (time_ns : Core.Time_ns.t)] with
+     | List [ date; ofday ] -> List [ ofday; date ]
+     | sexp -> sexp);
+  (Profile.output_profile
+   := fun string ->
+     (* If [output_profile] raises, then Nested_profile use [eprint_s] to print the
+        exception, which doesn't work well in Emacs.  So we do our own exception
+        handling. *)
+     try
+       match Profile_buffer.profile_buffer () with
+       | None -> ()
+       | Some buffer ->
+         Current_buffer.set_temporarily buffer Sync ~f:(fun () ->
+           Current_buffer.inhibit_read_only Sync (fun () ->
+             Current_buffer.append_to string))
+     with
+     | exn -> message_s [%message "unable to output profile" ~_:(exn : exn)]);
   Hook.add
     Elisp_gc.post_gc_hook
     (Hook.Function.create

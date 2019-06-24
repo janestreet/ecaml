@@ -84,7 +84,7 @@ let add wrapped_at name symbol =
 module type S = S with type t := t and type name := Name.t
 
 let wrap_existing wrapped_at symbol =
-  ( module struct
+  (module struct
     type Name.t += Major_mode
 
     let major_mode =
@@ -98,8 +98,7 @@ let wrap_existing wrapped_at symbol =
               (wrapped_at : Source_code_position.t)
               ~previous_def:(t : t)]
     ;;
-  end
-  : S )
+  end : S)
 ;;
 
 let find_or_wrap_existing here symbol =

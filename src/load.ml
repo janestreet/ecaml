@@ -17,5 +17,5 @@ let load ?(message = true) filename =
     Q.load
     (filename |> Filename.to_value)
     Value.nil
-    (not message |> Value.of_bool)
+    ((not message) |> Value.of_bool)
 ;;

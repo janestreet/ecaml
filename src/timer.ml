@@ -50,7 +50,7 @@ let run_after_i ?repeat here span ~f ~name =
 let cancel t = Symbol.funcall1_i Q.cancel_timer (t |> to_value)
 
 let sit_for ?(redisplay = true) span =
-  Symbol.funcall2_i Q.sit_for (span |> to_seconds) (not redisplay |> Value.of_bool)
+  Symbol.funcall2_i Q.sit_for (span |> to_seconds) ((not redisplay) |> Value.of_bool)
 ;;
 
 let sleep_for span = Symbol.funcall1_i Q.sleep_for (span |> to_seconds)

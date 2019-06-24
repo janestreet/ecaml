@@ -112,10 +112,10 @@ let%expect_test "[locate_dominating_file]" =
       let test ~above =
         print_s
           [%sexp
-            ( locate_dominating_file ~above:(concat [ dir; "/"; above ]) ~basename
-              |> Option.map ~f:(fun x ->
-                x |> File.truename |> String.chop_prefix_exn ~prefix:dir)
-              : string option )]
+            (locate_dominating_file ~above:(concat [ dir; "/"; above ]) ~basename
+             |> Option.map ~f:(fun x ->
+               x |> File.truename |> String.chop_prefix_exn ~prefix:dir)
+             : string option)]
       in
       test ~above:"b/c";
       [%expect {|

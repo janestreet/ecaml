@@ -268,10 +268,10 @@ module Async_tests = struct
     Directory.with_temp_dir Async ~prefix:"test-revert" ~suffix:"" ~f:(fun dir ->
       let%bind () = Selected_window.find_file (concat [ dir; "/file" ]) in
       ignore
-        ( Process.shell_command_exn
-            "echo foo >file"
-            ~working_directory:Of_current_buffer
-          : string );
+        (Process.shell_command_exn
+           "echo foo >file"
+           ~working_directory:Of_current_buffer
+         : string);
       print_s [%sexp (Current_buffer.contents () : Text.t)];
       let%bind () = [%expect {| "" |}] in
       let%bind () = revert (Current_buffer.get ()) in

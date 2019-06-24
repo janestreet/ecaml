@@ -5,8 +5,8 @@ open! Defvar
 let%expect_test "[defvar]" =
   let x = "x" |> Symbol.intern in
   ignore
-    ( defvar x [%here] ~docstring:"some text" ~type_:Value.Type.int ~initial_value:13 ()
-      : _ Var.t );
+    (defvar x [%here] ~docstring:"some text" ~type_:Value.Type.int ~initial_value:13 ()
+     : _ Var.t);
   print_s [%sexp (Current_buffer.value_exn { symbol = x; type_ = Value.Type.int } : int)];
   [%expect {|
     13 |}];

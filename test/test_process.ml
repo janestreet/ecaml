@@ -22,10 +22,10 @@ let show t =
         ~command:(command t : string list option)
         ~is_in_all_emacs_children:(List.mem (all_emacs_children ()) t ~equal : bool)
         ~pid_is_positive:
-          ( match pid t with
-            | None -> None
-            | Some pid -> Some (Pid.to_int pid >= 0)
-                          : bool option )
+          (match pid t with
+           | None -> None
+           | Some pid -> Some (Pid.to_int pid >= 0)
+                         : bool option)
         ~status:(status t : Status.t)
         ~exit_status:(exit_status t : Exit_status.t)]
 ;;
@@ -84,7 +84,7 @@ let%expect_test "[extend_sentinel]" =
       print_s [%sexp "I'm another sentinel!"];
       sentinels_ran := true);
     let timeout_at = Time.(add (now ()) (Span.of_sec 1.)) in
-    while not !sentinels_ran && Time.(now () < timeout_at) do
+    while (not !sentinels_ran) && Time.(now () < timeout_at) do
       Timer.sleep_for (0.01 |> sec_ns)
     done
   in
@@ -150,7 +150,7 @@ module Async = struct
           sentinels_ran := true);
       let timeout_at = Time.(add (now ()) (Span.of_sec 1.)) in
       let rec loop () =
-        if not !sentinels_ran && Time.(now () < timeout_at)
+        if (not !sentinels_ran) && Time.(now () < timeout_at)
         then (
           let%bind () =
             Async_ecaml.Private.run_outside_async [%here] (fun () ->

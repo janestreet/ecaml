@@ -25,7 +25,8 @@ let protect
       (t : (a, b) t)
       ~(f : unit -> b)
       ~finally
-  : b =
+  : b
+  =
   match t with
   | Sync -> Exn.protect ~f ~finally
   | Async ->

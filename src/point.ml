@@ -153,8 +153,8 @@ let handle_last_match ?(update_last_match = update_last_match_default) f =
   then Regexp.Last_match.save f
   else (
     let result = f () in
-    Regexp.Last_match.Private.Location.last :=
-      if result then Buffer (Current_buffer.get ()) else No_match;
+    Regexp.Last_match.Private.Location.last
+    := if result then Buffer (Current_buffer.get ()) else No_match;
     result)
 ;;
 

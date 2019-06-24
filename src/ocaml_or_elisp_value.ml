@@ -3,7 +3,7 @@ open! Import
 include Ocaml_or_elisp_value_intf
 
 let make (type ocaml) (type_ : ocaml Value.Type.t) =
-  ( module struct
+  (module struct
     type nonrec ocaml = ocaml
 
     let sexp_of_ocaml = Value.Type.to_sexp type_
@@ -22,7 +22,6 @@ let make (type ocaml) (type_ : ocaml Value.Type.t) =
       | Elisp value -> value
       | This ocaml -> Value.Type.to_value type_ ocaml
     ;;
-  end
-  : S
-    with type ocaml = ocaml )
+  end : S
+    with type ocaml = ocaml)
 ;;

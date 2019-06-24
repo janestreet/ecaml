@@ -151,7 +151,7 @@ let save_some ?(query = true) ?(which_buffers = Which_buffers.File_visiting) () 
     try
       Symbol.funcall2_i
         Q.save_some_buffers
-        (not query |> Value.of_bool)
+        ((not query) |> Value.of_bool)
         (which_buffers |> Which_buffers.to_value)
     with
     | exn -> raise_s [%message "[Buffer.save_some]" (exn : exn)])

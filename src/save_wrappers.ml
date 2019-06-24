@@ -19,22 +19,22 @@ let save_sync save_function args f =
   let r = ref None in
   let f =
     Function.create [%here] ~args:[] (function
-      | [|  |] ->
+      | [||] ->
         r := Some (f ());
         Value.nil
       | _ -> assert false)
   in
   ignore
-    ( Form.eval
-        (Form.list
-           (List.concat
-              [ [ save_function |> Form.symbol ]
-              ; args |> List.map ~f:Form.of_value_exn
-              ; [ Form.list
-                    [ Q.funcall |> Form.symbol; f |> Function.to_value |> Form.quote ]
-                ]
-              ]))
-      : Value.t );
+    (Form.eval
+       (Form.list
+          (List.concat
+             [ [ save_function |> Form.symbol ]
+             ; args |> List.map ~f:Form.of_value_exn
+             ; [ Form.list
+                   [ Q.funcall |> Form.symbol; f |> Function.to_value |> Form.quote ]
+               ]
+             ]))
+     : Value.t);
   match !r with
   | None -> assert false
   | Some a -> a
@@ -46,7 +46,8 @@ let save_
       save_function
       args
       (f : unit -> b)
-  : b =
+  : b
+  =
   match sync_or_async with
   | Sync -> save_sync save_function args f
   | Async ->
@@ -54,10 +55,10 @@ let save_
       [%here]
       ~message:
         [%sexp
-          ( sprintf
-              "%s called asynchronously in background job"
-              (Symbol.name save_function)
-            : string )];
+          (sprintf
+             "%s called asynchronously in background job"
+             (Symbol.name save_function)
+           : string)];
     Value.Private.run_outside_async [%here] (fun () ->
       save_sync save_function args (fun () -> Value.Private.block_on_async [%here] f))
 ;;

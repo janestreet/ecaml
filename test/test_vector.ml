@@ -140,8 +140,8 @@ let%expect_test "[to_array]" =
   for n = 0 to 3 do
     print_s
       [%sexp
-        ( List.init n ~f:Value.of_int_exn |> of_list |> to_array ~f:Value.to_int_exn
-          : int array )]
+        (List.init n ~f:Value.of_int_exn |> of_list |> to_array ~f:Value.to_int_exn
+         : int array)]
   done;
   [%expect {|
     ()

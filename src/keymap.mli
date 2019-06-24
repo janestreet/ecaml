@@ -56,7 +56,7 @@ module Entry : sig
     | Keyboard_macro of Key_sequence.t
     | Keymap of keymap
     | Symbol of Symbol.t
-    | Undefined  (** [(describe-function 'undefined)] *)
+    | Undefined (** [(describe-function 'undefined)] *)
     | Value of Value.t
   [@@deriving sexp_of]
 

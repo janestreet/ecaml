@@ -34,7 +34,7 @@ module T = struct
     | One_or_more of t
     | Or of t list
     (** [Pattern s] interprets [s] as a regexp (e.g., '.' matches any character) *)
-    | Pattern of string  (** Matches zero characters, but only where the point is. *)
+    | Pattern of string (** Matches zero characters, but only where the point is. *)
     | Point
     | Repeat of { min : int; max : int option; t : t }
     | Seq of t list

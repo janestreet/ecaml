@@ -204,8 +204,7 @@ module Inherit = struct
   let unspecified = Unspecified
 
   let to_value = function
-    | Face []
-    | Unspecified -> Value.unspecified
+    | Face [] | Unspecified -> Value.unspecified
     | Face [ face ] -> to_value face
     | Face faces -> Value.Type.to_value list_type faces
   ;;
@@ -555,7 +554,8 @@ module Attribute_and_value = struct
     | exception _ ->
       raise_s
         [%message
-          "[Face.Attribute_and_value.of_value_exn] got unexpected value" (value : Value.t)]
+          "[Face.Attribute_and_value.of_value_exn] got unexpected value"
+            (value : Value.t)]
   ;;
 
   let sort_by_attribute_name ts =
