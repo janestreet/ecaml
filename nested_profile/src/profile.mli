@@ -50,6 +50,7 @@ val should_profile : bool ref
 val hide_if_less_than : Time_ns.Span.t ref
 val hide_top_level_if_less_than : Time_ns.Span.t ref
 val sexp_of_time_ns : (Time_ns.t -> Sexp.t) ref
+val tag_frames_with : (unit -> Sexp.t option) option ref
 
 (** [profile] calls [output_profile] to display the profile to the user.  It is
     [print_string] by default. *)
@@ -63,7 +64,11 @@ module Start_location : sig
 end
 
 (** [start_location] specifies where in a profile the start time is rendered. *)
-val start_location : (unit -> Start_location.t) ref
+val start_location : Start_location.t ref
+
+(** Return the current stack of [profile] messages, sorted inner profile frames first.
+    Returns [None] if [should_profile] is false. *)
+val backtrace : unit -> Sexp.t list option
 
 module Private : sig
   module Clock : sig

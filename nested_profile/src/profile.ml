@@ -10,7 +10,7 @@ module Start_location = struct
   let default = End_of_profile_first_line
 end
 
-let start_location = ref (fun () -> Start_location.default)
+let start_location = ref Start_location.default
 let concat = String.concat
 let approximate_line_length_limit = ref 1_000
 let should_profile = ref false
@@ -18,6 +18,7 @@ let hide_if_less_than = ref (Time_ns.Span.of_int_us 100)
 let hide_top_level_if_less_than = ref (Time_ns.Span.of_int_ms 10)
 let output_profile = ref print_string
 let sexp_of_time_ns = ref [%sexp_of: Time_ns.Alternate_sexp.t]
+let tag_frames_with = ref None
 
 module Time_ns = struct
   include Time_ns
@@ -184,21 +185,11 @@ module Record = struct
   ;;
 
   let to_string_hum t =
-    let rendering_errors = ref [] in
-    let add_rendering_error error = rendering_errors := error :: !rendering_errors in
-    let start_location =
-      with_profiling_disallowed (fun () ->
-        try !start_location () with
-        | exn ->
-          let backtrace = Backtrace.Exn.most_recent () in
-          add_rendering_error
-            [%message
-              "[Profile.start_location] raised" (exn : exn) (backtrace : Backtrace.t)];
-          Start_location.default)
-    in
+    let rendering_started = now () in
+    let start_location = !start_location in
     let t = insert_gap_frames t in
     let took_total_width = max_took_width t in
-    let paren s = concat [ "("; s; ")" ] in
+    let paren strings = concat [ "("; concat strings; ")" ] in
     let shift_right =
       match start_location with
       | End_of_profile_first_line -> 0
@@ -233,45 +224,52 @@ module Record = struct
       concat
         [ String.make (shift_right + (3 * depth)) ' '
         ; paren
-            (concat
-               [ percentage
-               ; took
-                 |> time_span_as_micros_with_two_digits_of_precision
-                 |> pad_left ~total_width:took_total_width
-               ; " "
-               ; message |> sexp_to_string_on_one_line
-               ; (match start_location with
-                  | Line_preceding_profile -> ""
-                  | End_of_profile_first_line ->
-                    if depth = 0 then concat [ " "; start ] else "")
-               ; (if List.is_empty children
-                  then ""
-                  else
-                    concat
-                      [ " "
-                      ; paren
-                          (concat
-                             [ "\n"
-                             ; concat
-                                 ~sep:"\n"
-                                 (List.map
-                                    children
-                                    ~f:(loop ~depth:(depth + 1) ~parent_took:(Some took)))
-                             ])
-                      ])
-               ])
+            [ percentage
+            ; took
+              |> time_span_as_micros_with_two_digits_of_precision
+              |> pad_left ~total_width:took_total_width
+            ; " "
+            ; message |> sexp_to_string_on_one_line
+            ; (match start_location with
+               | Line_preceding_profile -> ""
+               | End_of_profile_first_line ->
+                 if depth = 0 then concat [ " "; start ] else "")
+            ; (if List.is_empty children
+               then ""
+               else
+                 concat
+                   [ " "
+                   ; paren
+                       [ "\n"
+                       ; concat
+                           ~sep:"\n"
+                           (List.map
+                              children
+                              ~f:(loop ~depth:(depth + 1) ~parent_took:(Some took)))
+                       ]
+                   ])
+            ]
         ]
     in
     let profile = loop t ~depth:0 ~parent_took:None in
+    let rendering_finished = now () in
+    let rendering_took = Time_ns.diff rendering_finished rendering_started in
     let profile =
-      match start_location with
-      | End_of_profile_first_line -> profile
-      | Line_preceding_profile -> paren (concat [ start; "\n"; profile ])
+      if Time_ns.Span.( < ) rendering_took !hide_top_level_if_less_than
+      then profile
+      else
+        paren
+          [ paren
+              [ "rendering_took "
+              ; rendering_took |> time_span_as_micros_with_two_digits_of_precision
+              ]
+          ; "\n"
+          ; profile
+          ]
     in
-    match !rendering_errors with
-    | [] -> profile
-    | rendering_errors ->
-      concat [ List rendering_errors |> sexp_to_string_on_one_line; "\n"; profile ]
+    match start_location with
+    | End_of_profile_first_line -> profile
+    | Line_preceding_profile -> paren [ start; "\n"; profile ]
   ;;
 end
 
@@ -320,6 +318,7 @@ module Profile_context = struct
   ;;
 
   let reset () = Stack.clear t
+  let backtrace () = Stack.to_list t |> List.map ~f:(fun frame -> frame.message)
 end
 
 let maybe_record_frame ?hide_if_less_than:local_hide_if_less_than (frame : Frame.t) ~stop
@@ -355,13 +354,27 @@ let profile
       (type a)
       ?hide_if_less_than
       (sync_or_async : a Sync_or_async.t)
-      message
+      (message : Sexp.t Lazy.t)
       (f : unit -> a)
   : a
   =
   if not (!profiling_is_allowed && !should_profile)
   then f ()
   else (
+    let tag =
+      with_profiling_disallowed (fun () ->
+        try Option.bind !tag_frames_with ~f:(fun f -> f ()) with
+        | exn ->
+          let backtrace = Backtrace.Exn.most_recent () in
+          Some
+            [%message
+              "[Profile.tag_frames_with] raised" (exn : exn) (backtrace : Backtrace.t)])
+    in
+    let message =
+      match tag with
+      | None -> message
+      | Some tag -> lazy (List [ force message; tag ])
+    in
     let frame = Frame.create ~message in
     Profile_context.push frame;
     match sync_or_async with
@@ -371,6 +384,12 @@ let profile
       Monitor.protect f ~finally:(fun () ->
         record_profile ?hide_if_less_than ~expected_frame:frame ();
         return ()))
+;;
+
+let backtrace () =
+  match !should_profile with
+  | false -> None
+  | true -> Some (Profile_context.backtrace () |> List.map ~f:force)
 ;;
 
 module Private = struct

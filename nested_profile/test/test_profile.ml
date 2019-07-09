@@ -211,7 +211,8 @@ let%expect_test "calling [profile] within the [Sexp.t Lazy.t] supplied to [profi
     {|
     outer call
     function supplied to [profile] ran
-    (1_000_000us "outer context" "1970-01-01 00:00:07.11Z") |}]
+    ((rendering_took 1_000_000us)
+    (1_000_000us "outer context" "1970-01-01 00:00:07.11Z")) |}]
 ;;
 
 let%expect_test "long line" =
@@ -231,17 +232,16 @@ let%expect_test "zero time" =
         Sync
         (lazy [%sexp "outer"])
         (fun () -> profile Sync (lazy [%sexp "inner"]) (fun () -> ()))));
-  [%expect {|
+  [%expect
+    {|
+    ((rendering_took 0us)
     (0us outer "1970-01-01 00:00:10.11Z" (
-       (  _% 0us inner))) |}]
+       (  _% 0us inner)))) |}]
 ;;
 
 let%expect_test "[start_location := Line_preceding_profile]" =
-  Ref.set_temporarily
-    start_location
-    (fun () -> Line_preceding_profile)
-    ~f:(fun () ->
-      profile Sync (lazy [%sexp "foo"]) (fun () -> advance_clock_by (sec 1.)));
+  Ref.set_temporarily start_location Line_preceding_profile ~f:(fun () ->
+    profile Sync (lazy [%sexp "foo"]) (fun () -> advance_clock_by (sec 1.)));
   [%expect {|
     ("1970-01-01 00:00:10.11Z"
      (1_000_000us foo)) |}]
@@ -260,18 +260,6 @@ let%expect_test "we do not force the message in a profile that isn't rendered" =
 
 let profile_sync () =
   profile Sync (lazy [%message "foo"]) (fun () -> advance_clock_by (sec 1.))
-;;
-
-let%expect_test "[start_location] that raises" =
-  require_does_not_raise [%here] ~cr:CR_soon (fun () ->
-    Ref.set_temporarily
-      start_location
-      (fun _ -> raise_s [%message "raising"])
-      ~f:profile_sync);
-  [%expect
-    {|
-    (("[Profile.start_location] raised" (exn raising) (backtrace ("<backtrace elided in test>"))))
-    (1_000_000us foo "1970-01-01 00:00:11.11Z") |}]
 ;;
 
 let%expect_test "[sexp_of_time_ns] that raises" =
@@ -305,5 +293,83 @@ let%expect_test "[profile] message that raises" =
       (fun () -> advance_clock_by (sec 1.)));
   [%expect
     {|
-    (1_000_000us ("[Profile.profile] message raised" (exn raising) (backtrace ("<backtrace elided in test>"))) "1970-01-01 00:00:14.11Z") |}]
+    (1_000_000us ("[Profile.profile] message raised" (exn raising) (backtrace ("<backtrace elided in test>"))) "1970-01-01 00:00:13.11Z") |}]
+;;
+
+let%expect_test "[backtrace]" =
+  let test_backtrace ~should_profile =
+    Ref.set_temporarily Profile.should_profile should_profile ~f:(fun () ->
+      profile
+        Sync
+        (lazy [%message "Outer profile"])
+        (fun () ->
+           profile
+             Sync
+             (lazy [%message "Inner profile"])
+             (fun () ->
+                print_s
+                  [%sexp
+                    "Backtrace from inner function", (backtrace () : Sexp.t list option)]);
+           print_s
+             [%sexp
+               "Backtrace from outer function", (backtrace () : Sexp.t list option)]))
+  in
+  test_backtrace ~should_profile:true;
+  let%bind () =
+    [%expect
+      {|
+    ("Backtrace from inner function" (("Inner profile" "Outer profile")))
+    ("Backtrace from outer function" (("Outer profile"))) |}]
+  in
+  test_backtrace ~should_profile:false;
+  [%expect
+    {|
+    ("Backtrace from inner function" ())
+    ("Backtrace from outer function" ()) |}]
+;;
+
+let%expect_test "[tag_frames_with]" =
+  Ref.set_temporarily tag_frames_with (Some (fun _ -> None)) ~f:call_profile;
+  let%bind () =
+    [%expect
+      {|
+    function supplied to [profile] ran
+    (1_000_000us context "1970-01-01 00:00:14.11Z") |}]
+  in
+  Ref.set_temporarily
+    tag_frames_with
+    (Some (fun _ -> Some (Atom "hello world")))
+    ~f:call_profile;
+  [%expect
+    {|
+    function supplied to [profile] ran
+    (1_000_000us (context "hello world") "1970-01-01 00:00:15.11Z") |}]
+;;
+
+let%expect_test "[tag_frames_with] runs before f" =
+  let some_int = ref 0 in
+  Ref.set_temporarily
+    tag_frames_with
+    (Some (fun _ -> Some [%sexp { some_int : int = !some_int }]))
+    ~f:(fun () ->
+      profile
+        Sync
+        (lazy [%message "Increment some_int"])
+        (fun () ->
+           incr some_int;
+           advance_clock_by (sec 1.)));
+  [%expect
+    {|
+      (1_000_000us ("Increment some_int" ((some_int 0))) "1970-01-01 00:00:16.11Z") |}]
+;;
+
+let%expect_test "[tag_frames_with] raises" =
+  Ref.set_temporarily
+    tag_frames_with
+    (Some (fun _ -> raise_s [%sexp "Hello world"]))
+    ~f:call_profile;
+  [%expect
+    {|
+    function supplied to [profile] ran
+    (1_000_000us (context ("[Profile.tag_frames_with] raised" (exn "Hello world") (backtrace ("<backtrace elided in test>")))) "1970-01-01 00:00:17.11Z") |}]
 ;;

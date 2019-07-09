@@ -59,7 +59,7 @@ Where to render a profile's start time:
       ()
   ;;
 
-  let () = Profile.start_location := fun () -> Customization.value customization
+  let () = Profile.start_location := Customization.value customization
 end
 
 module Profile_buffer : sig
