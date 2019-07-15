@@ -327,8 +327,17 @@ module type Value = sig
   end
 
   module For_testing : sig
-    exception Elisp_signal of { symbol : t; data : t }
-    exception Elisp_throw of { tag : t; value : t }
+    exception
+      Elisp_signal of
+        { symbol : t
+        ; data : t
+        }
+
+    exception
+      Elisp_throw of
+        { tag : t
+        ; value : t
+        }
 
     (** Used to edit non-deterministic stuff out of Elisp signals. *)
     val map_elisp_signal

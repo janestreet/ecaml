@@ -215,7 +215,11 @@ module Call = struct
 
   module Region_input = struct
     type t =
-      | Region of { start : Position.t; end_ : Position.t; delete : bool }
+      | Region of
+          { start : Position.t
+          ; end_ : Position.t
+          ; delete : bool
+          }
       | String of string
     [@@deriving sexp_of]
   end
@@ -255,7 +259,10 @@ module Call = struct
       | Before_point_in_current_buffer
       | Dev_null
       | Overwrite_file of string
-      | Split of { stderr : Stderr.t; stdout : Stdout.t }
+      | Split of
+          { stderr : Stderr.t
+          ; stdout : Stdout.t
+          }
     [@@deriving sexp_of]
 
     let to_value = function

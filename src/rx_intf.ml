@@ -36,7 +36,11 @@ module T = struct
     (** [Pattern s] interprets [s] as a regexp (e.g., '.' matches any character) *)
     | Pattern of string (** Matches zero characters, but only where the point is. *)
     | Point
-    | Repeat of { min : int; max : int option; t : t }
+    | Repeat of
+        { min : int
+        ; max : int option
+        ; t : t
+        }
     | Seq of t list
     (** Text matched by [Submatch] can be retrieved using [Regexp.Last_match.text_exn
         ~subexp:index].
@@ -51,7 +55,10 @@ module T = struct
         regexp pattern. If [index] is greater, it will shadow the submatch that would have
         been assigned that index. If [index] is less, then it is an error to use the
         resulting regexp. *)
-    | Submatch_n of { index : int; t : t }
+    | Submatch_n of
+        { index : int
+        ; t : t
+        }
     | Zero_or_more of t
     | Zero_or_one of t
   [@@deriving sexp_of]

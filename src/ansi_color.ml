@@ -143,7 +143,11 @@ module Color_spec = struct
   type t =
     | Standard of Standard.t
     | Indexed_256 of Color_index_256.t
-    | Rgb of { r : Color_value_8bit.t; g : Color_value_8bit.t; b : Color_value_8bit.t }
+    | Rgb of
+        { r : Color_value_8bit.t
+        ; g : Color_value_8bit.t
+        ; b : Color_value_8bit.t
+        }
   [@@deriving compare, hash, sexp_of]
 
   let make_fainter t =
@@ -335,7 +339,10 @@ module Code : sig
     (* there are some single-code color specs; those currently come with [Single_code]
        constructor and not with [Set_color] *)
     | Single_code of int
-    | Set_color of { subject : [ `background | `foreground ]; color : Color_spec.t }
+    | Set_color of
+        { subject : [ `background | `foreground ]
+        ; color : Color_spec.t
+        }
   [@@deriving compare, hash, sexp_of]
 
   module Incomplete_param : sig
@@ -356,7 +363,10 @@ end = struct
       (* there are some single-code color specs; those come with [Single_code]
          constructor *)
       | Single_code of int
-      | Set_color of { subject : [ `background | `foreground ]; color : Color_spec.t }
+      | Set_color of
+          { subject : [ `background | `foreground ]
+          ; color : Color_spec.t
+          }
     [@@deriving compare, hash, sexp_of]
   end
 

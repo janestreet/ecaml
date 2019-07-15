@@ -38,8 +38,17 @@ external non_local_exit_get_and_clear
   -> Funcall_exit.t
   = "ecaml_non_local_exit_get_and_clear"
 
-exception Elisp_signal of { symbol : t; data : t }
-exception Elisp_throw of { tag : t; value : t }
+exception
+  Elisp_signal of
+    { symbol : t
+    ; data : t
+    }
+
+exception
+  Elisp_throw of
+    { tag : t
+    ; value : t
+    }
 
 let raise_if_emacs_signaled () =
   match non_local_exit_get_and_clear () with
