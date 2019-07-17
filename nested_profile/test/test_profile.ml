@@ -212,7 +212,7 @@ let%expect_test "calling [profile] within the [Sexp.t Lazy.t] supplied to [profi
     outer call
     function supplied to [profile] ran
     ((rendering_took 1_000_000us)
-    (1_000_000us "outer context" "1970-01-01 00:00:07.11Z")) |}]
+     (1_000_000us "outer context" "1970-01-01 00:00:07.11Z")) |}]
 ;;
 
 let%expect_test "long line" =
@@ -235,7 +235,7 @@ let%expect_test "zero time" =
   [%expect
     {|
     ((rendering_took 0us)
-    (0us outer "1970-01-01 00:00:10.11Z" (
+     (0us outer "1970-01-01 00:00:10.11Z" (
        (  _% 0us inner)))) |}]
 ;;
 

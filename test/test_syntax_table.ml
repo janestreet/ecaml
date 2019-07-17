@@ -26,7 +26,7 @@ let%expect_test "[standard]" =
   [%expect
     {|
     ((Close_paren         ")]}")
-     (Escape              "\\")
+     (Escape              \)
      (Open_paren          "([{")
      (Punctuation         "!#',.:;?@^`~")
      (String_quote        "\"")
@@ -41,7 +41,7 @@ let%expect_test "[create]" =
   [%expect
     {|
     ((Close_paren         ")]}")
-     (Escape              "\\")
+     (Escape              \)
      (Open_paren          "([{")
      (Punctuation         "!#',.:;?@^`~")
      (String_quote        "\"")
@@ -56,7 +56,7 @@ let%expect_test "[create]" =
   [%expect
     {|
     ((Close_paren         ")]}")
-     (Escape              "\\")
+     (Escape              \)
      (Open_paren          "([{")
      (Punctuation         "!#',.:;?@^`~")
      (String_quote        "\"")

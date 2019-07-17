@@ -535,7 +535,7 @@ exit 1
     (raised (
       "[Process.call_exn] failed"
       (prog /bin/bash)
-      (args   (-c          "\necho '(\"foo bar\" baz)'\nexit 1\n"))
+      (args (-c "\necho '(\"foo bar\" baz)'\nexit 1\n"))
       (result (Exit_status 1))
       (output ("foo bar"   baz)))) |}]
 ;;
@@ -576,7 +576,7 @@ exit 1
     (raised (
       "[Process.call_exn] failed"
       (prog /bin/bash)
-      (args   (-c          "\necho '(\"foo bar\" baz)'\nexit 1\n"))
+      (args (-c "\necho '(\"foo bar\" baz)'\nexit 1\n"))
       (result (Exit_status 1))
       (output ("foo bar"   baz)))) |}]
 ;;

@@ -40,7 +40,7 @@ let%expect_test _ =
   [%expect
     {|
     ((rendering_took 0us)
-    (620_000us nest (19:00:00.000000000-05:00 1969-12-31) (
+     (620_000us nest (19:00:00.000000000-05:00 1969-12-31) (
        ( 16% 100_000us gap)
        (  2%  10_000us (garbage-collect) (
           (  0%       0us (boundp gc-elapsed))

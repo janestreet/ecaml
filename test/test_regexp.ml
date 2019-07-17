@@ -38,7 +38,7 @@ let%expect_test "[quote], [match_], [does_match]" =
      (match_ (1))
      (does_match true))
     ((pattern "\\\\")
-     (input   "\\")
+     (input   \)
      (match_ (0))
      (does_match true)) |}]
 ;;

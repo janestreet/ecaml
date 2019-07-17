@@ -254,22 +254,21 @@ module Record = struct
     let profile = loop t ~depth:0 ~parent_took:None in
     let rendering_finished = now () in
     let rendering_took = Time_ns.diff rendering_finished rendering_started in
-    let profile =
+    let rendering_took =
       if Time_ns.Span.( < ) rendering_took !hide_top_level_if_less_than
-      then profile
+      then None
       else
-        paren
-          [ paren
-              [ "rendering_took "
-              ; rendering_took |> time_span_as_micros_with_two_digits_of_precision
-              ]
-          ; "\n"
-          ; profile
-          ]
+        Some
+          (paren
+             [ "rendering_took "
+             ; rendering_took |> time_span_as_micros_with_two_digits_of_precision
+             ])
     in
-    match start_location with
-    | End_of_profile_first_line -> profile
-    | Line_preceding_profile -> paren [ start; "\n"; profile ]
+    match start_location, rendering_took with
+    | End_of_profile_first_line, None -> profile
+    | End_of_profile_first_line, Some r -> paren [ r; "\n "; profile ]
+    | Line_preceding_profile, None -> paren [ start; "\n"; profile ]
+    | Line_preceding_profile, Some r -> paren [ start; "\n "; r; "\n"; profile ]
   ;;
 end
 

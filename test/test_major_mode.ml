@@ -127,7 +127,7 @@ let%expect_test "[syntax_table]" =
   [%expect
     {|
     ((Close_paren         ")]}")
-     (Escape              "\\")
+     (Escape              \)
      (Open_paren          "([{")
      (Punctuation         "!#',.:;?@^`~")
      (String_quote        "\"")
@@ -142,7 +142,7 @@ let%expect_test "[prog]" =
   [%expect
     {|
     ((Close_paren         ")]}")
-     (Escape              "\\")
+     (Escape              \)
      (Open_paren          "([{")
      (Punctuation         "!#',.:;?@^`~")
      (String_quote        "\"")
@@ -157,7 +157,7 @@ let%expect_test "[special]" =
   [%expect
     {|
     ((Close_paren         ")]}")
-     (Escape              "\\")
+     (Escape              \)
      (Open_paren          "([{")
      (Punctuation         "!#',.:;?@^`~")
      (String_quote        "\"")
