@@ -14,7 +14,7 @@ include Value.Subtype
 val create
   :  Source_code_position.t
   -> ?docstring:string
-  -> ?interactive:string
+  -> ?interactive:Value.t
   -> args:Symbol.t list
   -> ?optional_args:Symbol.t list
   -> ?rest_arg:Symbol.t
@@ -24,7 +24,7 @@ val create
 val create_nullary
   :  Source_code_position.t
   -> ?docstring:string
-  -> ?interactive:string
+  -> ?interactive:Value.t
   -> (unit -> unit)
   -> t
 

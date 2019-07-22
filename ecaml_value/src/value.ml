@@ -78,6 +78,16 @@ let wrap_raise3 f a1 a2 a3 =
 external intern : string -> t = "ecaml_intern"
 
 let intern = wrap_raise1 intern
+let interned_symbols = String.Hash_set.create ()
+
+let all_interned_symbols () =
+  List.sort (Hash_set.to_list interned_symbols) ~compare:[%compare: string]
+;;
+
+let intern string =
+  if am_running_test then Hash_set.add interned_symbols string;
+  intern string
+;;
 
 module Q = struct
   let append = "append" |> intern
@@ -196,6 +206,8 @@ external funcall5
   -> bool
   -> t
   = "ecaml_funcall5_byte" "ecaml_funcall5"
+
+let external_funcall1 = funcall1
 
 let funcall0 f ~should_profile ~should_return_result =
   maybe_profile
@@ -406,6 +418,12 @@ external vec_size : t -> int = "ecaml_vec_size"
 let vec_size = wrap_raise1 vec_size
 let percent_s = of_utf8_bytes "%s"
 let message s = funcall2_i Q.message percent_s (of_utf8_bytes s)
+
+let message_zero_alloc t =
+  ignore (external_funcall1 Q.message t false : t);
+  raise_if_emacs_signaled ()
+;;
+
 let messagef fmt = ksprintf message fmt
 
 let message_s : Sexp.t -> unit = function
@@ -599,16 +617,6 @@ let initialize_module =
   sexp_of_t_ref := sexp_of_t
 ;;
 
-let initialize_module =
-  initialize_module;
-  Ecaml_callback.(register no_active_env)
-    ~f:(fun () ->
-      eprint_s
-        [%message
-          "Ecaml called with no active env" ~backtrace:(Backtrace.get () : Backtrace.t)])
-    ~should_run_holding_async_lock:true
-;;
-
 module Type = struct
   type async [@@deriving sexp_of]
   type sync [@@deriving sexp_of]
@@ -773,16 +781,6 @@ module Type = struct
       (fun a -> A.sexp_of_t a |> Sexp.to_string_mach |> to_value string)
   ;;
 
-  let caml_embed (type_id : _ Type_equal.Id.t) =
-    create
-      [%message "caml_embed" ~type_id:(Type_equal.Id.name type_id : string)]
-      (Type_equal.Id.to_sexp type_id)
-      (fun v ->
-         let embed = Caml_embed.of_value_exn v in
-         Caml_embed.extract_exn embed type_id)
-      (fun a -> Caml_embed.create type_id a |> Caml_embed.to_value)
-  ;;
-
   let path_list =
     map
       (nil_or string)
@@ -814,6 +812,7 @@ module Make_subtype (M : Make_subtype_arg) = struct
   ;;
 
   let type_ = Type.create [%message name] [%sexp_of: t] of_value_exn to_value
+  let t = type_
   let eq (t1 : t) t2 = eq t1 t2
 end
 
@@ -847,6 +846,8 @@ module Expert = struct
 end
 
 module For_testing = struct
+  let all_interned_symbols = all_interned_symbols
+
   exception Elisp_signal = Elisp_signal
   exception Elisp_throw = Elisp_throw
 
@@ -875,4 +876,6 @@ module Private = struct
   let run_outside_async here ?allowed_in_background f =
     (Set_once.get_exn Run_outside_async.set_once here).f here ?allowed_in_background f
   ;;
+
+  let message_zero_alloc = message_zero_alloc
 end

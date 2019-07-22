@@ -1,4 +1,5 @@
 open! Core_kernel
+open! Async_kernel
 open! Import
 open! Syntax_table
 
@@ -33,7 +34,8 @@ let%expect_test "[standard]" =
      (Symbol_constitutent &*+-/<=>_|)
      (Whitespace          " ")
      (Word_constituent
-      $%0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz)) |}]
+      $%0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz)) |}];
+  return ()
 ;;
 
 let%expect_test "[create]" =
@@ -48,7 +50,8 @@ let%expect_test "[create]" =
      (Symbol_constitutent &*+-/<=>_|)
      (Whitespace          " ")
      (Word_constituent
-      $%0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz)) |}]
+      $%0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz)) |}];
+  return ()
 ;;
 
 let%expect_test "[create]" =
@@ -63,7 +66,8 @@ let%expect_test "[create]" =
      (Symbol_constitutent &*+-/<=>_|)
      (Whitespace          " ")
      (Word_constituent
-      $%0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz)) |}]
+      $%0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz)) |}];
+  return ()
 ;;
 
 let%expect_test "[set_char]" =
@@ -84,5 +88,6 @@ let%expect_test "[set_char]" =
           (Class.equal class_ round_trip)
           ~if_false_then_print_s:
             (lazy [%message "" (class_ : Class.t) (round_trip : Class.t)])));
-  [%expect {| |}]
+  [%expect {| |}];
+  return ()
 ;;

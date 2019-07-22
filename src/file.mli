@@ -76,4 +76,12 @@ val make_temp_file : prefix:string -> suffix:string -> Filename.t
     [f] returns by raising.
 
     N.B. This is not the behavior of [(describe-function 'with-temp-file)]. *)
-val with_temp_file : f:(Filename.t -> 'a) -> prefix:string -> suffix:string -> 'a
+val with_temp_file
+  :  (_, 'a) Sync_or_async.t
+  -> f:(Filename.t -> 'a)
+  -> prefix:string
+  -> suffix:string
+  -> 'a
+
+(** [(describe-function 'executable-find)] *)
+val find_executable : string -> string option

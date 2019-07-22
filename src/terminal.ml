@@ -4,14 +4,11 @@ open! Import0
 module Q = struct
   let ns = "ns" |> Symbol.intern
   let pc = "pc" |> Symbol.intern
-  let terminal_list = "terminal-list" |> Symbol.intern
-  let terminal_live_p = "terminal-live-p" |> Symbol.intern
-  let terminal_name = "terminal-name" |> Symbol.intern
   let w32 = "w32" |> Symbol.intern
   let x = "x" |> Symbol.intern
 end
 
-let is_terminal = Funcall.(Q.terminal_live_p <: value @-> return bool)
+let is_terminal = Funcall.("terminal-live-p" <: value @-> return bool)
 
 include Value.Make_subtype (struct
     let name = "terminal"
@@ -43,19 +40,13 @@ module Type = struct
         | Mac_os -> Q.ns |> Symbol.to_value
         | Ms_dos -> Q.pc |> Symbol.to_value)
   ;;
+
+  let t = type_
 end
 
-module F = struct
-  open Funcall
-
-  let terminal_list = Q.terminal_list <: nullary @-> return (list type_)
-  let terminal_live_p = Q.terminal_live_p <: type_ @-> return Type.type_
-  let terminal_name = Q.terminal_name <: type_ @-> return string
-end
-
-let all_live = F.terminal_list
-let terminal_type = F.terminal_live_p
-let name = F.terminal_name
+let all_live = Funcall.("terminal-list" <: nullary @-> return (list t))
+let terminal_type = Funcall.("terminal-live-p" <: t @-> return Type.t)
+let name = Funcall.("terminal-name" <: t @-> return string)
 
 let graphical t =
   match terminal_type t with

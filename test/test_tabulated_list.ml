@@ -1,4 +1,5 @@
 open! Core_kernel
+open! Async_kernel
 open! Import
 open! Tabulated_list
 
@@ -56,7 +57,8 @@ let%expect_test "draw table" =
     [%expect {|
       b    1   y
       a    2   z
-      c    3   x |}])
+      c    3   x |}]);
+  return ()
 ;;
 
 let%expect_test "sort" =
@@ -84,7 +86,8 @@ let%expect_test "sort" =
     require_does_raise [%here] (fun () ->
       draw_and_print ~sort_by:("i2", `Ascending) entries);
     [%expect {|
-      ("Column is not sortable" i2) |}])
+      ("Column is not sortable" i2) |}]);
+  return ()
 ;;
 
 let%expect_test "id at point" =
@@ -102,7 +105,8 @@ let%expect_test "id at point" =
     [%expect {| (a) |}];
     Point.goto_max ();
     print_s [%sexp (get_id_at_point_exn t : string option)];
-    [%expect {| () |}])
+    [%expect {| () |}]);
+  return ()
 ;;
 
 let%expect_test "move_point_to_id" =
@@ -120,5 +124,6 @@ let%expect_test "move_point_to_id" =
     [%expect {| (b) |}];
     Tabulated_list.move_point_to_id t "c";
     print_s [%sexp (get_id_at_point_exn t : string option)];
-    [%expect {| (c) |}])
+    [%expect {| (c) |}]);
+  return ()
 ;;

@@ -1,4 +1,5 @@
 open! Core_kernel
+open! Async_kernel
 open! Import
 
 module Q = struct
@@ -15,5 +16,6 @@ let%expect_test _ =
   [%expect {| "Hello world" |}];
   Eval.after_load [%here] Q.array ~f:(fun () ->
     print_s [%sexp "This should print immediately"]);
-  [%expect {| "This should print immediately" |}]
+  [%expect {| "This should print immediately" |}];
+  return ()
 ;;

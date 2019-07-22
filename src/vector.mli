@@ -7,6 +7,7 @@ open! Import
 include Value.Subtype
 
 val type_ : 'a Value.Type.t -> 'a array Value.Type.t
+val t : 'a Value.Type.t -> 'a array Value.Type.t
 
 (** [(describe-function 'make-vector)] *)
 val create : len:int -> Value.t -> t

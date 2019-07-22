@@ -1,21 +1,6 @@
 open! Core_kernel
 open! Import0
 
-module Q = struct
-  include Q
-
-  let directory_file_name = "directory-file-name" |> Symbol.intern
-  and expand_file_name = "expand-file-name" |> Symbol.intern
-  and file_name_absolute_p = "file-name-absolute-p" |> Symbol.intern
-  and file_name_as_directory = "file-name-as-directory" |> Symbol.intern
-  and file_name_directory = "file-name-directory" |> Symbol.intern
-  and file_name_extension = "file-name-extension" |> Symbol.intern
-  and file_name_nondirectory = "file-name-nondirectory" |> Symbol.intern
-  and file_name_sans_extension = "file-name-sans-extension" |> Symbol.intern
-  and file_relative_name = "file-relative-name" |> Symbol.intern
-  and temporary_file_directory = "temporary-file-directory" |> Symbol.intern
-end
-
 include (
   String :
   sig
@@ -30,24 +15,23 @@ include (
   end)
 
 let type_ = Value.Type.(map_id string) [%message "filename"]
+let t = type_
 let of_value_exn = Value.Type.of_value_exn type_
 let to_value = Value.Type.to_value type_
+let is_absolute = Funcall.("file-name-absolute-p" <: t @-> return bool)
+let extension = Funcall.("file-name-extension" <: t @-> return (nil_or string))
 
-let is_absolute t =
-  Symbol.funcall1 Q.file_name_absolute_p (t |> to_value) |> Value.to_bool
+let extension_exn t =
+  match extension t with
+  | Some x -> x
+  | None -> raise_s [%message "Filename.extension_exn" ~_:(t : t)]
 ;;
 
-let unary q t = Symbol.funcall1 q (t |> to_value) |> of_value_exn
-let extension_exn = unary Q.file_name_extension
-let nondirectory = unary Q.file_name_nondirectory
-let of_directory = unary Q.directory_file_name
-let sans_extension = unary Q.file_name_sans_extension
-let to_directory = unary Q.file_name_as_directory
-
-let directory t =
-  let result = Symbol.funcall1 Q.file_name_directory (t |> to_value) in
-  if Value.is_nil result then None else Some (result |> of_value_exn)
-;;
+let nondirectory = Funcall.("file-name-nondirectory" <: t @-> return string)
+let of_directory = Funcall.("directory-file-name" <: string @-> return string)
+let sans_extension = Funcall.("file-name-sans-extension" <: t @-> return string)
+let to_directory = Funcall.("file-name-as-directory" <: t @-> return string)
+let directory = Funcall.("file-name-directory" <: t @-> return (nil_or string))
 
 let directory_exn t =
   match directory t with
@@ -58,15 +42,17 @@ let directory_exn t =
         "[Filename.directory_exn] of filename that has no directory" ~filename:(t : t)]
 ;;
 
-let make_relative t ~relative_to =
-  Symbol.funcall2 Q.file_relative_name (t |> to_value) (relative_to |> to_value)
-  |> of_value_exn
-;;
+let file_relative_name = Funcall.("file-relative-name" <: t @-> t @-> return t)
+let make_relative t ~relative_to = file_relative_name t relative_to
+let expand_file_name = Funcall.("expand-file-name" <: t @-> t @-> return t)
+let expand t ~in_dir = expand_file_name t in_dir
 
-let expand t ~in_dir =
-  Symbol.funcall2 Q.expand_file_name (t |> to_value) (in_dir |> to_value) |> of_value_exn
-;;
-
-let temporary_file_directory () =
-  Symbol.funcall0 Q.temporary_file_directory |> of_value_exn
+let temporary_file_directory =
+  let temporary_file_directory = "temporary-file-directory" in
+  let funcall = Funcall.(temporary_file_directory <: nullary @-> return t) in
+  let variable = Var.Wrap.(temporary_file_directory <: t) in
+  fun () ->
+    if Symbol.function_is_defined (Symbol.intern temporary_file_directory)
+    then funcall ()
+    else Current_buffer0.value_exn variable
 ;;

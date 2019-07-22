@@ -1,15 +1,7 @@
 open! Core_kernel
 open! Import
 
-module Q = struct
-  include Q
-
-  let find_function = "find-function" |> Symbol.intern
-end
-
-let find_function function_ =
-  Symbol.funcall1_i Q.find_function (function_ |> Symbol.to_value)
-;;
+let find_function = Funcall.("find-function" <: Symbol.t @-> return nil)
 
 let find_ocaml ~library ~symbol ~type_ =
   ( Buffer.find_file_noselect library
@@ -25,10 +17,10 @@ let advise_for_ocaml () =
     ~for_function
     (let open Funcall in
      let open Value.Type in
-     Symbol.type_
-     @-> Load_history.Type.type_
+     Symbol.t
+     @-> Load_history.Type.t
      @-> string
-     @-> return (tuple Buffer.type_ (nil_or Position.type_)))
+     @-> return (tuple Buffer.t (nil_or Position.t)))
     ~on_parse_error:Call_inner_function
     (fun inner symbol type_ library ->
        (* [find-function-search-for-symbol] is used by both [find-function] and

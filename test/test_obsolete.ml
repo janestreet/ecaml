@@ -1,4 +1,5 @@
 open! Core_kernel
+open! Async_kernel
 open! Import
 open! Obsolete
 
@@ -31,7 +32,8 @@ let%expect_test "obsolete functions already defined" =
     This function is obsolete since now;
     use `current-function' instead. |}];
   Symbol.funcall0_i obsolete;
-  [%expect {| (Called (symbol current-function)) |}]
+  [%expect {| (Called (symbol current-function)) |}];
+  return ()
 ;;
 
 let%expect_test "documentation for obsolete functions" =
@@ -81,7 +83,8 @@ let%expect_test "documentation for obsolete functions" =
     This function is obsolete since now;
     use `current-function' instead.
 
-    arbitrary docstring |}]
+    arbitrary docstring |}];
+  return ()
 ;;
 
 let%expect_test "obsolete functions not yet defined" =
@@ -110,7 +113,8 @@ let%expect_test "obsolete functions not yet defined" =
 
     _ |}];
   Symbol.funcall0_i obsolete;
-  [%expect {| (Called (symbol foobar)) |}]
+  [%expect {| (Called (symbol foobar)) |}];
+  return ()
 ;;
 
 let%expect_test "obsolete an undefined variable" =
@@ -148,7 +152,8 @@ let%expect_test "obsolete an undefined variable" =
     current1 is void as a variable.
 
     Documentation:
-    Not documented as a variable. |}]
+    Not documented as a variable. |}];
+  return ()
 ;;
 
 let%expect_test "obsolete an defined variable" =
@@ -195,7 +200,8 @@ let%expect_test "obsolete an defined variable" =
     current2 is void as a variable.
 
     Documentation:
-    Not documented as a variable. |}]
+    Not documented as a variable. |}];
+  return ()
 ;;
 
 let%expect_test "define an obsoleted variable" =
@@ -220,5 +226,6 @@ let%expect_test "define an obsoleted variable" =
       use `current3' instead.
 
     Documentation:
-    an obsolete variable |}]
+    an obsolete variable |}];
+  return ()
 ;;

@@ -1,4 +1,5 @@
 open! Core_kernel
+open! Async_kernel
 open! Import
 open! Obarray
 
@@ -19,7 +20,6 @@ let%expect_test "[iter], [standard]" =
      &context
      &define
      &key
-     &not
      &optional
      &or
      &rest
@@ -61,6 +61,7 @@ let%expect_test "[iter], [standard]" =
      :adstyle
      :advertised-binding
      :after
+     :after-hook
      :after-until
      :after-while
      :align-to
@@ -72,6 +73,7 @@ let%expect_test "[iter], [standard]" =
      :append
      :argument-precedence-order
      :around
+     :array
      :ascent
      :ascii-compatible-p
      :autohint
@@ -85,16 +87,24 @@ let%expect_test "[iter], [standard]" =
      :bindtodevice
      :bold
      :bom
+     :boolean
      :box
      :broadcast
      :buffer
      :button
+     :byte
      :bytesize
      :case-fixed
      :category
      :ccl-decoder
      :ccl-encoder
      :charset-list
+     :cipher-aead-capable
+     :cipher-blocksize
+     :cipher-id
+     :cipher-ivsize
+     :cipher-keysize
+     :cipher-tagsize
      :cl--generic--under-construction
      :code-offset
      :code-space
@@ -105,14 +115,6 @@ let%expect_test "[iter], [standard]" =
      :color-symbols
      :combining-capability
      :command
-     :company-doc-buffer
-     :company-docsig
-     :company-location
-     :completions
-     :connection-type
-     :conversion
-     :count
-     :crlfiles
-     :crop
-     :data) |}]
+     :company-doc-buffer) |}];
+  return ()
 ;;

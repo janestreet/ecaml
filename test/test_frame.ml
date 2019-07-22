@@ -1,4 +1,5 @@
 open! Core_kernel
+open! Async_kernel
 open! Import
 open! Frame
 
@@ -7,23 +8,26 @@ let shows ts = List.iter ts ~f:show
 
 let%expect_test "[all_live]" =
   shows (all_live ());
-  [%expect {|
-    "#<frame F1 0xbd9200>" |}]
+  [%expect {| "#<frame F1 0xc4e880>" |}];
+  return ()
 ;;
 
 let%expect_test "[all_visible]" =
   shows (all_visible ());
-  [%expect {|
-    "#<frame F1 0xbd9200>" |}]
+  [%expect {| "#<frame F1 0xc4e880>" |}];
+  return ()
 ;;
 
 let%expect_test "[selected]" =
   show (selected ());
-  [%expect {|
-    "#<frame F1 0xbd9200>" |}]
+  [%expect {| "#<frame F1 0xc4e880>" |}];
+  return ()
 ;;
 
-let%expect_test "[set_selected]" = set_selected (selected ())
+let%expect_test "[set_selected]" =
+  set_selected (selected ());
+  return ()
+;;
 
 let%expect_test "accessors" =
   let t = selected () in
@@ -39,7 +43,8 @@ let%expect_test "accessors" =
     ((num_cols     10)
      (num_rows     9)
      (pixel_height 10)
-     (pixel_width  10)) |}]
+     (pixel_width  10)) |}];
+  return ()
 ;;
 
 let%expect_test "accessors" =
@@ -52,12 +57,13 @@ let%expect_test "accessors" =
       (buried-buffer-list nil)
       (buffer-list ("#<buffer *scratch*>"))
       (unsplittable     nil)
-      (minibuffer       "#<window 2 on  *Minibuf-0*>")
       (modeline         t)
       (width            10)
       (height           9)
       (name             F1)
       (font             tty)
       (background-color unspecified-bg)
-      (foreground-color unspecified-fg))) |}]
+      (foreground-color unspecified-fg)
+      (minibuffer       t))) |}];
+  return ()
 ;;

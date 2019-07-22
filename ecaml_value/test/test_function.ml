@@ -1,4 +1,5 @@
 open! Core_kernel
+open! Async_kernel
 open! Import
 open! Function
 
@@ -6,38 +7,38 @@ let%expect_test "mutual recursion between Emacs and OCaml" =
   let r = ref None in
   let loop i =
     if i = 0
-    then 0 |> Value.of_int_exn
+    then 0
     else (
       match !r with
       | None -> assert false
       | Some v ->
         print_s [%message (i : int)];
-        Value.of_int_exn
-          (1 + Value.to_int_exn (Value.funcall1 v (i - 1 |> Value.of_int_exn))))
+        1 + Value.to_int_exn (Value.funcall1 v (i - 1 |> Value.of_int_exn)))
   in
   r
   := Some
        (Function.to_value
-          (Function.create [%here] ~args:[ "int" |> Symbol.intern ] (function
-             | [| v |] -> loop (v |> Value.to_int_exn)
-             | _ -> assert false)));
-  print_s [%message "result" ~_:(loop 5 : Value.t)];
+          (lambda
+             [%here]
+             (Returns Value.Type.int)
+             (let%map_open.Defun.Let_syntax () = return ()
+              and i = required "int" int in
+              loop i)));
+  print_s [%message "result" ~_:(loop 5 : int)];
   [%expect {|
     (i 5)
     (i 4)
     (i 3)
     (i 2)
     (i 1)
-    (result 5) |}]
+    (result 5) |}];
+  return ()
 ;;
 
 let eval_string s = s |> Form.read |> Form.eval
 
 let emacs_raise () =
-  Symbol.funcall2_i
-    ("signal" |> Symbol.intern)
-    ("error" |> Symbol.intern |> Symbol.to_value)
-    (13 |> Value.of_int_exn)
+  Funcall.("signal" <: Symbol.t @-> int @-> return nil) ("error" |> Symbol.intern) 13
 ;;
 
 let emacs_try_with =
@@ -46,33 +47,31 @@ let emacs_try_with =
 ;;
 
 let ocaml_raise =
-  Function.create [%here] ~args:[] (fun _ -> raise_s [%message "raising"])
+  lambda_nullary_nil [%here] (fun () -> raise_s [%message "raising"])
   |> Function.to_value
 ;;
 
 let%expect_test "raising from Emacs to OCaml" =
   show_raise emacs_raise;
-  [%expect {| (raised 13) |}]
+  [%expect {| (raised 13) |}];
+  return ()
 ;;
 
 let%expect_test "raising from OCaml to Emacs" =
   print_s [%sexp (Value.funcall1 emacs_try_with ocaml_raise : Value.t)];
-  [%expect {|
-    (emacs-caught-it (error raising)) |}]
+  [%expect {| (emacs-caught-it (error raising)) |}];
+  return ()
 ;;
 
 let%expect_test "raising from Emacs to Emacs with OCaml in between" =
   let value =
     Value.funcall1
       emacs_try_with
-      (Function.create [%here] ~args:[] (fun _ ->
-         emacs_raise ();
-         Value.nil)
-       |> Function.to_value)
+      (lambda_nullary_nil [%here] (fun () -> emacs_raise ()) |> Function.to_value)
   in
   print_s [%sexp (value : Value.t)];
-  [%expect {|
-    (emacs-caught-it (error . 13)) |}]
+  [%expect {| (emacs-caught-it (error . 13)) |}];
+  return ()
 ;;
 
 let%expect_test "error-symbol preservation when Emacs signal crosses OCaml" =
@@ -81,23 +80,22 @@ let%expect_test "error-symbol preservation when Emacs signal crosses OCaml" =
       ("(lambda (f) (condition-case error (funcall f) (arith-error `(emacs-caught-it \
         ,error))))"
        |> eval_string)
-      (Function.create [%here] ~args:[] (fun _ ->
-         Symbol.funcall2
-           ("signal" |> Symbol.intern)
-           ("arith-error" |> Value.intern)
+      (lambda_nullary_nil [%here] (fun () ->
+         Funcall.("signal" <: Symbol.t @-> value @-> return nil)
+           ("arith-error" |> Symbol.intern)
            Value.nil)
        |> Function.to_value)
   in
   print_s [%sexp (value : Value.t)];
-  [%expect {|
-    (emacs-caught-it (arith-error)) |}]
+  [%expect {| (emacs-caught-it (arith-error)) |}];
+  return ()
 ;;
 
 let%expect_test "raising from OCaml to OCaml with Emacs in between" =
   show_raise (fun () ->
     Value.funcall1 ("(lambda (f) (funcall f))" |> eval_string) ocaml_raise);
-  [%expect {|
-    (raised (raising)) |}]
+  [%expect {| (raised (raising)) |}];
+  return ()
 ;;
 
 let%expect_test "raising from OCaml to OCaml through many layers of Emacs" =
@@ -126,7 +124,7 @@ let%expect_test "raising from OCaml to OCaml through many layers of Emacs" =
        [%here]
        [%message "Backtrace has no frames from" Test_function_file1.filename]);
   [%expect {| |}];
-  Current_buffer.set_value_temporarily Debugger.debug_on_error true Sync ~f:(fun () ->
+  Current_buffer.set_value_temporarily Sync Debugger.debug_on_error true ~f:(fun () ->
     let show_errors = false in
     match show_errors with
     | true ->
@@ -136,7 +134,8 @@ let%expect_test "raising from OCaml to OCaml through many layers of Emacs" =
   [%expect
     {|
     (((foo bar baz) (backtrace ("<backtrace elided in test>")))
-     (backtrace "<backtrace elided in test>")) |}]
+     (backtrace "<backtrace elided in test>")) |}];
+  return ()
 ;;
 
 let%expect_test "function descriptions" =
@@ -230,7 +229,8 @@ let%expect_test "function descriptions" =
 
     Custom doc
 
-    Implemented at [app/emacs/lib/ecaml_value/test/test_function.ml:LINE:COL]. |}]
+    Implemented at [app/emacs/lib/ecaml_value/test/test_function.ml:LINE:COL]. |}];
+  return ()
 ;;
 
 let%expect_test "function arguments" =
@@ -258,41 +258,30 @@ let%expect_test "function arguments" =
     | exception _ -> print_s [%message "mismatch"]
   in
   arguments a0 ~args:[];
-  [%expect {|
-    (arguments ()) |}];
+  [%expect {| (arguments ()) |}];
   arguments a1 ~args:[];
-  [%expect {|
-    mismatch |}];
+  [%expect {| mismatch |}];
   arguments a0 ~args:[ x ];
-  [%expect {|
-    mismatch |}];
+  [%expect {| mismatch |}];
   arguments a1 ~args:[ x ];
-  [%expect {|
-    (arguments (0)) |}];
+  [%expect {| (arguments (0)) |}];
   arguments a2 ~args:[ x; y ];
-  [%expect {|
-    (arguments (0 1)) |}];
+  [%expect {| (arguments (0 1)) |}];
   arguments a0 ~args:[] ~rest_arg:x;
-  [%expect {|
-    (arguments ()) |}];
+  [%expect {| (arguments ()) |}];
   arguments a1 ~args:[] ~rest_arg:x;
-  [%expect {|
-    (arguments (0)) |}];
+  [%expect {| (arguments (0)) |}];
   arguments a2 ~args:[] ~rest_arg:x;
-  [%expect {|
-    (arguments (0 1)) |}];
+  [%expect {| (arguments (0 1)) |}];
   arguments a0 ~args:[] ~optional_args:[ x; y ] ~rest_arg:z;
-  [%expect {|
-    (arguments (nil nil)) |}];
+  [%expect {| (arguments (nil nil)) |}];
   arguments a1 ~args:[] ~optional_args:[ x; y ] ~rest_arg:z;
-  [%expect {|
-    (arguments (0 nil)) |}];
+  [%expect {| (arguments (0 nil)) |}];
   arguments a2 ~args:[] ~optional_args:[ x; y ] ~rest_arg:z;
-  [%expect {|
-    (arguments (0 1)) |}];
+  [%expect {| (arguments (0 1)) |}];
   arguments a3 ~args:[] ~optional_args:[ x; y ] ~rest_arg:z;
-  [%expect {|
-    (arguments (0 1 2)) |}]
+  [%expect {| (arguments (0 1 2)) |}];
+  return ()
 ;;
 
 let%expect_test "raise in dispatch" =
@@ -300,5 +289,17 @@ let%expect_test "raise in dispatch" =
   show_raise (fun () ->
     Ref.set_temporarily Expert.raise_in_dispatch true ~f:(fun () ->
       Value.funcall0_i (f |> Function.to_value)));
-  [%expect {| (raised (uncaught-ocaml-exception Fdispatch)) |}]
+  [%expect
+    {|
+    ("Ecaml callback handling raised"
+     (exn "Function.Expert.raise_in_dispatch set"))
+    (raised (uncaught-ocaml-exception Fdispatch)) |}];
+  return ()
+;;
+
+let%expect_test "reporting [Out_of_memory] doesn't allocate" =
+  require_no_allocation [%here] (fun () ->
+    Ecaml_value.Ecaml_callback.report_exn_when_calling_callback Out_of_memory);
+  [%expect {| Ecaml received Out_of_memory |}];
+  return ()
 ;;

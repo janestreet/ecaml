@@ -4,9 +4,9 @@ open! Import
 
 val initialize : unit -> unit
 
-module Expect_test_config : module type of Expect_test_config
+module Expect_test_config : module type of Expect_test_config_with_unit_expect
 
-module Import : sig
+module Export : sig
   module Clock : sig
     include module type of Async.Clock
 

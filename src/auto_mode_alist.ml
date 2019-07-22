@@ -1,12 +1,6 @@
 open! Core_kernel
 open! Import
 
-module Q = struct
-  include Q
-
-  let auto_mode_alist = "auto-mode-alist" |> Symbol.intern
-end
-
 module Entry = struct
   type t =
     { delete_suffix_and_recur : bool
@@ -60,19 +54,20 @@ module Entry = struct
       of_value_exn
       to_value
   ;;
+
+  let t = type_
 end
 
 type t = Entry.t list [@@deriving sexp_of]
 
-let type_ = Value.Type.list Entry.type_
-let auto_mode_alist = Var.create Q.auto_mode_alist type_
-let auto_mode_alist_value = Var.create Q.auto_mode_alist Value.Type.value
+let type_ = Value.Type.list Entry.t
+let t = type_
+let auto_mode_alist = Var.Wrap.("auto-mode-alist" <: t)
+let auto_mode_alist_value = Var.Wrap.("auto-mode-alist" <: value)
+let append = Funcall.("append" <: t @-> value @-> return value)
 
 let add entries =
   Current_buffer.set_value
     auto_mode_alist_value
-    (Symbol.funcall2
-       Q.append
-       (Value.Type.to_value type_ entries)
-       (Current_buffer.value_exn auto_mode_alist_value))
+    (append entries (Current_buffer.value_exn auto_mode_alist_value))
 ;;

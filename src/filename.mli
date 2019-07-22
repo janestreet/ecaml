@@ -52,5 +52,8 @@ val make_relative : t -> relative_to:t -> t
     [(Info-goto-node "(elisp)File Name Expansion")] *)
 val expand : t -> in_dir:t -> t
 
-(** [(describe-function 'temporary-file-directory)] *)
+(** [(describe-function 'temporary-file-directory)]
+
+    This function is only available starting in emacs 26. In earlier versions, this reads
+    the variable [(describe-variable 'temporary-file-directory)] *)
 val temporary_file_directory : unit -> t

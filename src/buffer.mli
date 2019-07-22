@@ -41,6 +41,8 @@ val create : name:string -> t
     [(describe-function 'get-buffer)]. *)
 val find : name:string -> t option
 
+val find_exn : name:string -> t
+
 (** [(describe-function 'get-file-buffer)].
     [(Info-goto-node "(elisp)Buffer File Name")] *)
 val find_visiting : file:Filename.t -> t option

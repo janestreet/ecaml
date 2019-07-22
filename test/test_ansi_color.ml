@@ -1,4 +1,5 @@
 open! Core_kernel
+open! Async_kernel
 open! Import
 open! Ansi_color
 
@@ -96,7 +97,8 @@ let%expect_test "empty state machine" =
             (foreground ())
             (italic        false)
             (reverse_video false)
-            (underline     false)))))))) |}]
+            (underline     false)))))))) |}];
+  return ()
 ;;
 
 let%expect_test "simple state machine" =
@@ -233,11 +235,12 @@ let%expect_test "simple state machine" =
                (foreground ())
                (italic        false)
                (reverse_video false)
-               (underline     false))))))))))) |}]
+               (underline     false))))))))))) |}];
+  return ()
 ;;
 
 let test ?(show_input = true) input =
-  let output = try_with (fun () -> color_string input) in
+  let output = Or_error.try_with (fun () -> color_string input) in
   print_s
     [%message.omit_nil
       ""
@@ -249,14 +252,14 @@ let test_codes codes = test (concat [ escape codes; "foo" ])
 
 let%expect_test "empty input" =
   test "";
-  [%expect {|
-    ("" (Ok "")) |}]
+  [%expect {| ("" (Ok "")) |}];
+  return ()
 ;;
 
 let%expect_test "no codes" =
   test "foo";
-  [%expect {|
-    (foo (Ok foo)) |}]
+  [%expect {| (foo (Ok foo)) |}];
+  return ()
 ;;
 
 let%expect_test "reset escape sequence" =
@@ -272,7 +275,8 @@ let%expect_test "reset escape sequence" =
   [%expect
     {|
     ("\027[31mfoo\027[mbar" (
-      Ok (foobar 0 3 (face (:foreground red3) font-lock-face (:foreground red3))))) |}]
+      Ok (foobar 0 3 (face (:foreground red3) font-lock-face (:foreground red3))))) |}];
+  return ()
 ;;
 
 let%expect_test "zero can be skipped" =
@@ -281,7 +285,8 @@ let%expect_test "zero can be skipped" =
     {|
     ("\027[38;2;255;;255mfoo" (
       Ok (
-        foo 0 3 (face (:foreground #FF00FF) font-lock-face (:foreground #FF00FF))))) |}]
+        foo 0 3 (face (:foreground #FF00FF) font-lock-face (:foreground #FF00FF))))) |}];
+  return ()
 ;;
 
 let%expect_test "invalid escapes don't crash the thing and they also don't prevent \
@@ -341,7 +346,8 @@ let%expect_test "invalid escapes don't crash the thing and they also don't preve
         "foo<invalid ANSI escape sequence \"\\027\">bar"
         0
         3
-        (face (:foreground red3) font-lock-face (:foreground red3))))) |}]
+        (face (:foreground red3) font-lock-face (:foreground red3))))) |}];
+  return ()
 ;;
 
 let%expect_test "256-indexed color" =
@@ -436,7 +442,8 @@ let%expect_test "256-indexed color" =
         foo 0 3 (face (:foreground #E4E4E4) font-lock-face (:foreground #E4E4E4)))))
     ("\027[38;5;255mfoo" (
       Ok (
-        foo 0 3 (face (:foreground #EEEEEE) font-lock-face (:foreground #EEEEEE))))) |}]
+        foo 0 3 (face (:foreground #EEEEEE) font-lock-face (:foreground #EEEEEE))))) |}];
+  return ()
 ;;
 
 let%expect_test "rgb color" =
@@ -525,7 +532,8 @@ let%expect_test "rgb color" =
         foo 0 3 (face (:foreground #FFFF0A) font-lock-face (:foreground #FFFF0A)))))
     ("\027[38;2;255;255;255mfoo" (
       Ok (
-        foo 0 3 (face (:foreground #FFFFFF) font-lock-face (:foreground #FFFFFF))))) |}]
+        foo 0 3 (face (:foreground #FFFFFF) font-lock-face (:foreground #FFFFFF))))) |}];
+  return ()
 ;;
 
 let%expect_test "single code" =
@@ -702,13 +710,14 @@ let%expect_test "single code" =
     ("\027[107mfoo" (
       Ok (foo 0 3 (face (:background white) font-lock-face (:background white)))))
     ("\027[108mfoo" (Ok foo))
-    ("\027[109mfoo" (Ok foo)) |}]
+    ("\027[109mfoo" (Ok foo)) |}];
+  return ()
 ;;
 
 let%expect_test "large code" =
   test_codes [ 123456 ];
-  [%expect {|
-    ("\027[123456mfoo" (Ok foo)) |}]
+  [%expect {| ("\027[123456mfoo" (Ok foo)) |}];
+  return ()
 ;;
 
 let%expect_test "rendering invalid escape sequences" =
@@ -722,14 +731,15 @@ let%expect_test "rendering invalid escape sequences" =
     ("\027[foo" "<unsupported ANSI escape sequence \"\\027[f\">oo")
     ("\027[31foo" "<unsupported ANSI escape sequence \"\\027[31f\">oo")
     ("\027[\208\1500m" "<invalid ANSI escape sequence \"\\027[\">\208\1500m")
-    ("\027[K" "") |}]
+    ("\027[K" "") |}];
+  return ()
 ;;
 
 let%expect_test "customization to disable rendering invalid escape sequences" =
   Current_buffer.set_value_temporarily
+    Sync
     (Ansi_color.show_invalid_escapes |> Customization.var)
     false
-    Sync
     ~f:(fun () ->
       List.iter
         [ "\027"; "\027["; "\027[foo"; "\027[31foo"; "\027Жm"; "\027[K" ]
@@ -741,7 +751,8 @@ let%expect_test "customization to disable rendering invalid escape sequences" =
     ("\027[foo" "\027[foo")
     ("\027[31foo" "\027[31foo")
     ("\027\208\150m" "\027\208\150m")
-    ("\027[K" "") |}]
+    ("\027[K" "") |}];
+  return ()
 ;;
 
 let%expect_test "drop unsupported escape sequences" =
@@ -758,7 +769,8 @@ let%expect_test "drop unsupported escape sequences" =
     ("\027[foo" oo)
     ("\027[31foo" oo)
     ("\027\208\150m" "<invalid ANSI escape sequence \"\\027\">\208\150m")
-    ("\027[K" "") |}]
+    ("\027[K" "") |}];
+  return ()
 ;;
 
 let%expect_test "color region incrementally" =
@@ -766,9 +778,9 @@ let%expect_test "color region incrementally" =
   let color_incrementally input_string ~preserve_state ~chunk_size =
     Current_buffer.set_temporarily_to_temp_buffer Sync (fun () ->
       Current_buffer.set_value_temporarily
+        Sync
         (Ansi_color.show_invalid_escapes |> Customization.var)
         false
-        Sync
         ~f:(fun () ->
           let rec loop s =
             if String.length s > 0
@@ -908,7 +920,8 @@ let%expect_test "color region incrementally" =
         (:background green3 :foreground red3)
         font-lock-face
         (:background green3 :foreground red3)))
-    (foobar) |}]
+    (foobar) |}];
+  return ()
 ;;
 
 let%expect_test "color region twice" =
@@ -926,7 +939,8 @@ let%expect_test "color region twice" =
     show ();
     [%expect
       {|
-      (foo 0 3 (face (:foreground red3) font-lock-face (:foreground red3))) |}])
+      (foo 0 3 (face (:foreground red3) font-lock-face (:foreground red3))) |}]);
+  return ()
 ;;
 
 let%expect_test "color buffer twice" =
@@ -943,7 +957,8 @@ let%expect_test "color buffer twice" =
     color_current_buffer ();
     show ();
     [%expect
-      {| (foo 0 3 (face (:foreground red3) font-lock-face (:foreground red3))) |}])
+      {| (foo 0 3 (face (:foreground red3) font-lock-face (:foreground red3))) |}]);
+  return ()
 ;;
 
 let test_point_preservation ~left ~right ~colorize =
@@ -981,7 +996,8 @@ let%expect_test "[color_current_buffer] and point" =
        (font-lock-face (:foreground green3) face (:foreground green3))
        15
        19
-       (font-lock-face (:foreground blue2) face (:foreground blue2))))) |}]
+       (font-lock-face (:foreground blue2) face (:foreground blue2))))) |}];
+  return ()
 ;;
 
 let%expect_test "[color_region_in_current_buffer] and point" =
@@ -1004,7 +1020,8 @@ let%expect_test "[color_region_in_current_buffer] and point" =
        (font-lock-face (:foreground green3) face (:foreground green3))
        15
        19
-       (font-lock-face (:foreground blue2) face (:foreground blue2))))) |}]
+       (font-lock-face (:foreground blue2) face (:foreground blue2))))) |}];
+  return ()
 ;;
 
 let%expect_test "multibyte character handling" =
@@ -1023,7 +1040,8 @@ let%expect_test "multibyte character handling" =
          : Text.t)]);
   [%expect
     {|
-    ("\208\150x" 1 2 (face (:foreground red3) font-lock-face (:foreground red3))) |}]
+    ("\208\150x" 1 2 (face (:foreground red3) font-lock-face (:foreground red3))) |}];
+  return ()
 ;;
 
 let%expect_test "patdiff output" =
@@ -1123,7 +1141,8 @@ base 7dcf98789cff | tip 164054e60e6e
         (:foreground red3 :weight bold))
       958
       1002
-      (face (:foreground red3) font-lock-face (:foreground red3)))) |}]
+      (face (:foreground red3) font-lock-face (:foreground red3)))) |}];
+  return ()
 ;;
 
 let%expect_test "[Ansi_color.Colors.get]" =
@@ -1134,7 +1153,8 @@ let%expect_test "[Ansi_color.Colors.get]" =
      (bright (grey50 red1 green1 yellow1 "deep sky blue" magenta1 cyan1 white))
      (faint (
        black "dark red" "dark green" yellow4 "dark blue" magenta4 cyan4 grey50))
-     (faint_default_color grey50)) |}]
+     (faint_default_color grey50)) |}];
+  return ()
 ;;
 
 let%expect_test "colors" =
@@ -1385,5 +1405,6 @@ let%expect_test "colors" =
         face
         (:background white :foreground grey50)
         font-lock-face
-        (:background white :foreground grey50)))) |}]
+        (:background white :foreground grey50)))) |}];
+  return ()
 ;;

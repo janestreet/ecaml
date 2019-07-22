@@ -1,15 +1,6 @@
 open! Core_kernel
 open! Import
 
-module Q = struct
-  include Q
-
-  let copy_syntax_table = "copy-syntax-table" |> Symbol.intern
-  and make_syntax_table = "make-syntax-table" |> Symbol.intern
-  and modify_syntax_entry = "modify-syntax-entry" |> Symbol.intern
-  and standard_syntax_table = "standard-syntax-table" |> Symbol.intern
-end
-
 include Value.Make_subtype (struct
     let name = "syntax-table"
     let here = [%here]
@@ -17,18 +8,10 @@ include Value.Make_subtype (struct
   end)
 
 let equal = eq
-let standard = Symbol.funcall0 Q.standard_syntax_table |> of_value_exn
-
-let create ?parent () =
-  Symbol.funcall1
-    Q.make_syntax_table
-    (match parent with
-     | None -> Value.nil
-     | Some t -> t |> to_value)
-  |> of_value_exn
-;;
-
-let copy t = Symbol.funcall1 Q.copy_syntax_table (t |> to_value) |> of_value_exn
+let standard = Funcall.("standard-syntax-table" <: nullary @-> return t) ()
+let make_syntax_table = Funcall.("make-syntax-table" <: nil_or t @-> return t)
+let create ?parent () = make_syntax_table parent
+let copy = Funcall.("copy-syntax-table" <: t @-> return t)
 
 module Class = struct
   module T = struct
@@ -132,12 +115,12 @@ module Descriptor = struct
   ;;
 end
 
+let modify_syntax_entry =
+  Funcall.("modify-syntax-entry" <: Char_code.t @-> value @-> t @-> return nil)
+;;
+
 let set t char_code class_ flags =
-  Symbol.funcall3_i
-    Q.modify_syntax_entry
-    (char_code |> Char_code.to_value)
-    ((class_, flags) |> Descriptor.to_value)
-    (t |> to_value)
+  modify_syntax_entry char_code ((class_, flags) |> Descriptor.to_value) t
 ;;
 
 let set_char t char class_ flags = set t (char |> Char_code.of_char_exn) class_ flags

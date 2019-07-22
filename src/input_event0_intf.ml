@@ -11,10 +11,4 @@ end
 
 module type Input_event0 = sig
   include Input_event0_public
-
-  module Q : sig
-    include module type of Q
-
-    val single_key_description : Symbol.t
-  end
 end

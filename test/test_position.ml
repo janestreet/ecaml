@@ -1,4 +1,5 @@
 open! Core_kernel
+open! Async_kernel
 open! Import
 open! Position
 
@@ -32,5 +33,6 @@ let%expect_test "[to_byte_position], [of_byte_position]" =
       {|
       ((position      3)
        (byte_position 5)
-       (round_trip    3)) |}])
+       (round_trip    3)) |}]);
+  return ()
 ;;

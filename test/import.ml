@@ -1,10 +1,15 @@
 open! Core_kernel
 open! Async_kernel
 include Ecaml
-include Expect_test_helpers_kernel
+
+include (
+  Expect_test_helpers :
+    module type of struct
+    include Expect_test_helpers
+  end
+  with module Expect_test_config := Expect_test_helpers.Expect_test_config)
 
 let concat = String.concat
-let try_with = Or_error.try_with
 
 (* [ignore_stderr] is useful for tests where Emacs outputs on stderr, which would cause
    jenga to view the test as failing.  [ignore_stderr] redirects stderr to [/dev/null],
@@ -36,9 +41,14 @@ let show_last_match ?subexp () =
   print_s
     [%message
       ""
-        ~text:(try_with (fun () -> Last_match.text_exn ?subexp ()) : Text.t Or_error.t)
-        ~start:(try_with (fun () -> Last_match.start_exn ?subexp ()) : int Or_error.t)
-        ~end_:(try_with (fun () -> Last_match.end_exn ?subexp ()) : int Or_error.t)]
+        ~text:
+          (Or_error.try_with (fun () -> Last_match.text_exn ?subexp ())
+           : Text.t Or_error.t)
+        ~start:
+          (Or_error.try_with (fun () -> Last_match.start_exn ?subexp ())
+           : int Or_error.t)
+        ~end_:
+          (Or_error.try_with (fun () -> Last_match.end_exn ?subexp ()) : int Or_error.t)]
 ;;
 
 let print_s ?(hide_positions = false) ?(templatize_current_directory = false) sexp =
@@ -92,7 +102,7 @@ let with_input_macro string f =
   Key_sequence.execute keyseq
 ;;
 
-let with_input (type a) string (f : unit -> a Deferred.t) : a =
+let with_input (type a) string (f : unit -> a Deferred.t) : a Deferred.t =
   let module Out_channel = Core.Out_channel in
   let module Unix = Core.Unix in
   let r, w = Unix.pipe () in
@@ -113,19 +123,24 @@ let with_input (type a) string (f : unit -> a Deferred.t) : a =
          "[with_input] doesn't support strings this long" ~_:(String.length string : int)]);
   Unix.dup2 ~src:r ~dst:Unix.stdin;
   Unix.close r;
-  protect
-    ~f:(fun () ->
-      Async_ecaml.Private.block_on_async
-        [%here]
-        ~context:(lazy [%message "Ecaml_test.Import.with_input"])
-        f)
-    ~finally:(fun () -> Unix.dup2 ~src:stdin_to_restore ~dst:Unix.stdin)
+  Monitor.protect f ~finally:(fun () ->
+    Unix.dup2 ~src:stdin_to_restore ~dst:Unix.stdin;
+    return ())
 ;;
 
 let%expect_test "[with_input] with too long string" =
   show_raise (fun () -> with_input (String.make 100_000 '\000') (fun () -> assert false));
-  [%expect {|
-    (raised ("[with_input] doesn't support strings this long" 100_000)) |}]
+  [%expect {| (raised ("[with_input] doesn't support strings this long" 100_000)) |}];
+  return ()
 ;;
 
 let () = Current_buffer.set_value Backup.make_backup_files false
+
+let while_ predicate ~do_ =
+  Deferred.repeat_until_finished () (fun () ->
+    if not (predicate ())
+    then return (`Finished ())
+    else (
+      let%bind () = do_ () in
+      return (`Repeat ())))
+;;

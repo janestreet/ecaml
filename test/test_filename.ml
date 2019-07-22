@@ -1,4 +1,5 @@
 open! Core_kernel
+open! Async_kernel
 open! Import
 open! Filename
 
@@ -17,7 +18,8 @@ let%expect_test "[directory], [nondirectory]" =
     ((filename /) (directory (/)) (nondirectory ""))
     ((filename /a) (directory (/)) (nondirectory a))
     ((filename /a/) (directory (/a/)) (nondirectory ""))
-    ((filename /a/b) (directory (/a/)) (nondirectory b)) |}]
+    ((filename /a/b) (directory (/a/)) (nondirectory b)) |}];
+  return ()
 ;;
 
 let%expect_test "[directory_exn]" =
@@ -25,7 +27,8 @@ let%expect_test "[directory_exn]" =
   [%expect
     {|
     (raised (
-      "[Filename.directory_exn] of filename that has no directory" (filename a))) |}]
+      "[Filename.directory_exn] of filename that has no directory" (filename a))) |}];
+  return ()
 ;;
 
 let%expect_test "[extension], [sans_extension]" =
@@ -34,26 +37,19 @@ let%expect_test "[extension], [sans_extension]" =
       [%message
         ""
           (filename : string)
-          ~extension:(try_with (fun () -> extension_exn filename) : string Or_error.t)
+          ~extension:
+            (Or_error.try_with (fun () -> extension_exn filename) : string Or_error.t)
           ~sans_extension:
-            (try_with (fun () -> sans_extension filename) : string Or_error.t)]);
+            (Or_error.try_with (fun () -> sans_extension filename) : string Or_error.t)]);
   [%expect
     {|
     ((filename foo)
-     (extension (
-       Error (
-         "unable to convert Elisp value to OCaml value"
-         (type_ filename)
-         (value nil)
-         (exn (
-           "unable to convert Elisp value to OCaml value"
-           (type_ string)
-           (value nil)
-           (exn (wrong-type-argument (stringp nil))))))))
+     (extension (Error (Filename.extension_exn foo)))
      (sans_extension (Ok foo)))
     ((filename foo.ml)
      (extension      (Ok ml))
-     (sans_extension (Ok foo))) |}]
+     (sans_extension (Ok foo))) |}];
+  return ()
 ;;
 
 let%expect_test "[of_directory], [to_directory]" =
@@ -74,7 +70,8 @@ let%expect_test "[of_directory], [to_directory]" =
      (to_directory /a/))
     ((filename     /a/)
      (of_directory /a)
-     (to_directory /a/)) |}]
+     (to_directory /a/)) |}];
+  return ()
 ;;
 
 let%expect_test "[is_absolute]" =
@@ -96,7 +93,8 @@ let%expect_test "[is_absolute]" =
     ((filename    a)
      (is_absolute false))
     ((filename    /a/)
-     (is_absolute true)) |}]
+     (is_absolute true)) |}];
+  return ()
 ;;
 
 let%expect_test "[make_relative]" =
@@ -122,7 +120,8 @@ let%expect_test "[make_relative]" =
      (relative    b/c))
     ((filename    /a/b/c)
      (relative_to /)
-     (relative    a/b/c)) |}]
+     (relative    a/b/c)) |}];
+  return ()
 ;;
 
 let%expect_test "[expand]" =
@@ -143,5 +142,6 @@ let%expect_test "[expand]" =
      (expanded /b))
     ((in_dir   /a/b)
      (filename c/../d)
-     (expanded /a/b/d)) |}]
+     (expanded /a/b/d)) |}];
+  return ()
 ;;

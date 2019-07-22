@@ -1,6 +1,5 @@
 open! Core_kernel
 open! Import
-module Value = Value0
 module Scheduler = Async_unix.Async_unix_private.Raw_scheduler
 
 let scheduler = Scheduler.t ()
@@ -21,6 +20,19 @@ type 'callback t =
   }
 [@@deriving sexp_of]
 
+let report_exn_when_calling_callback =
+  let out_of_memory_message = "Ecaml received Out_of_memory" in
+  let out_of_memory_value = out_of_memory_message |> Value.of_utf8_bytes in
+  function
+  | Out_of_memory ->
+    (try Value.Private.message_zero_alloc out_of_memory_value with
+     | _ -> eprintf "%s" out_of_memory_message)
+  | exn ->
+    let sexp = [%message "Ecaml callback handling raised" (exn : Exn.t)] in
+    (try Value.message_s sexp with
+     | _ -> eprint_s sexp)
+;;
+
 let register
       (type callback)
       (t : callback t)
@@ -34,13 +46,26 @@ let register
     in
     if Scheduler.am_holding_lock scheduler then f () else Scheduler.with_lock scheduler f
   in
-  let callback =
-    if not should_run_holding_async_lock
-    then f
-    else (
-      match t.arity with
-      | Arity1 -> fun a1 -> with_lock (fun () -> f a1)
-      | Arity2 -> fun a1 a2 -> with_lock (fun () -> f a1 a2))
+  let callback : callback =
+    match t.arity with
+    | Arity1 ->
+      fun a1 ->
+        (try
+           if not should_run_holding_async_lock then f a1 else with_lock (fun () -> f a1)
+         with
+         | exn ->
+           report_exn_when_calling_callback exn;
+           raise exn)
+    | Arity2 ->
+      fun a1 a2 ->
+        (try
+           if not should_run_holding_async_lock
+           then f a1 a2
+           else with_lock (fun () -> f a1 a2)
+         with
+         | exn ->
+           report_exn_when_calling_callback exn;
+           raise exn)
   in
   Caml.Callback.register t.name callback
 ;;
@@ -51,5 +76,18 @@ let end_of_module_initialization =
   { arity = Arity1; name = "end_of_module_initialization" }
 ;;
 
-let no_active_env = { arity = Arity1; name = "no_active_env" }
+(** [no_active_env] is used when the C code detects that OCaml is attempting to call an
+    Emacs function but there is no active env.  It prints a message that includes an
+    OCaml backtrace, which may be useful in debugging. *)
+let () =
+  register
+    { arity = Arity1; name = "no_active_env" }
+    ~f:(fun () ->
+      eprint_s
+        [%message
+          "Ecaml called with no active env" ~backtrace:(Backtrace.get () : Backtrace.t)])
+    ~should_run_holding_async_lock:true
+;;
+
 let free_embedded_caml_values = { arity = Arity1; name = "free_embedded_caml_values" }
+let initialize_module = ()

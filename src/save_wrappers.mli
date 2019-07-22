@@ -23,7 +23,7 @@ val save_window_excursion : (_, 'a) Sync_or_async.t -> (unit -> 'a) -> 'a
 val save_selected_window : (_, 'a) Sync_or_async.t -> (unit -> 'a) -> 'a
 
 (** [(describe-function 'with-selected-frame)] *)
-val with_selected_frame : Value.t -> (_, 'a) Sync_or_async.t -> (unit -> 'a) -> 'a
+val with_selected_frame : (_, 'a) Sync_or_async.t -> Value.t -> (unit -> 'a) -> 'a
 
 (** [(describe-function 'with-selected-window)] *)
-val with_selected_window : Value.t -> (_, 'a) Sync_or_async.t -> (unit -> 'a) -> 'a
+val with_selected_window : (_, 'a) Sync_or_async.t -> Value.t -> (unit -> 'a) -> 'a

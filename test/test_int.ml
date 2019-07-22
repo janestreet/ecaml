@@ -1,4 +1,5 @@
 open! Core_kernel
+open! Async_kernel
 open! Import
 
 let eval_int_var string = Form.eval (string |> Symbol.intern |> Form.symbol)
@@ -9,17 +10,14 @@ let most_positive_fixnum = Value.emacs_max_int
 
 let%expect_test "most-{neg,pos}itive-fixnum" =
   print_s [%sexp (most_negative_fixnum_value : Value.t)];
-  [%expect {|
-    -2305843009213693952 |}];
+  [%expect {| -2305843009213693952 |}];
   print_s [%sexp (most_negative_fixnum : int)];
-  [%expect {|
-    -2_305_843_009_213_693_952 |}];
+  [%expect {| -2_305_843_009_213_693_952 |}];
   print_s [%sexp (most_positive_fixnum_value : Value.t)];
-  [%expect {|
-    2305843009213693951 |}];
+  [%expect {| 2305843009213693951 |}];
   print_s [%sexp (most_positive_fixnum : int)];
-  [%expect {|
-    2_305_843_009_213_693_951 |}]
+  [%expect {| 2_305_843_009_213_693_951 |}];
+  return ()
 ;;
 
 let%expect_test "[Value.of_int]" =
@@ -140,7 +138,8 @@ let%expect_test "[Value.of_int]" =
      (i' (
        Error (
          "validation errors" ((
-           overflow-error "value 4611686018427387903 > bound 2305843009213693951")))))) |}]
+           overflow-error "value 4611686018427387903 > bound 2305843009213693951")))))) |}];
+  return ()
 ;;
 
 let%expect_test "ints coming from emacs are not boxed" =
@@ -150,5 +149,6 @@ let%expect_test "ints coming from emacs are not boxed" =
   [%expect {|
     (Value
       (v     123456)
-      (boxed false)) |}]
+      (boxed false)) |}];
+  return ()
 ;;

@@ -8,6 +8,7 @@ module type S = sig
   val of_value_exn : Value0.t -> t
   val to_value : t -> Value0.t
   val type_ : t type_
+  val t : t type_
 end
 
 module type S1 = sig
@@ -17,4 +18,5 @@ module type S1 = sig
   val of_value_exn : (Value0.t -> 'a) -> Value0.t -> 'a t
   val to_value : ('a -> Value0.t) -> 'a t -> Value0.t
   val type_ : 'a type_ -> 'a t type_
+  val t : 'a type_ -> 'a t type_
 end

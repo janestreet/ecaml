@@ -4,6 +4,7 @@
     [(Info-goto-node "(elisp)Key Sequences")] *)
 
 open! Core_kernel
+open! Async_kernel
 open! Import
 include Value.Subtype
 
@@ -31,7 +32,7 @@ val create_exn : string -> t
 
 (** [(describe-function 'execute-kbd-macro)]
     [(Info-goto-node "(elisp)Keyboard Macros")] *)
-val execute : t -> unit
+val execute : t -> unit Deferred.t
 
 (** [(describe-variable 'executing-kbd-macro)]
     [(Info-goto-node "(elisp)Keyboard Macros")] *)

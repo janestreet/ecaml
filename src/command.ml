@@ -1,14 +1,5 @@
 open! Core_kernel
 open! Import0
-
-module Q = struct
-  include Q
-
-  let call_interactively = "call-interactively" |> Symbol.intern
-  and current_prefix_arg = "current-prefix-arg" |> Symbol.intern
-  and prefix_numeric_value = "prefix-numeric-value" |> Symbol.intern
-end
-
 module Current_buffer = Current_buffer0
 
 include Value.Make_subtype (struct
@@ -17,10 +8,7 @@ include Value.Make_subtype (struct
     let is_in_subtype = Value.is_command
   end)
 
-let history_var =
-  Var.create ("command-history" |> Symbol.intern) (Value.Type.list Form.type_)
-;;
-
+let history_var = Var.Wrap.("command-history" <: list Form.t)
 let history () = Current_buffer0.value_exn history_var
 
 module Raw_prefix_argument = struct
@@ -59,24 +47,27 @@ module Raw_prefix_argument = struct
     Value.Type.create [%message "raw_prefix_arg"] [%sexp_of: t] of_value_exn to_value
   ;;
 
-  let for_current_command = Var.create Q.current_prefix_arg type_
-
-  let numeric_value t =
-    Symbol.funcall1 Q.prefix_numeric_value (t |> to_value) |> Value.to_int_exn
-  ;;
+  let t = type_
+  let for_current_command = Var.Wrap.("current-prefix-arg" <: t)
+  let numeric_value = Funcall.("prefix-numeric-value" <: t @-> return int)
 end
+
+let call_interactively = Funcall.("call-interactively" <: value @-> bool @-> return nil)
 
 let call_interactively
       ?(raw_prefix_argument = Raw_prefix_argument.Absent)
       ?(record = false)
       command
   =
-  Current_buffer.set_value Raw_prefix_argument.for_current_command raw_prefix_argument;
-  Symbol.funcall2_i Q.call_interactively command (record |> Value.of_bool)
+  Value.Private.run_outside_async [%here] (fun () ->
+    Current_buffer.set_value
+      Raw_prefix_argument.for_current_command
+      raw_prefix_argument;
+    call_interactively command record)
 ;;
 
-let inhibit_quit = Var.create ("inhibit-quit" |> Symbol.intern) Value.Type.bool
-let quit_flag = Var.create ("quit-flag" |> Symbol.intern) Value.Type.bool
+let inhibit_quit = Var.Wrap.("inhibit-quit" <: bool)
+let quit_flag = Var.Wrap.("quit-flag" <: bool)
 let request_quit () = Current_buffer.set_value quit_flag true
 
 let quit_requested () =

@@ -33,7 +33,7 @@ module type Customization = sig
         [(describe-function 'defgroup)]
         [(Info-goto-node "(elisp)Group Definitions")] *)
     val defgroup
-      :  Symbol.t
+      :  string
       -> Source_code_position.t
       -> docstring:string
       -> parents:t list
@@ -94,7 +94,13 @@ module type Customization = sig
   val standard_value : 'a t -> 'a
 
   (** [(describe-function 'defcustom)]
-      [(Info-goto-node "(elisp)Variable Definitions")] *)
+      [(Info-goto-node "(elisp)Variable Definitions")]
+
+      [on_set], if supplied, is called when the user attempts to set the customization,
+      either via the customization interface or via [custom-set-variables].  [on_set]
+      can validate the input and perform other side effects needed to keep OCaml
+      data structures in sync with the setting.  If [on_set] raises, the customization
+      is not set. *)
   val defcustom
     :  ?show_form:bool (** default is [false] *)
     -> Symbol.t
@@ -104,6 +110,7 @@ module type Customization = sig
     -> type_:'a Value.Type.t
     -> customization_type:Type.t
     -> standard_value:'a
+    -> ?on_set:('a -> unit)
     -> unit
     -> 'a t
 
@@ -124,6 +131,7 @@ module type Customization = sig
     -> docstring:string
     -> group:Group.t
     -> standard_value:'a
+    -> ?on_set:('a -> unit)
     -> unit
     -> 'a t
 

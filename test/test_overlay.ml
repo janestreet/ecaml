@@ -1,10 +1,11 @@
 open! Core_kernel
+open! Async_kernel
 open! Import
 open! Overlay
 
 let with_buffer f =
   let buffer = Buffer.create ~name:"test-buffer" in
-  Current_buffer.set_temporarily buffer Sync ~f:(fun () ->
+  Current_buffer.set_temporarily Sync buffer ~f:(fun () ->
     Point.insert
       {|
       Lorem ipsum dolor sit amet,
@@ -51,7 +52,8 @@ let%expect_test "[create], [delete], [end_], [start]" =
     count_overlays ();
     [%expect {|
       (at "point min" 0)
-      (in buffer 0) |}])
+      (in buffer 0) |}]);
+  return ()
 ;;
 
 let%expect_test "[move]" =
@@ -71,7 +73,8 @@ let%expect_test "[move]" =
     count_overlays ();
     [%expect {|
       (in region1 0)
-      (in region2 1) |}])
+      (in region2 1) |}]);
+  return ()
 ;;
 
 let%expect_test "[get_property], [put_property]" =
@@ -79,36 +82,33 @@ let%expect_test "[get_property], [put_property]" =
     let t = create () ~start:(Point.min ()) ~end_:(Point.max ()) in
     put_property t Text.Property_name.face [ Face Face.default ];
     print_s [%sexp (get_property t Text.Property_name.face : Text.Face_spec.t)];
-    [%expect {| ((Face default)) |}])
+    [%expect {| ((Face default)) |}]);
+  return ()
 ;;
 
 let%expect_test "[remove_overlays]" =
   with_buffer (fun _ ->
     remove_overlays ();
     num_overlays_in_buffer ();
-    [%expect {|
-      0 |}];
+    [%expect {| 0 |}];
     let add_overlay () =
       let t = create () ~start:(Point.min ()) ~end_:(Point.max ()) in
       put_property t Text.Property_name.face [ Face Face.default ]
     in
     add_overlay ();
     num_overlays_in_buffer ();
-    [%expect {|
-      1 |}];
+    [%expect {| 1 |}];
     remove_overlays ();
     num_overlays_in_buffer ();
-    [%expect {|
-      0 |}];
+    [%expect {| 0 |}];
     add_overlay ();
     remove_overlays
       ()
       ~with_property:(Text.Property_name.font_lock_face, [ Face Face.default ]);
     num_overlays_in_buffer ();
-    [%expect {|
-      1 |}];
+    [%expect {| 1 |}];
     remove_overlays () ~with_property:(Text.Property_name.face, [ Face Face.default ]);
     num_overlays_in_buffer ();
-    [%expect {|
-      0 |}])
+    [%expect {| 0 |}]);
+  return ()
 ;;

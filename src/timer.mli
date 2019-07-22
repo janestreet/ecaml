@@ -10,6 +10,7 @@
     [(Info-goto-node "(elisp)Timers")] *)
 
 open! Core_kernel
+open! Async_kernel
 open! Import
 include Value.Subtype
 
@@ -43,8 +44,11 @@ val cancel : t -> unit
 
 (** [(describe-function 'sit-for)]
     [(Info-goto-node "(elisp)Waiting")] *)
-val sit_for : ?redisplay:bool (** default is [true] *) -> Time_ns.Span.t -> unit
+val sit_for
+  :  ?redisplay:bool (** default is [true] *)
+  -> Time_ns.Span.t
+  -> unit Deferred.t
 
 (** [(describe-function 'sleep-for)]
     [(Info-goto-node "(elisp)Waiting")] *)
-val sleep_for : Time_ns.Span.t -> unit
+val sleep_for : Time_ns.Span.t -> unit Deferred.t

@@ -2,6 +2,7 @@ open! Core_kernel
 module Caml_embed = Ecaml_value.Caml_embed
 module Ecaml_callback = Ecaml_value.Ecaml_callback
 module Form = Ecaml_value.Form
+module Funcall = Ecaml_value.Funcall
 module Function = Ecaml_value.Function
 module Generated_bindings = Ecaml_value.Generated_bindings
 module Value = Ecaml_value.Value

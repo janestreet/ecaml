@@ -26,7 +26,7 @@ val let_ : (Symbol.t * t) list -> t -> t
 
 val lambda
   :  ?docstring:string
-  -> ?interactive:string
+  -> ?interactive:Value.t
   -> ?optional_args:Symbol.t list
   -> ?rest_arg:Symbol.t
   -> Source_code_position.t

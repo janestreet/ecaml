@@ -1,4 +1,5 @@
 open! Core_kernel
+open! Async_kernel
 open! Import
 
 let%test "list reverse inline test" =
@@ -11,11 +12,12 @@ let%test "should raise" =
 
 let%expect_test "list reverse expect test" =
   List.rev [ 1; 2; 3 ] |> [%sexp_of: int list] |> print_s;
-  [%expect "(3 2 1)"]
+  [%expect "(3 2 1)"];
+  return ()
 ;;
 
 let%expect_test "Emacs math" =
   Form.eval ("(+ 1 2)" |> Form.read) |> Value.to_int_exn |> printf "%d\n";
-  [%expect {|
-    3 |}]
+  [%expect {| 3 |}];
+  return ()
 ;;

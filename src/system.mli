@@ -40,4 +40,8 @@ module Var_and_value : sig
   [@@deriving sexp_of]
 end
 
-val setenv_temporarily : Var_and_value.t list -> f:(unit -> 'a) -> 'a
+val setenv_temporarily
+  :  (_, 'a) Sync_or_async.t
+  -> Var_and_value.t list
+  -> f:(unit -> 'a)
+  -> 'a

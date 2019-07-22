@@ -51,6 +51,16 @@ module Property : sig
 
   (** [(describe-function 'put)] *)
   val put : 'a t -> symbol -> 'a -> unit
+
+  (** According to [(Info-goto-node "(elisp)Documentation Basics")], there are two places
+      where one can put a documentation string:
+
+      1. in the lambda after the arg list, or
+      2. in the function symbol's function-documentation property
+
+      Most functions use (1), but some use (2), e.g. a [defalias] like [abbrev-get]
+      or an advised function like [next-error]. *)
+  val function_documentation : Value.t t
 end
 
 module type Subtype = sig

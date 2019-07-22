@@ -5,11 +5,12 @@
     [(Info-goto-node "(elisp)Loading")] *)
 
 open! Core_kernel
+open! Async_kernel
 open! Import
 
 (** [(describe-function 'load)]
     [(Info-goto-node "(elisp)How Programs Do Loading")] *)
-val load : ?message:bool (** default is [true] *) -> string -> unit
+val load : ?message:bool (** default is [true] *) -> string -> unit Deferred.t
 
 (** [(describe-variable 'load-path)]
     [(Info-goto-node "(elisp)Library Search")] *)

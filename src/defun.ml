@@ -4,21 +4,10 @@ open! Import
 include Defun_intf
 
 module Q = struct
-  let defalias = "defalias" |> Symbol.intern
-
   module A = struct
     let optional = "&optional" |> Symbol.intern
     let rest = "&rest" |> Symbol.intern
   end
-end
-
-module F = struct
-  open! Funcall
-  open! Value.Type
-
-  let defalias =
-    Q.defalias <: Symbol.type_ @-> Symbol.type_ @-> nil_or string @-> return nil
-  ;;
 end
 
 module T0 = struct
@@ -54,9 +43,9 @@ module T = struct
   include T0
   include Applicative.Make (T0)
 
-  let required name type_ = Required (name, type_)
-  let optional name type_ = Optional (name, Value.Type.nil_or type_)
-  let rest name type_ = Rest (name, type_)
+  let required name type_ = Required (name |> Symbol.intern, type_)
+  let optional name type_ = Optional (name |> Symbol.intern, Value.Type.nil_or type_)
+  let rest name type_ = Rest (name |> Symbol.intern, type_)
 
   let optional_with_nil name type_ =
     map (optional name type_) ~f:(function
@@ -79,13 +68,24 @@ end
 
 include Applicative.Make_let_syntax (T) (Open_on_rhs_intf) (T)
 
-let apply t args =
+let apply t args ~function_ ~defined_at =
   let len = Array.length args in
   let pos = ref 0 in
-  let consume_arg (type_ : _ Value.Type.t) =
-    let arg = Value.Type.of_value_exn type_ args.(!pos) in
+  let convert_arg arg type_ value =
+    try Value.Type.of_value_exn type_ value with
+    | exn ->
+      raise_s
+        [%message
+          "function got argument of wrong type"
+            ~_:(function_ : Sexp.t)
+            (defined_at : Source_code_position.t)
+            (arg : Symbol.t)
+            ~_:(exn : exn)]
+  in
+  let consume_arg symbol type_ =
+    let a = convert_arg symbol type_ args.(!pos) in
     incr pos;
-    arg
+    a
   in
   let rec loop : type a. a t -> a =
     fun t ->
@@ -96,18 +96,19 @@ let apply t args =
         let x1 = loop t1 in
         let x2 = loop t2 in
         x1, x2
-      | Required (_, type_) ->
+      | Required (symbol, type_) ->
         if Int.( >= ) !pos len
         then
           raise_s
             [%message
               "Not enough arguments.  Emacs should have raised wrong-number-of-arguments."]
-        else consume_arg type_
-      | Optional (_, type_) -> if Int.( >= ) !pos len then None else consume_arg type_
-      | Rest (_, type_) ->
+        else consume_arg symbol type_
+      | Optional (symbol, type_) ->
+        if Int.( >= ) !pos len then None else consume_arg symbol type_
+      | Rest (symbol, type_) ->
         let retval =
           Array.sub args ~pos:!pos ~len:(len - !pos)
-          |> Array.map ~f:(Value.Type.of_value_exn type_)
+          |> Array.map ~f:(fun value -> convert_arg symbol type_ value)
           |> Array.to_list
         in
         pos := len;
@@ -206,18 +207,19 @@ let call
   let context : Sexp.t Lazy.t =
     lazy (List (function_ :: (args |> Array.map ~f:Value.sexp_of_t |> Array.to_list)))
   in
+  let apply () = apply t args ~function_ ~defined_at:here in
   let doit () =
     match returns with
-    | Returns returns -> Value.Type.to_value returns (apply t args)
+    | Returns returns -> Value.Type.to_value returns (apply ())
     | Returns_deferred returns ->
-      Value.Private.block_on_async here (fun () -> apply t args) ~context
-      |> Value.Type.to_value returns
+      Value.Private.block_on_async here apply ~context |> Value.Type.to_value returns
   in
   if should_profile then profile Sync context doit else doit ()
 ;;
 
 module Interactive = struct
   type t =
+    | Args of (unit -> Value.t list Deferred.t)
     | Function_name of { prompt : string }
     | Ignored
     | No_arg
@@ -225,46 +227,62 @@ module Interactive = struct
     | Raw_prefix
     | Region
 
-  let to_string = function
-    | Function_name { prompt } -> sprintf "a%s" prompt
-    | Ignored -> "i"
-    | No_arg -> ""
-    | Prompt prompt -> sprintf "s%s" prompt
-    | Raw_prefix -> "P"
-    | Region -> "r"
-  ;;
-
   let type_ =
     Value.Type.(
       map
-        string
+        value
         ~name:[%message "interactive-code"]
-        ~of_:(function
-          | "i" -> Ignored
-          | "" -> No_arg
-          | "P" -> Raw_prefix
-          | "r" -> Region
-          | s ->
-            let prefixes =
-              [ ("s", fun prompt -> Prompt prompt)
-              ; ("a", fun prompt -> Function_name { prompt })
+        ~of_:(fun value ->
+          if not (Value.is_string value)
+          then (
+            let form = Form.of_value_exn value in
+            Args
+              (fun () -> Deferred.return (Form.eval form |> Value.to_list_exn ~f:Fn.id)))
+          else (
+            match value |> Value.to_utf8_bytes_exn with
+            | "i" -> Ignored
+            | "" -> No_arg
+            | "P" -> Raw_prefix
+            | "r" -> Region
+            | s ->
+              let prefixes =
+                [ ("s", fun prompt -> Prompt prompt)
+                ; ("a", fun prompt -> Function_name { prompt })
+                ]
+              in
+              (match
+                 List.find_map prefixes ~f:(fun (prefix, f) ->
+                   Option.map (String.chop_prefix s ~prefix) ~f)
+               with
+               | Some result -> result
+               | None -> raise_s [%sexp "Unimplemented interactive code", (s : string)])))
+        ~to_:(function
+          | Args f ->
+            Form.list
+              [ "funcall" |> Symbol.intern |> Form.symbol
+              ; Form.quote
+                  (Function.create [%here] ~args:[] (function
+                     | [||] -> Value.list (Value.Private.block_on_async [%here] f)
+                     | _ -> assert false)
+                   |> Function.to_value)
               ]
-            in
-            (match
-               List.find_map prefixes ~f:(fun (prefix, f) ->
-                 Option.map (String.chop_prefix s ~prefix) ~f)
-             with
-             | Some result -> result
-             | None -> raise_s [%sexp "Unimplemented interactive code", (s : string)]))
-        ~to_:to_string)
+            |> Form.to_value
+          | Function_name { prompt } -> sprintf "a%s" prompt |> Value.of_utf8_bytes
+          | Ignored -> "i" |> Value.of_utf8_bytes
+          | No_arg -> "" |> Value.of_utf8_bytes
+          | Prompt prompt -> sprintf "s%s" prompt |> Value.of_utf8_bytes
+          | Raw_prefix -> "P" |> Value.of_utf8_bytes
+          | Region -> "r" |> Value.of_utf8_bytes))
   ;;
 
+  let t = type_
   let of_value_exn = Value.Type.of_value_exn type_
   let to_value = Value.Type.to_value type_
 end
 
 module For_testing = struct
   let defun_symbols = ref []
+  let all_defun_symbols () = !defun_symbols |> List.sort ~compare:Symbol.compare_name
 end
 
 let add_to_load_history symbol here =
@@ -272,9 +290,13 @@ let add_to_load_history symbol here =
   For_testing.defun_symbols := symbol :: !For_testing.defun_symbols
 ;;
 
+let defalias =
+  Funcall.("defalias" <: Symbol.t @-> Symbol.t @-> nil_or string @-> return nil)
+;;
+
 let defalias symbol here ?docstring ~alias_of () =
   add_to_load_history symbol here;
-  F.defalias symbol alias_of (docstring |> Option.map ~f:String.strip)
+  defalias symbol alias_of (docstring |> Option.map ~f:String.strip)
 ;;
 
 let define_obsolete_alias obsolete here ?docstring ~alias_of ~since () =
@@ -305,7 +327,7 @@ let defun_internal
     symbol
     here
     ?docstring
-    ?interactive:(Option.map interactive ~f:Interactive.to_string)
+    ?interactive:(Option.map interactive ~f:Interactive.to_value)
     ~args:args.required
     ~optional_args:args.optional
     ?rest_arg:args.rest
@@ -397,7 +419,7 @@ let lambda here ?docstring ?interactive returns t =
   Function.create
     here
     ?docstring
-    ?interactive:(Option.map interactive ~f:Interactive.to_string)
+    ?interactive:(Option.map interactive ~f:Interactive.to_value)
     ~optional_args:args.optional
     ?rest_arg:args.rest
     ~args:args.required

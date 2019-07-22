@@ -4,100 +4,70 @@ open! Import
 include Value.Make_subtype (struct
     let here = [%here]
     let name = "overlay"
-    let is_in_subtype = Funcall.("overlayp" |> Symbol.intern <: value @-> return bool)
+    let is_in_subtype = Funcall.("overlayp" <: value @-> return bool)
   end)
 
-module Q = struct
-  include Q
+let make_overlay =
+  Funcall.("make-overlay" <: Position.t @-> Position.t @-> nil_or Buffer.t @-> return t)
+;;
 
-  let delete_overlay = "delete-overlay" |> Symbol.intern
-  let make_overlay = "make-overlay" |> Symbol.intern
-  let move_overlay = "move-overlay" |> Symbol.intern
-  let overlay_buffer = "overlay-buffer" |> Symbol.intern
-  let overlay_end = "overlay-end" |> Symbol.intern
-  let overlay_get = "overlay-get" |> Symbol.intern
-  let overlay_put = "overlay-put" |> Symbol.intern
-  let overlay_start = "overlay-start" |> Symbol.intern
-  let overlays_at = "overlays-at" |> Symbol.intern
-  let overlays_in = "overlays-in" |> Symbol.intern
-  let remove_overlays = "remove-overlays" |> Symbol.intern
-end
+let create ?buffer () ~start ~end_ = make_overlay start end_ buffer
+let start = Funcall.("overlay-start" <: t @-> return Position.t)
+let end_ = Funcall.("overlay-end" <: t @-> return Position.t)
+let buffer = Funcall.("overlay-buffer" <: t @-> return Buffer.t)
+let delete = Funcall.("delete-overlay" <: t @-> return nil)
 
-module F = struct
-  include Funcall
+let move_overlay =
+  Funcall.(
+    "move-overlay" <: t @-> Position.t @-> Position.t @-> nil_or Buffer.t @-> return t)
+;;
 
-  let delete_overlay = Q.delete_overlay <: type_ @-> return nil
-
-  let make_overlay =
-    Q.make_overlay
-    <: Position.type_ @-> Position.type_ @-> nil_or Buffer.type_ @-> return type_
-  ;;
-
-  let move_overlay =
-    Q.move_overlay
-    <: type_
-       @-> Position.type_
-       @-> Position.type_
-       @-> nil_or Buffer.type_
-       @-> return type_
-  ;;
-
-  let overlay_buffer = Q.overlay_buffer <: type_ @-> return Buffer.type_
-  let overlay_end = Q.overlay_end <: type_ @-> return Position.type_
-  let overlay_start = Q.overlay_start <: type_ @-> return Position.type_
-
-  let overlays_at =
-    Q.overlays_at <: Position.type_ @-> nil_or bool @-> return (list type_)
-  ;;
-
-  let overlays_in =
-    Q.overlays_in <: Position.type_ @-> Position.type_ @-> return (list type_)
-  ;;
-end
-
-let create ?buffer () ~start ~end_ = F.make_overlay start end_ buffer
-let start = F.overlay_start
-let end_ = F.overlay_end
-let buffer = F.overlay_buffer
-let delete = F.delete_overlay
-let move ?buffer t ~start ~end_ = F.move_overlay t start end_ buffer
+let move ?buffer t ~start ~end_ = move_overlay t start end_ buffer
+let overlay_get = Funcall.("overlay-get" <: t @-> Symbol.t @-> return value)
 
 let get_property t property_name =
-  Symbol.funcall2
-    Q.overlay_get
-    (t |> to_value)
-    (property_name |> Text.Property_name.name_as_value)
+  overlay_get t (property_name |> Text.Property_name.name)
   |> Text.Property_name.of_value_exn property_name
 ;;
 
+let overlay_put = Funcall.("overlay-put" <: t @-> Symbol.t @-> value @-> return nil)
+
 let put_property t property_name property_value =
-  Symbol.funcall3_i
-    Q.overlay_put
-    (t |> to_value)
-    (property_name |> Text.Property_name.name_as_value)
+  overlay_put
+    t
+    (property_name |> Text.Property_name.name)
     (property_value |> Text.Property_name.to_value property_name)
 ;;
 
-let remove_overlays ?start ?end_ ?with_property () =
-  let option x f =
-    match x with
-    | None -> Value.nil
-    | Some x -> f x
-  in
-  let property_name, property_value =
-    match with_property with
-    | None -> Value.nil, Value.nil
-    | Some (name, value) ->
-      Text.Property_name.name_as_value name, Text.Property_name.to_value name value
-  in
-  Symbol.funcall4_i
-    Q.remove_overlays
-    (option start Position.to_value)
-    (option end_ Position.to_value)
-    property_name
-    property_value
+let remove_overlays =
+  Funcall.(
+    "remove-overlays"
+    <: nil_or Position.t
+       @-> nil_or Position.t
+       @-> nil_or Symbol.t
+       @-> value
+       @-> return nil)
 ;;
 
-let at position = F.overlays_at position None
-let in_ ~start ~end_ = F.overlays_in start end_
+let remove_overlays ?start ?end_ ?with_property () =
+  let property_name, property_value =
+    match with_property with
+    | None -> None, Value.nil
+    | Some (name, value) ->
+      Some (Text.Property_name.name name), Text.Property_name.to_value name value
+  in
+  remove_overlays start end_ property_name property_value
+;;
+
+let overlays_at =
+  Funcall.("overlays-at" <: Position.t @-> nil_or bool @-> return (list t))
+;;
+
+let at position = overlays_at position None
+
+let overlays_in =
+  Funcall.("overlays-in" <: Position.t @-> Position.t @-> return (list t))
+;;
+
+let in_ ~start ~end_ = overlays_in start end_
 let equal a b = Value.eq (a |> to_value) (b |> to_value)

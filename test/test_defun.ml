@@ -1,7 +1,10 @@
 open! Core_kernel
+open! Async_kernel
 open! Import
-open Defun
 
+(* We don't [open Defun] here because it conflicts with Async's [Let_syntax]. *)
+
+let return = Deferred.return
 let here = [%here]
 let return_type = Value.Type.sexpable (module Sexp) ~name:[%sexp "sexp"]
 
@@ -16,12 +19,11 @@ let%expect_test "[defun]" =
     here
     ~docstring:"Returns its own arguments as a sexp."
     (Returns return_type)
-    (let open Let_syntax in
-     let%map_open () = return ()
-     and i = required ("int" |> Symbol.intern) Value.Type.int
-     and s = required ("string" |> Symbol.intern) Value.Type.string
-     and s_o = optional ("string-optional" |> Symbol.intern) Value.Type.string
-     and rest = rest ("rest" |> Symbol.intern) Value.Type.string in
+    (let%map_open.Defun.Let_syntax () = return ()
+     and i = required "int" int
+     and s = required "string" string
+     and s_o = optional "string-optional" string
+     and rest = rest "rest" string in
      [%message
        "Got args." (i : int) (s : string) (s_o : string option) (rest : string list)]);
   print_funcallN
@@ -46,7 +48,26 @@ let%expect_test "[defun]" =
 
 (<SYMBOL> INT STRING &optional STRING-OPTIONAL &rest REST)
 
-Returns its own arguments as a sexp. |}]
+Returns its own arguments as a sexp. |}];
+  return ()
+;;
+
+let%expect_test "[defun ~interactive:(Args _)]" =
+  let symbol = "test-interactive" |> Symbol.intern in
+  defun
+    symbol
+    [%here]
+    ~docstring:""
+    ~interactive:(Args (fun () -> return [ 13 |> Value.of_int_exn ]))
+    (Returns Value.Type.unit)
+    (let%map_open.Defun.Let_syntax () = return ()
+     and arg = required "arg" int in
+     print_s [%sexp (arg : int)]);
+  Symbol.funcall1_i symbol (15 |> Value.of_int_exn);
+  [%expect {| 15 |}];
+  let%bind () = Command.call_interactively (symbol |> Symbol.to_value) in
+  [%expect {| 13 |}];
+  return ()
 ;;
 
 let%expect_test "[defun] tuple ordering" =
@@ -56,11 +77,10 @@ let%expect_test "[defun] tuple ordering" =
     here
     ~docstring:""
     (Returns return_type)
-    (let open Let_syntax in
-     let%map_open () = return ()
+    (let%map_open.Defun.Let_syntax () = return ()
      and difference =
-       let%map minuend = required ("minuend" |> Symbol.intern) Value.Type.int
-       and subtrahend = required ("subtrahend" |> Symbol.intern) Value.Type.int in
+       let%map_open.Defun.Let_syntax minuend = required "minuend" Value.Type.int
+       and subtrahend = required "subtrahend" Value.Type.int in
        minuend - subtrahend
      in
      [%message (difference : int)]);
@@ -73,7 +93,8 @@ let%expect_test "[defun] tuple ordering" =
   [%expect {|
 <SYMBOL> is a Lisp function.
 
-(<SYMBOL> MINUEND SUBTRAHEND) |}]
+(<SYMBOL> MINUEND SUBTRAHEND) |}];
+  return ()
 ;;
 
 let%expect_test "[defun] wrong number of arguments" =
@@ -85,20 +106,19 @@ let%expect_test "[defun] wrong number of arguments" =
     (Returns return_type)
     (let open Defun.Let_syntax in
      let%map_open () = return ()
-     and arg = required ("arg" |> Symbol.intern) int in
+     and arg = required "arg" int in
      [%message (arg : int)]);
   print_funcallN symbol (List.init 1 ~f:Value.Type.(int |> to_value));
   [%expect {| (arg 0) |}];
   show_raise (fun () ->
     Value.For_testing.map_elisp_signal_omit_data (fun () ->
       print_funcallN symbol (List.init 2 ~f:Value.Type.(int |> to_value))));
-  [%expect {|
-    (raised wrong-number-of-arguments) |}];
+  [%expect {| (raised wrong-number-of-arguments) |}];
   show_raise (fun () ->
     Value.For_testing.map_elisp_signal_omit_data (fun () ->
       print_funcallN symbol (List.init 0 ~f:Value.Type.(int |> to_value))));
-  [%expect {|
-    (raised wrong-number-of-arguments) |}]
+  [%expect {| (raised wrong-number-of-arguments) |}];
+  return ()
 ;;
 
 let%expect_test "[defun] omitted optional arguments" =
@@ -108,14 +128,71 @@ let%expect_test "[defun] omitted optional arguments" =
     here
     ~docstring:""
     (Returns return_type)
-    (let open Let_syntax in
-     let%map_open () = return ()
-     and optional = optional ("optional" |> Symbol.intern) Value.Type.int in
+    (let%map_open.Defun.Let_syntax () = return ()
+     and optional = optional "optional" int in
      [%message (optional : int option)]);
   print_funcallN symbol (List.init 1 ~f:Value.Type.(int |> to_value));
   [%expect {| (optional (0)) |}];
   print_funcallN symbol (List.init 0 ~f:Value.Type.(int |> to_value));
-  [%expect {| (optional ()) |}]
+  [%expect {| (optional ()) |}];
+  return ()
+;;
+
+let%expect_test "[defun] type errors in required, optional, and rest arguments" =
+  let test make_arg =
+    let symbol = "some-function" |> Symbol.intern in
+    defun
+      symbol
+      [%here]
+      ~docstring:""
+      (Returns Value.Type.unit)
+      (let%map_open.Defun.Let_syntax () = return ()
+       and _ = make_arg "arg" int in
+       assert false);
+    require_does_raise [%here] ~hide_positions:true (fun () ->
+      Symbol.funcall1_i symbol ("foo" |> Value.of_utf8_bytes))
+  in
+  test Defun.required;
+  [%expect
+    {|
+    ((
+      "function got argument of wrong type"
+      some-function
+      (defined_at app/emacs/lib/ecaml/test/test_defun.ml:LINE:COL)
+      (arg arg)
+      ("unable to convert Elisp value to OCaml value"
+       (type_ int)
+       (value foo)
+       (exn (wrong-type-argument (integerp foo)))))) |}];
+  test Defun.optional;
+  [%expect
+    {|
+    ((
+      "function got argument of wrong type"
+      some-function
+      (defined_at app/emacs/lib/ecaml/test/test_defun.ml:LINE:COL)
+      (arg arg)
+      ("unable to convert Elisp value to OCaml value"
+       (type_ (nil_or int))
+       (value foo)
+       (exn (
+         "unable to convert Elisp value to OCaml value"
+         (type_ int)
+         (value foo)
+         (exn (wrong-type-argument (integerp foo)))))))) |}];
+  test Defun.rest;
+  [%expect
+    {|
+    ((
+      "function got argument of wrong type"
+      some-function
+      (defined_at app/emacs/lib/ecaml/test/test_defun.ml:LINE:COL)
+      (arg arg)
+      ("unable to convert Elisp value to OCaml value"
+       (type_ int)
+       (value foo)
+       (exn (wrong-type-argument (integerp foo)))))) |}];
+  return ()
 ;;
 
 let%expect_test "[lambda]" =
@@ -125,7 +202,7 @@ let%expect_test "[lambda]" =
       (Returns Value.Type.int)
       (let open Defun.Let_syntax in
        let%map_open () = return ()
-       and i = required ("int" |> Symbol.intern) int in
+       and i = required "int" int in
        i + 1)
   in
   let retval =
@@ -134,13 +211,11 @@ let%expect_test "[lambda]" =
   in
   print_s [%sexp (retval : int)];
   [%expect {| 2 |}];
-  let docstring =
-    Symbol.funcall1 ("documentation" |> Symbol.intern) (fn |> Function.to_value)
-    |> Value.Type.(string |> of_value_exn)
-  in
+  let docstring = Funcall.("documentation" <: Function.t @-> return string) fn in
   if not (String.is_prefix docstring ~prefix:"Implemented at")
   then print_endline docstring;
-  [%expect {| |}]
+  [%expect {| |}];
+  return ()
 ;;
 
 let%expect_test "[defalias]" =
@@ -153,5 +228,6 @@ let%expect_test "[defalias]" =
 
     (f &rest NUMBERS-OR-MARKERS)
 
-    Return sum of any number of arguments, which are numbers or markers. |}]
+    Return sum of any number of arguments, which are numbers or markers. |}];
+  return ()
 ;;

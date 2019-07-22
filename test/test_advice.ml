@@ -1,4 +1,5 @@
 open! Core_kernel
+open! Async_kernel
 open! Import
 open! Advice
 
@@ -10,7 +11,7 @@ let initialize () =
     [%here]
     (Returns Value.Type.int)
     (let open Defun.Let_syntax in
-     let%map_open args = rest ("rest" |> Symbol.intern) value in
+     let%map_open args = rest "rest" value in
      print_s [%message "test-function" (args : Value.t list)];
      13)
 ;;
@@ -48,7 +49,8 @@ let%expect_test "" =
     (advice (rest (1)))
     (test-function (args (0 1)))
     (advice (inner_result 13))
-    (call (result 14)) |}]
+    (call (result 14)) |}];
+  return ()
 ;;
 
 let%expect_test "[around_funcall ~on_parse_error]" =
@@ -89,5 +91,6 @@ let%expect_test "[around_funcall ~on_parse_error]" =
   test Value.Type.string ~on_parse_error:Call_inner_function;
   [%expect {|
     (test-function (args (1)))
-    (call (result 13)) |}]
+    (call (result 13)) |}];
+  return ()
 ;;

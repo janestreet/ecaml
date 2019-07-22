@@ -1,4 +1,5 @@
 open! Core_kernel
+open! Async_kernel
 open! Import
 open! Window
 
@@ -6,8 +7,8 @@ let show_all () = print_s [%sexp (all_in_selected_frame () : t list)]
 
 let%expect_test "[all_in_selected_frame]" =
   show_all ();
-  [%expect {|
-    ("#<window 1 on *scratch*>") |}]
+  [%expect {| ("#<window 1 on *scratch*>") |}];
+  return ()
 ;;
 
 let try_with = Or_error.try_with
@@ -35,21 +36,22 @@ let%expect_test "accessors" =
      (height      (Ok 9))
      (is_live     (Ok true))
      (point       (Ok 1))
-     (width       (Ok 10))) |}]
+     (width       (Ok 10))) |}];
+  return ()
 ;;
 
 let%expect_test "[set_point_exn]" =
   Point.insert "foo";
   set_point_exn t (2 |> Position.of_int_exn);
   print_s [%sexp (point_exn t : Position.t)];
-  [%expect {|
-    2 |}]
+  [%expect {| 2 |}];
+  return ()
 ;;
 
 let%expect_test "[delete_exn] raise" =
   show_raise (fun () -> delete_exn t);
-  [%expect {|
-    (raised ("Attempt to delete minibuffer or sole ordinary window")) |}]
+  [%expect {| (raised ("Attempt to delete minibuffer or sole ordinary window")) |}];
+  return ()
 ;;
 
 let%expect_test "[delete_exn]" =
@@ -65,9 +67,10 @@ let%expect_test "[delete_exn]" =
   [%expect
     {|
     ((body_height (Error (wrong-type-argument (window-live-p "#<window 1>"))))
-     (buffer (Error ("[buffer]'s [of_value_exn] got value not in subtype" nil)))
+     (buffer (Error (Window.buffer_exn "#<window 1>")))
      (height (Error (wrong-type-argument (window-valid-p "#<window 1>"))))
      (is_live (Ok false))
      (point (Error (wrong-type-argument (window-live-p "#<window 1>"))))
-     (width (Error (wrong-type-argument (window-live-p "#<window 1>"))))) |}]
+     (width (Error (wrong-type-argument (window-live-p "#<window 1>"))))) |}];
+  return ()
 ;;

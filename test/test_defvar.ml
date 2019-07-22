@@ -1,4 +1,5 @@
 open! Core_kernel
+open! Async_kernel
 open! Import
 open! Defvar
 
@@ -20,7 +21,8 @@ let%expect_test "[defvar]" =
        (x-gtk-stock-map     custom-variable)
        (icon-map-list       custom-variable))
       variable-documentation
-      "some text") |}]
+      "some text") |}];
+  return ()
 ;;
 
 let%expect_test "[defvar] with invalid value" =
@@ -42,7 +44,8 @@ let%expect_test "[defvar] with invalid value" =
       ("unable to convert Elisp value to OCaml value"
        (type_ int)
        (value nil)
-       (exn (wrong-type-argument (integerp nil)))))) |}]
+       (exn (wrong-type-argument (integerp nil)))))) |}];
+  return ()
 ;;
 
 let%expect_test "[defvaralias]" =
@@ -74,7 +77,8 @@ let%expect_test "[defvaralias]" =
       This variable is an alias for `x'.
 
     Documentation:
-    some other text |}]
+    some other text |}];
+  return ()
 ;;
 
 let%expect_test "[define_obsolete_alias]" =
@@ -96,5 +100,6 @@ let%expect_test "[define_obsolete_alias]" =
       use `y' instead.
 
     Documentation:
-    some docs |}]
+    some docs |}];
+  return ()
 ;;

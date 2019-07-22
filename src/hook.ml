@@ -4,8 +4,7 @@ open! Import
 module Q = struct
   include Q
 
-  let add_hook = "add-hook" |> Symbol.intern
-  and after_load_functions = "after-load-functions" |> Symbol.intern
+  let after_load_functions = "after-load-functions" |> Symbol.intern
   and after_revert = "after-revert-hook" |> Symbol.intern
   and after_save_hook = "after-save-hook" |> Symbol.intern
   and before_save_hook = "before-save-hook" |> Symbol.intern
@@ -13,24 +12,9 @@ module Q = struct
   and focus_in_hook = "focus-in-hook" |> Symbol.intern
   and kill_buffer_hook = "kill-buffer-hook" |> Symbol.intern
   and post_command_hook = "post-command-hook" |> Symbol.intern
-  and remove_hook = "remove-hook" |> Symbol.intern
-  and run_hooks = "run-hooks" |> Symbol.intern
-  and start = "start" |> Symbol.intern
-  and window = "window" |> Symbol.intern
   and window_configuration_change_hook =
     "window-configuration-change-hook" |> Symbol.intern
   and window_scroll_functions = "window-scroll-functions" |> Symbol.intern
-end
-
-module F = struct
-  open! Funcall
-  open! Value.Type
-
-  let add_hook =
-    Q.add_hook <: Symbol.type_ @-> Symbol.type_ @-> bool @-> bool @-> return nil
-  and remove_hook =
-    Q.remove_hook <: Symbol.type_ @-> Symbol.type_ @-> bool @-> return nil
-  and run_hooks = Q.run_hooks <: Symbol.type_ @-> return nil
 end
 
 include Hook0
@@ -78,13 +62,13 @@ module Function = struct
        | Window ->
          let open Defun.Let_syntax in
          let%map_open () = return ()
-         and window = required Q.window Window.type_
-         and start = required Q.start Position.type_ in
+         and window = required "window" Window.t
+         and start = required "start" Position.t in
          try_with (fun () -> f { window; start })
        | File ->
          let open Defun.Let_syntax in
          let%map_open () = return ()
-         and file = required Q.file Value.Type.string in
+         and file = required "file" string in
          try_with (fun () -> f { file }))
   ;;
 
@@ -100,12 +84,13 @@ module Function = struct
   ;;
 
   let funcall (type a) ({ symbol; hook_type } : a t) (x : a) =
+    let elisp_name = symbol |> Symbol.name in
     let open Funcall in
     match hook_type, x with
-    | Normal, () -> (symbol <: nullary @-> return nil) ()
+    | Normal, () -> (elisp_name <: nullary @-> return nil) ()
     | Window, { window; start } ->
-      (symbol <: Window.type_ @-> Position.type_ @-> return nil) window start
-    | File, { file } -> (symbol <: Value.Type.string @-> return nil) file
+      (elisp_name <: Window.t @-> Position.t @-> return nil) window start
+    | File, { file } -> (elisp_name <: Value.Type.string @-> return nil) file
   ;;
 
   let symbol t = t.symbol
@@ -118,8 +103,12 @@ module Where = struct
   [@@deriving sexp_of]
 end
 
+let remove_hook =
+  Funcall.("remove-hook" <: Symbol.t @-> Symbol.t @-> bool @-> return nil)
+;;
+
 let remove ?(buffer_local = false) t function_ =
-  F.remove_hook (t |> symbol) (Function.symbol function_) buffer_local
+  remove_hook (t |> symbol) (Function.symbol function_) buffer_local
 ;;
 
 module Id = Unique_id.Int ()
@@ -133,9 +122,13 @@ let make_one_shot_function_symbol function_ =
        ])
 ;;
 
+let add_hook =
+  Funcall.("add-hook" <: Symbol.t @-> Symbol.t @-> bool @-> bool @-> return nil)
+;;
+
 let add ?(buffer_local = false) ?(one_shot = false) ?(where = Where.Start) t function_ =
   let add function_ =
-    F.add_hook
+    add_hook
       (t |> symbol)
       (Function.symbol function_)
       (match where with
@@ -162,7 +155,13 @@ let add ?(buffer_local = false) ?(one_shot = false) ?(where = Where.Start) t fun
 ;;
 
 let clear t = Current_buffer.set_value t.var []
-let run t = F.run_hooks (t |> symbol)
+let run_hooks = Funcall.("run-hooks" <: Symbol.t @-> return nil)
+
+let run t =
+  let symbol = t |> symbol in
+  Value.Private.run_outside_async [%here] (fun () -> run_hooks symbol)
+;;
+
 let after_load = create Q.after_load_functions ~hook_type:File
 let after_revert = create Q.after_revert ~hook_type:Normal
 let after_save = create Q.after_save_hook ~hook_type:Normal

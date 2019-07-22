@@ -1,4 +1,5 @@
 open! Core_kernel
+open! Async_kernel
 open! Import
 open! System
 
@@ -8,27 +9,23 @@ let%expect_test "[setenv], [getenv], [setenv_temporarily]" =
   let getenv () = print_s [%sexp (getenv ~var : string option)] in
   setenv "a";
   getenv ();
-  [%expect {|
-    (a) |}];
+  [%expect {| (a) |}];
   setenv "b";
   getenv ();
-  [%expect {|
-    (b) |}];
-  setenv_temporarily [ { var; value = "c" } ] ~f:(fun () ->
+  [%expect {| (b) |}];
+  setenv_temporarily Sync [ { var; value = "c" } ] ~f:(fun () ->
     getenv ();
-    [%expect {|
-      (c) |}];
+    [%expect {| (c) |}];
     setenv "d";
     getenv ();
-    [%expect {|
-      (d) |}]);
+    [%expect {| (d) |}]);
   getenv ();
-  [%expect {|
-    (b) |}]
+  [%expect {| (b) |}];
+  return ()
 ;;
 
 let%expect_test "[noninteractive]" =
   print_s [%sexp (Current_buffer.value_exn noninteractive : bool)];
-  [%expect {|
-    true |}]
+  [%expect {| true |}];
+  return ()
 ;;

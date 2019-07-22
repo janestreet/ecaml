@@ -8,6 +8,7 @@
     [(Info-goto-node "(elisp)Hooks")] *)
 
 open! Core_kernel
+open! Async_kernel
 open! Import
 
 type 'a t = 'a Hook0.t [@@deriving sexp_of]
@@ -88,7 +89,7 @@ val clear : _ t -> unit
 
 (** [(describe-function 'run-hooks)]
     [(Info-goto-node "(elisp)Running Hooks")] *)
-val run : normal t -> unit
+val run : normal t -> unit Deferred.t
 
 (** [(describe-variable 'after-load-functions)]
     [(Info-goto-node "(elisp)Hooks for Loading")] *)

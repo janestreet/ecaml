@@ -25,11 +25,17 @@ module Q = struct
   include Q
 
   let ansi_color = "ansi-color" |> Symbol.intern
-  and ansi_color_bright_vector = "ansi-color-bright-names-vector" |> Symbol.intern
-  and ansi_color_faint_vector = "ansi-color-faint-names-vector" |> Symbol.intern
-  and ansi_color_names_vector = "ansi-color-names-vector" |> Symbol.intern
 end
 
+let ansi_color_bright_vector =
+  Var.Wrap.("ansi-color-bright-names-vector" <: Vector.t Color.t)
+;;
+
+let ansi_color_faint_vector =
+  Var.Wrap.("ansi-color-faint-names-vector" <: Vector.t Color.t)
+;;
+
+let ansi_color_names_vector = Var.Wrap.("ansi-color-names-vector" <: Vector.t Color.t)
 let max_supported_code = 109
 let customization_group = "ansi-colors" |> Customization.Group.of_string
 
@@ -166,7 +172,7 @@ module Colors : sig
   val color : t -> Color_spec.t -> Color.t
   val faint_default_color : t -> Color.t
 end = struct
-  let defcustom_color_var symbol here ~docstring ~standard_value () =
+  let defcustom_color_var var here ~docstring ~standard_value () =
     let standard_value =
       standard_value
       |> List.map ~f:Value.of_utf8_bytes
@@ -175,7 +181,7 @@ end = struct
     in
     ignore
       (Customization.defcustom
-         symbol
+         (Var.symbol var)
          here
          ~docstring
          ~group:customization_group
@@ -189,7 +195,7 @@ end = struct
 
   let () =
     defcustom_color_var
-      Q.ansi_color_bright_vector
+      ansi_color_bright_vector
       [%here]
       ~docstring:
         {|
@@ -210,7 +216,7 @@ Bright colors used to color escape sequences 90-97 (foreground) and 100-107 (bac
 
   let () =
     defcustom_color_var
-      Q.ansi_color_faint_vector
+      ansi_color_faint_vector
       [%here]
       ~docstring:"Dimmed colors used to color foreground with escape sequence 2"
       ~standard_value:
@@ -308,21 +314,18 @@ Bright colors used to color escape sequences 90-97 (foreground) and 100-107 (bac
 
   let get () =
     Feature.require Q.ansi_color;
-    let load_color_vector symbol =
-      try
-        Current_buffer.value_exn (Var.create symbol (Vector.type_ Color.type_))
-        |> By_color_index.create_exn
-      with
+    let load_color_vector var =
+      try Current_buffer.value_exn var |> By_color_index.create_exn with
       | exn ->
         raise_s
           [%message
             "[Colors.get] unable to load color vector"
-              ~symbol:(Symbol.name symbol : string)
+              ~symbol:(Var.symbol var : Symbol.t)
               ~_:(exn : exn)]
     in
-    let regular = load_color_vector Q.ansi_color_names_vector in
-    let bright = load_color_vector Q.ansi_color_bright_vector in
-    let faint = load_color_vector Q.ansi_color_faint_vector in
+    let regular = load_color_vector ansi_color_names_vector in
+    let bright = load_color_vector ansi_color_bright_vector in
+    let faint = load_color_vector ansi_color_faint_vector in
     let faint_default_color =
       match Face.attribute_value Face.default Foreground with
       | Color c -> make_faint c

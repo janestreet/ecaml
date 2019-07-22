@@ -7,6 +7,7 @@ module Url : sig
   type t = string
 
   val type_ : t Value.Type.t
+  val t : t Value.Type.t
 end
 
 (** [(describe-function 'browse-url)] *)

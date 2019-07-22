@@ -1,4 +1,5 @@
 open! Core_kernel
+open! Async_kernel
 open! Import
 open! Thing_at_point
 
@@ -35,7 +36,8 @@ let%expect_test "[find], [bounds]" =
     test ~thing:Word;
     [%expect {| (buffer) |}];
     test ~thing:alpha_or_bang;
-    [%expect {| (test!buffer) |}])
+    [%expect {| (test!buffer) |}]);
+  return ()
 ;;
 
 let%expect_test "[forward], [beginning], [beginning_exn], [end_], [end_exn]" =
@@ -109,5 +111,6 @@ let%expect_test "[forward], [beginning], [beginning_exn], [end_], [end_exn]" =
     [%expect
       {|
       This is/a │test!buffer with
-      various|things to match*against |}])
+      various|things to match*against |}]);
+  return ()
 ;;

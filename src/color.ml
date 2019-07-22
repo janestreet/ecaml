@@ -2,16 +2,6 @@ open! Core_kernel
 open! Import0
 module Frame = Frame0
 
-module Q = struct
-  include Q
-
-  let color_defined_p = "color-defined-p" |> Symbol.intern
-  and color_gray_p = "color-gray-p" |> Symbol.intern
-  and color_supported_p = "color-supported-p" |> Symbol.intern
-  and color_values = "color-values" |> Symbol.intern
-  and defined_colors = "defined-colors" |> Symbol.intern
-end
-
 include Value.Make_subtype (struct
     let name = "color"
     let here = [%here]
@@ -32,23 +22,16 @@ and red = "red" |> of_name
 and white = "white" |> of_name
 and yellow = "yellow" |> of_name
 
-let frame option =
-  (match option with
-   | Some x -> x
-   | None -> Frame.selected ())
-  |> Frame.to_value
+let is f ?on t = f t on
+let is_gray = is Funcall.("color-gray-p" <: t @-> nil_or Frame.t @-> return bool)
+let is_defined = is Funcall.("color-defined-p" <: t @-> nil_or Frame.t @-> return bool)
+
+let is_supported =
+  is Funcall.("color-supported-p" <: t @-> nil_or Frame.t @-> return bool)
 ;;
 
-let is q ?on t = Symbol.funcall2 q (t |> to_value) (frame on) |> Value.to_bool
-let is_gray = is Q.color_gray_p
-let is_defined = is Q.color_defined_p
-let is_supported = is Q.color_supported_p
-
-let defined ?on () =
-  Symbol.funcall1 Q.defined_colors (frame on)
-  |> Value.to_list_exn ~f:of_value_exn
-  |> List.sort ~compare
-;;
+let defined_colors = Funcall.("defined-colors" <: nil_or Frame.t @-> return (list t))
+let defined ?on () = defined_colors on |> List.sort ~compare
 
 module RGB = struct
   type t =
@@ -65,9 +48,10 @@ module RGB = struct
 end
 
 let elt = Generated_bindings.elt_returning_int
+let color_values = Funcall.("color-values" <: t @-> nil_or Frame.t @-> return value)
 
 let rgb_exn ?on t : RGB.t =
-  let v = Symbol.funcall2 Q.color_values (t |> to_value) (frame on) in
+  let v = color_values t on in
   if Value.is_nil v
   then
     raise_s

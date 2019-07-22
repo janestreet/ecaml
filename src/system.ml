@@ -1,34 +1,13 @@
 open! Core_kernel
 open! Import
 
-module Q = struct
-  include Q
-
-  let exec_path = "exec-path" |> Symbol.intern
-  and getenv = "getenv" |> Symbol.intern
-  and noninteractive = "noninteractive" |> Symbol.intern
-  and process_environment = "process-environment" |> Symbol.intern
-  and setenv = "setenv" |> Symbol.intern
-  and system_name = "system-name" |> Symbol.intern
-end
-
-let string_option = Value.Type.(nil_or string)
-
-let getenv ~var =
-  Symbol.funcall1 Q.getenv (var |> Value.of_utf8_bytes)
-  |> Value.Type.of_value_exn string_option
-;;
-
-let setenv ~var ~value =
-  Symbol.funcall2_i
-    Q.setenv
-    (var |> Value.of_utf8_bytes)
-    (value |> Value.Type.to_value string_option)
-;;
-
-let process_environment = Var.create Q.process_environment Value.Type.(list string)
-let exec_path = Var.create Q.exec_path Value.Type.path_list
-let noninteractive = Var.create Q.noninteractive Value.Type.bool
+let getenv = Funcall.("getenv" <: string @-> return (nil_or string))
+let getenv ~var = getenv var
+let setenv = Funcall.("setenv" <: string @-> nil_or string @-> return nil)
+let setenv ~var ~value = setenv var value
+let process_environment = Var.Wrap.("process-environment" <: list string)
+let exec_path = Var.Wrap.("exec-path" <: path_list)
+let noninteractive = Var.Wrap.("noninteractive" <: bool)
 let is_interactive () = not (Current_buffer.value_exn noninteractive)
 
 module Var_and_value = struct
@@ -39,18 +18,18 @@ module Var_and_value = struct
   [@@deriving sexp_of]
 end
 
-let setenv_temporarily vars_and_values ~f =
-  let process_environment = Var.create Q.process_environment Value.Type.value in
+let append = Funcall.("append" <: list string @-> value @-> return value)
+
+let setenv_temporarily sync_or_async vars_and_values ~f =
+  let process_environment = Var.Wrap.("process-environment" <: value) in
   Current_buffer.set_value_temporarily
+    sync_or_async
     ~f
     process_environment
-    (Symbol.funcall2
-       Q.append
+    (append
        (vars_and_values
-        |> List.map ~f:(fun { Var_and_value.var; value } -> concat [ var; "="; value ])
-        |> Value.Type.(list string |> to_value))
+        |> List.map ~f:(fun { Var_and_value.var; value } -> concat [ var; "="; value ]))
        (Current_buffer.value_exn process_environment))
-    Sync
 ;;
 
-let hostname () = Symbol.funcall0 Q.system_name |> Value.to_utf8_bytes_exn
+let hostname = Funcall.("system-name" <: nullary @-> return string)

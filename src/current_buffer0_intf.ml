@@ -11,7 +11,7 @@ module type Current_buffer0_public = sig
 
   (** [set_temporarily t ~f] runs [f] with the current buffer set to [t].
       [(describe-function 'with-current-buffer)]. *)
-  val set_temporarily : Buffer0.t -> (_, 'a) Sync_or_async.t -> f:(unit -> 'a) -> 'a
+  val set_temporarily : (_, 'a) Sync_or_async.t -> Buffer0.t -> f:(unit -> 'a) -> 'a
 
   (** [(describe-function 'symbol-value)] *)
   val symbol_value : Symbol.t -> Value.t
@@ -36,15 +36,15 @@ module type Current_buffer0_public = sig
   val clear_value : 'a Var.t -> unit
 
   val set_value_temporarily
-    :  'a Var.t
+    :  (_, 'b) Sync_or_async.t
+    -> 'a Var.t
     -> 'a
-    -> (_, 'b) Sync_or_async.t
     -> f:(unit -> 'b)
     -> 'b
 
   val set_values_temporarily
-    :  Var.And_value.t list
-    -> (_, 'a) Sync_or_async.t
+    :  (_, 'a) Sync_or_async.t
+    -> Var.And_value.t list
     -> f:(unit -> 'a)
     -> 'a
 
@@ -54,13 +54,4 @@ end
 
 module type Current_buffer0 = sig
   include Current_buffer0_public
-
-  module Q : sig
-    include module type of Q
-
-    val boundp : Symbol.t
-    val current_buffer : Symbol.t
-    val makunbound : Symbol.t
-    val set_buffer : Symbol.t
-  end
 end

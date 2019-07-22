@@ -15,8 +15,8 @@ let to_filename = function
 
 let within t ~f =
   Current_buffer.set_value_temporarily
+    Sync
     (Buffer_local.var Current_buffer.directory)
     (t |> to_filename)
-    Sync
     ~f
 ;;

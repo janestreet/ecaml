@@ -1,4 +1,5 @@
 open! Core_kernel
+open! Async_kernel
 open! Import
 open! Echo_area
 
@@ -7,7 +8,7 @@ open! Echo_area
    copy of the output. *)
 let show () =
   let buffer = Buffer.find_or_create ~name:"*Messages*" in
-  Current_buffer.set_temporarily buffer Sync ~f:(fun () ->
+  Current_buffer.set_temporarily Sync buffer ~f:(fun () ->
     print_string (Current_buffer.contents () |> Text.to_utf8_bytes));
   Buffer.Blocking.kill buffer
 ;;
@@ -17,7 +18,8 @@ let%expect_test "[message_s] of a value" =
   show ();
   [%expect {|
     13
-    13 |}]
+    13 |}];
+  return ()
 ;;
 
 let%expect_test "[message]" =
@@ -25,7 +27,8 @@ let%expect_test "[message]" =
   show ();
   [%expect {|
     foobar
-    foobar |}]
+    foobar |}];
+  return ()
 ;;
 
 let%expect_test "[messagef]" =
@@ -33,7 +36,8 @@ let%expect_test "[messagef]" =
   show ();
   [%expect {|
     13
-    13 |}]
+    13 |}];
+  return ()
 ;;
 
 let%expect_test "[message_s] of an atom" =
@@ -41,7 +45,8 @@ let%expect_test "[message_s] of an atom" =
   show ();
   [%expect {|
     foo bar
-    foo bar |}]
+    foo bar |}];
+  return ()
 ;;
 
 let%expect_test "[message_s]" =
@@ -49,19 +54,22 @@ let%expect_test "[message_s]" =
   show ();
   [%expect {|
    (foobar 13)
-   (foobar 13) |}]
+   (foobar 13) |}];
+  return ()
 ;;
 
 let%expect_test "[message ~echo:false]" =
   message "foo" ~echo:false;
   [%expect {| |}];
   show ();
-  [%expect {| foo |}]
+  [%expect {| foo |}];
+  return ()
 ;;
 
 let%expect_test "[inhibit_messages]" =
   inhibit_messages Sync (fun () -> message "hello");
   [%expect {| |}];
   show ();
-  [%expect {| hello |}]
+  [%expect {| hello |}];
+  return ()
 ;;

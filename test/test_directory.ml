@@ -1,40 +1,44 @@
 open! Core_kernel
+open! Async_kernel
 open! Import
 open! Directory
 
 let%expect_test "" =
-  try delete "zzz" ~recursive:true with
-  | _ -> ()
+  (try delete "zzz" ~recursive:true with
+   | _ -> ());
+  return ()
 ;;
 
 let%expect_test "[create], [delete]" =
   create "zzz";
-  delete "zzz"
+  delete "zzz";
+  return ()
 ;;
 
 let%expect_test "[create ~parents:true], [delete ~recursive:true]" =
   create "a/b/c" ~parents:true;
-  delete "a" ~recursive:true
+  delete "a" ~recursive:true;
+  return ()
 ;;
 
 let%expect_test "[create] raise" =
   show_raise (fun () -> create "/zzz");
-  [%expect
-    {|
-    (raised (file-error ("Creating directory" "Permission denied" /zzz))) |}]
+  [%expect {| (raised (file-error ("Creating directory" "Permission denied" /zzz))) |}];
+  return ()
 ;;
 
 let%expect_test "[delete] raise" =
   print_s
     ~templatize_current_directory:true
-    [%sexp (try_with (fun () -> delete "zzz") : _ Or_error.t)];
+    [%sexp (Or_error.try_with (fun () -> delete "zzz") : _ Or_error.t)];
   [%expect
     {|
     (Error (
-      file-error (
+      file-missing (
         "Removing directory"
         "No such file or directory"
-        <current-directory>/zzz))) |}]
+        <current-directory>/zzz))) |}];
+  return ()
 ;;
 
 let%expect_test "[files]" =
@@ -48,7 +52,8 @@ let%expect_test "[files]" =
   show_files ();
   [%expect {|
     (a b) |}];
-  delete "zzz" ~recursive:true
+  delete "zzz" ~recursive:true;
+  return ()
 ;;
 
 let%expect_test "[files_recursively]" =
@@ -62,5 +67,6 @@ let%expect_test "[files_recursively]" =
     (<current-directory>/a/b/c/z3
      <current-directory>/a/b/z2
      <current-directory>/a/z1) |}];
-  delete "a" ~recursive:true
+  delete "a" ~recursive:true;
+  return ()
 ;;

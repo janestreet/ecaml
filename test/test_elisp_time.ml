@@ -1,4 +1,5 @@
 open! Core
+open! Async_kernel
 open! Import
 open! Elisp_time
 
@@ -25,5 +26,6 @@ let%expect_test "[of_time_ns], [format], [to_time_ns_exn]" =
     ((time_ns (2018-11-14 16:25:19.927203204-05:00))
      (elisp_time "2018-11-14 16:25:19.927203204-0500"))
     ((time_ns (2104-11-28 19:00:00.000000000-05:00))
-     (elisp_time "2104-11-28 19:00:00.000000000-0500")) |}]
+     (elisp_time "2104-11-28 19:00:00.000000000-0500")) |}];
+  return ()
 ;;

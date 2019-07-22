@@ -89,8 +89,7 @@ let lambda =
     ; docstring |> Value.of_utf8_bytes |> some
     ; interactive
       |> Option.map ~f:(fun interactive ->
-        Value.list
-          [ Q.interactive |> Symbol.to_value; interactive |> Value.of_utf8_bytes ])
+        Value.list [ Q.interactive |> Symbol.to_value; interactive ])
     ; body |> to_value |> some
     ]
     |> List.filter_opt

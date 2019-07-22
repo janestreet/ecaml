@@ -1,33 +1,20 @@
 open! Core_kernel
 open! Import0
 open! Async_kernel
-
-module Q = struct
-  include Q
-
-  let boundp = "boundp" |> Symbol.intern
-  and current_buffer = "current-buffer" |> Symbol.intern
-  and makunbound = "makunbound" |> Symbol.intern
-  and set_buffer = "set-buffer" |> Symbol.intern
-  and symbol_value = "symbol-value" |> Symbol.intern
-end
-
 module Buffer = Buffer0
 
-let get () = Symbol.funcall0 Q.current_buffer |> Buffer.of_value_exn
-let set t = Symbol.funcall1_i Q.set_buffer (t |> Buffer.to_value)
+let get = Funcall.("current-buffer" <: nullary @-> return Buffer.t)
+let set = Funcall.("set-buffer" <: Buffer.t @-> return nil)
 
-let set_temporarily t sync_or_async ~f =
+let set_temporarily sync_or_async buffer ~f =
   let old = get () in
-  set t;
+  set buffer;
   Sync_or_async.protect [%here] sync_or_async ~f ~finally:(fun () -> set old)
 ;;
 
-let value_is_defined (var : _ Var.t) =
-  Symbol.funcall1 Q.boundp (var.symbol |> Symbol.to_value) |> Value.to_bool
-;;
-
-let symbol_value symbol = Symbol.funcall1 Q.symbol_value (symbol |> Symbol.to_value)
+let boundp = Funcall.("boundp" <: Symbol.t @-> return bool)
+let value_is_defined (var : _ Var.t) = boundp var.symbol
+let symbol_value = Funcall.("symbol-value" <: Symbol.t @-> return value)
 
 let value_internal (var : _ Var.t) =
   symbol_value var.symbol |> Value.Type.of_value_exn var.type_
@@ -54,15 +41,12 @@ let value_opt_exn var =
           ~buffer:(get () : Buffer.t)]
 ;;
 
-let clear_value (var : _ Var.t) =
-  Symbol.funcall1_i Q.makunbound (var.symbol |> Symbol.to_value)
-;;
+let makunbound = Funcall.("makunbound" <: Symbol.t @-> return nil)
+let clear_value (var : _ Var.t) = makunbound var.symbol
+let elisp_set = Funcall.("set" <: Symbol.t @-> value @-> return nil)
 
 let set_value (var : _ Var.t) a =
-  Symbol.funcall2_i
-    Q.set
-    (var.symbol |> Symbol.to_value)
-    (a |> Value.Type.to_value var.type_)
+  elisp_set var.symbol (a |> Value.Type.to_value var.type_)
 ;;
 
 let set_values vars_and_values =
@@ -70,7 +54,7 @@ let set_values vars_and_values =
     set_value var value)
 ;;
 
-let set_values_temporarily vars_and_values sync_or_async ~f =
+let set_values_temporarily sync_or_async vars_and_values ~f =
   let old_buffer = get () in
   let olds =
     List.map vars_and_values ~f:(fun (Var.And_value.T (var, _)) ->
@@ -89,8 +73,8 @@ let set_values_temporarily vars_and_values sync_or_async ~f =
     if buffer_changed then set new_buffer)
 ;;
 
-let set_value_temporarily var value sync_or_async ~f =
-  set_values_temporarily [ T (var, value) ] sync_or_async ~f
+let set_value_temporarily sync_or_async var value ~f =
+  set_values_temporarily sync_or_async [ T (var, value) ] ~f
 ;;
 
 let has_non_null_value var =

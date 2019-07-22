@@ -1,14 +1,6 @@
 open! Core_kernel
 open! Import0
-
-module Q = struct
-  include Q
-
-  let default_boundp = "default-boundp" |> Symbol.intern
-  and local_variable_if_set_p = "local-variable-if-set-p" |> Symbol.intern
-  and make_variable_buffer_local = "make-variable-buffer-local" |> Symbol.intern
-  and set_default = "set-default" |> Symbol.intern
-end
+module Buffer = Buffer0
 
 type 'a t =
   { symbol : Symbol.t
@@ -36,38 +28,39 @@ let create symbol type_ =
   }
 ;;
 
+module Wrap = struct
+  let ( <: ) name type_ = create (name |> Symbol.intern) type_
+
+  include (Value.Type : Value.Type.S)
+end
+
 let symbol_as_value t = t.symbol |> Symbol.to_value
+let default_value = Funcall.("default-value" <: Symbol.t @-> return value)
+let default_value_exn t = default_value t.symbol |> Value.Type.of_value_exn t.type_
+let default_boundp = Funcall.("default-boundp" <: Symbol.t @-> return bool)
+let default_value_is_defined t = default_boundp t.symbol
+let set_default = Funcall.("set-default" <: Symbol.t @-> value @-> return nil)
+let set_default_value t a = set_default t.symbol (a |> Value.Type.to_value t.type_)
 
-let default_value_exn t =
-  Symbol.funcall1 Q.default_value (symbol_as_value t) |> Value.Type.of_value_exn t.type_
-;;
-
-let default_value_is_defined t =
-  Symbol.funcall1 Q.default_boundp (symbol_as_value t) |> Value.to_bool
-;;
-
-let set_default_value t a =
-  Symbol.funcall2_i Q.set_default (symbol_as_value t) (a |> Value.Type.to_value t.type_)
+let make_variable_buffer_local =
+  Funcall.("make-variable-buffer-local" <: Symbol.t @-> return nil)
 ;;
 
 let make_buffer_local_always t =
-  let symbol = symbol_as_value t in
-  add_gc_root symbol;
-  Symbol.funcall1_i Q.make_variable_buffer_local symbol
+  add_gc_root (symbol_as_value t);
+  make_variable_buffer_local t.symbol
 ;;
 
-let is_buffer_local_if_set t buffer =
-  Symbol.funcall2
-    Q.local_variable_if_set_p
-    (t.symbol |> Symbol.to_value)
-    (buffer |> Buffer0.to_value)
-  |> Value.to_bool
+let local_variable_if_set_p =
+  Funcall.("local-variable-if-set-p" <: Symbol.t @-> Buffer.t @-> return bool)
 ;;
+
+let is_buffer_local_if_set t buffer = local_variable_if_set_p t.symbol buffer
 
 let is_buffer_local_always var =
-  let buffer = Buffer0.create ~name:"*for [Var.is_buffer_local_always]*" in
+  let buffer = Buffer.create ~name:"*for [Var.is_buffer_local_always]*" in
   let result = is_buffer_local_if_set var buffer in
-  Buffer0.Blocking.kill buffer;
+  Buffer.Blocking.kill buffer;
   result
 ;;
 

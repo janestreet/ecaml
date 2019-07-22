@@ -28,6 +28,13 @@ val around_values
   -> ((Value.t list -> Value.t) -> Value.t list -> Value.t)
   -> unit
 
+module On_parse_error : sig
+  type t =
+    | Allow_raise
+    | Call_inner_function
+  [@@deriving sexp_of]
+end
+
 (** [around_funcall] provides typeful access to the arguments and return value of
     [for_function]. *)
 val around_funcall
@@ -36,7 +43,7 @@ val around_funcall
   -> ?docstring:string
   -> for_function:Symbol.t
   -> ?interactive:Defun.Interactive.t
-  -> ?on_parse_error:Funcall.On_parse_error.t
+  -> ?on_parse_error:On_parse_error.t
   -> ?should_profile:bool
   -> 'a Funcall.t
   -> ('a -> 'a)

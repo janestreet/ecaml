@@ -1,4 +1,5 @@
 open! Core_kernel
+open! Async_kernel
 open! Import
 open! Color
 
@@ -15,8 +16,8 @@ let show t =
 
 let%expect_test "[defined]" =
   print_s [%sexp (defined () : t list)];
-  [%expect {|
-    (black blue cyan green magenta red white yellow) |}]
+  [%expect {| (black blue cyan green magenta red white yellow) |}];
+  return ()
 ;;
 
 let%expect_test "attributes" =
@@ -86,13 +87,14 @@ let%expect_test "attributes" =
      (rgb (
        (r 65_535)
        (g 65_535)
-       (b 0)))) |}]
+       (b 0)))) |}];
+  return ()
 ;;
 
 let%expect_test "[rgb_exn] raise" =
   require_does_raise [%here] (fun () -> rgb_exn ("zzz" |> of_name));
-  [%expect {|
-    ("[Color.rgb_exn] got non-displayable color" (color zzz)) |}]
+  [%expect {| ("[Color.rgb_exn] got non-displayable color" (color zzz)) |}];
+  return ()
 ;;
 
 let%expect_test "[of_rgb]" =
@@ -144,5 +146,6 @@ let%expect_test "[of_rgb]" =
      (rgb (
        (r 65_535)
        (g 65_535)
-       (b 65_535)))) |}]
+       (b 65_535)))) |}];
+  return ()
 ;;

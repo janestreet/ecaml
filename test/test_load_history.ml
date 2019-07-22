@@ -1,4 +1,5 @@
 open! Core_kernel
+open! Async_kernel
 open! Import
 open! Load_history
 
@@ -28,12 +29,10 @@ let%expect_test "[defcustom], [defvar], [defun], [update_emacs_with_entries], \
     print_s [%sexp (defining_file symbol : string option)]
   in
   show_defining_file custom;
-  [%expect {|
-    (<dir>/lib/ecaml/test/test_load_history.ml) |}];
+  [%expect {| (<dir>/lib/ecaml/test/test_load_history.ml) |}];
   show_defining_file var;
-  [%expect {|
-    (<dir>/lib/ecaml/test/test_load_history.ml) |}];
+  [%expect {| (<dir>/lib/ecaml/test/test_load_history.ml) |}];
   show_defining_file fun_;
-  [%expect {|
-    (<dir>/lib/ecaml/test/test_load_history.ml) |}]
+  [%expect {| (<dir>/lib/ecaml/test/test_load_history.ml) |}];
+  return ()
 ;;

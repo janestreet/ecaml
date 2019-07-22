@@ -18,7 +18,7 @@ Takes one argument NAME and says "Hello, NAME"
 |}
     (Returns Value.Type.unit)
     (let open Defun.Let_syntax in
-     let%map_open name = required ("NAME" |> Symbol.intern) Value.Type.string in
+     let%map_open name = required "name" string in
      message ("Hello, " ^ name));
   provide ("hello_world" |> Symbol.intern)
 ;;

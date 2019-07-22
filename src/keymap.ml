@@ -4,22 +4,7 @@ open! Import
 module Q = struct
   include Q
 
-  let copy_keymap = "copy-keymap" |> Symbol.intern
-  and current_global_map = "current-global-map" |> Symbol.intern
-  and define_key = "define-key" |> Symbol.intern
-  and keymap_parent = "keymap-parent" |> Symbol.intern
-  and lookup_key = "lookup-key" |> Symbol.intern
-  and make_keymap = "make-keymap" |> Symbol.intern
-  and make_sparse_keymap = "make-sparse-keymap" |> Symbol.intern
-  and minor_mode_map_alist = "minor-mode-map-alist" |> Symbol.intern
-  and minor_mode_overriding_map_alist =
-    "minor-mode-overriding-map-alist" |> Symbol.intern
-  and set_keymap_parent = "set-keymap-parent" |> Symbol.intern
-  and set_transient_map = "set-transient-map" |> Symbol.intern
-  and special_event_map = "special-event-map" |> Symbol.intern
-  and suppress_keymap = "suppress-keymap" |> Symbol.intern
-  and undefined = "undefined" |> Symbol.intern
-  and use_global_map = "use-global-map" |> Symbol.intern
+  let undefined = "undefined" |> Symbol.intern
 end
 
 include Value.Make_subtype (struct
@@ -31,22 +16,9 @@ include Value.Make_subtype (struct
 type keymap = t [@@deriving sexp_of]
 
 let equal = eq
-
-let parent t =
-  let result = Symbol.funcall1 Q.keymap_parent (t |> to_value) in
-  if Value.is_nil result then None else Some (result |> of_value_exn)
-;;
-
-let set_parent t parent =
-  Symbol.funcall2_i
-    Q.set_keymap_parent
-    (t |> to_value)
-    (match parent with
-     | None -> Value.nil
-     | Some parent -> parent |> to_value)
-;;
-
-let set_transient t = Symbol.funcall1_i Q.set_transient_map (t |> to_value)
+let parent = Funcall.("keymap-parent" <: t @-> return (nil_or t))
+let set_parent = Funcall.("set-keymap-parent" <: t @-> nil_or t @-> return nil)
+let set_transient = Funcall.("set-transient-map" <: t @-> return nil)
 
 module Kind = struct
   type t =
@@ -55,20 +27,19 @@ module Kind = struct
   [@@deriving sexp_of]
 end
 
+let make_keymap = Funcall.("make-keymap" <: nil_or string @-> return t)
+let make_sparse_keymap = Funcall.("make-sparse-keymap" <: nil_or string @-> return t)
+
 let create ?(kind = Kind.Sparse) ?menu_name () =
-  Symbol.funcall1
-    (match kind with
-     | Full -> Q.make_keymap
-     | Sparse -> Q.make_sparse_keymap)
-    (match menu_name with
-     | None -> Value.nil
-     | Some menu_name -> menu_name |> Value.of_utf8_bytes)
-  |> of_value_exn
+  (match kind with
+   | Full -> make_keymap
+   | Sparse -> make_sparse_keymap)
+    menu_name
 ;;
 
-let deep_copy t = Symbol.funcall1 Q.copy_keymap (t |> to_value) |> of_value_exn
-let global () = Symbol.funcall0 Q.current_global_map |> of_value_exn
-let set_global t = Symbol.funcall1_i Q.use_global_map (t |> to_value)
+let deep_copy = Funcall.("copy-keymap" <: t @-> return t)
+let global = Funcall.("current-global-map" <: nullary @-> return t)
+let set_global = Funcall.("use-global-map" <: t @-> return nil)
 
 module Entry = struct
   type t =
@@ -111,16 +82,14 @@ module Entry = struct
   let type_ =
     Value.Type.create [%sexp "Keymap.Entry"] [%sexp_of: t] of_value_exn to_value
   ;;
+
+  let t = type_
 end
 
+let lookup_key = Funcall.("lookup-key" <: t @-> Key_sequence.t @-> bool @-> return value)
+
 let lookup_key_exn ?(accept_defaults = false) t key_sequence =
-  let result =
-    Symbol.funcall3
-      Q.lookup_key
-      (t |> to_value)
-      (key_sequence |> Key_sequence.to_value)
-      (accept_defaults |> Value.of_bool)
-  in
+  let result = lookup_key t key_sequence accept_defaults in
   if Value.is_integer result
   then
     raise_s
@@ -130,22 +99,16 @@ let lookup_key_exn ?(accept_defaults = false) t key_sequence =
   result |> Entry.of_value_exn
 ;;
 
-let define_key t key_sequence entry =
-  Symbol.funcall3_i
-    Q.define_key
-    (t |> to_value)
-    (key_sequence |> Key_sequence.to_value)
-    (entry |> Entry.to_value)
+let define_key =
+  Funcall.("define-key" <: t @-> Key_sequence.t @-> Entry.t @-> return nil)
 ;;
 
 let minor_mode_map_alist =
-  Var.create Q.minor_mode_map_alist Value.Type.(list (tuple Symbol.type_ type_))
+  Var.Wrap.("minor-mode-map-alist" <: list (tuple Symbol.t type_))
 ;;
 
 let minor_mode_overriding_map_alist =
-  Buffer_local.wrap_existing
-    Q.minor_mode_overriding_map_alist
-    Value.Type.(list (tuple Symbol.type_ type_))
+  Buffer_local.Wrap.("minor-mode-overriding-map-alist" <: list (tuple Symbol.t type_))
 ;;
 
 let find_minor_mode_map assoc symbol = List.Assoc.find assoc symbol ~equal:Symbol.equal
@@ -172,8 +135,6 @@ let override_minor_mode_map symbol ~f =
        :: Buffer_local.Private.get_in_current_buffer minor_mode_overriding_map_alist)
 ;;
 
-let special_event_map = Var.create Q.special_event_map type_
-
-let suppress_keymap ?(suppress_digits = false) t =
-  Symbol.funcall2_i Q.suppress_keymap (t |> to_value) (suppress_digits |> Value.of_bool)
-;;
+let special_event_map = Var.Wrap.("special-event-map" <: t)
+let suppress_keymap = Funcall.("suppress-keymap" <: t @-> bool @-> return nil)
+let suppress_keymap ?(suppress_digits = false) t = suppress_keymap t suppress_digits

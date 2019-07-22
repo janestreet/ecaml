@@ -14,6 +14,19 @@ type 'a var = 'a t
 
 val create : Symbol.t -> 'a Value.Type.t -> 'a t
 
+(** Idiomatic usage of [Wrap] looks like:
+
+    {[ Var.Wrap.(SYMBOL_NAME <: TYPE) ]}
+
+    For example:
+
+    {[ Var.Wrap.("inhibit-quit" <: bool) ]} *)
+module Wrap : sig
+  val ( <: ) : string -> 'a Value.Type.t -> 'a t
+
+  include Value.Type.S
+end
+
 module And_value : sig
   type t = T : 'a var * 'a -> t [@@deriving sexp_of]
 end

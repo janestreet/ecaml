@@ -9,16 +9,9 @@ module Q = struct
   and display = "display" |> Symbol.intern
   and font_lock_face = "font-lock-face" |> Symbol.intern
   and foreground_color = "foreground-color" |> Symbol.intern
-  and get_text_property = "get-text-property" |> Symbol.intern
   and mouse_face = "mouse-face" |> Symbol.intern
-  and multibyte_string_p = "multibyte-string-p" |> Symbol.intern
   and propertize = "propertize" |> Symbol.intern
-  and remove_list_of_text_properties = "remove-list-of-text-properties" |> Symbol.intern
   and string = "string" |> Symbol.intern
-  and string_bytes = "string-bytes" |> Symbol.intern
-  and string_to_multibyte = "string-to-multibyte" |> Symbol.intern
-  and string_to_unibyte = "string-to-unibyte" |> Symbol.intern
-  and text_properties_at = "text-properties-at" |> Symbol.intern
 end
 
 include Value.Make_subtype (struct
@@ -27,19 +20,8 @@ include Value.Make_subtype (struct
     let is_in_subtype = Value.is_string
   end)
 
-let char_code t i =
-  Symbol.funcall2 Q.aref (t |> to_value) (i |> Value.of_int_exn)
-  |> Char_code.of_value_exn
-;;
-
-let set_char_code t i char_code =
-  Symbol.funcall3_i
-    Q.aset
-    (t |> to_value)
-    (i |> Value.of_int_exn)
-    (char_code |> Char_code.to_value)
-;;
-
+let char_code = Funcall.("aref" <: t @-> int @-> return Char_code.t)
+let set_char_code = Funcall.("aset" <: t @-> int @-> Char_code.t @-> return nil)
 let of_utf8_bytes string = string |> Value.of_utf8_bytes |> of_value_exn
 let to_utf8_bytes t = t |> to_value |> Value.to_utf8_bytes_exn
 
@@ -61,7 +43,7 @@ module Compare_as_string = struct
   include Comparable.Make (T)
 end
 
-let length t = Symbol.funcall1 Q.length (t |> to_value) |> Value.to_int_exn
+let length = Funcall.("length" <: t @-> return int)
 let concat ts = Symbol.funcallN Q.concat (ts : t list :> Value.t list) |> of_value_exn
 
 module Face_spec = struct
@@ -249,7 +231,6 @@ module Property_name = struct
 
     let sexp_of_t (T p) = [%sexp (p : _ t)]
     let name (T p) = name p
-    let name_as_value (T p) = name_as_value p
     let all_except_unknown = ref []
 
     let of_name_as_value_exn value =
@@ -368,88 +349,88 @@ let propertize t properties =
   |> of_value_exn
 ;;
 
+let get_text_property =
+  Funcall.("get-text-property" <: int @-> Symbol.t @-> t @-> return value)
+;;
+
 let property_value t ~at property_name =
-  let value =
-    Symbol.funcall3
-      Q.get_text_property
-      (at |> Value.of_int_exn)
-      (property_name |> Property_name.name |> Symbol.to_value)
-      (t |> to_value)
-  in
+  let value = get_text_property at (property_name |> Property_name.name) t in
   if Value.is_nil value
   then None
   else Some (value |> Property_name.of_value_exn property_name)
 ;;
 
-let properties t ~at =
-  Symbol.funcall2 Q.text_properties_at (at |> Value.of_int_exn) (t |> to_value)
-  |> Property.of_property_list_exn
-;;
+let text_properties_at = Funcall.("text-properties-at" <: int @-> t @-> return value)
+let properties t ~at = text_properties_at at t |> Property.of_property_list_exn
 
 let get_start start =
-  (match start with
-   | Some i -> i
-   | None -> 0)
-  |> Value.of_int_exn
+  match start with
+  | Some i -> i
+  | None -> 0
 ;;
 
 let get_end t end_ =
-  (match end_ with
-   | Some i -> i
-   | None -> length t)
-  |> Value.of_int_exn
+  match end_ with
+  | Some i -> i
+  | None -> length t
+;;
+
+let put_text_property =
+  Funcall.(
+    "put-text-property" <: int @-> int @-> Symbol.t @-> value @-> t @-> return nil)
 ;;
 
 let set_property ?start ?end_ t property_name property_value =
-  Symbol.funcall5_i
-    Q.put_text_property
+  put_text_property
     (start |> get_start)
     (end_ |> get_end t)
-    (property_name |> Property_name.name_as_value)
+    (property_name |> Property_name.name)
     (property_value |> Property_name.to_value property_name)
-    (t |> to_value)
+    t
+;;
+
+let add_text_properties =
+  Funcall.("add-text-properties" <: int @-> int @-> list value @-> t @-> return nil)
 ;;
 
 let add_properties ?start ?end_ t properties =
-  Symbol.funcall4_i
-    Q.add_text_properties
+  add_text_properties
     (start |> get_start)
     (end_ |> get_end t)
-    (properties |> Property.to_property_list |> Value.list)
-    (t |> to_value)
+    (properties |> Property.to_property_list)
+    t
+;;
+
+let set_text_properties =
+  Funcall.("set-text-properties" <: int @-> int @-> list value @-> t @-> return nil)
 ;;
 
 let set_properties ?start ?end_ t properties =
-  Symbol.funcall4_i
-    Q.set_text_properties
+  set_text_properties
     (start |> get_start)
     (end_ |> get_end t)
-    (properties |> Property.to_property_list |> Value.list)
-    (t |> to_value)
+    (properties |> Property.to_property_list)
+    t
+;;
+
+let remove_list_of_text_properties =
+  Funcall.(
+    "remove-list-of-text-properties"
+    <: int @-> int @-> list Symbol.t @-> t @-> return nil)
 ;;
 
 let remove_properties ?start ?end_ t property_names =
-  Symbol.funcall4_i
-    Q.remove_list_of_text_properties
+  remove_list_of_text_properties
     (start |> get_start)
     (end_ |> get_end t)
-    (property_names |> List.map ~f:Property_name.Packed.name_as_value |> Value.list)
-    (t |> to_value)
+    (property_names |> List.map ~f:Property_name.Packed.name)
+    t
 ;;
 
-let is_multibyte t =
-  Symbol.funcall1 Q.multibyte_string_p (t |> to_value) |> Value.to_bool
-;;
-
-let num_bytes t = Symbol.funcall1 Q.string_bytes (t |> to_value) |> Value.to_int_exn
-
-let to_multibyte t =
-  Symbol.funcall1 Q.string_to_multibyte (t |> to_value) |> of_value_exn
-;;
-
-let to_unibyte_exn t =
-  Symbol.funcall1 Q.string_to_unibyte (t |> to_value) |> of_value_exn
-;;
+let is_multibyte = Funcall.("multibyte-string-p" <: t @-> return bool)
+let num_bytes = Funcall.("string-bytes" <: t @-> return int)
+let to_multibyte = Funcall.("string-to-multibyte" <: t @-> return t)
+let to_unibyte_exn = Funcall.("string-to-unibyte" <: t @-> return t)
 
 let of_char_array chars =
   Symbol.funcallN_array Q.string (Array.map chars ~f:Char_code.to_value) |> of_value_exn

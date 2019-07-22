@@ -12,13 +12,13 @@ module type S = sig
   val return : 'a -> 'a t
   val map : 'a t -> f:('a -> 'b) -> 'b t
   val both : 'a t -> 'b t -> ('a * 'b) t
-  val required : Symbol.t -> 'a Value.Type.t -> 'a t
-  val optional : Symbol.t -> 'a Value.Type.t -> 'a option t
-  val rest : Symbol.t -> 'a Value.Type.t -> 'a list t
-  val optional_with_default : Symbol.t -> 'a -> 'a Value.Type.t -> 'a t
+  val required : string -> 'a Value.Type.t -> 'a t
+  val optional : string -> 'a Value.Type.t -> 'a option t
+  val rest : string -> 'a Value.Type.t -> 'a list t
+  val optional_with_default : string -> 'a -> 'a Value.Type.t -> 'a t
 
   (** An optional argument whose [Value.Type.t] handles [nil] directly. *)
-  val optional_with_nil : Symbol.t -> 'a Value.Type.t -> 'a t
+  val optional_with_nil : string -> 'a Value.Type.t -> 'a t
 
   include Value.Type.S
 end
@@ -39,6 +39,11 @@ module type Defun = sig
 
   module Interactive : sig
     type t =
+      | Args of (unit -> Value.t list Deferred.t)
+      (** When a command defined with [~interactive:(Args f)] is called interactively, [f
+          ()] is called to compute the argument values to supply to the command.  Of
+          course, the argument values should match the command's [Defun.t]
+          specification. *)
       | Function_name of { prompt : string }
       | Ignored
       | No_arg
@@ -50,19 +55,8 @@ module type Defun = sig
   end
 
   module For_testing : sig
-    val defun_symbols : Symbol.t list ref
+    val all_defun_symbols : unit -> Symbol.t list
   end
-
-  val defun_raw
-    :  Symbol.t
-    -> Source_code_position.t
-    -> ?docstring:string
-    -> ?interactive:string
-    -> args:Symbol.t list
-    -> ?optional_args:Symbol.t list
-    -> ?rest_arg:Symbol.t
-    -> Function.Fn.t
-    -> unit
 
   (** An [Returns.t] states the return type of a function and whether the function returns
       a value of that type directly or via a [Deferred.t].  An [(a, a) Returns.t] means

@@ -2,7 +2,7 @@ open! Core_kernel
 open! Import
 module Id = Caml_embedded_id
 
-type t = Value0.t [@@deriving sexp_of]
+type t = Value.t [@@deriving sexp_of]
 
 external ecaml_inject : Id.t -> t = "ecaml_inject"
 external ecaml_project : t -> Id.t = "ecaml_project"
@@ -51,3 +51,13 @@ let initialize =
 ;;
 
 let debug_sexp () = [%sexp_of: Univ.t Id.Table.t] embedded_values
+
+let create_type (type_id : _ Type_equal.Id.t) =
+  Value.Type.create
+    [%message "caml_embed" ~type_id:(Type_equal.Id.name type_id : string)]
+    (Type_equal.Id.to_sexp type_id)
+    (fun v ->
+       let embed = of_value_exn v in
+       extract_exn embed type_id)
+    (fun a -> create type_id a |> to_value)
+;;

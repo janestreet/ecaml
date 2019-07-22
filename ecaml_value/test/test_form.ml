@@ -1,4 +1,5 @@
 open! Core_kernel
+open! Async_kernel
 open! Import
 open! Form
 
@@ -13,11 +14,12 @@ let%expect_test "[eval]" =
     (13 --> (Ok 13))
     ("(+ 1 4)" --> (Ok 5))
     ("((lambda (x) (+ x 1)) 13)" --> (Ok 14))
-    ("(+ \"foo\")" --> (Error (wrong-type-argument (number-or-marker-p foo)))) |}]
+    ("(+ \"foo\")" --> (Error (wrong-type-argument (number-or-marker-p foo)))) |}];
+  return ()
 ;;
 
 let%expect_test "[eval_string]" =
   print_s [%sexp (eval_string "(+ 1 2)" : Value.t)];
-  [%expect {|
-    3 |}]
+  [%expect {| 3 |}];
+  return ()
 ;;

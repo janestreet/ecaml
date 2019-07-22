@@ -1,4 +1,5 @@
 open! Core_kernel
+open! Async_kernel
 open! Import
 open! Marker
 
@@ -19,7 +20,8 @@ let%expect_test "[create], accessors" =
     ((marker "#<marker in no buffer>")
      (buffer ())
      (insertion_type Before_inserted_text)
-     (position ())) |}]
+     (position ())) |}];
+  return ()
 ;;
 
 let%expect_test "[set_insertion_type]" =
@@ -39,7 +41,8 @@ let%expect_test "[set_insertion_type]" =
     ((marker "#<marker in no buffer>")
      (buffer ())
      (insertion_type Before_inserted_text)
-     (position ())) |}]
+     (position ())) |}];
+  return ()
 ;;
 
 let%expect_test "[set]" =
@@ -62,7 +65,8 @@ let%expect_test "[set]" =
       ((marker "#<marker at 5 in *temp-buffer*>")
        (buffer ("#<buffer *temp-buffer*>"))
        (insertion_type Before_inserted_text)
-       (position (5))) |}])
+       (position (5))) |}]);
+  return ()
 ;;
 
 let%expect_test "[copy]" =
@@ -91,5 +95,6 @@ let%expect_test "[copy]" =
       ((marker "#<marker in no buffer>")
        (buffer ())
        (insertion_type Before_inserted_text)
-       (position ())) |}])
+       (position ())) |}]);
+  return ()
 ;;

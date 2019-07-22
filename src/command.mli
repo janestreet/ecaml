@@ -1,6 +1,7 @@
 (** [(Info-goto-node "(elisp)Command Loop")] *)
 
 open! Core_kernel
+open! Async_kernel
 open! Import0
 
 (** A [Command.t] is an Elisp value satsifying [commandp].
@@ -39,7 +40,7 @@ val call_interactively
   :  ?raw_prefix_argument:Raw_prefix_argument.t (** default is [Absent] *)
   -> ?record:bool (** default is [false] *)
   -> Value.t
-  -> unit
+  -> unit Deferred.t
 
 (** [(describe-variable 'inhibit-quit)]
     [(Info-goto-node "(elisp)Quitting")] *)

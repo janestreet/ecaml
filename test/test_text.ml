@@ -1,4 +1,5 @@
 open! Core_kernel
+open! Async_kernel
 open! Import
 open! Text
 
@@ -7,7 +8,6 @@ module Q = struct
 
   let background_color = "background-color" |> Symbol.intern
   let foreground_color = "foreground-color" |> Symbol.intern
-  let format = "format" |> Symbol.intern
 end
 
 let face = Property_name.face
@@ -21,15 +21,16 @@ let%expect_test "[length]" =
     0
     1
     2
-    3 |}]
+    3 |}];
+  return ()
 ;;
 
 let%expect_test "[char_code]" =
   let t = of_utf8_bytes "abc" in
   let cs = List.init (length t) ~f:(fun i -> char_code t i) in
   print_s [%sexp (cs : Char_code.t list)];
-  [%expect {|
-    (97 98 99) |}]
+  [%expect {| (97 98 99) |}];
+  return ()
 ;;
 
 let%expect_test "[set_char_code]" =
@@ -37,8 +38,8 @@ let%expect_test "[set_char_code]" =
   set_char_code t 1 ('d' |> Char_code.of_char_exn);
   let cs = List.init (length t) ~f:(fun i -> char_code t i) in
   print_s [%sexp (cs : Char_code.t list)];
-  [%expect {|
-    (97 100 99) |}]
+  [%expect {| (97 100 99) |}];
+  return ()
 ;;
 
 let utf8 = "‚îú" |> of_utf8_bytes
@@ -58,7 +59,8 @@ let%expect_test "[num_bytes]" =
   test utf8;
   [%expect {|
     ((length    1)
-     (num_bytes 3)) |}]
+     (num_bytes 3)) |}];
+  return ()
 ;;
 
 let show_string string =
@@ -79,7 +81,8 @@ let%expect_test "ASCII string" =
     ((text      foo)
      (length    3)
      (num_bytes 3)
-     (string    foo)) |}]
+     (string    foo)) |}];
+  return ()
 ;;
 
 let%expect_test "ordinary UTF-8" =
@@ -89,7 +92,8 @@ let%expect_test "ordinary UTF-8" =
     ((text      "\226\148\156")
      (length    1)
      (num_bytes 3)
-     (string    "\226\148\156")) |}]
+     (string    "\226\148\156")) |}];
+  return ()
 ;;
 
 let%expect_test "malformed UTF-8" =
@@ -99,7 +103,8 @@ let%expect_test "malformed UTF-8" =
     ((text      "\128\129\130")
      (length    3)
      (num_bytes 6)
-     (string    "\128\129\130")) |}]
+     (string    "\128\129\130")) |}];
+  return ()
 ;;
 
 let show_string_bytes string =
@@ -111,10 +116,7 @@ let show_string_bytes string =
 ;;
 
 let%expect_test "show steps in the rendering of [text] in the malformed UTF-8 test" =
-  let text =
-    Symbol.funcall2 Q.format ("%S" |> Value.of_utf8_bytes) ("ÄÅÇ" |> Value.of_utf8_bytes)
-    |> of_value_exn
-  in
+  let text = Funcall.("format" <: string @-> string @-> return Text.t) "%S" "ÄÅÇ" in
   let text_bytes = text |> to_utf8_bytes in
   show_string_bytes text_bytes;
   [%expect
@@ -168,8 +170,8 @@ let%expect_test "show steps in the rendering of [text] in the malformed UTF-8 te
     s.[ 13 ] = '"'
     s.[ 14 ] = '\n' |}];
   print_s sexp;
-  [%expect {|
-    "\200\201\202" |}]
+  [%expect {| "\200\201\202" |}];
+  return ()
 ;;
 
 let%expect_test "[concat]" =
@@ -177,14 +179,12 @@ let%expect_test "[concat]" =
     print_s [%sexp (concat (strings |> List.map ~f:of_utf8_bytes) : t)]
   in
   show [];
-  [%expect {|
-    "" |}];
+  [%expect {| "" |}];
   show [ "a" ];
-  [%expect {|
-    a |}];
+  [%expect {| a |}];
   show [ "a"; "b"; "cde" ];
-  [%expect {|
-    abcde |}]
+  [%expect {| abcde |}];
+  return ()
 ;;
 
 let%expect_test "[get_property]" =
@@ -195,14 +195,15 @@ let%expect_test "[get_property]" =
         ""
           (at : int)
           ~property:
-            (try_with (fun () -> property_value t ~at face)
+            (Or_error.try_with (fun () -> property_value t ~at face)
              : Face_spec.t option Or_error.t)]
   done;
   [%expect
     {|
     ((at 0) (property (Ok ())))
     ((at 1) (property (Ok ())))
-    ((at 2) (property (Error (args-out-of-range (2 2))))) |}]
+    ((at 2) (property (Error (args-out-of-range (2 2))))) |}];
+  return ()
 ;;
 
 let%expect_test "[set_property]" =
@@ -217,7 +218,7 @@ let%expect_test "[set_property]" =
             ""
               ~text:(t : t)
               ~property:
-                (try_with (fun () -> property_value t ~at:0 face)
+                (Or_error.try_with (fun () -> property_value t ~at:0 face)
                  : Face_spec.t option Or_error.t)]
       | exception exn -> print_s [%message "failed" ~_:(exn : exn)]
     done
@@ -252,7 +253,8 @@ let%expect_test "[set_property]" =
     (failed (args-out-of-range (1 2)))
     ((start 2)
      (end_  2))
-    ((text a) (property (Ok ()))) |}]
+    ((text a) (property (Ok ()))) |}];
+  return ()
 ;;
 
 let face_spec_ones : Face_spec.One.t list =
@@ -292,7 +294,8 @@ let%expect_test "various [Face_spec.t] values" =
     ((Face default) (Attributes ((Slant Italic))))
     ((Face default) (Attributes ((Weight Bold))))
     ((Face default)
-     (Face default)) |}]
+     (Face default)) |}];
+  return ()
 ;;
 
 let%expect_test "deprecated face specs" =
@@ -318,7 +321,8 @@ let%expect_test "deprecated face specs" =
     ((Attributes ((Foreground (Color red)))) (Attributes ((Weight Bold))))
     ((Attributes ((Weight Bold))) (Attributes ((Foreground (Color red)))))
     ((Attributes ((Foreground (Color red)))) (Face default))
-    ((Face default) (Attributes ((Foreground (Color red))))) |}]
+    ((Face default) (Attributes ((Foreground (Color red))))) |}];
+  return ()
 ;;
 
 let%expect_test "[add_properties]" =
@@ -331,37 +335,36 @@ let%expect_test "[add_properties]" =
   [%expect {| (a 0 1 (face (:background blue))) |}];
   add_properties t [ T (font_lock_face, background_red) ];
   print_s [%sexp (t : t)];
-  [%expect {| (a 0 1 (face (:background blue) font-lock-face (:background red))) |}]
+  [%expect {| (a 0 1 (face (:background blue) font-lock-face (:background red))) |}];
+  return ()
 ;;
 
 let%expect_test "[set_properties]" =
   let t = of_utf8_bytes "a" in
   set_properties t [ T (face, background_red) ];
   print_s [%sexp (t : t)];
-  [%expect {|
-    (a 0 1 (face (:background red))) |}];
+  [%expect {| (a 0 1 (face (:background red))) |}];
   set_properties t [ T (face, background_blue) ];
   print_s [%sexp (t : t)];
-  [%expect {|
-    (a 0 1 (face (:background blue))) |}];
+  [%expect {| (a 0 1 (face (:background blue))) |}];
   set_properties t [ T (font_lock_face, background_red) ];
   print_s [%sexp (t : t)];
-  [%expect {|
-    (a 0 1 (font-lock-face (:background red))) |}]
+  [%expect {| (a 0 1 (font-lock-face (:background red))) |}];
+  return ()
 ;;
 
 let%expect_test "[properties]" =
   let t = of_utf8_bytes "a" in
   let show () = print_s [%sexp (properties t ~at:0 : Property.t list)] in
   show ();
-  [%expect {|
-    () |}];
+  [%expect {| () |}];
   set_properties t [ T (face, background_blue); T (font_lock_face, background_blue) ];
   show ();
   [%expect
     {|
     ((face ((Attributes ((Background (Color blue))))))
-     (font-lock-face ((Attributes ((Background (Color blue))))))) |}]
+     (font-lock-face ((Attributes ((Background (Color blue))))))) |}];
+  return ()
 ;;
 
 let%expect_test "registering a new text property" =
@@ -376,14 +379,12 @@ let%expect_test "registering a new text property" =
   let t = of_utf8_bytes "a" in
   set_property t property_name ("bar" |> Symbol.intern);
   print_s [%sexp (t : t)];
-  [%expect {|
-    (a 0 1 (foo bar)) |}];
+  [%expect {| (a 0 1 (foo bar)) |}];
   print_s [%sexp (property_value t ~at:0 property_name : Symbol.t option)];
-  [%expect {|
-    (bar) |}];
+  [%expect {| (bar) |}];
   print_s [%sexp (properties t ~at:0 : Property.t list)];
-  [%expect {|
-    ((foo bar)) |}]
+  [%expect {| ((foo bar)) |}];
+  return ()
 ;;
 
 let%expect_test "[remove_properties]" =
@@ -391,16 +392,14 @@ let%expect_test "[remove_properties]" =
   remove_properties t [ T face ];
   set_properties t [ T (face, background_red); T (font_lock_face, background_red) ];
   print_s [%sexp (t : t)];
-  [%expect {|
-    (a 0 1 (font-lock-face (:background red) face (:background red))) |}];
+  [%expect {| (a 0 1 (font-lock-face (:background red) face (:background red))) |}];
   remove_properties t [ T font_lock_face ];
   print_s [%sexp (t : t)];
-  [%expect {|
-    (a 0 1 (face (:background red))) |}];
+  [%expect {| (a 0 1 (face (:background red))) |}];
   remove_properties t [ T face ];
   print_s [%sexp (t : t)];
-  [%expect {|
-    a |}]
+  [%expect {| a |}];
+  return ()
 ;;
 
 let%expect_test "[propertize]" =
@@ -409,14 +408,11 @@ let%expect_test "[propertize]" =
     print_s [%sexp (t : t)]
   in
   test [];
-  [%expect {|
-    foo |}];
+  [%expect {| foo |}];
   test [ T (face, []) ];
-  [%expect {|
-    (foo 0 3 (face nil)) |}];
+  [%expect {| (foo 0 3 (face nil)) |}];
   test [ T (face, background_red) ];
-  [%expect {|
-    (foo 0 3 (face (:background red))) |}];
+  [%expect {| (foo 0 3 (face (:background red))) |}];
   test
     [ T
         ( face
@@ -430,29 +426,27 @@ let%expect_test "[propertize]" =
     ];
   [%expect
     {|
-    (foo 0 3 (face (:background red :foreground green :slant italic :weight bold))) |}]
+    (foo 0 3 (face (:background red :foreground green :slant italic :weight bold))) |}];
+  return ()
 ;;
 
 let%expect_test "[is_multibyte], [to_multibyte], [to_unibyte]" =
   let test t = print_s [%sexp (is_multibyte t : bool)] in
   test ("" |> of_utf8_bytes);
-  [%expect {|
-    true |}];
+  [%expect {| true |}];
   test ("" |> of_utf8_bytes |> to_unibyte_exn);
-  [%expect {|
-    false |}];
+  [%expect {| false |}];
   test ("" |> of_utf8_bytes |> to_unibyte_exn |> to_multibyte);
-  [%expect {|
-    true |}];
+  [%expect {| true |}];
   test utf8;
-  [%expect {|
-    true |}]
+  [%expect {| true |}];
+  return ()
 ;;
 
 let%expect_test "[to_unibyte_exn] raise" =
   require_does_raise [%here] (fun () -> to_unibyte_exn utf8);
-  [%expect {|
-    ("Can't convert the 0th character to unibyte") |}]
+  [%expect {| ("Can't convert the 0th character to unibyte") |}];
+  return ()
 ;;
 
 let%expect_test "[to_char_array]" =
@@ -465,7 +459,8 @@ let%expect_test "[to_char_array]" =
   [%expect {| (27 91 49 59 50 109) |}];
   (* some unicode chars *)
   test ({|‚îå‚îÄ‚î¨‚îÄ‚îê|} |> of_utf8_bytes);
-  [%expect {| (9484 9472 9516 9472 9488) |}]
+  [%expect {| (9484 9472 9516 9472 9488) |}];
+  return ()
 ;;
 
 let%expect_test "[of_char_array]" =
@@ -481,5 +476,6 @@ let%expect_test "[of_char_array]" =
   test [| 27; 91; 48; 109 |];
   [%expect {| "\027[0m" |}];
   test [| 9484; 9472; 9516; 9472; 9488 |] ~expected:{|‚îå‚îÄ‚î¨‚îÄ‚îê|};
-  [%expect {| "\226\148\140\226\148\128\226\148\172\226\148\128\226\148\144" |}]
+  [%expect {| "\226\148\140\226\148\128\226\148\172\226\148\128\226\148\144" |}];
+  return ()
 ;;

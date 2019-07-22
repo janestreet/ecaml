@@ -16,7 +16,7 @@ module Fn = struct
   type t = Value.t array -> Value.t [@@deriving sexp_of]
 
   let type_id = Type_equal.Id.create ~name:"Ecaml.Fn" sexp_of_t
-  let ecaml_type = Value.Type.caml_embed type_id
+  let ecaml_type = Caml_embed.create_type type_id
 end
 
 module Expert = struct
@@ -40,7 +40,8 @@ let create =
   Ecaml_callback.(register dispatch_function)
     ~should_run_holding_async_lock:true
     ~f:(fun callback_id args ->
-      if !Expert.raise_in_dispatch then raise_s [%message "dispatch"];
+      if !Expert.raise_in_dispatch
+      then raise_s [%message "Function.Expert.raise_in_dispatch set"];
       try
         let callback = Caml_embed.lookup_by_id_exn callback_id Fn.type_id in
         callback args

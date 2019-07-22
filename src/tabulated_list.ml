@@ -1,28 +1,6 @@
 open! Core_kernel
 open! Import
 
-module Q = struct
-  include Q
-
-  let tabulated_list_entries = "tabulated-list-entries" |> Symbol.intern
-  and tabulated_list_format = "tabulated-list-format" |> Symbol.intern
-  and tabulated_list_get_id = "tabulated-list-get-id" |> Symbol.intern
-  and tabulated_list_init_header = "tabulated-list-init-header" |> Symbol.intern
-  and tabulated_list_mode = "tabulated-list-mode" |> Symbol.intern
-  and tabulated_list_print = "tabulated-list-print" |> Symbol.intern
-  and tabulated_list_sort_key = "tabulated-list-sort-key" |> Symbol.intern
-end
-
-module F = struct
-  open! Funcall
-  open! Value.Type
-
-  let tabulated_list_get_id =
-    Q.tabulated_list_get_id <: nullary @-> return (nil_or value)
-  and tabulated_list_init_header = Q.tabulated_list_init_header <: nullary @-> return nil
-  and tabulated_list_print = Q.tabulated_list_print <: bool @-> bool @-> return nil
-end
-
 module Column = struct
   module Format = struct
     type 'a t =
@@ -85,13 +63,15 @@ module Column = struct
             ~of_:(fun x -> List.map (pairs x) ~f:Property.of_values)
             ~to_:(List.concat_map ~f:Property.to_values)
         ;;
+
+        let t = type_
       end
 
       let type_ =
         let format = create in
         let open Value.Type in
         map
-          (tuple string (tuple int (tuple bool Properties.type_)))
+          (tuple string (tuple int (tuple bool Properties.t)))
           ~name:[%sexp "Column.Format"]
           ~of_:(fun (header, (width, (sortable, props))) ->
             let t = format ~header ~sortable ~width () in
@@ -102,6 +82,8 @@ module Column = struct
           ~to_:(fun { align_right; header; pad_right; sortable; width } ->
             header, (width, (sortable, [ Align_right align_right; Pad_right pad_right ])))
       ;;
+
+      let t = type_
     end
   end
 
@@ -212,15 +194,19 @@ type ('record, 'id) t =
 let keymap t = Major_mode.keymap (major_mode t)
 
 let tabulated_list_format_var =
-  Buffer_local.wrap_existing
-    Q.tabulated_list_format
-    (Value.Type.vector Column.Format.Fixed_width.type_)
+  Buffer_local.Wrap.("tabulated-list-format" <: vector Column.Format.Fixed_width.t)
 ;;
 
 let tabulated_list_sort_key_var =
-  Buffer_local.wrap_existing
-    Q.tabulated_list_sort_key
-    Value.Type.(nil_or (tuple string bool))
+  Buffer_local.Wrap.("tabulated-list-sort-key" <: nil_or (tuple string bool))
+;;
+
+let tabulated_list_init_header =
+  Funcall.("tabulated-list-init-header" <: nullary @-> return nil)
+;;
+
+let tabulated_list_print =
+  Funcall.("tabulated-list-print" <: bool @-> bool @-> return nil)
 ;;
 
 let draw ?sort_by t rows =
@@ -248,11 +234,11 @@ let draw ?sort_by t rows =
     tabulated_list_format_var
     (Array.of_list
        (List.map t.columns ~f:(fun column -> Column.fixed_width_format column rows)));
-  F.tabulated_list_init_header ();
-  F.tabulated_list_print true false
+  tabulated_list_init_header ();
+  tabulated_list_print true false
 ;;
 
-module Tabulated_list_mode = (val Major_mode.wrap_existing [%here] Q.tabulated_list_mode)
+module Tabulated_list_mode = (val Major_mode.wrap_existing "tabulated-list-mode" [%here])
 
 let create major_mode columns ~id_equal ~id_type ~id_of_record =
   if not (Major_mode.is_derived major_mode ~from:Tabulated_list_mode.major_mode)
@@ -265,7 +251,7 @@ let create major_mode columns ~id_equal ~id_type ~id_of_record =
     let entry_type =
       let open Value.Type in
       map
-        (tuple id_type (tuple (vector Text.type_) unit))
+        (tuple id_type (tuple (vector Text.t) unit))
         ~name:[%message "tabulated-list-entries" (id_type : _ Value.Type.t)]
         ~of_:(fun _ -> raise_s [%sexp "reading tabulated-list-entries is not supported"])
         ~to_:(fun record ->
@@ -275,13 +261,17 @@ let create major_mode columns ~id_equal ~id_type ~id_of_record =
               |> Array.of_list
             , () ) ))
     in
-    Buffer_local.wrap_existing Q.tabulated_list_entries (Value.Type.list entry_type)
+    Buffer_local.Wrap.("tabulated-list-entries" <: list entry_type)
   in
   { columns; entries_var; id_equal; id_of_record; id_type; major_mode }
 ;;
 
+let tabulated_list_get_id =
+  Funcall.("tabulated-list-get-id" <: nullary @-> return (nil_or value))
+;;
+
 let get_id_at_point_exn t =
-  Option.map (F.tabulated_list_get_id ()) ~f:(Value.Type.of_value_exn t.id_type)
+  Option.map (tabulated_list_get_id ()) ~f:(Value.Type.of_value_exn t.id_type)
 ;;
 
 let move_point_to_id t id =
@@ -305,7 +295,7 @@ let current_buffer_has_entries () =
   not
     (Value.is_nil
        (Current_buffer.get_buffer_local
-          (Buffer_local.wrap_existing Q.tabulated_list_entries Value.Type.value)))
+          Buffer_local.Wrap.("tabulated-list-entries" <: value)))
 ;;
 
 let revert_hook =

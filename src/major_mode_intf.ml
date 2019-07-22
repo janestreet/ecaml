@@ -40,10 +40,10 @@ module type Major_mode = sig
 
   module type S = S with type t := t and type name := Name.t
 
-  (** [wrap_existing] wraps an existing Emacs major mode, and stores it in the table of
-      all major modes indexed by symbol. [wrap_existing] raises if a major mode associated
-      with this symbol was already wrapped. *)
-  val wrap_existing : Source_code_position.t -> Symbol.t -> (module S)
+  (** [wrap_existing mode_name] wraps the existing Emacs major mode named [mode_name], and
+      stores it in the table of all major modes indexed by symbol. [wrap_existing] raises
+      if a major mode associated with this symbol was already wrapped. *)
+  val wrap_existing : string -> Source_code_position.t -> (module S)
 
   (** [find_or_wrap_existing] looks up the major mode associated with this symbol by a
       previous call to [wrap_existing] or creates one with the [Undistinguished] name. *)

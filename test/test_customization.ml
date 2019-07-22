@@ -1,4 +1,5 @@
 open! Core_kernel
+open! Async_kernel
 open! Import
 open! Customization
 
@@ -9,8 +10,9 @@ let next_counter () =
   !counter
 ;;
 
+let group = Group.of_string "test-customization-group"
+
 let test ?show_form type_ customization_type standard_value =
-  let group = Group.of_string "test-customization-group" in
   let variable =
     concat [ "test-customization-symbol-"; next_counter () |> Int.to_string ]
     |> Symbol.intern
@@ -55,7 +57,8 @@ let%expect_test "[Boolean] with default [nil]" =
        Customization group: test-customization-group
        Standard value: nil
        Customization type: boolean
-    Groups: [Test Customization Group] |}]
+    Groups: [Test Customization Group] |}];
+  return ()
 ;;
 
 let%expect_test "[Boolean] with default [t]" =
@@ -69,7 +72,8 @@ let%expect_test "[Boolean] with default [t]" =
        Customization group: test-customization-group
        Standard value: t
        Customization type: boolean
-    Groups: [Test Customization Group] |}]
+    Groups: [Test Customization Group] |}];
+  return ()
 ;;
 
 let%expect_test "[Const]" =
@@ -84,7 +88,8 @@ let%expect_test "[Const]" =
        Customization group: test-customization-group
        Standard value: 13
        Customization type: (choice (const 13))
-    Groups: [Test Customization Group] |}]
+    Groups: [Test Customization Group] |}];
+  return ()
 ;;
 
 let%expect_test "[enum]" =
@@ -102,9 +107,10 @@ let%expect_test "[enum]" =
     let of_value_exn _ = raise_s [%message "unimplemented"]
     let to_value t = Symbol.to_value (Symbol.intern (to_string t))
     let type_ = Value.Type.create [%message "M"] [%sexp_of: t] of_value_exn to_value
+    let t = type_
   end
   in
-  test M.type_ (Type.enum M.all M.to_value) A;
+  test M.t (Type.enum M.all M.to_value) A;
   [%expect
     {|
     Hide Test Customization Symbol 4: [Value Menu] A
@@ -114,7 +120,8 @@ let%expect_test "[enum]" =
        Customization group: test-customization-group
        Standard value: A
        Customization type: (choice (const A) (const B))
-    Groups: [Test Customization Group] |}]
+    Groups: [Test Customization Group] |}];
+  return ()
 ;;
 
 let%expect_test "[defcustom] invalid-value error message" =
@@ -140,5 +147,36 @@ let%expect_test "[defcustom] invalid-value error message" =
         "unable to convert Elisp value to OCaml value"
         (type_ int)
         (value nil)
-        (exn (wrong-type-argument (integerp nil)))))) |}]
+        (exn (wrong-type-argument (integerp nil)))))) |}];
+  return ()
+;;
+
+let%expect_test "[defcustom ~on_set]" =
+  let t =
+    defcustom
+      ("foo" |> Symbol.intern)
+      [%here]
+      ~docstring:""
+      ~group
+      ~type_:Value.Type.int
+      ~customization_type:Integer
+      ~standard_value:13
+      ~on_set:(fun i ->
+        if i < 0 then raise_s [%message "can't set it to a negative"];
+        message_s [%message "set it"])
+      ()
+  in
+  [%expect {| set it |}];
+  let show () = print_s [%sexp (value t : int)] in
+  show ();
+  [%expect {| 13 |}];
+  set_value t 15;
+  [%expect {| set it |}];
+  show ();
+  [%expect {| 15 |}];
+  set_value t (-1);
+  [%expect {| Error setting foo: (error can't set it to a negative) |}];
+  show ();
+  [%expect {| 15 |}];
+  return ()
 ;;

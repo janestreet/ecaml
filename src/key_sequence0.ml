@@ -1,15 +1,6 @@
 open! Core_kernel
 open! Import
 
-module Q = struct
-  include Q
-
-  let elt = "elt" |> Symbol.intern
-  and key_description = "key-description" |> Symbol.intern
-  and listify_key_sequence = "listify-key-sequence" |> Symbol.intern
-  and read_kbd_macro = "read-kbd-macro" |> Symbol.intern
-end
-
 module Z = struct
   module Input_event = Input_event0
 end
@@ -22,24 +13,9 @@ include Value.Make_subtype (struct
     let is_in_subtype t = Value.is_string t || Value.is_vector t
   end)
 
-let description t =
-  Symbol.funcall1 Q.key_description (t |> to_value) |> Value.to_utf8_bytes_exn
-;;
-
+let description = Funcall.("key-description" <: t @-> return string)
 let sexp_of_t t = [%sexp (description t : string)]
-
-let create_exn string =
-  Symbol.funcall1 Q.read_kbd_macro (string |> Value.of_utf8_bytes) |> of_value_exn
-;;
-
-let length t = Symbol.funcall1 Q.length (t |> to_value) |> Value.to_int_exn
-
-let get t i =
-  Symbol.funcall2 Q.elt (t |> to_value) (i |> Value.of_int_exn)
-  |> Input_event.of_value_exn
-;;
-
-let to_list t =
-  Symbol.funcall1 Q.listify_key_sequence (t |> to_value)
-  |> Value.to_list_exn ~f:Input_event.of_value_exn
-;;
+let create_exn = Funcall.("read-kbd-macro" <: string @-> return t)
+let length = Funcall.("length" <: t @-> return int)
+let get = Funcall.("elt" <: t @-> int @-> return Input_event.t)
+let to_list = Funcall.("listify-key-sequence" <: t @-> return (list Input_event.t))

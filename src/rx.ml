@@ -12,7 +12,7 @@ module Q = struct
   and not_ = "not" |> Symbol.intern
   and one_or_more = "one-or-more" |> Symbol.intern
   and or_ = "or" |> Symbol.intern
-  and rx_to_string = "rx-to-string" |> Symbol.intern
+  and point = "point" |> Symbol.intern
   and seq = "seq" |> Symbol.intern
   and submatch = "submatch" |> Symbol.intern
   and submatch_n = "submatch-n" |> Symbol.intern
@@ -21,13 +21,6 @@ module Q = struct
   and sym_star_star = "**" |> Symbol.intern
   and zero_or_more = "zero-or-more" |> Symbol.intern
   and zero_or_one = "zero-or-one" |> Symbol.intern
-end
-
-module F = struct
-  open Funcall
-  open Value.Type
-
-  let rx_to_string = Q.rx_to_string <: Form.type_ @-> return string
 end
 
 module Char_class = struct
@@ -106,4 +99,5 @@ and to_form t =
   | Zero_or_one t -> to_form (Repeat { min = 0; max = Some 1; t })
 ;;
 
-let pattern t = F.rx_to_string (to_form t)
+let rx_to_string = Funcall.("rx-to-string" <: Form.t @-> return string)
+let pattern t = rx_to_string (to_form t)

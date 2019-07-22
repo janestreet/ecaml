@@ -43,8 +43,33 @@ module type Buffer_local = sig
     -> 'a Value.Type.t
     -> 'a t
 
+  (** Idiomatic usage of [Wrap] looks like:
+
+      {[ Buffer_local.Wrap.(SYMBOL_NAME <: TYPE) ]}
+
+      For example:
+
+      {[ Buffer_local.Wrap.("default-directory" <: string) ]}
+
+      To use [~make_buffer_local_always:true], the idiom is:
+
+      {[
+        Buffer_local.Wrap.(
+          let ( <: ) = ( <: ) ~make_buffer_local_always:true in
+          SYMBOL_NAME <: TYPE)
+      ]} *)
+  module Wrap : sig
+    val ( <: )
+      :  ?make_buffer_local_always:bool (** default is [false] *)
+      -> string
+      -> 'a Value.Type.t
+      -> 'a t
+
+    include Value.Type.S
+  end
+
   (** [defvar_embedded] defines a buffer-local variable whose Elisp representation is an
-      opaque pointer to an OCaml value, via [Value.Type.caml_embed].  This allows one to
+      opaque pointer to an OCaml value, via [Caml_embed.create_type].  This allows one to
       store an arbitrary OCaml value in a buffer local, without any conversions between
       OCaml and Elisp. *)
   val defvar_embedded

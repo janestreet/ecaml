@@ -4,8 +4,7 @@ open! Import
 module Q = struct
   include Q
 
-  let make_vector = "make-vector" |> Symbol.intern
-  and vconcat = "vconcat" |> Symbol.intern
+  let vconcat = "vconcat" |> Symbol.intern
 end
 
 include Value.Make_subtype (struct
@@ -14,11 +13,9 @@ include Value.Make_subtype (struct
     let is_in_subtype = Value.is_vector
   end)
 
-let create ~len value =
-  Symbol.funcall2 Q.make_vector (len |> Value.of_int_exn) value |> of_value_exn
-;;
-
-let length t = Symbol.funcall1 Q.length (t |> to_value) |> Value.to_int_exn
+let make_vector = Funcall.("make-vector" <: int @-> value @-> return t)
+let create ~len value = make_vector len value
+let length = Funcall.("length" <: t @-> return int)
 
 let bounds_check t i name =
   let length = length t in
@@ -32,14 +29,18 @@ let bounds_check t i name =
           ~vector:(t : t)]
 ;;
 
+let aref = Funcall.("aref" <: t @-> int @-> return value)
+
 let get t i =
   bounds_check t i "get";
-  Symbol.funcall2 Q.aref (t |> to_value) (i |> Value.of_int_exn)
+  aref t i
 ;;
+
+let aset = Funcall.("aset" <: t @-> int @-> value @-> return nil)
 
 let set t i v =
   bounds_check t i "set";
-  Symbol.funcall3_i Q.aset (t |> to_value) (i |> Value.of_int_exn) v
+  aset t i v
 ;;
 
 let of_list vs = Symbol.funcallN Q.vector vs |> of_value_exn
@@ -58,3 +59,5 @@ let type_ (type a) (type_ : a Value.Type.t) =
        |> of_list
        |> to_value)
 ;;
+
+let t = type_

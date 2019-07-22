@@ -10,16 +10,15 @@ let%expect_test "[y_or_n]" =
       print_s [%sexp (bool : bool)];
       return ())
   in
-  test "y";
-  [%expect {|
-    (y or n) true |}];
-  test "n";
-  [%expect {|
-    (y or n) false |}];
-  show_raise (fun () -> test "z");
+  let%bind () = test "y" in
+  [%expect {| (y or n) true |}];
+  let%bind () = test "n" in
+  [%expect {| (y or n) false |}];
+  let%bind () = show_raise_async (fun () -> test "z") in
   [%expect
     {|
-    (y or n) Please answer y or n.  (y or n) (raised ("Error reading from stdin")) |}]
+    (y or n) Please answer y or n.  (y or n) (raised ("Error reading from stdin")) |}];
+  return ()
 ;;
 
 let%expect_test "[y_or_n_with_timeout]" =
@@ -31,16 +30,15 @@ let%expect_test "[y_or_n_with_timeout]" =
       print_s [%sexp (response : int Y_or_n_with_timeout.t)];
       return ())
   in
-  test "y";
-  [%expect {|
-    (y or n) Y |}];
-  test "n";
-  [%expect {|
-    (y or n) N |}];
-  show_raise (fun () -> test "z");
+  let%bind () = test "y" in
+  [%expect {| (y or n) Y |}];
+  let%bind () = test "n" in
+  [%expect {| (y or n) N |}];
+  let%bind () = show_raise_async (fun () -> test "z") in
   [%expect
     {|
-    (y or n) Please answer y or n.  (y or n) (raised ("Error reading from stdin")) |}]
+    (y or n) Please answer y or n.  (y or n) (raised ("Error reading from stdin")) |}];
+  return ()
 ;;
 
 let%expect_test "[yes_or_no]" =
@@ -50,21 +48,22 @@ let%expect_test "[yes_or_no]" =
       print_s [%sexp (response : bool)];
       return ())
   in
-  test "yes\n";
-  [%expect {|
-    (yes or no) true |}];
-  test "no\n";
-  [%expect {|
-    (yes or no) false |}]
+  let%bind () = test "yes\n" in
+  [%expect {| (yes or no) true |}];
+  let%bind () = test "no\n" in
+  [%expect {| (yes or no) false |}];
+  return ()
 ;;
 
 let%expect_test "[read_from]" =
-  with_input "foo" (fun () ->
-    let%bind response = read_from ~prompt:"" ~history:Minibuffer.history () in
-    print_s [%sexp (response : string)];
-    return ());
-  [%expect {|
-    foo |}]
+  let%bind () =
+    with_input "foo" (fun () ->
+      let%bind response = read_from ~prompt:"" ~history:Minibuffer.history () in
+      print_s [%sexp (response : string)];
+      return ())
+  in
+  [%expect {| foo |}];
+  return ()
 ;;
 
 let%expect_test "[exit_hook]" =
@@ -73,7 +72,8 @@ let%expect_test "[exit_hook]" =
     {|
     ((symbol    minibuffer-exit-hook)
      (hook_type Normal)
-     (value (()))) |}]
+     (value (()))) |}];
+  return ()
 ;;
 
 let%expect_test "[setup_hook]" =
@@ -85,7 +85,8 @@ let%expect_test "[setup_hook]" =
      (value ((
        rfn-eshadow-setup-minibuffer
        minibuffer-history-isearch-setup
-       minibuffer-history-initialize)))) |}]
+       minibuffer-history-initialize)))) |}];
+  return ()
 ;;
 
 let%expect_test "[setup_hook] [exit_hook] don't run in batch mode" =
@@ -107,10 +108,12 @@ let%expect_test "[setup_hook] [exit_hook] don't run in batch mode" =
        ~hook_type:Normal
        (Returns Value.Type.unit)
        (fun () -> print_s [%message "running exit hook"]));
-  with_input "foo" (fun () ->
-    let%bind response = read_from ~prompt:"" ~history:Minibuffer.history () in
-    print_s [%sexp (response : string)];
-    return ());
-  [%expect {|
-    foo |}]
+  let%bind () =
+    with_input "foo" (fun () ->
+      let%bind response = read_from ~prompt:"" ~history:Minibuffer.history () in
+      print_s [%sexp (response : string)];
+      return ())
+  in
+  [%expect {| foo |}];
+  return ()
 ;;

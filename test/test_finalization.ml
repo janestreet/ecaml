@@ -1,8 +1,9 @@
 open! Core_kernel
+open! Async_kernel
 open! Import
 
 let callback_from_emacs_to_ocaml =
-  Function.to_value (Function.create [%here] ~args:[] (fun _ -> Value.nil))
+  Function.to_value (lambda_nullary_nil [%here] (fun () -> ()))
 ;;
 
 let make_ocaml_garbage_not_keep_emacs_values_alive () =
@@ -15,9 +16,9 @@ let make_ocaml_garbage_not_keep_emacs_values_alive () =
 ;;
 
 let emacs_garbage_collect =
-  let f = "garbage-collect" |> Symbol.intern in
+  let garbage_collect = Funcall.("garbage-collect" <: nullary @-> return nil) in
   fun () ->
-    Symbol.funcall0_i f;
+    garbage_collect ();
     (* Remove reference to OCaml values that are no longer referenced by emacs. We need to
        go into dispatch for that to happen so we just need to call a function here *)
     Value.funcall0_i callback_from_emacs_to_ocaml
@@ -48,7 +49,7 @@ let%expect_test "finalization of embedded ocaml values" =
     let type_id = Type_equal.Id.create ~name:"A" sexp_of_t
   end
   in
-  let a_type = Value.Type.caml_embed A.type_id in
+  let a_type = Caml_embed.create_type A.type_id in
   let var_name = "embedded-var-a" in
   let var = Var.create (Symbol.create ~name:var_name) a_type in
   Var.make_buffer_local_always var;
@@ -65,8 +66,8 @@ let%expect_test "finalization of embedded ocaml values" =
   emacs_garbage_collect ();
   make_ocaml_garbage_not_keep_emacs_values_alive ();
   dump_embedded_values ();
-  [%expect {|
-    () |}]
+  [%expect {| () |}];
+  return ()
 ;;
 
 let%expect_test "Emacs objects no longer referenced from OCaml can be gc'ed by Emacs" =
@@ -76,7 +77,10 @@ let%expect_test "Emacs objects no longer referenced from OCaml can be gc'ed by E
   make_ocaml_garbage_not_keep_emacs_values_alive ();
   let after = Value.Stat.now () in
   print_s [%sexp (Value.Stat.diff after before : Value.Stat.t)];
-  [%expect "\n    ((emacs_free_performed 2)\n     (emacs_free_scheduled 2))"]
+  [%expect {|
+    ((emacs_free_performed 2)
+     (emacs_free_scheduled 2)) |}];
+  return ()
 ;;
 
 let test_ocaml_gc_handles_references_from_emacs ~make_emacs_reference =
@@ -112,7 +116,8 @@ let%expect_test "OCaml objects no longer referenced from Emacs can be gc'ed by O
     lambda_nullary [%here] (Returns Value.Type.value) ocaml_value |> Function.to_value);
   [%expect {|
     ((alive_before true)
-     (alive_after  false)) |}]
+     (alive_after  false)) |}];
+  return ()
 ;;
 
 let%expect_test "finalization of an Emacs function" =
@@ -121,10 +126,12 @@ let%expect_test "finalization of an Emacs function" =
     r := 14;
     Value.nil
   in
-  Gc.Expert.add_finalizer_exn f (fun _ -> print_s [%message "finalized" (r : int ref)]);
+  Core.Gc.Expert.add_finalizer_exn f (fun _ ->
+    print_s [%message "finalized" (r : int ref)]);
   ignore (Function.create [%here] ~args:[] f : Function.t);
   make_ocaml_garbage_not_keep_emacs_values_alive ();
   emacs_garbage_collect ();
   Gc.compact ();
-  [%expect {| (finalized (r 14)) |}]
+  [%expect {| (finalized (r 14)) |}];
+  return ()
 ;;

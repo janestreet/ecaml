@@ -35,7 +35,10 @@ val selected : unit -> t
 val set_selected : t -> unit
 
 (** [(describe-function 'with-selected-frame)] *)
-val set_selected_temporarily : t -> (_, 'a) Sync_or_async.t -> f:(unit -> 'a) -> 'a
+val set_selected_temporarily : (_, 'a) Sync_or_async.t -> t -> f:(unit -> 'a) -> 'a
+
+(** [(describe-function 'frame-visible-p)] *)
+val is_visible : t -> bool
 
 (** [(describe-function 'visible-frame-list)] *)
 val all_visible : unit -> t list
@@ -51,3 +54,6 @@ val other_frame : int -> unit
 
 (** [(describe-function 'frame-terminal)] *)
 val terminal : t -> Terminal.t
+
+(** [(describe-variable 'frame-inherited-parameters)] *)
+val inherited_parameters : Symbol.t list Var.t

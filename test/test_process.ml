@@ -1,14 +1,15 @@
 open! Core_kernel
+open! Async_kernel
 open! Import
 open! Process
 
 let%expect_test "[all_my_children], [name]" =
   let ts = all_emacs_children () in
   print_s [%message "" ~_:(ts : t list)];
-  [%expect {|
-    ("#<process Async scheduler>") |}];
+  [%expect {| ("#<process Async scheduler>") |}];
   List.iter ts ~f:(fun t -> print_s [%message "" ~name:(name t : string)]);
-  [%expect {| (name "Async scheduler") |}]
+  [%expect {| (name "Async scheduler") |}];
+  return ()
 ;;
 
 let sleep ?buffer () = create "/bin/sleep" [ "100" ] ~name:"sleeper" ?buffer ()
@@ -57,21 +58,26 @@ let%expect_test "[start], [buffer], [name], [command], [pid], [status], [exit_st
      (is_in_all_emacs_children false)
      (pid_is_positive (true))
      (status Signal)
-     (exit_status (Fatal_signal 9))) |}]
+     (exit_status (Fatal_signal 9))) |}];
+  return ()
 ;;
 
 let%expect_test "[exit_status]" =
   let test prog =
     let t = create prog [] ~name:"t" () in
-    while Process.is_alive t do
-      Timer.sleep_for (0.01 |> sec_ns)
-    done;
-    print_s [%message (status t : Status.t) (exit_status t : Exit_status.t)]
+    let%bind () =
+      while_
+        (fun () -> Process.is_alive t)
+        ~do_:(fun () -> Timer.sleep_for (0.01 |> sec_ns))
+    in
+    print_s [%message (status t : Status.t) (exit_status t : Exit_status.t)];
+    return ()
   in
-  test "true";
+  let%bind () = test "true" in
   [%expect {| (("status t" Exit) ("exit_status t" (Exited 0))) |}];
-  test "false";
-  [%expect {| (("status t" Exit) ("exit_status t" (Exited 1))) |}]
+  let%bind () = test "false" in
+  [%expect {| (("status t" Exit) ("exit_status t" (Exited 1))) |}];
+  return ()
 ;;
 
 let%expect_test "[extend_sentinel]" =
@@ -84,20 +90,21 @@ let%expect_test "[extend_sentinel]" =
       print_s [%sexp "I'm another sentinel!"];
       sentinels_ran := true);
     let timeout_at = Time.(add (now ()) (Span.of_sec 1.)) in
-    while (not !sentinels_ran) && Time.(now () < timeout_at) do
-      Timer.sleep_for (0.01 |> sec_ns)
-    done
+    while_
+      (fun () -> (not !sentinels_ran) && Time.(now () < timeout_at))
+      ~do_:(fun () -> Timer.sleep_for (0.01 |> sec_ns))
   in
-  test "true";
+  let%bind () = test "true" in
   [%expect {|
     finished
 
     "I'm another sentinel!" |}];
-  test "false";
+  let%bind () = test "false" in
   [%expect {|
     exited abnormally with code 1
 
-    "I'm another sentinel!" |}]
+    "I'm another sentinel!" |}];
+  return ()
 ;;
 
 let%expect_test "[extend_sentinel] runs sentinel in the background" =
@@ -113,122 +120,105 @@ let%expect_test "[extend_sentinel] runs sentinel in the background" =
         print_s [%message "sentinel ran"];
         require [%here] (Background.am_running_in_background ());
         Sync_or_async.return sync_or_async ());
-    while not !sentinel_ran do
-      Timer.sleep_for (0.01 |> sec_ns)
-    done
+    while_
+      (fun () -> not !sentinel_ran)
+      ~do_:(fun () -> Timer.sleep_for (0.01 |> sec_ns))
   in
-  test Sync;
-  [%expect {|
-    "sentinel ran" |}];
-  test Async;
-  [%expect {|
-    "sentinel ran" |}]
+  let%bind () = test Sync in
+  [%expect {| "sentinel ran" |}];
+  let%bind () = test Async in
+  [%expect {| "sentinel ran" |}];
+  return ()
 ;;
 
-module Async = struct
-  open! Async
-  open! Async_ecaml
-
-  let%expect_test "Async [extend_sentinel]" =
-    let test prog =
-      let t = create prog [] ~name:"t" () in
-      let sentinels_ran = ref false in
-      extend_sentinel
-        [%here]
-        t
-        (Returns_deferred Value.Type.unit)
-        ~sentinel:(fun ~event ->
-          let%map () = Clock.after (sec 0.01) in
-          print_endline event);
-      extend_sentinel
-        [%here]
-        t
-        (Returns_deferred Value.Type.unit)
-        ~sentinel:(fun ~event:_ ->
-          let%map () = Clock.after (sec 0.01) in
-          print_s [%sexp "I'm another sentinel!"];
-          sentinels_ran := true);
-      let timeout_at = Time.(add (now ()) (Span.of_sec 1.)) in
-      let rec loop () =
-        if (not !sentinels_ran) && Time.(now () < timeout_at)
-        then (
-          let%bind () =
-            Async_ecaml.Private.run_outside_async [%here] (fun () ->
-              Timer.sleep_for (0.01 |> sec_ns))
-          in
-          loop ())
-        else return ()
-      in
-      loop ()
+let%expect_test "Async [extend_sentinel]" =
+  let test prog =
+    let t = create prog [] ~name:"t" () in
+    let sentinels_ran = ref false in
+    extend_sentinel [%here] t (Returns_deferred Value.Type.unit) ~sentinel:(fun ~event ->
+      let%map () = Clock.after (sec 0.01) in
+      print_endline event);
+    extend_sentinel
+      [%here]
+      t
+      (Returns_deferred Value.Type.unit)
+      ~sentinel:(fun ~event:_ ->
+        let%map () = Clock.after (sec 0.01) in
+        print_s [%sexp "I'm another sentinel!"];
+        sentinels_ran := true);
+    let timeout_at = Time.(add (now ()) (Span.of_sec 1.)) in
+    let rec loop () =
+      if (not !sentinels_ran) && Time.(now () < timeout_at)
+      then (
+        let%bind () = Timer.sleep_for (0.01 |> sec_ns) in
+        loop ())
+      else return ()
     in
-    let%bind () = test "true" in
-    let%bind () = [%expect {|
+    loop ()
+  in
+  let%bind () = test "true" in
+  [%expect {|
       finished
 
-      "I'm another sentinel!" |}] in
-    let%bind () = test "false" in
-    [%expect {|
+      "I'm another sentinel!" |}];
+  let%bind () = test "false" in
+  [%expect {|
       exited abnormally with code 1
 
-      "I'm another sentinel!" |}]
-  ;;
+      "I'm another sentinel!" |}];
+  return ()
+;;
 
-  let%expect_test "[exited]" =
-    let t = create "true" [] ~name:"z" () in
-    let exited = exited t in
-    let rec loop () =
-      if Deferred.is_determined exited
-      then return ()
-      else (
-        let%bind () =
-          Async_ecaml.Private.run_outside_async [%here] (fun () ->
-            Timer.sleep_for (0.01 |> sec_ns))
-        in
-        loop ())
-    in
-    let%bind () = loop () in
-    print_s [%sexp (exited : Exited.t Deferred.t)];
-    [%expect {|
-      (Full (Exited 0)) |}]
-  ;;
-end
+let%expect_test "[exited]" =
+  let t = create "true" [] ~name:"z" () in
+  let exited = exited t in
+  let rec loop () =
+    if Deferred.is_determined exited
+    then return ()
+    else (
+      let%bind () = Timer.sleep_for (0.01 |> sec_ns) in
+      loop ())
+  in
+  let%bind () = loop () in
+  print_s [%sexp (exited : Exited.t Deferred.t)];
+  [%expect {|
+      (Full (Exited 0)) |}];
+  return ()
+;;
 
 let%expect_test "[buffer]" =
   Current_buffer.set_temporarily_to_temp_buffer Sync (fun () ->
     let t = sleep () ~buffer:(Current_buffer.get ()) in
     print_s [%sexp (buffer t : Buffer.t option)];
     kill t);
-  [%expect {|
-    ("#<buffer *temp-buffer*>") |}]
+  [%expect {| ("#<buffer *temp-buffer*>") |}];
+  return ()
 ;;
 
 let%expect_test "[find_by_name]" =
   let find () = find_by_name "sleeper" in
   let test () = print_s [%sexp (find () : t option)] in
   test ();
-  [%expect {|
-    () |}];
+  [%expect {| () |}];
   ignore (sleep () : t);
   test ();
-  [%expect {|
-    ("#<process sleeper>") |}];
+  [%expect {| ("#<process sleeper>") |}];
   Option.iter (find ()) ~f:kill;
   test ();
-  [%expect {|
-    () |}]
+  [%expect {| () |}];
+  return ()
 ;;
 
 let%expect_test "[query_on_exit], [set_query_on_exit]" =
   let t = sleep () in
   let show () = print_s [%message "" ~query_on_exit:(query_on_exit t : bool)] in
   show ();
-  [%expect {|
-    (query_on_exit true) |}];
+  [%expect {| (query_on_exit true) |}];
   set_query_on_exit t false;
   show ();
-  [%expect {|
-    (query_on_exit false) |}];
-  kill t
+  [%expect {| (query_on_exit false) |}];
+  kill t;
+  return ()
 ;;
 
 let print_current_buffer_contents () =
@@ -259,8 +249,8 @@ let show_file_contents file =
 let%expect_test "[call_result_exn] raise" =
   require_does_raise [%here] (fun () -> test_call_result_exn () ~prog:"/zzz" ~args:[]);
   [%expect
-    {|
-    (file-error ("Searching for program" "No such file or directory" /zzz)) |}]
+    {| (file-missing ("Searching for program" "No such file or directory" /zzz)) |}];
+  return ()
 ;;
 
 let%expect_test "[call_result_exn]" =
@@ -276,14 +266,16 @@ let%expect_test "[call_result_exn]" =
   [%expect {|
     (result (Exit_status 0))
     output:
-    foo bar |}]
+    foo bar |}];
+  return ()
 ;;
 
 let%expect_test "[Call.Input.Dev_null]" =
   test_call_result_exn () ~prog:"cat" ~args:[] ~input:Dev_null;
   [%expect {|
     (result (Exit_status 0))
-    output: |}]
+    output: |}];
+  return ()
 ;;
 
 let%expect_test "[Call.Input.File]" =
@@ -302,14 +294,16 @@ let%expect_test "[Call.Input.File]" =
     (result (Exit_status 0))
     output:
     foobar |}];
-  Sys.remove file
+  Sys.remove file;
+  return ()
 ;;
 
 let%expect_test "[Call.Output.Dev_null]" =
   test_call_result_exn () ~prog:"echo" ~args:[ "foo" ] ~output:Dev_null;
   [%expect {|
     (result (Exit_status 0))
-    output: |}]
+    output: |}];
+  return ()
 ;;
 
 let%expect_test "[Call.Output.File]" =
@@ -319,8 +313,7 @@ let%expect_test "[Call.Output.File]" =
     (result (Exit_status 0))
     output: |}];
   show_file_contents file;
-  [%expect {|
-    foo |}];
+  [%expect {| foo |}];
   test_call_result_exn
     ()
     ~prog:"bash"
@@ -330,8 +323,7 @@ let%expect_test "[Call.Output.File]" =
     (result (Exit_status 0))
     output: |}];
   show_file_contents file;
-  [%expect {|
-    another-foo |}];
+  [%expect {| another-foo |}];
   test_call_result_exn
     ()
     ~prog:"bash"
@@ -344,7 +336,8 @@ let%expect_test "[Call.Output.File]" =
   [%expect {|
     foo
     bar |}];
-  Sys.remove file
+  Sys.remove file;
+  return ()
 ;;
 
 let%expect_test "[Call.Output.Split]" =
@@ -359,8 +352,7 @@ let%expect_test "[Call.Output.Split]" =
       (result (Exit_status 0))
       output: |}];
     print_current_buffer_contents ();
-    [%expect {|
-      foo |}]);
+    [%expect {| foo |}]);
   test_call_result_exn
     ()
     ~prog:"echo"
@@ -388,8 +380,7 @@ let%expect_test "[Call.Output.Split]" =
     (result (Exit_status 0))
     output: |}];
   show_file_contents file;
-  [%expect {|
-    foo |}];
+  [%expect {| foo |}];
   Sys.remove file;
   let file1 = Caml.Filename.temp_file "" "" in
   let file2 = Caml.Filename.temp_file "" "" in
@@ -402,19 +393,18 @@ let%expect_test "[Call.Output.Split]" =
     (result (Exit_status 0))
     output: |}];
   show_file_contents file1;
-  [%expect {|
-    bar |}];
+  [%expect {| bar |}];
   show_file_contents file2;
-  [%expect {|
-    foo |}];
+  [%expect {| foo |}];
   Sys.remove file1;
-  Sys.remove file2
+  Sys.remove file2;
+  return ()
 ;;
 
 let%expect_test "[call_exn]" =
   print_endline (call_exn "echo" [ "foo" ]);
-  [%expect {|
-    foo |}]
+  [%expect {| foo |}];
+  return ()
 ;;
 
 let%expect_test "[call_exn] raise" =
@@ -426,13 +416,14 @@ let%expect_test "[call_exn] raise" =
       (prog false)
       (args ())
       (result (Exit_status 1))
-      (output ""))) |}]
+      (output ""))) |}];
+  return ()
 ;;
 
 let%expect_test "[shell_command_exn]" =
   print_endline (shell_command_exn "echo foo");
-  [%expect {|
-    foo |}]
+  [%expect {| foo |}];
+  return ()
 ;;
 
 let%expect_test "[shell_command_exn] raise" =
@@ -444,23 +435,23 @@ let%expect_test "[shell_command_exn] raise" =
       (prog /bin/bash)
       (args   (-c          "echo -n foo; false"))
       (result (Exit_status 1))
-      (output foo))) |}]
+      (output foo))) |}];
+  return ()
 ;;
 
 let%expect_test "[shell_command_exn ~working_directory]" =
   print_endline (shell_command_exn "pwd" ~working_directory:Root);
-  [%expect {|
-    / |}];
+  [%expect {| / |}];
   print_endline (shell_command_exn "pwd" ~working_directory:(This "/bin"));
-  [%expect {|
-    /bin |}];
+  [%expect {| /bin |}];
   require_equal
     [%here]
     (module String)
     (shell_command_exn "pwd" ~working_directory:Of_current_buffer)
     (Current_buffer.(get_buffer_local directory)
      |> File.truename
-     |> Filename.of_directory)
+     |> Filename.of_directory);
+  return ()
 ;;
 
 let input_region ~start ~end_ ~delete =
@@ -519,7 +510,8 @@ let%expect_test "[call_region_exn]" =
   [%expect {|
     (result (Exit_status 0))
     output:
-    fiitrin |}]
+    fiitrin |}];
+  return ()
 ;;
 
 let%expect_test "[call_exn] with sexp error message" =
@@ -537,7 +529,8 @@ exit 1
       (prog /bin/bash)
       (args (-c "\necho '(\"foo bar\" baz)'\nexit 1\n"))
       (result (Exit_status 1))
-      (output ("foo bar"   baz)))) |}]
+      (output ("foo bar"   baz)))) |}];
+  return ()
 ;;
 
 let%expect_test "[call_exn] with a multi-line error message" =
@@ -560,7 +553,8 @@ exit 1
       (prog /bin/bash)
       (args (-c "\necho line1\necho line2\necho line3\nexit 1\n"))
       (result (Exit_status 1))
-      (output (line1 line2 line3)))) |}]
+      (output (line1 line2 line3)))) |}];
+  return ()
 ;;
 
 let%expect_test "[call_expect_no_output] with sexp error message" =
@@ -578,7 +572,8 @@ exit 1
       (prog /bin/bash)
       (args (-c "\necho '(\"foo bar\" baz)'\nexit 1\n"))
       (result (Exit_status 1))
-      (output ("foo bar"   baz)))) |}]
+      (output ("foo bar"   baz)))) |}];
+  return ()
 ;;
 
 let%expect_test "[get_property] and [set_property]" =
@@ -586,10 +581,9 @@ let%expect_test "[get_property] and [set_property]" =
   let property = "foo" |> Symbol.intern in
   let show () = print_s [%sexp (get_property t property : Value.t option)] in
   show ();
-  [%expect {|
-    () |}];
+  [%expect {| () |}];
   set_property t property (13 |> Value.of_int_exn);
   show ();
-  [%expect {|
-    (13) |}]
+  [%expect {| (13) |}];
+  return ()
 ;;

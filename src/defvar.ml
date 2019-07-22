@@ -1,21 +1,6 @@
 open! Core_kernel
 open! Import
 
-module Q = struct
-  include Q
-
-  let defvaralias = "defvaralias" |> Symbol.intern
-end
-
-module F = struct
-  open! Funcall
-  open! Value.Type
-
-  let defvaralias =
-    Q.defvaralias <: Symbol.type_ @-> Symbol.type_ @-> nil_or string @-> return nil
-  ;;
-end
-
 let all_defvar_symbols = ref []
 
 module Private = struct
@@ -53,8 +38,12 @@ let defvar
   Var.create symbol type_
 ;;
 
+let defvaralias =
+  Funcall.("defvaralias" <: Symbol.t @-> Symbol.t @-> nil_or string @-> return nil)
+;;
+
 let defvaralias symbol here ?docstring ~alias_of () =
-  F.defvaralias symbol alias_of docstring;
+  defvaralias symbol alias_of docstring;
   add symbol here
 ;;
 

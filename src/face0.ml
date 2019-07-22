@@ -12,15 +12,8 @@ module Q = struct
   and extra_condensed = "extra-condensed" |> Symbol.intern
   and extra_expanded = "extra-expanded" |> Symbol.intern
   and extra_light = "extra-light" |> Symbol.intern
-  and face_all_attributes = "face-all-attributes" |> Symbol.intern
-  and face_attribute = "face-attribute" |> Symbol.intern
-  and face_attribute_relative_p = "face-attribute-relative-p" |> Symbol.intern
-  and face_list = "face-list" |> Symbol.intern
-  and face_spec_set = "face-spec-set" |> Symbol.intern
-  and font_family_list = "font-family-list" |> Symbol.intern
   and italic = "italic" |> Symbol.intern
   and light = "light" |> Symbol.intern
-  and merge_face_attribute = "merge-face-attribute" |> Symbol.intern
   and normal = "normal" |> Symbol.intern
   and oblique = "oblique" |> Symbol.intern
   and reverse_italic = "reverse-italic" |> Symbol.intern
@@ -29,7 +22,6 @@ module Q = struct
   and semi_condensed = "semi-condensed" |> Symbol.intern
   and semi_expanded = "semi-expanded" |> Symbol.intern
   and semi_light = "semi-light" |> Symbol.intern
-  and set_face_attribute = "set-face-attribute" |> Symbol.intern
   and ultra_bold = "ultra-bold" |> Symbol.intern
   and ultra_condensed = "ultra-condensed" |> Symbol.intern
   and ultra_expanded = "ultra-expanded" |> Symbol.intern
@@ -49,7 +41,7 @@ include Value.Make_subtype (struct
     let is_in_subtype = Value.is_symbol
   end)
 
-let list_type = Value.Type.list type_
+let list_type = Value.Type.list t
 let of_name s = s |> Value.intern |> of_value_exn
 let default = "default" |> of_name
 
@@ -518,20 +510,18 @@ module Attribute = struct
     Value.to_value
   ;;
 
-  let is_relative t a =
-    Symbol.funcall2
-      Q.face_attribute_relative_p
-      (t |> to_symbol |> Symbol.to_value)
-      (a |> to_value t)
-    |> Value.to_bool
+  let face_attribute_relative_p =
+    Funcall.("face-attribute-relative-p" <: Symbol.t @-> value @-> return bool)
+  ;;
+
+  let is_relative t a = face_attribute_relative_p (t |> to_symbol) (a |> to_value t)
+
+  let merge_face_attribute =
+    Funcall.("merge-face-attribute" <: Symbol.t @-> value @-> value @-> return value)
   ;;
 
   let merge t a1 a2 =
-    Symbol.funcall3
-      Q.merge_face_attribute
-      (t |> to_symbol |> Symbol.to_value)
-      (a1 |> to_value t)
-      (a2 |> to_value t)
+    merge_face_attribute (t |> to_symbol) (a1 |> to_value t) (a2 |> to_value t)
     |> of_value_exn t
   ;;
 end
@@ -570,42 +560,43 @@ module Attribute_and_value = struct
 end
 
 let frame option =
-  (match option with
-   | Some x -> x
-   | None -> Frame.selected ())
-  |> Frame.to_value
+  match option with
+  | Some x -> x
+  | None -> Frame.selected ()
 ;;
 
-let all_defined () =
-  Symbol.funcall0 Q.face_list |> Value.to_list_exn ~f:of_value_exn |> List.sort ~compare
-;;
+let face_list = Funcall.("face-list" <: nullary @-> return (list t))
+let all_defined () = face_list () |> List.sort ~compare
+let font_family_list = Funcall.("font-family-list" <: Frame.t @-> return (list string))
+let font_family_list ?on () = font_family_list (frame on)
 
-let font_family_list ?on () =
-  Symbol.funcall1 Q.font_family_list (frame on)
-  |> Value.to_list_exn ~f:Value.to_utf8_bytes_exn
+let face_attribute =
+  Funcall.("face-attribute" <: t @-> Symbol.t @-> Frame.t @-> return value)
 ;;
 
 let attribute_value ?on t attribute =
-  Symbol.funcall3
-    Q.face_attribute
-    (t |> to_value)
-    (attribute |> Attribute.to_symbol |> Symbol.to_value)
-    (frame on)
+  face_attribute t (attribute |> Attribute.to_symbol) (frame on)
   |> Attribute.of_value_exn attribute
 ;;
 
+let set_face_attribute =
+  Funcall.("set-face-attribute" <: t @-> Frame.t @-> Symbol.t @-> value @-> return nil)
+;;
+
 let set_attribute ?on t attribute value =
-  Symbol.funcall4_i
-    Q.set_face_attribute
-    (t |> to_value)
+  set_face_attribute
+    t
     (frame on)
-    (attribute |> Attribute.to_symbol |> Symbol.to_value)
+    (attribute |> Attribute.to_symbol)
     (Attribute.to_value attribute value)
 ;;
 
+let face_all_attributes =
+  Funcall.("face-all-attributes" <: t @-> Frame.t @-> return (list value))
+;;
+
 let attributes ?on t =
-  Symbol.funcall2 Q.face_all_attributes (t |> to_value) (frame on)
-  |> Value.to_list_exn ~f:Attribute_and_value.of_value_exn
+  face_all_attributes t (frame on) |> List.map ~f:Attribute_and_value.of_value_exn
 ;;
 
 let specs_to_value specs =
@@ -613,6 +604,5 @@ let specs_to_value specs =
     list [ cons t (list (List.concat_map specs ~f:Attribute_and_value.to_value_list)) ])
 ;;
 
-let spec_set face specs =
-  Symbol.funcall2_i Q.face_spec_set (to_value face) (specs_to_value specs)
-;;
+let face_spec_set = Funcall.("face-spec-set" <: t @-> value @-> return nil)
+let spec_set face specs = face_spec_set face (specs_to_value specs)

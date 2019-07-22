@@ -1,17 +1,9 @@
 open! Core_kernel
 open! Import
 
-module Q = struct
-  include Q
-
-  let comment_end = "comment-end" |> Symbol.intern
-  and comment_multi_line = "comment-multi-line" |> Symbol.intern
-  and comment_start = "comment-start" |> Symbol.intern
-end
-
-let start = Var.create Q.comment_start Value.Type.string
-let end_ = Var.create Q.comment_end Value.Type.string
-let multi_line = Var.create Q.comment_multi_line Value.Type.bool
+let start = Var.Wrap.("comment-start" <: string)
+let end_ = Var.Wrap.("comment-end" <: string)
+let multi_line = Var.Wrap.("comment-multi-line" <: bool)
 
 let set_current_buffer_options ~start:s ~end_:e ~is_multi_line:m =
   Current_buffer.set_value start s;

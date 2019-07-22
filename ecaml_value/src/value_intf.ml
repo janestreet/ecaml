@@ -113,20 +113,8 @@ module type Type = sig
       buffer local variables *)
   val sexpable : (module Sexpable with type t = 'a) -> name:Sexp.t -> 'a t
 
-  (** Embed values of type ['a]. Note that unlike other functions above, the values are
-      not transformed, so this can be used to preserve state in emacs. More precisely,
-      this following returns [true]:
-      {[
-        let var = Var.create (Value.Type.caml_embed type_id) in
-        Current_buffer.set_value var v;
-        phys_equal v (Current_buffer.value_exn var)
-      ]}
-  *)
-  val caml_embed : 'a Type_equal.Id.t -> 'a t
-
   (** A list of directories. Each element is a string (directory name) or nil (try
-      default directory). nil values are converted to ".", which has the same meaning.
-  *)
+      default directory). nil values are converted to ".", which has the same meaning. *)
   val path_list : string list t
 end
 
@@ -327,6 +315,8 @@ module type Value = sig
   end
 
   module For_testing : sig
+    val all_interned_symbols : unit -> string list
+
     exception
       Elisp_signal of
         { symbol : t
@@ -382,5 +372,7 @@ module type Value = sig
       -> ?allowed_in_background:bool
       -> (unit -> 'a)
       -> 'a Deferred.t
+
+    val message_zero_alloc : t -> unit
   end
 end

@@ -1,5 +1,5 @@
 open! Core_kernel
-open! Import0
+open! Import
 
 type _ t =
   | Cons : 'a Value.Type.t * 'b t -> ('a -> 'b) t
@@ -120,14 +120,10 @@ let wrap_unrolled : type a. a t -> Value.t -> a =
   | t -> wrap t symbol
 ;;
 
-let ( <: ) symbol t = wrap_unrolled t (symbol |> Symbol.to_value)
-
-module On_parse_error = struct
-  type t =
-    | Allow_raise
-    | Call_inner_function
-  [@@deriving sexp_of]
-end
+let ( <: ) elisp_function =
+  let v = elisp_function |> Value.intern in
+  fun t -> wrap_unrolled t v
+;;
 
 let apply t f args ~on_parse_error =
   let wrong_number_of_args message =
@@ -159,25 +155,9 @@ let apply t f args ~on_parse_error =
   apply t f args
 ;;
 
-module Private = struct
-  let advice t f on_parse_error here inner rest =
-    apply
-      t
-      (f (wrap_unrolled t inner))
-      rest
-      ~on_parse_error:
-        (match (on_parse_error : On_parse_error.t) with
-         | Allow_raise -> raise
-         | Call_inner_function ->
-           fun exn ->
-             Echo_area.inhibit_messages Sync (fun () ->
-               message_s
-                 [%message
-                   "Ignoring advice that failed to parse its arguments."
-                     ~_:(here : Source_code_position.t)
-                     ~_:(exn : exn)]);
-             Value.funcallN inner rest)
-  ;;
-end
-
 include (Value.Type : Value.Type.S)
+
+module Private = struct
+  let apply = apply
+  let wrap_unrolled = wrap_unrolled
+end

@@ -1,4 +1,5 @@
 open! Core_kernel
+open! Async_kernel
 open! Import
 open! Keymap
 
@@ -19,14 +20,15 @@ let%expect_test "[global], [lookup_key_exn]" =
     (C-c (Keymap mode-specific-command-prefix))
     ("C-x C-a" Absent)
     ("C-x C-f" (Command find-file))
-    (ESC (Keymap ESC-prefix)) |}]
+    (ESC (Keymap ESC-prefix)) |}];
+  return ()
 ;;
 
 let%expect_test "[create]" =
   let t = create () in
   show t;
-  [%expect {|
-    (keymap) |}]
+  [%expect {| (keymap) |}];
+  return ()
 ;;
 
 let%expect_test "[define_key]" =
@@ -55,7 +57,8 @@ let%expect_test "[define_key]" =
   define_key t "b" Absent;
   show t;
   [%expect {|
-    (keymap (98) (97 . zzz)) |}]
+    (keymap (98) (97 . zzz)) |}];
+  return ()
 ;;
 
 let%expect_test "[lookup_key_exn] too long" =
@@ -63,7 +66,8 @@ let%expect_test "[lookup_key_exn] too long" =
   [%expect
     {|
     (raised (
-      "[Keymap.lookup_key_exn] got too long key sequence" (key_sequence "a b"))) |}]
+      "[Keymap.lookup_key_exn] got too long key sequence" (key_sequence "a b"))) |}];
+  return ()
 ;;
 
 let%expect_test "[set_global]" =
@@ -71,22 +75,21 @@ let%expect_test "[set_global]" =
   let t = create () in
   set_global t;
   require [%here] (eq t (global ()));
-  set_global saved
+  set_global saved;
+  return ()
 ;;
 
 let%expect_test "[parent], [set_parent]" =
   let t = create () in
   print_s [%sexp (parent t : t option)];
-  [%expect {|
-    () |}];
+  [%expect {| () |}];
   set_parent t (Some (create ()));
   print_s [%sexp (parent t : t option)];
-  [%expect {|
-    ((keymap)) |}];
+  [%expect {| ((keymap)) |}];
   set_parent t None;
   print_s [%sexp (parent t : t option)];
-  [%expect {|
-    () |}]
+  [%expect {| () |}];
+  return ()
 ;;
 
 let%expect_test "[deep_copy]" =
@@ -95,11 +98,10 @@ let%expect_test "[deep_copy]" =
   let t2 = deep_copy t1 in
   define_key t2 "abc" Absent;
   show t1;
-  [%expect {|
-    (keymap (97 keymap (98 keymap (99 . undefined)))) |}];
+  [%expect {| (keymap (97 keymap (98 keymap (99 . undefined)))) |}];
   show t2;
-  [%expect {|
-    (keymap (97 keymap (98 keymap (99)))) |}]
+  [%expect {| (keymap (97 keymap (98 keymap (99)))) |}];
+  return ()
 ;;
 
 let%expect_test "[create ~kind:Full ()]" =
@@ -108,5 +110,6 @@ let%expect_test "[create ~kind:Full ()]" =
   [%expect
     {|
     (keymap
-     "#^[nil nil keymap nil nil nil nil nil nil nil nil nil nil nil nil nil nil nil nil nil nil nil nil nil nil nil nil nil nil nil nil nil nil nil nil nil nil nil nil nil nil nil nil nil nil nil nil nil nil nil nil nil nil nil nil nil nil nil nil nil nil nil nil nil nil nil nil nil]") |}]
+     "#^[nil nil keymap nil nil nil nil nil nil nil nil nil nil nil nil nil nil nil nil nil nil nil nil nil nil nil nil nil nil nil nil nil nil nil nil nil nil nil nil nil nil nil nil nil nil nil nil nil nil nil nil nil nil nil nil nil nil nil nil nil nil nil nil nil nil nil nil nil]") |}];
+  return ()
 ;;

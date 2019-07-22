@@ -1,16 +1,10 @@
 open! Core_kernel
 open! Import
 
-module Q = struct
-  let float_time = "float-time" |> Symbol.intern
-  and format_time_string = "format-time-string" |> Symbol.intern
-  and time_less_p = "time-less-p" |> Symbol.intern
-end
-
 module F0 = struct
   open Funcall
 
-  let float_time = Q.float_time <: Value.Type.value @-> return float
+  let float_time = "float-time" <: Value.Type.value @-> return float
 end
 
 include Value.Make_subtype (struct
@@ -24,18 +18,11 @@ include Value.Make_subtype (struct
     ;;
   end)
 
-module F = struct
-  open Funcall
-  include F0
-
-  let t = type_
-  let format_time_string = Q.format_time_string <: string @-> t @-> return string
-  let time_less_p = Q.time_less_p <: t @-> t @-> return bool
-end
-
-let format t ~format_string = F.format_time_string format_string t
+let t = type_
+let format_time_string = Funcall.("format-time-string" <: string @-> t @-> return string)
+let format t ~format_string = format_time_string format_string t
 let sexp_of_t t = [%sexp (format t ~format_string:"%F %T.%N%z" : string)]
-let ( < ) = F.time_less_p
+let ( < ) = Funcall.("time-less-p" <: t @-> t @-> return bool)
 let ( > ) t1 t2 = t2 < t1
 let compare t1 t2 = if t1 < t2 then -1 else if t1 > t2 then 1 else 0
 

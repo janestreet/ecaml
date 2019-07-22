@@ -1,4 +1,5 @@
 open! Core_kernel
+open! Async_kernel
 open! Import
 open! Major_mode
 
@@ -26,7 +27,7 @@ let%expect_test "duplicate [define_derived_mode]" =
     {|
     (raised (
       "Already associated with a name."
-      (symbol test-major-mode)
+      (name test-major-mode)
       (wrapped_at app/emacs/lib/ecaml/test/test_major_mode.ml:LINE:COL)
       (previous_def (
         (wrapped_at app/emacs/lib/ecaml/test/test_major_mode.ml:LINE:COL)
@@ -37,7 +38,8 @@ let%expect_test "duplicate [define_derived_mode]" =
           (symbol    test-major-mode-hook)
           (hook_type Normal)
           (value (()))))
-        (syntax_table_var (test-major-mode-syntax-table syntax-table)))))) |}]
+        (syntax_table_var (test-major-mode-syntax-table syntax-table)))))) |}];
+  return ()
 ;;
 
 let%expect_test "duplicate name is NOT caught" =
@@ -48,7 +50,8 @@ let%expect_test "duplicate name is NOT caught" =
       ~docstring:""
       ~mode_line:""
       ());
-  [%expect {| "did not raise" |}]
+  [%expect {| "did not raise" |}];
+  return ()
 ;;
 
 let%expect_test "[define_derived_mode]" =
@@ -81,43 +84,40 @@ let%expect_test "[define_derived_mode]" =
          (symbol    test-major-mode-hook)
          (hook_type Normal)
          (value (()))))
-       (syntax_table_var (test-major-mode-syntax-table syntax-table))) |}])
+       (syntax_table_var (test-major-mode-syntax-table syntax-table))) |}]);
+  return ()
 ;;
 
-module Async_testing = struct
-  open! Async_kernel
-  open! Async_testing
-
-  let%expect_test "[hook]" =
-    let module M =
-      (val define_derived_mode
-             ("for-testing-mode-hook" |> Symbol.intern)
-             [%here]
-             ~docstring:""
-             ~mode_line:""
-             ())
-    in
-    let t = M.major_mode in
-    Hook.add
-      (hook t)
-      (Hook.Function.create
-         ("my-hook" |> Symbol.intern)
-         [%here]
-         ~hook_type:Normal
-         (Returns Value.Type.unit)
-         (fun () -> print_s [%message "hook ran"]));
-    let%bind () =
-      Current_buffer.set_temporarily_to_temp_buffer Async (fun () ->
-        Current_buffer.change_major_mode t)
-    in
-    [%expect {| "hook ran" |}]
-  ;;
-end
+let%expect_test "[hook]" =
+  let module M =
+    (val define_derived_mode
+           ("for-testing-mode-hook" |> Symbol.intern)
+           [%here]
+           ~docstring:""
+           ~mode_line:""
+           ())
+  in
+  let t = M.major_mode in
+  Hook.add
+    (hook t)
+    (Hook.Function.create
+       ("my-hook" |> Symbol.intern)
+       [%here]
+       ~hook_type:Normal
+       (Returns Value.Type.unit)
+       (fun () -> print_s [%message "hook ran"]));
+  let%bind () =
+    Current_buffer.set_temporarily_to_temp_buffer Async (fun () ->
+      Current_buffer.change_major_mode t)
+  in
+  [%expect {| "hook ran" |}];
+  return ()
+;;
 
 let%expect_test "[keymap]" =
   print_s [%sexp (keymap M.major_mode : Keymap.t)];
-  [%expect {|
-    (keymap) |}]
+  [%expect {| (keymap) |}];
+  return ()
 ;;
 
 let show_syntax_table t = Test_syntax_table.show (syntax_table t)
@@ -134,7 +134,8 @@ let%expect_test "[syntax_table]" =
      (Symbol_constitutent &*+-/<=>_|)
      (Whitespace          " ")
      (Word_constituent
-      $%0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz)) |}]
+      $%0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz)) |}];
+  return ()
 ;;
 
 let%expect_test "[prog]" =
@@ -149,7 +150,8 @@ let%expect_test "[prog]" =
      (Symbol_constitutent &*+-/<=>_|)
      (Whitespace          " ")
      (Word_constituent
-      $%0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz)) |}]
+      $%0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz)) |}];
+  return ()
 ;;
 
 let%expect_test "[special]" =
@@ -164,7 +166,8 @@ let%expect_test "[special]" =
      (Symbol_constitutent &*+-/<=>_|)
      (Whitespace          " ")
      (Word_constituent
-      $%0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz)) |}]
+      $%0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz)) |}];
+  return ()
 ;;
 
 let%expect_test "[text]" =
@@ -177,7 +180,8 @@ let%expect_test "[text]" =
      (Symbol_constitutent &*+-/<=>_|)
      (Whitespace          " ")
      (Word_constituent
-      $%'0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz)) |}]
+      $%'0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz)) |}];
+  return ()
 ;;
 
 let%expect_test "[is_derived]" =
@@ -193,28 +197,25 @@ let%expect_test "[is_derived]" =
            ())
   in
   print_s [%sexp (is_derived M.major_mode ~from:Text.major_mode : bool)];
-  [%expect {| true |}]
+  [%expect {| true |}];
+  return ()
 ;;
 
-module Async_tests = struct
-  open! Async
-  open! Async_ecaml
-
-  let%expect_test "Async initialization function" =
-    let module M =
-      (val define_derived_mode
-             ("test-major-mode-async-init-function" |> Symbol.intern)
-             [%here]
-             ~docstring:"docstring"
-             ~mode_line:"<test-mode mode line>"
-             ~initialize:
-               ( Returns_deferred Value.Type.unit
-               , fun () ->
-                 let%map () = Clock.after (Time.Span.of_ms 1.) in
-                 print_s [%message "initialized"] )
-             ())
-    in
-    let%bind () = Current_buffer.change_major_mode M.major_mode in
-    [%expect {| initialized |}]
-  ;;
-end
+let%expect_test "Async initialization function" =
+  let module M =
+    (val define_derived_mode
+           ("test-major-mode-async-init-function" |> Symbol.intern)
+           [%here]
+           ~docstring:"docstring"
+           ~mode_line:"<test-mode mode line>"
+           ~initialize:
+             ( Returns_deferred Value.Type.unit
+             , fun () ->
+               let%map () = Clock.after (Time.Span.of_ms 1.) in
+               print_s [%message "initialized"] )
+           ())
+  in
+  let%bind () = Current_buffer.change_major_mode M.major_mode in
+  [%expect {| initialized |}];
+  return ()
+;;

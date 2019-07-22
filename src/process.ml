@@ -9,30 +9,13 @@ module Q = struct
   and call_process_region = "call-process-region" |> Symbol.intern
   and closed = "closed" |> Symbol.intern
   and connect = "connect" |> Symbol.intern
-  and delete_process = "delete-process" |> Symbol.intern
   and exit_ = "exit" |> Symbol.intern
   and failed = "failed" |> Symbol.intern
-  and get_process = "get-process" |> Symbol.intern
   and listen = "listen" |> Symbol.intern
   and local = "local" |> Symbol.intern
   and make_network_process = "make-network-process" |> Symbol.intern
   and open_ = "open" |> Symbol.intern
-  and output = "output" |> Symbol.intern
-  and process = "process" |> Symbol.intern
-  and process_buffer = "process-buffer" |> Symbol.intern
-  and process_command = "process-command" |> Symbol.intern
-  and process_exit_status = "process-exit-status" |> Symbol.intern
-  and process_id = "process-id" |> Symbol.intern
-  and process_list = "process-list" |> Symbol.intern
-  and process_live_p = "process-live-p" |> Symbol.intern
-  and process_mark = "process-mark" |> Symbol.intern
-  and process_name = "process-name" |> Symbol.intern
-  and process_query_on_exit_flag = "process-query-on-exit-flag" |> Symbol.intern
-  and process_sentinel = "process-sentinel" |> Symbol.intern
-  and process_status = "process-status" |> Symbol.intern
   and run = "run" |> Symbol.intern
-  and set_process_sentinel = "set-process-sentinel" |> Symbol.intern
-  and set_process_query_on_exit_flag = "set-process-query-on-exit-flag" |> Symbol.intern
   and signal = "signal" |> Symbol.intern
   and start_process = "start-process" |> Symbol.intern
   and stop = "stop" |> Symbol.intern
@@ -74,66 +57,36 @@ module Status = struct
          | Stop -> Q.stop)
   ;;
 
+  let t = type_
   let of_value_exn = Value.Type.of_value_exn type_
   let to_value = Value.Type.to_value type_
 end
 
-module F = struct
-  open Funcall
-
-  let is_alive = Q.process_live_p <: type_ @-> return bool
-  let process_exit_status = Q.process_exit_status <: type_ @-> return int
-  let process_sentinel = Q.process_sentinel <: type_ @-> return (nil_or Function.type_)
-  let process_status = Q.process_status <: type_ @-> return Status.type_
-
-  let set_process_sentinel =
-    Q.set_process_sentinel <: type_ @-> Function.type_ @-> return nil
-  ;;
-end
-
+let is_alive = Funcall.("process-live-p" <: t @-> return bool)
 let equal = eq
-let is_alive = F.is_alive
-
-let buffer t =
-  let v = Symbol.funcall1 Q.process_buffer (t |> to_value) in
-  if Value.is_nil v then None else Some (v |> Buffer.of_value_exn)
-;;
+let buffer = Funcall.("process-buffer" <: t @-> return (nil_or Buffer.t))
+let process_command = Funcall.("process-command" <: t @-> return value)
 
 let command t =
-  let v = Symbol.funcall1 Q.process_command (t |> to_value) in
+  let v = process_command t in
   if Value.is_nil v || Value.eq v Value.t
   then None
   else Some (v |> Value.to_list_exn ~f:Value.to_utf8_bytes_exn)
 ;;
 
-let name t = Symbol.funcall1 Q.process_name (t |> to_value) |> Value.to_utf8_bytes_exn
+let name = Funcall.("process-name" <: t @-> return string)
+let process_id = Funcall.("process-id" <: t @-> return (nil_or int))
+let pid t = process_id t |> Option.map ~f:Pid.of_int
+let mark = Funcall.("process-mark" <: t @-> return Marker.t)
+let query_on_exit = Funcall.("process-query-on-exit-flag" <: t @-> return bool)
 
-let pid t =
-  let v = Symbol.funcall1 Q.process_id (t |> to_value) in
-  if Value.is_nil v then None else Some (v |> Value.to_int_exn |> Pid.of_int)
+let set_query_on_exit =
+  Funcall.("set-process-query-on-exit-flag" <: t @-> bool @-> return nil)
 ;;
 
-let mark t = Symbol.funcall1 Q.process_mark (t |> to_value) |> Marker.of_value_exn
-
-let query_on_exit t =
-  Symbol.funcall1 Q.process_query_on_exit_flag (t |> to_value) |> Value.to_bool
-;;
-
-let set_query_on_exit t b =
-  Symbol.funcall2_i Q.set_process_query_on_exit_flag (t |> to_value) (b |> Value.of_bool)
-;;
-
-let get_property =
-  Funcall.(
-    "process-get" |> Symbol.intern <: type_ @-> Symbol.type_ @-> return (nil_or value))
-;;
-
-let set_property =
-  Funcall.(
-    "process-put" |> Symbol.intern <: type_ @-> Symbol.type_ @-> value @-> return nil)
-;;
-
-let status = F.process_status
+let get_property = Funcall.("process-get" <: t @-> Symbol.t @-> return (nil_or value))
+let set_property = Funcall.("process-put" <: t @-> Symbol.t @-> value @-> return nil)
+let status = Funcall.("process-status" <: t @-> return Status.t)
 
 module Exit_status = struct
   type t =
@@ -143,21 +96,17 @@ module Exit_status = struct
   [@@deriving sexp]
 end
 
+let process_exit_status = Funcall.("process-exit-status" <: t @-> return int)
+
 let exit_status t : Exit_status.t =
   match status t with
-  | Exit -> Exited (F.process_exit_status t)
-  | Signal -> Fatal_signal (F.process_exit_status t)
+  | Exit -> Exited (process_exit_status t)
+  | Signal -> Fatal_signal (process_exit_status t)
   | Closed | Connect | Failed | Listen | Open | Run | Stop -> Not_exited
 ;;
 
-let find_by_name name =
-  Symbol.funcall1 Q.get_process (name |> Value.of_utf8_bytes)
-  |> Value.Type.(nil_or type_ |> of_value_exn)
-;;
-
-let all_emacs_children () =
-  Symbol.funcall0 Q.process_list |> Value.to_list_exn ~f:of_value_exn
-;;
+let find_by_name = Funcall.("get-process" <: string @-> return (nil_or t))
+let all_emacs_children = Funcall.("process-list" <: nullary @-> return (list t))
 
 let create prog args ~name ?buffer () =
   Symbol.funcallN
@@ -172,7 +121,7 @@ let create prog args ~name ?buffer () =
   |> of_value_exn
 ;;
 
-let kill t = Symbol.funcall1_i Q.delete_process (t |> to_value)
+let kill = Funcall.("delete-process" <: t @-> return nil)
 
 let create_unix_network_process () ~filter ~name ~socket_path =
   of_value_exn
@@ -188,15 +137,14 @@ let create_unix_network_process () ~filter ~name ~socket_path =
        ; socket_path |> Value.of_utf8_bytes
        ; Q.K.filter |> Symbol.to_value
        ; Function.to_value
-           (Function.create
+           (Defun.lambda
               [%here]
               ~docstring:"Network process filter."
-              ~args:[ Q.process; Q.output ]
-              (function
-                | [| process; output |] ->
-                  filter (process |> of_value_exn) (output |> Text.of_value_exn);
-                  Value.nil
-                | _ -> assert false))
+              (Returns Value.Type.unit)
+              (let%map_open.Defun.Let_syntax () = return ()
+               and process = required "process" t
+               and output = required "output" Text.t in
+               filter process output))
        ])
 ;;
 
@@ -428,6 +376,12 @@ let shell_command_expect_no_output_exn ?input ?working_directory ?verbose_exn co
   call_expect_no_output_exn bash [ "-c"; command ] ?input ?working_directory ?verbose_exn
 ;;
 
+let process_sentinel = Funcall.("process-sentinel" <: t @-> return (nil_or Function.t))
+
+let set_process_sentinel =
+  Funcall.("set-process-sentinel" <: t @-> Function.t @-> return nil)
+;;
+
 let extend_sentinel
       (type a)
       here
@@ -435,15 +389,15 @@ let extend_sentinel
       (returns : (unit, a) Defun.Returns.t)
       ~(sentinel : event:string -> a)
   =
-  let previous_sentinel = F.process_sentinel t in
-  F.set_process_sentinel
+  let previous_sentinel = process_sentinel t in
+  set_process_sentinel
     t
     (Defun.lambda
        here
        returns
        (let%map_open.Defun.Let_syntax () = return ()
-        and process = required ("process" |> Symbol.intern) Value.Type.value
-        and event = required ("event" |> Symbol.intern) Value.Type.value in
+        and process = required "process" value
+        and event = required "event" value in
         let run_previous_sentinel () =
           match previous_sentinel with
           | None -> ()
@@ -481,7 +435,7 @@ end
 let exited =
   let property = "exited" |> Symbol.intern in
   let type_ =
-    Value.Type.caml_embed
+    Caml_embed.create_type
       (Type_equal.Id.create ~name:"exited" [%sexp_of: Exited.t Deferred.t])
   in
   fun t ->

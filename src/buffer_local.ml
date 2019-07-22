@@ -25,6 +25,14 @@ let wrap_existing ?(make_buffer_local_always = false) symbol type_ =
   var
 ;;
 
+module Wrap = struct
+  let ( <: ) ?make_buffer_local_always name type_ =
+    wrap_existing ?make_buffer_local_always (name |> Symbol.intern) type_
+  ;;
+
+  include (Value.Type : Value.Type.S)
+end
+
 let defvar symbol here ?(docstring = "") ~type_ ~default_value () =
   let var =
     Defvar.defvar symbol here ~docstring ~type_ ~initial_value:default_value ()
@@ -46,7 +54,7 @@ let defvar_embedded
     ?docstring
     ~type_:
       (Value.Type.nil_or
-         (Value.Type.caml_embed
+         (Caml_embed.create_type
             (Type_equal.Id.create ~name:(Symbol.name symbol) [%sexp_of: Arg.t])))
     ~default_value:None
     ()
@@ -55,7 +63,7 @@ let defvar_embedded
 let set_in_current_buffer t a = Current_buffer.set_value t a
 
 let set t a buffer =
-  Current_buffer.set_temporarily buffer Sync ~f:(fun () -> set_in_current_buffer t a)
+  Current_buffer.set_temporarily Sync buffer ~f:(fun () -> set_in_current_buffer t a)
 ;;
 
 let get_in_current_buffer t =
@@ -71,7 +79,7 @@ let get_in_current_buffer t =
 ;;
 
 let get t buffer =
-  Current_buffer.set_temporarily buffer Sync ~f:(fun () -> get_in_current_buffer t)
+  Current_buffer.set_temporarily Sync buffer ~f:(fun () -> get_in_current_buffer t)
 ;;
 
 let get_in_current_buffer_exn t =
@@ -86,11 +94,11 @@ let get_in_current_buffer_exn t =
 ;;
 
 let get_exn t buffer =
-  Current_buffer.set_temporarily buffer Sync ~f:(fun () -> get_in_current_buffer_exn t)
+  Current_buffer.set_temporarily Sync buffer ~f:(fun () -> get_in_current_buffer_exn t)
 ;;
 
 let update_exn t buffer ~f =
-  Current_buffer.set_temporarily buffer Sync ~f:(fun () ->
+  Current_buffer.set_temporarily Sync buffer ~f:(fun () ->
     set_in_current_buffer t (Some (f (get_in_current_buffer_exn t))))
 ;;
 

@@ -2,36 +2,24 @@ open! Core_kernel
 open! Import
 
 module Q = struct
-  include Input_event0.Q
-
   let alt = "alt" |> Symbol.intern
   and click = "click" |> Symbol.intern
   and control = "control" |> Symbol.intern
   and double = "double" |> Symbol.intern
   and down = "down" |> Symbol.intern
   and drag = "drag" |> Symbol.intern
-  and event_basic_type = "event-basic-type" |> Symbol.intern
-  and event_modifiers = "event-modifiers" |> Symbol.intern
   and hyper = "hyper" |> Symbol.intern
   and meta = "meta" |> Symbol.intern
-  and read_event = "read-event" |> Symbol.intern
   and shift = "shift" |> Symbol.intern
   and super = "super" |> Symbol.intern
   and triple = "triple" |> Symbol.intern
-  and unread_command_events = "unread-command-events" |> Symbol.intern
 end
 
 module Current_buffer = Current_buffer0
 module Key_sequence = Key_sequence0
+include Input_event0
 
-include (
-  Input_event0 :
-    module type of struct
-    include Input_event0
-  end
-  with module Q := Input_event0.Q)
-
-let read () = Symbol.funcall0 Q.read_event |> of_value_exn
+let read = Funcall.("read-event" <: nullary @-> return t)
 
 module Basic = struct
   type t =
@@ -52,7 +40,8 @@ module Basic = struct
   ;;
 end
 
-let basic t = Symbol.funcall1 Q.event_basic_type (t |> to_value) |> Basic.of_value_exn
+let event_basic_type = Funcall.("event-basic-type" <: t @-> return value)
+let basic t = event_basic_type t |> Basic.of_value_exn
 
 module Modifier = struct
   type t =
@@ -91,10 +80,8 @@ module Modifier = struct
   let of_value_exn value = value |> Symbol.of_value_exn |> of_symbol_exn
 end
 
-let modifiers t =
-  Symbol.funcall1 Q.event_modifiers (t |> to_value)
-  |> Value.to_list_exn ~f:Modifier.of_value_exn
-;;
+let event_modifiers = Funcall.("event-modifiers" <: t @-> return (list value))
+let modifiers t = event_modifiers t |> List.map ~f:Modifier.of_value_exn
 
 let create_exn input =
   let key_sequence = Key_sequence.create_exn input in
@@ -108,21 +95,20 @@ let create_exn input =
   Key_sequence.get key_sequence 0
 ;;
 
-let unread_command_input = Var.create Q.unread_command_events Value.Type.(list type_)
+let unread_command_input = Var.Wrap.("unread-command-events" <: list t)
+let append = Funcall.("append" <: value @-> value @-> return value)
 
 let enqueue_unread_command_input ts =
-  let unread_command_events = Var.create Q.unread_command_events Value.Type.value in
+  let unread_command_events = Var.Wrap.("unread-command-events" <: value) in
   Current_buffer.set_value
     unread_command_events
-    (Symbol.funcall2
-       Q.append
+    (append
        (unread_command_events |> Current_buffer.value_exn)
        ((ts : t list :> Value.t list) |> Value.list))
 ;;
 
 let recent_keys_internal =
-  Funcall.(
-    "recent-keys" |> Symbol.intern <: bool @-> return (Vector.type_ Value.Type.value))
+  Funcall.("recent-keys" <: bool @-> return (Vector.t Value.Type.value))
 ;;
 
 let recent_keys () = recent_keys_internal false |> Array.map ~f:of_value_exn

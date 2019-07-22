@@ -42,6 +42,12 @@ val read
   -> unit
   -> string Deferred.t
 
+(** Read a function name in the same manner as [describe-function]. *)
+val read_function_name
+  :  prompt:string
+  -> history:Minibuffer.History.t
+  -> string Deferred.t
+
 (** [(describe-function 'completing-read-multiple)] **)
 val read_multiple
   :  prompt:string (** typically ends with ": " *)

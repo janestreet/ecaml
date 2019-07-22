@@ -1,4 +1,5 @@
 open! Core_kernel
+open! Async_kernel
 open! Import
 open! Hook
 
@@ -45,7 +46,8 @@ let%expect_test "[add]" =
     ((symbol    some-hook)
      (hook_type Normal)
      (value ((f2 f1 f3)))) |}];
-  clear t
+  clear t;
+  return ()
 ;;
 
 let%expect_test "[add] when present" =
@@ -56,7 +58,8 @@ let%expect_test "[add] when present" =
     ((symbol    some-hook)
      (hook_type Normal)
      (value ((f1)))) |}];
-  clear t
+  clear t;
+  return ()
 ;;
 
 let%expect_test "[remove]" =
@@ -80,7 +83,8 @@ let%expect_test "[remove]" =
     ((symbol    some-hook)
      (hook_type Normal)
      (value (()))) |}];
-  clear t
+  clear t;
+  return ()
 ;;
 
 let%expect_test "[remove] when absent" =
@@ -102,20 +106,21 @@ let%expect_test "[remove] when absent" =
     ((symbol    some-hook)
      (hook_type Normal)
      (value ((f2)))) |}];
-  clear t
+  clear t;
+  return ()
 ;;
 
 let%expect_test "[run]" =
-  run t;
+  let%bind () = run t in
   add t f1;
-  run t;
-  [%expect {|
-    f1 |}];
+  let%bind () = run t in
+  [%expect {| f1 |}];
   add t f2;
-  run t;
+  let%bind () = run t in
   [%expect {|
     f2
-    f1 |}]
+    f1 |}];
+  return ()
 ;;
 
 let create_after_load_fun s =
@@ -135,17 +140,18 @@ let%expect_test "[after_load] hooks" =
   add after_load f2;
   let file = Caml.Filename.temp_file "ecamltest" ".el" in
   Out_channel.write_all file ~data:"'()";
-  Load.load ~message:false file;
+  let%bind () = Load.load ~message:false file in
   [%expect {|
     f2
     after_load one_shot hook
     f1 |}];
-  Load.load ~message:false file;
+  let%bind () = Load.load ~message:false file in
   [%expect {|
     f2
     f1 |}];
   remove after_load f1;
-  remove after_load f2
+  remove after_load f2;
+  return ()
 ;;
 
 let%expect_test "Blocking async hook" =
@@ -157,55 +163,53 @@ let%expect_test "Blocking async hook" =
         ~hook_type:File
         (Returns_deferred Value.Type.unit)
         (fun _ ->
-           let%map.Async () = Async.Clock.after pause in
+           let%map () = Clock.after pause in
            print_s [%message "f1"])
     in
     add after_load f1;
     let file = Caml.Filename.temp_file "ecamltest" ".el" in
     Out_channel.write_all file ~data:"'()";
-    Load.load ~message:false file;
-    remove after_load f1
+    let%bind () = Load.load ~message:false file in
+    remove after_load f1;
+    return ()
   in
-  test ~pause:(sec 0.01);
-  [%expect {| f1 |}]
+  let%bind () = test ~pause:(sec 0.01) in
+  [%expect {| f1 |}];
+  return ()
 ;;
 
-module Async_test = struct
-  open! Async
-  open! Async_ecaml
-
-  let%expect_test "[after_save], [kill_buffer]" =
-    let file = "test-after-save.tmp" in
-    let%bind () = Selected_window.find_file file in
-    add
-      after_save
-      ~buffer_local:true
-      (Function.create
-         ("test-after-save-hook" |> Symbol.intern)
-         [%here]
-         ~hook_type:Normal
-         (Returns Value.Type.unit)
-         (fun () -> print_s [%message "after-save hook ran"]));
-    print_s [%sexp (Current_buffer.is_buffer_local (var after_save) : bool)];
-    let%bind () = [%expect {| true |}] in
-    add
-      kill_buffer
-      ~buffer_local:true
-      (Function.create
-         ("test-kill-buffer-hook" |> Symbol.intern)
-         [%here]
-         ~hook_type:Normal
-         (Returns Value.Type.unit)
-         (fun () -> print_s [%message "kill-buffer hook ran"]));
-    Point.insert "foo";
-    let%bind () = Current_buffer.save () in
-    let%bind () = [%expect {| "after-save hook ran" |}] in
-    let%bind () = Current_buffer.kill () in
-    let%bind () = [%expect {| "kill-buffer hook ran" |}] in
-    File.delete file;
-    return ()
-  ;;
-end
+let%expect_test "[after_save], [kill_buffer]" =
+  let file = "test-after-save.tmp" in
+  let%bind () = Selected_window.find_file file in
+  add
+    after_save
+    ~buffer_local:true
+    (Function.create
+       ("test-after-save-hook" |> Symbol.intern)
+       [%here]
+       ~hook_type:Normal
+       (Returns Value.Type.unit)
+       (fun () -> print_s [%message "after-save hook ran"]));
+  print_s [%sexp (Current_buffer.is_buffer_local (var after_save) : bool)];
+  [%expect {|
+      true |}];
+  add
+    kill_buffer
+    ~buffer_local:true
+    (Function.create
+       ("test-kill-buffer-hook" |> Symbol.intern)
+       [%here]
+       ~hook_type:Normal
+       (Returns Value.Type.unit)
+       (fun () -> print_s [%message "kill-buffer hook ran"]));
+  Point.insert "foo";
+  let%bind () = Current_buffer.save () in
+  [%expect {| "after-save hook ran" |}];
+  let%bind () = Current_buffer.kill () in
+  [%expect {| "kill-buffer hook ran" |}];
+  File.delete file;
+  return ()
+;;
 
 let%expect_test "hook raise" =
   let hook_type = Hook_type.Normal in
@@ -227,9 +231,10 @@ let%expect_test "hook raise" =
        ~hook_type
        (Returns_deferred Value.Type.unit)
        (fun () -> raise_s [%message "raise2"]));
-  run t;
+  let%bind () = run t in
   [%expect
     {|
     ("Error in hook" hook-raise1 raise1)
-    ("Error in hook" hook-raise2 raise2) |}]
+    ("Error in hook" hook-raise2 raise2) |}];
+  return ()
 ;;

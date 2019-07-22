@@ -426,16 +426,16 @@ let start_scheduler () =
       then
         (* We really want to see the error, so we inhibit quit while displaying it. *)
         Current_buffer.set_value_temporarily
+          Sync
           Command.inhibit_quit
           true
-          Sync
           ~f:(fun () -> message_s [%sexp (exn : exn)])
       else
         t.exceptions_raised_outside_emacs_env
         <- exn :: t.exceptions_raised_outside_emacs_env)
 ;;
 
-module Import = struct
+module Export = struct
   module Clock = Async.Clock
 
   let don't_wait_for = Async.don't_wait_for
@@ -463,7 +463,9 @@ module Private = struct
           raise_s
             [%message.omit_nil
               "Called [block_on_async] in the middle of an Async job!"
-                (context_backtrace : Context_backtrace.t ref)];
+                (context_backtrace : Context_backtrace.t ref)
+                ~profile_backtrace:
+                  (Nested_profile.Profile.backtrace () : Sexp.t list option)];
         let rec run_cycles_until_filled deferred =
           if Command.quit_requested ()
           then error_s [%message "Blocking operation interrupted"]
@@ -521,7 +523,7 @@ module Private = struct
 end
 
 module Expect_test_config = struct
-  include Async.Expect_test_config
+  include Async.Expect_test_config_with_unit_expect
 
   let run f =
     Private.block_on_async [%here] ~context:(lazy [%message "Expect_test_config.run"]) f

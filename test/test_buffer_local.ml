@@ -1,4 +1,5 @@
 open! Core_kernel
+open! Async_kernel
 open! Import
 open! Buffer_local
 
@@ -13,8 +14,8 @@ let int =
 
 let%expect_test "[symbol]" =
   print_s [%sexp (symbol int : Symbol.t)];
-  [%expect {|
-    some-int |}]
+  [%expect {| some-int |}];
+  return ()
 ;;
 
 let show_in_current_buffer () =
@@ -30,17 +31,17 @@ let%expect_test "[get] with no value" =
     {|
     ("buffer has no value for variable"
       (variable (some-int (option int)))
-      (buffer "#<buffer *scratch*>")) |}]
+      (buffer "#<buffer *scratch*>")) |}];
+  return ()
 ;;
 
 let%expect_test "[get] with some value" =
   Current_buffer.set_buffer_local int (Some 13);
   show_in_current_buffer ();
-  [%expect {|
-    (13) |}];
+  [%expect {| (13) |}];
   print_s [%sexp (Current_buffer.get_buffer_local_exn int : int)];
-  [%expect {|
-    13 |}]
+  [%expect {| 13 |}];
+  return ()
 ;;
 
 let%expect_test "[get] with strange value" =
@@ -58,7 +59,8 @@ let%expect_test "[get] with strange value" =
     ("buffer has strange value for variable"
       (variable (some-int (option int)))
       (buffer "#<buffer *scratch*>")
-      (value  thirteen)) |}]
+      (value  thirteen)) |}];
+  return ()
 ;;
 
 let%expect_test "different values in different buffers" =
@@ -67,11 +69,10 @@ let%expect_test "different values in different buffers" =
   set int (Some 1) b1;
   set int (Some 2) b2;
   print_s [%sexp (get_exn int b1 : int)];
-  [%expect {|
-    1 |}];
+  [%expect {| 1 |}];
   print_s [%sexp (get_exn int b2 : int)];
-  [%expect {|
-    2 |}]
+  [%expect {| 2 |}];
+  return ()
 ;;
 
 let%expect_test "[get] with value represented as [nil]" =
@@ -90,7 +91,8 @@ let%expect_test "[get] with value represented as [nil]" =
   test false;
   [%expect {| false |}];
   test true;
-  [%expect {| true |}]
+  [%expect {| true |}];
+  return ()
 ;;
 
 let%expect_test "[defvar_embedded]" =
@@ -104,17 +106,15 @@ let%expect_test "[defvar_embedded]" =
   in
   let show () = print_s [%sexp (Current_buffer.get_buffer_local t : int ref option)] in
   show ();
-  [%expect {|
-    () |}];
+  [%expect {| () |}];
   let r = ref 13 in
   Current_buffer.set_buffer_local t (Some r);
   show ();
-  [%expect {|
-    (13) |}];
+  [%expect {| (13) |}];
   r := 14;
   show ();
-  [%expect {|
-    (14) |}]
+  [%expect {| (14) |}];
+  return ()
 ;;
 
 let%expect_test "[defvar ~wrapped:false]" =
@@ -128,12 +128,11 @@ let%expect_test "[defvar ~wrapped:false]" =
   in
   let show () = print_s [%sexp (Current_buffer.get_buffer_local t : int option)] in
   show ();
-  [%expect {|
-    () |}];
+  [%expect {| () |}];
   Current_buffer.set_buffer_local t (Some 13);
   show ();
-  [%expect {|
-    (13) |}]
+  [%expect {| (13) |}];
+  return ()
 ;;
 
 let%expect_test "non-nil default value" =
@@ -147,12 +146,11 @@ let%expect_test "non-nil default value" =
   in
   let show () = print_s [%sexp (Current_buffer.get_buffer_local t : int)] in
   show ();
-  [%expect {|
-    13 |}];
+  [%expect {| 13 |}];
   Current_buffer.set_buffer_local t 14;
   show ();
-  [%expect {|
-    14 |}]
+  [%expect {| 14 |}];
+  return ()
 ;;
 
 let%expect_test "[wrap_existing]" =
@@ -169,8 +167,7 @@ let%expect_test "[wrap_existing]" =
     wrap_existing var.symbol var.type_ ~make_buffer_local_always
   in
   print_s [%sexp (Var.is_buffer_local_always var : bool)];
-  [%expect {|
-    false |}];
+  [%expect {| false |}];
   require_does_raise [%here] (fun () -> wrap ~make_buffer_local_always:false);
   [%expect
     {|
@@ -178,37 +175,33 @@ let%expect_test "[wrap_existing]" =
      (symbol for-wrapping)) |}];
   let _ = wrap ~make_buffer_local_always:true in
   print_s [%sexp (Var.is_buffer_local_always var : bool)];
-  [%expect {|
-    true |}]
+  [%expect {| true |}];
+  return ()
 ;;
 
-module Async = struct
-  open! Async
-  open! Async_ecaml
+let%expect_test "non-permanent buffer-locals cleared on changing major modes" =
+  Current_buffer.set_temporarily_to_temp_buffer Async (fun () ->
+    Current_buffer.set_buffer_local int (Some 23);
+    show_in_current_buffer ();
+    [%expect {| (23) |}];
+    let%bind () = Current_buffer.change_major_mode Major_mode.Prog.major_mode in
+    show_in_current_buffer ();
+    [%expect {| () |}];
+    return ())
+;;
 
-  let%expect_test "non-permanent buffer-locals cleared on changing major modes" =
-    Current_buffer.set_temporarily_to_temp_buffer Async (fun () ->
-      Current_buffer.set_buffer_local int (Some 23);
-      show_in_current_buffer ();
-      let%bind () = [%expect {| (23) |}] in
-      let%bind () = Current_buffer.change_major_mode Major_mode.Prog.major_mode in
-      show_in_current_buffer ();
-      [%expect {| () |}])
-  ;;
-
-  let%expect_test "permanent buffer-locals not cleared on changing major modes" =
-    Current_buffer.set_temporarily_to_temp_buffer Async (fun () ->
-      Buffer_local.set_permanent int true;
-      Current_buffer.set_buffer_local int (Some 23);
-      show_in_current_buffer ();
-      let%bind () = [%expect {| (23) |}] in
-      let%bind () = Current_buffer.change_major_mode Major_mode.Prog.major_mode in
-      show_in_current_buffer ();
-      let%bind () = [%expect {| (23) |}] in
-      Buffer_local.set_permanent int false;
-      let%bind () = Current_buffer.change_major_mode Major_mode.Prog.major_mode in
-      show_in_current_buffer ();
-      let%bind () = [%expect {| () |}] in
-      return ())
-  ;;
-end
+let%expect_test "permanent buffer-locals not cleared on changing major modes" =
+  Current_buffer.set_temporarily_to_temp_buffer Async (fun () ->
+    Buffer_local.set_permanent int true;
+    Current_buffer.set_buffer_local int (Some 23);
+    show_in_current_buffer ();
+    [%expect {| (23) |}];
+    let%bind () = Current_buffer.change_major_mode Major_mode.Prog.major_mode in
+    show_in_current_buffer ();
+    [%expect {| (23) |}];
+    Buffer_local.set_permanent int false;
+    let%bind () = Current_buffer.change_major_mode Major_mode.Prog.major_mode in
+    show_in_current_buffer ();
+    [%expect {| () |}];
+    return ())
+;;

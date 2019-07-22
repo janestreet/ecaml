@@ -10,6 +10,7 @@ module Backup = Backup
 module Browse_url = Browse_url
 module Buffer = Buffer
 module Buffer_local = Buffer_local
+module Caml_embed = Ecaml_value.Caml_embed
 module Char_code = Char_code
 module Color = Color
 module Command = Command
@@ -32,6 +33,7 @@ module Elisp_gc = Elisp_gc
 module Elisp_time = Elisp_time
 module Eval = Eval
 module Evil = Evil
+module Expect_test_config = Async_ecaml.Expect_test_config
 module Face = Face
 module Feature = Feature
 module File = File
@@ -39,7 +41,7 @@ module Filename = Filename
 module Find_function = Find_function
 module Form = Ecaml_value.Form
 module Frame = Frame
-module Funcall = Funcall
+module Funcall = Ecaml_value.Funcall
 module Function = Ecaml_value.Function
 module Grep = Grep
 module Hash_table = Hash_table
@@ -88,6 +90,7 @@ open! Core_kernel
 open! Async_kernel
 open! Import
 module Q = Q
+include Async_ecaml.Export
 
 let ( << ) = ( << )
 and ( >> ) = ( >> )
@@ -167,19 +170,19 @@ Close file descriptor zero, aka stdin.  For testing a bug in `call-process-regio
 ;;
 
 let () =
-  let symbol = "ecaml-test-raise" |> Symbol.intern in
+  let ecaml_test_raise_name = "ecaml-test-raise" in
+  let ecaml_test_raise = Funcall.(ecaml_test_raise_name <: nil_or int @-> return nil) in
   defun
-    symbol
+    (ecaml_test_raise_name |> Symbol.intern)
     [%here]
     ~interactive:No_arg
     (Returns Value.Type.unit)
     (let open Defun.Let_syntax in
-     let%map_open n = optional Q.number int in
+     let%map_open n = optional "number" int in
      let n = Option.value n ~default:0 in
      if n <= 0
      then raise_s [%message "foo" "bar" "baz"]
-     else Funcall.(symbol <: nil_or int @-> return nil) (Some (n - 1));
-     ());
+     else ecaml_test_raise (Some (n - 1)));
   (* Replace [false] with [true] to define a function for testing
      [Minibuffer.read_from]. *)
   if false

@@ -4,21 +4,15 @@ module Current_buffer = Current_buffer0
 
 module Q = struct
   let evil = "evil" |> Symbol.intern
-  let evil_declare_ignore_repeat = "evil-declare-ignore-repeat" |> Symbol.intern
   let evilified = "evilified" |> Symbol.intern
 end
 
-module F = struct
-  open! Funcall
-  open! Value.Type
-
-  let evil_declare_ignore_repeat =
-    Q.evil_declare_ignore_repeat <: Symbol.type_ @-> return ignored
-  ;;
-end
+let evil_declare_ignore_repeat =
+  Funcall.("evil-declare-ignore-repeat" <: Symbol.t @-> return ignored)
+;;
 
 let declare_ignore_repeat command =
-  Eval.after_load [%here] Q.evil ~f:(fun () -> F.evil_declare_ignore_repeat command)
+  Eval.after_load [%here] Q.evil ~f:(fun () -> evil_declare_ignore_repeat command)
 ;;
 
 module Config = struct
@@ -40,7 +34,7 @@ module State = struct
 
   let type_ =
     Value.Type.map
-      Symbol.type_
+      Symbol.t
       ~name:[%sexp "evil-state"]
       ~of_:(fun sym -> if Symbol.equal Q.evilified sym then Evilified else Other sym)
       ~to_:(function
@@ -48,14 +42,11 @@ module State = struct
         | Other sym -> sym)
   ;;
 
-  let var = Var.create ("evil-state" |> Symbol.intern) type_
+  let t = type_
+  let var = Var.Wrap.("evil-state" <: t)
   let get () = Current_buffer.value_exn var
 end
 
 module Escape = struct
-  let inhibit_functions =
-    Var.create
-      ("evil-escape-inhibit-functions" |> Symbol.intern)
-      Value.Type.(list Function.type_)
-  ;;
+  let inhibit_functions = Var.Wrap.("evil-escape-inhibit-functions" <: list Function.t)
 end

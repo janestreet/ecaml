@@ -1,4 +1,5 @@
 open! Core_kernel
+open! Async_kernel
 open! Import
 open! Regexp
 
@@ -40,7 +41,8 @@ let%expect_test "[quote], [match_], [does_match]" =
     ((pattern "\\\\")
      (input   \)
      (match_ (0))
-     (does_match true)) |}]
+     (does_match true)) |}];
+  return ()
 ;;
 
 let%expect_test "[any_pattern]" =
@@ -68,7 +70,8 @@ let%expect_test "[any_pattern]" =
      (does_match true))
     ((patterns (b a))
      (regexp     "b\\|a")
-     (does_match true)) |}]
+     (does_match true)) |}];
+  return ()
 ;;
 
 let%expect_test "[any_quote]" =
@@ -93,7 +96,8 @@ let%expect_test "[any_quote]" =
      (does_match false))
     ((strings (a b))
      (regexp     [ab])
-     (does_match true)) |}]
+     (does_match true)) |}];
+  return ()
 ;;
 
 let%expect_test "[Last_match] raise due to no match" =
@@ -106,7 +110,8 @@ let%expect_test "[Last_match] raise due to no match" =
     {|
     ((text  (Error "Prior [Regexp] match did not match"))
      (start (Error "Prior [Regexp] match did not match"))
-     (end_  (Error "Prior [Regexp] match did not match"))) |}]
+     (end_  (Error "Prior [Regexp] match did not match"))) |}];
+  return ()
 ;;
 
 let%expect_test "[Last_match] with nonexistent [subexp]" =
@@ -127,7 +132,8 @@ let%expect_test "[Last_match] with nonexistent [subexp]" =
          (subexp 1))))
      (end_ (
        Error (
-         "[Regexp.Last_match.end_exn] got [subexp] that did not match" (subexp 1))))) |}]
+         "[Regexp.Last_match.end_exn] got [subexp] that did not match" (subexp 1))))) |}];
+  return ()
 ;;
 
 let%expect_test "[Last_match] success" =
@@ -171,7 +177,8 @@ let%expect_test "[Last_match] success" =
      (match_result (1)))
     ((text  (Ok foo))
      (start (Ok 1))
-     (end_  (Ok 4))) |}]
+     (end_  (Ok 4))) |}];
+  return ()
 ;;
 
 let%expect_test "[Last_match ~subexp] success" =
@@ -186,7 +193,8 @@ let%expect_test "[Last_match ~subexp] success" =
   [%expect {|
     ((text  (Ok foo))
      (start (Ok 1))
-     (end_  (Ok 4))) |}]
+     (end_  (Ok 4))) |}];
+  return ()
 ;;
 
 let%expect_test "[Last_match.get_exn]" =
@@ -216,7 +224,8 @@ let%expect_test "[Last_match.get_exn]" =
   [%expect {|
     ((text  (Ok foo))
      (start (Ok 1))
-     (end_  (Ok 4))) |}]
+     (end_  (Ok 4))) |}];
+  return ()
 ;;
 
 let%expect_test "[of_rx]" =
@@ -518,5 +527,6 @@ let%expect_test "[of_rx]" =
     ((matches true)
      (index   4)
      (submatch (baz))) |}];
-  [%expect {| |}]
+  [%expect {| |}];
+  return ()
 ;;

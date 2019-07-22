@@ -25,41 +25,21 @@ The major mode for the *profile* buffer, which holds a log of Ecaml profile outp
 let () = Keymap.suppress_keymap (Major_mode.keymap major_mode) ~suppress_digits:true
 
 module Start_location = struct
-  module T = struct
-    include Profile.Start_location
+  include Profile.Start_location
 
-    let to_string t =
-      [%sexp (t : t)]
-      |> Sexp.to_string
-      |> String.lowercase
-      |> String.tr ~target:'_' ~replacement:'-'
-    ;;
-
-    let to_symbol t = t |> to_string |> Symbol.intern
-
-    let docstring = function
-      | End_of_profile_first_line ->
-        "put the time at the end of the profile's first line"
-      | Line_preceding_profile -> "put the time on its own line, before the profile"
-    ;;
-  end
-
-  include T
-
-  let customization =
-    Customization.defcustom_enum
-      ("ecaml-profile-start-location" |> Symbol.intern)
-      [%here]
-      (module T)
-      ~docstring:{|
-Where to render a profile's start time:
-|}
-      ~group:Customization.Group.ecaml
-      ~standard_value:End_of_profile_first_line
-      ()
+  let to_string t =
+    [%sexp (t : t)]
+    |> Sexp.to_string
+    |> String.lowercase
+    |> String.tr ~target:'_' ~replacement:'-'
   ;;
 
-  let () = Profile.start_location := Customization.value customization
+  let to_symbol t = t |> to_string |> Symbol.intern
+
+  let docstring = function
+    | End_of_profile_first_line -> "put the time at the end of the profile's first line"
+    | Line_preceding_profile -> "put the time on its own line, before the profile"
+  ;;
 end
 
 module Profile_buffer : sig
@@ -98,16 +78,73 @@ end = struct
   ;;
 end
 
-let set_should_profile should_profile =
-  Profile.should_profile := should_profile;
-  let verb = if !Profile.should_profile then "enabled" else "disabled" in
-  message (String.concat [ "You just "; verb; " ecaml profiling" ])
+let tag_function =
+  Defvar.defvar
+    ("ecaml-profile-tag-frame-function" |> Symbol.intern)
+    [%here]
+    ~docstring:
+      {|
+If non-nil, ecaml-profile calls this function with 0 arguments when creating a profile
+frame.  The output is added to the profile frame. |}
+    ~type_:(Value.Type.nil_or Function.type_)
+    ~initial_value:None
+    ()
 ;;
 
 let initialize () =
-  (* When not in test, we start initializing the profile buffer, so that it exists when we
-     need it. *)
-  if not am_running_test then ignore (Profile_buffer.profile_buffer () : Buffer.t option);
+  let (_ : _ Customization.t) =
+    Customization.defcustom_enum
+      ("ecaml-profile-start-location" |> Symbol.intern)
+      [%here]
+      (module Start_location)
+      ~docstring:{| Where to render a profile's start time: |}
+      ~group:Customization.Group.ecaml
+      ~standard_value:End_of_profile_first_line
+      ~on_set:(fun start_location -> Profile.start_location := start_location)
+      ()
+  in
+  let should_profile =
+    Customization.defcustom
+      ("ecaml-profile-should-profile" |> Symbol.intern)
+      [%here]
+      ~docstring:{| Whether profiling is enabled. |}
+      ~group:Customization.Group.ecaml
+      ~type_:Value.Type.bool
+      ~customization_type:Boolean
+      ~standard_value:false
+      ~on_set:(fun bool -> Profile.should_profile := bool)
+      ()
+  in
+  let _hide_if_less_than =
+    Customization.defcustom
+      ("ecaml-profile-hide-frame-if-less-than" |> Symbol.intern)
+      [%here]
+      ~docstring:{| Hide profile frames shorter than this duration. |}
+      ~group:Customization.Group.ecaml
+      ~type_:Value.Type.string
+      ~customization_type:String
+      ~standard_value:"1ms"
+      ~on_set:(fun string ->
+        Profile.hide_if_less_than := string |> Time_ns.Span.of_string)
+      ()
+  in
+  let _hide_top_level_if_less_than =
+    Customization.defcustom
+      ("ecaml-profile-hide-top-level-if-less-than" |> Symbol.intern)
+      [%here]
+      ~docstring:{| Hide profiles shorter than this duration. |}
+      ~group:Customization.Group.ecaml
+      ~type_:Value.Type.string
+      ~customization_type:String
+      ~standard_value:"100ms"
+      ~on_set:(fun string ->
+        Profile.hide_top_level_if_less_than := string |> Time_ns.Span.of_string)
+      ()
+  in
+  if System.is_interactive ()
+  then
+    (* We start initializing the profile buffer, so that it exists when we need it. *)
+    ignore (Profile_buffer.profile_buffer () : Buffer.t option);
   (Profile.sexp_of_time_ns
    := fun time_ns ->
      match [%sexp (time_ns : Core.Time_ns.t)] with
@@ -122,11 +159,18 @@ let initialize () =
        match Profile_buffer.profile_buffer () with
        | None -> ()
        | Some buffer ->
-         Current_buffer.set_temporarily buffer Sync ~f:(fun () ->
+         Current_buffer.set_temporarily Sync buffer ~f:(fun () ->
            Current_buffer.inhibit_read_only Sync (fun () ->
              Current_buffer.append_to string))
      with
      | exn -> message_s [%message "unable to output profile" ~_:(exn : exn)]);
+  Profile.tag_frames_with
+  := Some
+       (fun () ->
+          match Current_buffer.value_exn tag_function with
+          | None -> None
+          | Some f ->
+            Some (f |> Function.to_value |> Value.funcall0 |> [%sexp_of: Value.t]));
   Hook.add
     Elisp_gc.post_gc_hook
     (Hook.Function.create
@@ -162,8 +206,12 @@ let initialize () =
               ~start:(Time_ns.sub stop gc_took)
               ~stop
               ~message:(lazy [%message "gc" (gcs_done : int opaque_in_test)]))));
-  let open Defun in
-  defun_nullary_nil
+  let set_should_profile bool =
+    Customization.set_value should_profile bool;
+    let verb = if !Profile.should_profile then "enabled" else "disabled" in
+    message (String.concat [ "You just "; verb; " ecaml profiling" ])
+  in
+  Defun.defun_nullary_nil
     ("ecaml-toggle-profiling" |> Symbol.intern)
     [%here]
     ~docstring:
@@ -171,65 +219,49 @@ let initialize () =
        buffer."
     ~interactive:No_arg
     (fun () -> set_should_profile (not !Profile.should_profile));
-  defun_nullary_nil
+  Defun.defun_nullary_nil
     ("ecaml-enable-profiling" |> Symbol.intern)
     [%here]
     ~docstring:
       "Enable logging of elisp->ecaml calls and durations in the `*profile*' buffer."
     ~interactive:No_arg
     (fun () -> set_should_profile true);
-  defun_nullary_nil
+  Defun.defun_nullary_nil
     ("ecaml-disable-profiling" |> Symbol.intern)
     [%here]
     ~docstring:
       "Disable logging of elisp->ecaml calls and durations in the `*profile*' buffer."
     ~interactive:No_arg
     (fun () -> set_should_profile false);
-  let defun_set_span name setting =
-    defun
-      (concat [ "ecaml-profile-set-"; name ] |> Symbol.intern)
-      [%here]
-      ~docstring:
-        (concat
-           [ "Don't record profiles shorter than this duration (default is "
-           ; !setting |> Time_ns.Span.to_short_string
-           ; ")"
-           ])
-      ~interactive:
-        (Prompt
-           (concat
-              [ "set "
-              ; name
-              ; " duration (currently "
-              ; !setting |> Time_ns.Span.to_short_string
-              ; "): "
-              ]))
-      (Returns Value.Type.unit)
-      (let%map.Let_syntax duration =
-         required ("duration" |> Symbol.intern) Value.Type.string
-       in
-       setting := Time_ns.Span.of_string duration)
-  in
-  defun_set_span "hide-if-less-than" Profile.hide_if_less_than;
-  defun_set_span "hide-top-level-if-less-than" Profile.hide_top_level_if_less_than;
-  defun
+  Defun.defun
     ("ecaml-profile-inner" |> Symbol.intern)
     [%here]
     ~docstring:"profile an elisp function using Nested_profile"
     ~should_profile:false
     (Returns Value.Type.value)
     (let%map_open.Defun.Let_syntax () = return ()
-     and description = required ("DESCRIPTION" |> Symbol.intern) Value.Type.string
-     and f = required ("FUNCTION" |> Symbol.intern) Value.Type.value in
+     and description = required "description" string
+     and f = required "function" value in
      profile Sync (lazy [%message description]) (fun () -> Value.funcall0 f));
-  defun
+  Defun.defun
     ("ecaml-profile-elisp-function" |> Symbol.intern)
     [%here]
     ~docstring:"Wrap the given function in a call to [Nested_profile.profile]."
-    ~interactive:(Function_name { prompt = "Profile function: " })
+    ~interactive:
+      (let history =
+         Minibuffer.History.find_or_create
+           ("ecaml-profile-elisp-function-history" |> Symbol.intern)
+           [%here]
+       in
+       Args
+         (fun () ->
+            let%bind function_name =
+              Completing.read_function_name ~prompt:"Profile function: " ~history
+            in
+            return [ function_name |> Value.intern ]))
     (Returns Value.Type.unit)
     (let%map_open.Defun.Let_syntax () = return ()
-     and fn = required ("function" |> Symbol.intern) Symbol.type_ in
+     and fn = required "function" Symbol.t in
      Advice.around_values
        ("ecaml-profile-wrapper-for-" ^ Symbol.name fn |> Symbol.intern)
        [%here]
@@ -239,5 +271,10 @@ let initialize () =
           profile
             Sync
             (lazy [%sexp ((fn |> Symbol.to_value) :: args : Value.t list)])
-            (fun () -> f args)))
+            (fun () -> f args));
+     message (concat [ "You just added Ecaml profiling of ["; fn |> Symbol.name; "]" ]))
 ;;
+
+module Private = struct
+  let tag_function = tag_function
+end

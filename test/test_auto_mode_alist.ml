@@ -1,4 +1,5 @@
 open! Core_kernel
+open! Async_kernel
 open! Import
 open! Auto_mode_alist
 
@@ -15,7 +16,8 @@ let%expect_test "[add]" =
     ((
       (filename_match          foo)
       (function_               foo-mode)
-      (delete_suffix_and_recur false))) |}]
+      (delete_suffix_and_recur false))) |}];
+  return ()
 ;;
 
 let%expect_test "[auto_mode_alist]" =
@@ -30,6 +32,8 @@ let%expect_test "[auto_mode_alist]" =
      ((filename_match          "\\.elc\\'")
       (function_               elisp-byte-code-mode)
       (delete_suffix_and_recur false))
+     ((filename_match          "\\.zst\\'")
+      (delete_suffix_and_recur true))
      ((filename_match          "\\.dz\\'")
       (delete_suffix_and_recur true))
      ((filename_match          "\\.xz\\'")
@@ -54,8 +58,11 @@ let%expect_test "[auto_mode_alist]" =
      ((filename_match          "\\.re?st\\'")
       (function_               rst-mode)
       (delete_suffix_and_recur false))
-     ((filename_match          "\\.pyw?\\'")
+     ((filename_match          "\\.py[iw]?\\'")
       (function_               python-mode)
+      (delete_suffix_and_recur false))
+     ((filename_match          "\\.less\\'")
+      (function_               less-css-mode)
       (delete_suffix_and_recur false))
      ((filename_match          "\\.scss\\'")
       (function_               scss-mode)
@@ -87,7 +94,10 @@ let%expect_test "[auto_mode_alist]" =
      ((filename_match          "\\.y\\(acc\\)?\\'")
       (function_               c-mode)
       (delete_suffix_and_recur false))
-     ((filename_match          "\\.[ch]\\'")
+     ((filename_match          "\\.h\\'")
+      (function_               c-or-c++-mode)
+      (delete_suffix_and_recur false))
+     ((filename_match          "\\.c\\'")
       (function_               c-mode)
       (delete_suffix_and_recur false))
      ((filename_match          "\\.\\(CC?\\|HH?\\)\\'")
@@ -103,7 +113,7 @@ let%expect_test "[auto_mode_alist]" =
       (function_               bat-mode)
       (delete_suffix_and_recur false))
      ((filename_match "\\.[sx]?html?\\(\\.[a-zA-Z_]+\\)?\\'")
-      (function_               html-mode)
+      (function_               mhtml-mode)
       (delete_suffix_and_recur false))
      ((filename_match          "\\.svgz?\\'")
       (function_               image-mode)
@@ -260,7 +270,7 @@ let%expect_test "[auto_mode_alist]" =
       (function_               sh-mode)
       (delete_suffix_and_recur false))
      ((filename_match
-       "\\(/\\|\\`\\)\\.\\(shrc\\|[kz]shrc\\|bashrc\\|t?cshrc\\|esrc\\)\\'")
+       "\\(/\\|\\`\\)\\.\\(shrc\\|zshrc\\|m?kshrc\\|bashrc\\|t?cshrc\\|esrc\\)\\'")
       (function_               sh-mode)
       (delete_suffix_and_recur false))
      ((filename_match
@@ -352,7 +362,7 @@ let%expect_test "[auto_mode_alist]" =
       (function_               tar-mode)
       (delete_suffix_and_recur false))
      ((filename_match
-       "\\.\\(arc\\|zip\\|lzh\\|lha\\|zoo\\|[jew]ar\\|xpi\\|rar\\|7z\\|ARC\\|ZIP\\|LZH\\|LHA\\|ZOO\\|[JEW]AR\\|XPI\\|RAR\\|7Z\\)\\'")
+       "\\.\\(arc\\|zip\\|lzh\\|lha\\|zoo\\|[jew]ar\\|xpi\\|rar\\|cbr\\|7z\\|ARC\\|ZIP\\|LZH\\|LHA\\|ZOO\\|[JEW]AR\\|XPI\\|RAR\\|CBR\\|7Z\\)\\'")
       (function_               archive-mode)
       (delete_suffix_and_recur false))
      ((filename_match          "\\.oxt\\'")
@@ -393,6 +403,9 @@ let%expect_test "[auto_mode_alist]" =
       (delete_suffix_and_recur false))
      ((filename_match          "\\.json\\'")
       (function_               javascript-mode)
+      (delete_suffix_and_recur false))
+     ((filename_match          "\\.jsx\\'")
+      (function_               js-jsx-mode)
       (delete_suffix_and_recur false))
      ((filename_match          "\\.[ds]?vh?\\'")
       (function_               verilog-mode)
@@ -495,8 +508,8 @@ let%expect_test "[auto_mode_alist]" =
        "\\.\\(?:[iI][nN][iI]\\|[lL][sS][tT]\\|[rR][eE][gG]\\|[sS][yY][sS]\\)\\'")
       (function_               conf-mode)
       (delete_suffix_and_recur false))
-     ((filename_match "\\.\\(?:desktop\\|la\\)\\'")
-      (function_      conf-unix-mode)
+     ((filename_match          "\\.la\\'")
+      (function_               conf-unix-mode)
       (delete_suffix_and_recur false))
      ((filename_match          "\\.ppd\\'")
       (function_               conf-ppd-mode)
@@ -506,6 +519,12 @@ let%expect_test "[auto_mode_alist]" =
       (delete_suffix_and_recur false))
      ((filename_match "\\.properties\\(?:\\.[a-zA-Z0-9._-]+\\)?\\'")
       (function_               conf-javaprop-mode)
+      (delete_suffix_and_recur false))
+     ((filename_match          "\\.toml\\'")
+      (function_               conf-toml-mode)
+      (delete_suffix_and_recur false))
+     ((filename_match          "\\.desktop\\'")
+      (function_               conf-desktop-mode)
       (delete_suffix_and_recur false))
      ((filename_match
        "\\`/etc/\\(?:DIR_COLORS\\|ethers\\|.?fstab\\|.*hosts\\|lesskey\\|login\\.?de\\(?:fs\\|vperm\\)\\|magic\\|mtab\\|pam\\.d/.*\\|permissions\\(?:\\.d/.+\\)?\\|protocols\\|rpc\\|services\\)\\'")
@@ -561,5 +580,9 @@ let%expect_test "[auto_mode_alist]" =
       (delete_suffix_and_recur false))
      ((filename_match          "\\.txz\\'")
       (function_               tar-mode)
-      (delete_suffix_and_recur false))) |}]
+      (delete_suffix_and_recur false))
+     ((filename_match          "\\.tzst\\'")
+      (function_               tar-mode)
+      (delete_suffix_and_recur false))) |}];
+  return ()
 ;;

@@ -15,21 +15,6 @@ include Value.Make_subtype (struct
     ;;
   end)
 
-module Q = struct
-  let plist_get = "plist-get" |> Symbol.intern
-  and plist_put = "plist-put" |> Symbol.intern
-  and symbol_plist = "symbol-plist" |> Symbol.intern
-end
-
-module F = struct
-  open! Funcall
-  open! Value.Type
-
-  let plist_get = Q.plist_get <: type_ @-> Symbol.type_ @-> return (nil_or value)
-  let plist_put = Q.plist_put <: type_ @-> Symbol.type_ @-> value @-> return nil
-  let symbol_plist = Q.symbol_plist <: Symbol.type_ @-> return type_
-end
-
-let get = F.plist_get
-let set = F.plist_put
-let of_symbol = F.symbol_plist
+let get = Funcall.("plist-get" <: t @-> Symbol.t @-> return (nil_or value))
+let set = Funcall.("plist-put" <: t @-> Symbol.t @-> value @-> return nil)
+let of_symbol = Funcall.("symbol-plist" <: Symbol.t @-> return t)

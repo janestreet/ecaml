@@ -273,8 +273,8 @@ static void if_exception_signal_emacs_and_use_ecaml_nil(emacs_env* maybe_env, ch
     *ret = ecaml_nil();
     if (maybe_env != NULL) {
       emacs_env *env = maybe_env;
-      /* Ignoring the exception is not great, but it only happens in free_caml_cb, which
-         will not raise as currently implemented. */
+      /* We ignore the exception here, but there is code in [ecaml_callback.ml] that
+         attempts to report the exception before raising it. */
       env->non_local_exit_signal(env,
                                  env->intern(env, "uncaught-ocaml-exception"),
                                  env->intern(env, symbol_string));

@@ -1,4 +1,5 @@
 open! Core_kernel
+open! Async_kernel
 open! Import
 open! Key_sequence
 
@@ -24,13 +25,14 @@ let%expect_test "[create_exn]" =
     (C-<f5> <C-f5>)
     (C-<right> <C-right>)
     (<mouse-2> <mouse-2>)
-    (C-<down-mouse-3> <C-down-mouse-3>) |}]
+    (C-<down-mouse-3> <C-down-mouse-3>) |}];
+  return ()
 ;;
 
 let%expect_test "[create_exn] raise" =
   show_raise (fun () -> create_exn "C-xy");
-  [%expect {|
-    (raised ("C- must prefix a single character, not xy")) |}]
+  [%expect {| (raised ("C- must prefix a single character, not xy")) |}];
+  return ()
 ;;
 
 let%expect_test "[length]" =
@@ -41,7 +43,8 @@ let%expect_test "[length]" =
     (C-x 1)
     (a 1)
     (ab 2)
-    (A-C-M-S-x 1) |}]
+    (A-C-M-S-x 1) |}];
+  return ()
 ;;
 
 let%expect_test "[get]" =
@@ -52,14 +55,16 @@ let%expect_test "[get]" =
   [%expect {|
     a
     b
-    c |}]
+    c |}];
+  return ()
 ;;
 
 let%expect_test "[execute]" =
-  Current_buffer.set_temporarily_to_temp_buffer Sync (fun () ->
-    execute (create_exn "foo RET bar RET");
+  Current_buffer.set_temporarily_to_temp_buffer Async (fun () ->
+    let%bind () = execute (create_exn "foo RET bar RET") in
     print_s [%sexp (Current_buffer.contents () : Text.t)];
-    [%expect {| "foo\nbar\n" |}])
+    [%expect {| "foo\nbar\n" |}];
+    return ())
 ;;
 
 let print_am_executing () =
@@ -68,16 +73,16 @@ let print_am_executing () =
 
 let%expect_test "[am_executing] false" =
   print_am_executing ();
-  [%expect {|
-    false |}]
+  [%expect {| false |}];
+  return ()
 ;;
 
 let%expect_test "[am_executing] true" =
   defun_nullary_nil ("foo" |> Symbol.intern) [%here] ~interactive:No_arg (fun () ->
     print_am_executing ());
-  execute (create_exn "M-x foo");
-  [%expect {|
-    true |}]
+  let%bind () = execute (create_exn "M-x foo") in
+  [%expect {| true |}];
+  return ()
 ;;
 
 let%expect_test "[enqueue_unread_command_input]" =
@@ -87,24 +92,22 @@ let%expect_test "[enqueue_unread_command_input]" =
         (Current_buffer.value_exn Input_event.unread_command_input : Input_event.t list)]
   in
   show ();
-  [%expect {|
-    () |}];
+  [%expect {| () |}];
   enqueue_unread_command_input (create_exn "abc");
   show ();
-  [%expect {|
-    (a b c) |}];
-  Current_buffer.set_value Input_event.unread_command_input []
+  [%expect {| (a b c) |}];
+  Current_buffer.set_value Input_event.unread_command_input [];
+  return ()
 ;;
 
 let%expect_test "[read]" =
   enqueue_unread_command_input (create_exn "a");
   print_s [%sexp (read () ~prompt:"" : t)];
-  [%expect {|
-    a |}];
+  [%expect {| a |}];
   enqueue_unread_command_input (create_exn "C-x C-f");
   print_s [%sexp (read () ~prompt:"" : t)];
-  [%expect {|
-    "C-x C-f" |}]
+  [%expect {| "C-x C-f" |}];
+  return ()
 ;;
 
 let%expect_test "[to_list]" =
@@ -116,5 +119,6 @@ let%expect_test "[to_list]" =
     ("" ())
     (a (a))
     (RET (RET))
-    ("C-c C-a" (C-c C-a)) |}]
+    ("C-c C-a" (C-c C-a)) |}];
+  return ()
 ;;

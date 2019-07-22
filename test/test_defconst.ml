@@ -1,4 +1,5 @@
 open! Core_kernel
+open! Async_kernel
 open! Import
 open! Defconst
 
@@ -20,5 +21,6 @@ let%expect_test "defconst" =
   print_endline (Current_buffer.value_exn var);
   [%expect {| foo-value |}];
   print_s [%sexp (Load_history.defining_file symbol : string option)];
-  [%expect {| (<dir>/lib/ecaml/test/test_defconst.ml) |}]
+  [%expect {| (<dir>/lib/ecaml/test/test_defconst.ml) |}];
+  return ()
 ;;

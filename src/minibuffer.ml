@@ -4,13 +4,9 @@ open! Import
 module Q = struct
   include Q
 
-  let minibuffer_exit_hook = "minibuffer-exit-hook" |> Symbol.intern
-  and minibuffer_history = "minibuffer-history" |> Symbol.intern
+  let default_value = "default-value" |> Symbol.intern
+  and minibuffer_exit_hook = "minibuffer-exit-hook" |> Symbol.intern
   and minibuffer_setup_hook = "minibuffer-setup-hook" |> Symbol.intern
-  and read_from_minibuffer = "read-from-minibuffer" |> Symbol.intern
-  and y_or_n_p = "y-or-n-p" |> Symbol.intern
-  and y_or_n_p_with_timeout = "y-or-n-p-with-timeout" |> Symbol.intern
-  and yes_or_no_p = "yes-or-no-p" |> Symbol.intern
 end
 
 module Y_or_n_with_timeout = struct
@@ -46,20 +42,19 @@ module History = struct
   ;;
 end
 
-let history : History.t = T (Var.create Q.minibuffer_history Value.Type.(list string))
+let history : History.t = T Var.Wrap.("minibuffer-history" <: list string)
 
 module Blocking = struct
-  let y_or_n ~prompt =
-    Symbol.funcall1 Q.y_or_n_p (prompt |> Value.of_utf8_bytes) |> Value.to_bool
+  let y_or_n_p = Funcall.("y-or-n-p" <: string @-> return bool)
+  let y_or_n ~prompt = y_or_n_p prompt
+
+  let y_or_n_p_with_timeout =
+    Funcall.("y-or-n-p-with-timeout" <: string @-> float @-> Symbol.t @-> return value)
   ;;
 
   let y_or_n_with_timeout ~prompt ~timeout:(span, a) : _ Y_or_n_with_timeout.t =
     let result =
-      Symbol.funcall3
-        Q.y_or_n_p_with_timeout
-        (prompt |> Value.of_utf8_bytes)
-        (span |> Time_ns.Span.to_sec |> Value.of_float)
-        (Q.default_value |> Symbol.to_value)
+      y_or_n_p_with_timeout prompt (span |> Time_ns.Span.to_sec) Q.default_value
     in
     if Value.is_nil result
     then N
@@ -68,28 +63,32 @@ module Blocking = struct
     else Timeout a
   ;;
 
-  let yes_or_no ~prompt =
-    Symbol.funcall1 Q.yes_or_no_p (prompt |> Value.of_utf8_bytes) |> Value.to_bool
+  let yes_or_no_p = Funcall.("yes-or-no-p" <: string @-> return bool)
+  let yes_or_no ~prompt = yes_or_no_p prompt
+
+  let read_from_minibuffer =
+    Funcall.(
+      "read-from-minibuffer"
+      <: string
+         @-> nil_or string
+         @-> nil_or Keymap.t
+         @-> bool
+         @-> value
+         @-> nil_or string
+         @-> return string)
   ;;
 
   let read_from ~prompt ?initial_contents ?default_value ~history ?history_pos () =
     let history = History.symbol history |> Symbol.to_value in
-    Symbol.funcallN
-      Q.read_from_minibuffer
-      [ prompt |> Value.of_utf8_bytes
-      ; (match initial_contents with
-         | None -> Value.nil
-         | Some s -> s |> Value.of_utf8_bytes)
-      ; Value.nil
-      ; Value.nil
-      ; (match history_pos with
-         | None -> history
-         | Some i -> Value.cons history (i |> Value.of_int_exn))
-      ; (match default_value with
-         | None -> Value.nil
-         | Some s -> s |> Value.of_utf8_bytes)
-      ]
-    |> Value.to_utf8_bytes_exn
+    read_from_minibuffer
+      prompt
+      initial_contents
+      None
+      false
+      (match history_pos with
+       | None -> history
+       | Some i -> Value.cons history (i |> Value.of_int_exn))
+      default_value
   ;;
 end
 

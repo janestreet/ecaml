@@ -130,10 +130,13 @@ val insert : string -> unit
 val insert_text : Text.t -> unit
 
 (** [(describe-function 'insert-file-contents)] *)
-val insert_file_contents_exn : string -> unit
+val insert_file_contents_exn : ?replace:bool (** default is [false] *) -> string -> unit
 
 (** [(describe-function 'insert-file-contents-literally)] *)
-val insert_file_contents_literally : string -> unit
+val insert_file_contents_literally
+  :  ?replace:bool (** default is [false] *)
+  -> string
+  -> unit
 
 (** [(describe-function 'kill-word)]. *)
 val kill_word : int -> unit
@@ -198,3 +201,6 @@ val looking_at : ?update_last_match:bool (** default is [false] *) -> Regexp.t -
 
 (** [(describe-function 'recenter)] *)
 val recenter : ?screen_line:int -> unit -> unit
+
+(** [(describe-function 'function-called-at-point)] *)
+val function_called_at : unit -> Symbol.t option

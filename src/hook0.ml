@@ -38,5 +38,5 @@ let sexp_of_t _ t =
 ;;
 
 let create symbol ~hook_type =
-  { var = { symbol; type_ = Value.Type.(list Function.type_) }; hook_type }
+  { var = { symbol; type_ = Value.Type.(list Function.t) }; hook_type }
 ;;

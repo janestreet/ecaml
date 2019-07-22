@@ -17,13 +17,7 @@ end
 
 let save_sync save_function args f =
   let r = ref None in
-  let f =
-    Function.create [%here] ~args:[] (function
-      | [||] ->
-        r := Some (f ());
-        Value.nil
-      | _ -> assert false)
-  in
+  let f = Defun.lambda_nullary_nil [%here] (fun () -> r := Some (f ())) in
   ignore
     (Form.eval
        (Form.list
@@ -81,10 +75,10 @@ let save_selected_window sync_or_async f =
   save_ sync_or_async Q.save_selected_window [] f
 ;;
 
-let with_selected_frame frame sync_or_async f =
+let with_selected_frame sync_or_async frame f =
   save_ sync_or_async Q.with_selected_frame [ frame ] f
 ;;
 
-let with_selected_window window sync_or_async f =
+let with_selected_window sync_or_async window f =
   save_ sync_or_async Q.with_selected_window [ window ] f
 ;;

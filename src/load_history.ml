@@ -6,21 +6,16 @@ module Q = struct
   include Q
 
   let autoload = "autoload" |> Symbol.intern
-  and load_history = "load-history" |> Symbol.intern
+  and provide = "provide" |> Symbol.intern
   and require = "require" |> Symbol.intern
-  and symbol_file = "symbol-file" |> Symbol.intern
 end
 
 module Current_buffer = Current_buffer0
 
 type t = Value.t [@@deriving sexp_of]
 
-let load_history = Var.create Q.load_history Value.Type.value
-
-let defining_file symbol =
-  let result = Symbol.funcall1 Q.symbol_file (symbol |> Symbol.to_value) in
-  if Value.is_nil result then None else Some (result |> Value.to_utf8_bytes_exn)
-;;
+let load_history = Var.Wrap.("load-history" <: value)
+let defining_file = Funcall.("symbol-file" <: Symbol.t @-> return (nil_or string))
 
 module Entry = struct
   type t =
@@ -67,6 +62,7 @@ module Type = struct
         | Var -> Q.defvar |> Symbol.to_value)
   ;;
 
+  let t = type_
   let of_value_exn = Value.Type.of_value_exn type_
   let to_value = Value.Type.to_value type_
 end
@@ -110,6 +106,8 @@ let add_entry here (entry : Entry.t) =
   | _ -> ()
 ;;
 
+let append = Funcall.("append" <: value @-> value @-> return value)
+
 let update_emacs_with_entries ~chop_prefix ~in_dir =
   let addition =
     !entries
@@ -127,5 +125,5 @@ let update_emacs_with_entries ~chop_prefix ~in_dir =
   entries := [];
   Current_buffer.set_value
     load_history
-    (Symbol.funcall2 Q.append addition (Current_buffer.value_exn load_history))
+    (append addition (Current_buffer.value_exn load_history))
 ;;

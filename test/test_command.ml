@@ -1,4 +1,5 @@
 open! Core_kernel
+open! Async_kernel
 open! Import
 open! Command
 
@@ -12,7 +13,7 @@ let%expect_test "[Raw_prefix_argument]" =
     ~interactive:Raw_prefix
     (Returns Value.Type.unit)
     (let open Defun.Let_syntax in
-     let%map_open arg = required ("arg" |> Symbol.intern) value in
+     let%map_open arg = required "arg" value in
      print_s
        [%message
          ""
@@ -25,17 +26,19 @@ let%expect_test "[Raw_prefix_argument]" =
   is_command (f |> Symbol.to_value);
   [%expect {|
     true |}];
-  List.iter
-    [ Value.nil
-    ; 3 |> Value.of_int_exn
-    ; Value.list [ 4 |> Value.of_int_exn ]
-    ; "-" |> Value.intern
-    ]
-    ~f:(fun prefix_arg ->
-      print_s [%message (prefix_arg : Value.t)];
-      Command.call_interactively
-        (f |> Symbol.to_value)
-        ~raw_prefix_argument:(prefix_arg |> Raw_prefix_argument.of_value_exn));
+  let%bind () =
+    Deferred.List.iter
+      [ Value.nil
+      ; 3 |> Value.of_int_exn
+      ; Value.list [ 4 |> Value.of_int_exn ]
+      ; "-" |> Value.intern
+      ]
+      ~f:(fun prefix_arg ->
+        print_s [%message (prefix_arg : Value.t)];
+        Command.call_interactively
+          (f |> Symbol.to_value)
+          ~raw_prefix_argument:(prefix_arg |> Raw_prefix_argument.of_value_exn))
+  in
   [%expect
     {|
     (prefix_arg nil)
@@ -53,7 +56,8 @@ let%expect_test "[Raw_prefix_argument]" =
     (prefix_arg -)
     ((arg                 -)
      (for_current_command Minus)
-     (raw_prefix_argument Minus)) |}]
+     (raw_prefix_argument Minus)) |}];
+  return ()
 ;;
 
 let%expect_test "[call_interactively ~record:true]" =
@@ -64,15 +68,31 @@ let%expect_test "[call_interactively ~record:true]" =
   let most_recent_command () =
     print_s [%sexp (List.hd_exn (Command.history ()) : Form.t)]
   in
-  call_interactively (f1 |> Symbol.to_value) ~record:true;
+  let%bind () = call_interactively (f1 |> Symbol.to_value) ~record:true in
   most_recent_command ();
   [%expect {| (test-f1) |}];
-  call_interactively (f2 |> Symbol.to_value) ~record:false;
+  let%bind () = call_interactively (f2 |> Symbol.to_value) ~record:false in
   most_recent_command ();
   [%expect {| (test-f1) |}];
-  call_interactively (f2 |> Symbol.to_value) ~record:true;
+  let%bind () = call_interactively (f2 |> Symbol.to_value) ~record:true in
   most_recent_command ();
-  [%expect {| (test-f2) |}]
+  [%expect {| (test-f2) |}];
+  return ()
+;;
+
+let%expect_test "[call_interactively] with an Async command" =
+  let f = "test-f" |> Symbol.intern in
+  defun_nullary
+    f
+    [%here]
+    ~interactive:No_arg
+    (Returns_deferred Value.Type.unit)
+    (fun () ->
+       message_s [%message "called"];
+       return ());
+  let%bind () = call_interactively (f |> Symbol.to_value) in
+  [%expect {| called |}];
+  return ()
 ;;
 
 let give_emacs_chance_to_signal () = ignore (Text.of_utf8_bytes "ignoreme")
@@ -81,15 +101,17 @@ let%expect_test "quit" =
   show_raise (fun () ->
     Command.request_quit ();
     give_emacs_chance_to_signal ());
-  [%expect {| (raised quit) |}]
+  [%expect {| (raised quit) |}];
+  return ()
 ;;
 
 let%expect_test "inhibit-quit" =
   show_raise (fun () ->
-    Current_buffer.set_value_temporarily inhibit_quit true Sync ~f:(fun () ->
+    Current_buffer.set_value_temporarily Sync inhibit_quit true ~f:(fun () ->
       Command.request_quit ();
       give_emacs_chance_to_signal ()));
   [%expect {| "did not raise" |}];
   show_raise (fun () -> give_emacs_chance_to_signal ());
-  [%expect {| (raised quit) |}]
+  [%expect {| (raised quit) |}];
+  return ()
 ;;

@@ -5,6 +5,7 @@ module Q = struct
   include Q
 
   let abbrev_mode = "abbrev-mode" |> Symbol.intern
+  and buffer_read_only = "buffer-read-only" |> Symbol.intern
   and define_minor_mode = "define-minor-mode" |> Symbol.intern
   and goto_address_mode = "goto-address-mode" |> Symbol.intern
   and read_only_mode = "read-only-mode" |> Symbol.intern
@@ -70,9 +71,7 @@ let define_minor_mode
       ?(initialize = fun () -> ())
       ()
   =
-  let keymap_var =
-    Var.create (Symbol.intern (concat [ name |> Symbol.name; "-map" ])) Keymap.type_
-  in
+  let keymap_var = Var.Wrap.(concat [ name |> Symbol.name; "-map" ] <: Keymap.t) in
   Current_buffer.set_value keymap_var (Keymap.create ());
   let keymap = Current_buffer.value_exn keymap_var in
   List.iter define_keys ~f:(fun (keys, symbol) ->
@@ -97,11 +96,7 @@ let define_minor_mode
        ; Value.of_bool global |> Form.of_value_exn
        ; Form.list
            [ Q.funcall |> Form.symbol
-           ; Form.quote
-               (Function.create here ~args:[] (fun _ ->
-                  initialize ();
-                  Value.nil)
-                |> Function.to_value)
+           ; Form.quote (Defun.lambda_nullary_nil here initialize |> Function.to_value)
            ]
        ]);
   let t = { function_name = name; variable_name = name } in

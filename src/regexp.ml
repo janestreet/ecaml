@@ -1,23 +1,5 @@
 open! Core_kernel
 open! Import
-
-module Q = struct
-  include Q
-
-  let match_beginning = "match-beginning" |> Symbol.intern
-  and match_data = "match-data" |> Symbol.intern
-  and match_end = "match-end" |> Symbol.intern
-  and match_string = "match-string" |> Symbol.intern
-  and match_string_no_properties = "match-string-no-properties" |> Symbol.intern
-  and regexp_opt = "regexp-opt" |> Symbol.intern
-  and regexp_quote = "regexp-quote" |> Symbol.intern
-  and replace_match = "replace-match" |> Symbol.intern
-  and replace_regexp_in_string = "replace-regexp-in-string" |> Symbol.intern
-  and set_match_data = "set-match-data" |> Symbol.intern
-  and string_match = "string-match" |> Symbol.intern
-  and string_match_p = "string-match-p" |> Symbol.intern
-end
-
 module Current_buffer = Current_buffer0
 
 include Value.Make_subtype (struct
@@ -26,30 +8,13 @@ include Value.Make_subtype (struct
     let is_in_subtype = Value.is_string
   end)
 
-module F = struct
-  open Funcall
-  open Value.Type
-
-  let replace_regexp_in_string =
-    Q.replace_regexp_in_string
-    <: type_ @-> Text.type_ @-> Text.type_ @-> return Text.type_
-  ;;
-
-  let replace_match =
-    Q.replace_match
-    <: string @-> bool @-> bool @-> nil_or string @-> nil_or int @-> return nil
-  ;;
-end
-
 let of_pattern string = string |> Value.of_utf8_bytes |> of_value_exn
 let to_pattern t = t |> to_value |> Value.to_utf8_bytes_exn
 let of_rx rx = of_pattern (Rx.pattern rx)
 let match_anything = of_pattern ""
 let match_nothing = of_pattern "z^"
-
-let quote string =
-  Symbol.funcall1 Q.regexp_quote (string |> Value.of_utf8_bytes) |> of_value_exn
-;;
+let quote = Funcall.("regexp-quote" <: string @-> return t)
+let regexp_opt = Funcall.("regexp-opt" <: list string @-> return t)
 
 let any_quote strings =
   match strings with
@@ -58,9 +23,7 @@ let any_quote strings =
        regexp that matches anything, when it should return a regexp that matches
        nothing. *)
     match_nothing
-  | _ ->
-    Symbol.funcall1 Q.regexp_opt (Value.list (List.map strings ~f:Value.of_utf8_bytes))
-    |> of_value_exn
+  | _ -> regexp_opt strings
 ;;
 
 let any_pattern patterns = of_pattern (concat ~sep:{|\||} patterns)
@@ -87,10 +50,12 @@ module Last_match = struct
     }
   [@@deriving sexp_of]
 
+  let match_data = Funcall.("match-data" <: nullary @-> return value)
+
   let get () =
     match !Location.last with
     | No_match -> None
-    | _ as location -> Some { location; positions = Symbol.funcall0 Q.match_data }
+    | _ as location -> Some { location; positions = match_data () }
   ;;
 
   let get_exn () =
@@ -99,9 +64,11 @@ module Last_match = struct
     | None -> raise_s [%message "Prior [Regexp] match did not match"]
   ;;
 
+  let set_match_data = Funcall.("set-match-data" <: value @-> return nil)
+
   let set t =
     Location.last := t.location;
-    Symbol.funcall1_i Q.set_match_data t.positions
+    set_match_data t.positions
   ;;
 
   let save f =
@@ -112,11 +79,19 @@ module Last_match = struct
       | Some t -> set t)
   ;;
 
+  let match_string =
+    Funcall.("match-string" <: int @-> nil_or Text.t @-> return (nil_or Text.t))
+  ;;
+
+  let match_string_no_properties =
+    Funcall.(
+      "match-string-no-properties" <: int @-> nil_or Text.t @-> return (nil_or Text.t))
+  ;;
+
   let text_exn ?(subexp = 0) ?(text_properties = false) () =
     let result =
-      Symbol.funcall2
-        (if text_properties then Q.match_string else Q.match_string_no_properties)
-        (subexp |> Value.of_int_exn)
+      (if text_properties then match_string else match_string_no_properties)
+        subexp
         (match !Location.last with
          | Buffer expected ->
            let current = Current_buffer.get () in
@@ -127,55 +102,58 @@ module Last_match = struct
                  "[Regexp.Last_match.text_exn] called in wrong buffer"
                    (current : Buffer.t)
                    (expected : Buffer.t)];
-           Value.nil
+           None
          | No_match -> raise_s [%message "Prior [Regexp] match did not match"]
-         | Text text -> text |> Text.to_value)
+         | Text text -> Some text)
     in
-    if Value.is_nil result
-    then
+    match result with
+    | Some x -> x
+    | None ->
       raise_s
         [%message
-          "[Regexp.Last_match.text_exn] got [subexp] that did not match" (subexp : int)];
-    result |> Text.of_value_exn
+          "[Regexp.Last_match.text_exn] got [subexp] that did not match" (subexp : int)]
   ;;
 
-  let pos name q ?(subexp = 0) () =
+  let pos name f ?(subexp = 0) () =
     (match !Location.last with
      | No_match -> raise_s [%message "Prior [Regexp] match did not match"]
      | _ -> ());
-    let result = Symbol.funcall1 q (subexp |> Value.of_int_exn) in
-    if Value.is_nil result
-    then
+    match f subexp with
+    | Some i -> i
+    | None ->
       raise_s
         [%message
           (concat [ "[Regexp.Last_match."; name; "_exn] got [subexp] that did not match" ])
-            (subexp : int)];
-    result |> Value.to_int_exn
+            (subexp : int)]
   ;;
 
-  let start_exn = pos "start" Q.match_beginning
-  let end_exn = pos "end" Q.match_end
-  let replace str = F.replace_match str false false None None
+  let start_exn = pos "start" Funcall.("match-beginning" <: int @-> return (nil_or int))
+  let end_exn = pos "end" Funcall.("match-end" <: int @-> return (nil_or int))
+
+  let replace_match =
+    Funcall.(
+      "replace-match"
+      <: string @-> bool @-> bool @-> nil_or string @-> nil_or int @-> return nil)
+  ;;
+
+  let replace str = replace_match str false false None None
 end
+
+let string_match =
+  Funcall.("string-match" <: t @-> Text.t @-> nil_or int @-> return (nil_or int))
+;;
+
+let string_match_p =
+  Funcall.("string-match-p" <: t @-> Text.t @-> nil_or int @-> return (nil_or int))
+;;
 
 let match_ ?start ?(update_last_match = false) t text =
   let result =
-    Symbol.funcall3
-      (if update_last_match then Q.string_match else Q.string_match_p)
-      (t |> to_value)
-      (text |> Text.to_value)
-      (start
-       |> function
-       | None -> Value.nil
-       | Some i -> i |> Value.of_int_exn)
+    (if update_last_match then string_match else string_match_p) t text start
   in
-  if Value.is_nil result
-  then (
-    if update_last_match then Last_match.Location.last := No_match;
-    None)
-  else (
-    if update_last_match then Last_match.Location.last := Text text;
-    Some (result |> Value.to_int_exn))
+  if update_last_match
+  then Last_match.Location.last := if is_none result then No_match else Text text;
+  result
 ;;
 
 let does_match ?start ?update_last_match t text =
@@ -194,9 +172,14 @@ let extract ?start ?subexp t text =
 ;;
 
 let extract_string ?start ?subexp t s = extract ?start ?subexp t (Text.of_utf8_bytes s)
-let replace t ~with_ ~in_ = F.replace_regexp_in_string t with_ in_
+
+let replace_regexp_in_string =
+  Funcall.("replace-regexp-in-string" <: t @-> Text.t @-> Text.t @-> return Text.t)
+;;
+
+let replace t ~with_ ~in_ = replace_regexp_in_string t with_ in_
 
 let replace_string t ~with_ ~in_ =
-  F.replace_regexp_in_string t (with_ |> Text.of_utf8_bytes) (in_ |> Text.of_utf8_bytes)
+  replace_regexp_in_string t (with_ |> Text.of_utf8_bytes) (in_ |> Text.of_utf8_bytes)
   |> Text.to_utf8_bytes
 ;;

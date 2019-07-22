@@ -4,37 +4,32 @@ include Ecaml_value.Symbol
 
 module Q = struct
   let cl = "cl" |> intern
-  and fboundp = "fboundp" |> intern
-  and fset = "fset" |> intern
-  and gensym = "gensym" |> intern
-  and get = "get" |> intern
-  and make_symbol = "make-symbol" |> intern
-  and put = "put" |> intern
-  and symbol_function = "symbol-function" |> intern
-  and symbol_name = "symbol-name" |> intern
 end
 
-let name t = funcall1 Q.symbol_name (t |> to_value) |> Value.to_utf8_bytes_exn
+let name = Funcall.("symbol-name" <: t @-> return string)
 let compare_name t1 t2 = String.compare (name t1) (name t2)
-let function_is_defined t = funcall1 Q.fboundp (t |> to_value) |> Value.to_bool
+let function_is_defined = Funcall.("fboundp" <: t @-> return bool)
+let symbol_function = Funcall.("symbol-function" <: t @-> return value)
 
 let function_exn t =
   if not (function_is_defined t)
   then
     raise_s
       [%message "[Symbol.function_exn] of symbol with no function field" ~symbol:(t : t)];
-  funcall1 Q.symbol_function (t |> to_value)
+  symbol_function t
 ;;
 
-let create ~name = funcall1 Q.make_symbol (name |> Value.of_utf8_bytes) |> of_value_exn
+let make_symbol = Funcall.("make-symbol" <: string @-> return t)
+let create ~name = make_symbol name
 let require_cl = Memo.unit (fun () -> Ecaml_value.Feature.require Q.cl)
+let gensym = Funcall.("gensym" <: nil_or string @-> return t)
 
 let gensym ?prefix () =
   require_cl ();
-  funcall1 Q.gensym (prefix |> Value.Type.(nil_or string |> to_value)) |> of_value_exn
+  gensym prefix
 ;;
 
-let set_function t value = funcall2_i Q.fset (t |> to_value) value
+let set_function = Funcall.("fset" <: t @-> value @-> return nil)
 
 type symbol = t [@@deriving sexp_of]
 
@@ -46,11 +41,8 @@ module Property = struct
   [@@deriving sexp_of]
 
   let create name type_ = { name; type_ }
-
-  let get { name; type_ } sym =
-    funcall2 Q.get (sym |> to_value) (name |> to_value)
-    |> Value.Type.(nil_or type_ |> of_value_exn)
-  ;;
+  let get = Funcall.("get" <: t @-> t @-> return value)
+  let get { name; type_ } sym = get sym name |> Value.Type.(nil_or type_ |> of_value_exn)
 
   let get_exn t symbol =
     match get t symbol with
@@ -58,12 +50,11 @@ module Property = struct
     | None -> raise_s [%message (symbol : symbol) "has no property" (t.name : symbol)]
   ;;
 
-  let put { name; type_ } sym value =
-    funcall3_i
-      Q.put
-      (sym |> to_value)
-      (name |> to_value)
-      (value |> Value.Type.to_value type_)
+  let put = Funcall.("put" <: t @-> t @-> value @-> return nil)
+  let put { name; type_ } sym value = put sym name (value |> Value.Type.to_value type_)
+
+  let function_documentation =
+    create ("function-documentation" |> intern) Value.Type.value
   ;;
 end
 

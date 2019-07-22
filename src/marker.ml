@@ -1,17 +1,6 @@
 open! Core_kernel
 open! Import
 
-module Q = struct
-  include Q
-
-  let copy_marker = "copy-marker" |> Symbol.intern
-  and make_marker = "make-marker" |> Symbol.intern
-  and marker_buffer = "marker-buffer" |> Symbol.intern
-  and marker_insertion_type = "marker-insertion-type" |> Symbol.intern
-  and marker_position = "marker-position" |> Symbol.intern
-  and set_marker_insertion_type = "set-marker-insertion-type" |> Symbol.intern
-end
-
 include Value.Make_subtype (struct
     let name = "marker"
     let here = [%here]
@@ -32,36 +21,23 @@ module Insertion_type = struct
     | After_inserted_text -> Value.t
     | Before_inserted_text -> Value.nil
   ;;
+
+  let type_ =
+    Value.Type.create [%message "Marker.Insertion_type"] [%sexp_of: t] of_value to_value
+  ;;
+
+  let t = type_
 end
 
-let buffer t =
-  let value = Symbol.funcall1 Q.marker_buffer (t |> to_value) in
-  if Value.is_nil value then None else Some (value |> Buffer.of_value_exn)
+let buffer = Funcall.("marker-buffer" <: t @-> return (nil_or Buffer.t))
+let insertion_type = Funcall.("marker-insertion-type" <: t @-> return Insertion_type.t)
+
+let set_insertion_type =
+  Funcall.("set-marker-insertion-type" <: t @-> Insertion_type.t @-> return nil)
 ;;
 
-let insertion_type t =
-  Symbol.funcall1 Q.marker_insertion_type (t |> to_value) |> Insertion_type.of_value
-;;
-
-let set_insertion_type t insertion_type =
-  Symbol.funcall2_i
-    Q.set_marker_insertion_type
-    (t |> to_value)
-    (insertion_type |> Insertion_type.to_value)
-;;
-
-let position t =
-  let value = Symbol.funcall1 Q.marker_position (t |> to_value) in
-  if Value.is_nil value then None else Some (value |> Position.of_value_exn)
-;;
-
-let create () = Symbol.funcall0 Q.make_marker |> of_value_exn
-let copy t = Symbol.funcall1 Q.copy_marker (t |> to_value) |> of_value_exn
-
-let set t buffer position =
-  Symbol.funcall3_i
-    Q.set_marker
-    (t |> to_value)
-    (position |> Position.to_value)
-    (buffer |> Buffer.to_value)
-;;
+let position = Funcall.("marker-position" <: t @-> return (nil_or Position.t))
+let create = Funcall.("make-marker" <: nullary @-> return t)
+let copy = Funcall.("copy-marker" <: t @-> return t)
+let set_marker = Funcall.("set-marker" <: t @-> Position.t @-> Buffer.t @-> return nil)
+let set t buffer position = set_marker t position buffer

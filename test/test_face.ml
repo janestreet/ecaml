@@ -1,16 +1,17 @@
 open! Core_kernel
+open! Async_kernel
 open! Import
 open! Face
 
 let%expect_test "[font_family_list]" =
   print_s [%sexp (font_family_list () : string list)];
-  [%expect {|
-    () |}]
+  [%expect {| () |}];
+  return ()
 ;;
 
 let customization_group =
   Customization.Group.defgroup
-    ("test-group" |> Symbol.intern)
+    "test-group"
     [%here]
     ~docstring:"A test customization group"
     ~parents:[]
@@ -87,7 +88,8 @@ let%expect_test "[is_relative]" =
      (unspecified_is_relative true))
     ((Width                   Ultra_condensed)
      (is_relative             false)
-     (unspecified_is_relative true)) |}]
+     (unspecified_is_relative true)) |}];
+  return ()
 ;;
 
 let%expect_test "[merge]" =
@@ -116,7 +118,8 @@ let%expect_test "[merge]" =
   [%expect {|
     ((Color black)
      (Color red)
-     (merge (Color black))) |}]
+     (merge (Color black))) |}];
+  return ()
 ;;
 
 let%expect_test "[attribute]" =
@@ -141,7 +144,8 @@ let%expect_test "[attribute]" =
     (Strike_through Absent)
     (Underline Absent)
     (Weight Unspecified)
-    (Width Unspecified) |}]
+    (Width Unspecified) |}];
+  return ()
 ;;
 
 let%expect_test "[all_defined], [attributes]" =
@@ -693,6 +697,22 @@ let%expect_test "[all_defined], [attributes]" =
       (Background     Unspecified)
       (Stipple        unspecified)
       (Inherit (Face (mode-line)))))
+    (header-line-highlight (
+      (Font_family    Unspecified)
+      (Font_foundry   Unspecified)
+      (Width          Unspecified)
+      (Height         Unspecified)
+      (Weight         Unspecified)
+      (Slant          Unspecified)
+      (Underline      Unspecified)
+      (Overline       Unspecified)
+      (Strike_through Unspecified)
+      (Box            unspecified)
+      (Inverse_video  Unspecified)
+      (Foreground     Unspecified)
+      (Background     Unspecified)
+      (Stipple        unspecified)
+      (Inherit (Face (highlight)))))
     (help-argument-name (
       (Font_family    Unspecified)
       (Font_foundry   Unspecified)
@@ -721,6 +741,38 @@ let%expect_test "[all_defined], [attributes]" =
       (Strike_through Unspecified)
       (Box            unspecified)
       (Inverse_video  Yes)
+      (Foreground     Unspecified)
+      (Background     Unspecified)
+      (Stipple        unspecified)
+      (Inherit        Unspecified)))
+    (homoglyph (
+      (Font_family    Unspecified)
+      (Font_foundry   Unspecified)
+      (Width          Unspecified)
+      (Height         Unspecified)
+      (Weight         Unspecified)
+      (Slant          Unspecified)
+      (Underline      Unspecified)
+      (Overline       Unspecified)
+      (Strike_through Unspecified)
+      (Box            unspecified)
+      (Inverse_video  Unspecified)
+      (Foreground (Color brown))
+      (Background Unspecified)
+      (Stipple    unspecified)
+      (Inherit    Unspecified)))
+    (internal-border (
+      (Font_family    Unspecified)
+      (Font_foundry   Unspecified)
+      (Width          Unspecified)
+      (Height         Unspecified)
+      (Weight         Unspecified)
+      (Slant          Unspecified)
+      (Underline      Unspecified)
+      (Overline       Unspecified)
+      (Strike_through Unspecified)
+      (Box            unspecified)
+      (Inverse_video  Unspecified)
       (Foreground     Unspecified)
       (Background     Unspecified)
       (Stipple        unspecified)
@@ -789,6 +841,38 @@ let%expect_test "[all_defined], [attributes]" =
       (Background     Unspecified)
       (Stipple        unspecified)
       (Inherit        Unspecified)))
+    (line-number (
+      (Font_family    Unspecified)
+      (Font_foundry   Unspecified)
+      (Width          Unspecified)
+      (Height         Unspecified)
+      (Weight         Unspecified)
+      (Slant          Unspecified)
+      (Underline      Unspecified)
+      (Overline       Unspecified)
+      (Strike_through Unspecified)
+      (Box            unspecified)
+      (Inverse_video  Unspecified)
+      (Foreground     Unspecified)
+      (Background     Unspecified)
+      (Stipple        unspecified)
+      (Inherit (Face (shadow default)))))
+    (line-number-current-line (
+      (Font_family    Unspecified)
+      (Font_foundry   Unspecified)
+      (Width          Unspecified)
+      (Height         Unspecified)
+      (Weight         Unspecified)
+      (Slant          Unspecified)
+      (Underline      Unspecified)
+      (Overline       Unspecified)
+      (Strike_through Unspecified)
+      (Box            unspecified)
+      (Inverse_video  Unspecified)
+      (Foreground     Unspecified)
+      (Background     Unspecified)
+      (Stipple        unspecified)
+      (Inherit (Face (line-number)))))
     (link (
       (Font_family    Unspecified)
       (Font_foundry   Unspecified)
@@ -965,6 +1049,22 @@ let%expect_test "[all_defined], [attributes]" =
       (Background     Unspecified)
       (Stipple        unspecified)
       (Inherit        Unspecified)))
+    (mouse-drag-and-drop-region (
+      (Font_family    Unspecified)
+      (Font_foundry   Unspecified)
+      (Width          Unspecified)
+      (Height         Unspecified)
+      (Weight         Unspecified)
+      (Slant          Unspecified)
+      (Underline      Unspecified)
+      (Overline       Unspecified)
+      (Strike_through Unspecified)
+      (Box            unspecified)
+      (Inverse_video  Unspecified)
+      (Foreground     Unspecified)
+      (Background     Unspecified)
+      (Stipple        unspecified)
+      (Inherit (Face (region)))))
     (next-error (
       (Font_family    Unspecified)
       (Font_foundry   Unspecified)
@@ -981,6 +1081,22 @@ let%expect_test "[all_defined], [attributes]" =
       (Background     Unspecified)
       (Stipple        unspecified)
       (Inherit (Face (region)))))
+    (nobreak-hyphen (
+      (Font_family    Unspecified)
+      (Font_foundry   Unspecified)
+      (Width          Unspecified)
+      (Height         Unspecified)
+      (Weight         Unspecified)
+      (Slant          Unspecified)
+      (Underline      Unspecified)
+      (Overline       Unspecified)
+      (Strike_through Unspecified)
+      (Box            unspecified)
+      (Inverse_video  Unspecified)
+      (Foreground (Color brown))
+      (Background Unspecified)
+      (Stipple    unspecified)
+      (Inherit    Unspecified)))
     (nobreak-space (
       (Font_family    Unspecified)
       (Font_foundry   Unspecified)
@@ -1013,6 +1129,22 @@ let%expect_test "[all_defined], [attributes]" =
       (Background     Unspecified)
       (Stipple        unspecified)
       (Inherit (Face (isearch)))))
+    (read-multiple-choice-face (
+      (Font_family    Unspecified)
+      (Font_foundry   Unspecified)
+      (Width          Unspecified)
+      (Height         Unspecified)
+      (Weight         Bold)
+      (Slant          Unspecified)
+      (Underline      Unspecified)
+      (Overline       Unspecified)
+      (Strike_through Unspecified)
+      (Box            unspecified)
+      (Inverse_video  Unspecified)
+      (Foreground     Unspecified)
+      (Background     Unspecified)
+      (Stipple        unspecified)
+      (Inherit (Face (underline)))))
     (region (
       (Font_family    Unspecified)
       (Font_foundry   Unspecified)
@@ -1093,6 +1225,22 @@ let%expect_test "[all_defined], [attributes]" =
       (Background     Unspecified)
       (Stipple        unspecified)
       (Inherit (Face (underline)))))
+    (show-paren-match-expression (
+      (Font_family    Unspecified)
+      (Font_foundry   Unspecified)
+      (Width          Unspecified)
+      (Height         Unspecified)
+      (Weight         Unspecified)
+      (Slant          Unspecified)
+      (Underline      Unspecified)
+      (Overline       Unspecified)
+      (Strike_through Unspecified)
+      (Box            unspecified)
+      (Inverse_video  Unspecified)
+      (Foreground     Unspecified)
+      (Background     Unspecified)
+      (Stipple        unspecified)
+      (Inherit (Face (show-paren-match)))))
     (show-paren-mismatch (
       (Font_family    Unspecified)
       (Font_foundry   Unspecified)
@@ -1476,7 +1624,8 @@ let%expect_test "[all_defined], [attributes]" =
       (Foreground (Color gray40))
       (Background Unspecified)
       (Stipple    unspecified)
-      (Inherit    Unspecified))) |}]
+      (Inherit    Unspecified))) |}];
+  return ()
 ;;
 
 let%expect_test "[defface]" =
@@ -1507,5 +1656,6 @@ let%expect_test "[defface]" =
       (Foreground (Color cyan))
       (Background Unspecified)
       (Stipple    unspecified)
-      (Inherit    Unspecified))) |}]
+      (Inherit    Unspecified))) |}];
+  return ()
 ;;
