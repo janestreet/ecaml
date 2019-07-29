@@ -95,6 +95,11 @@ let test_ocaml_gc_handles_references_from_emacs ~make_emacs_reference =
     fun () -> Weak_pointer.is_some w
   in
   ignore (make_emacs_reference ~ocaml_value : Value.t);
+  (* When built with OCaml 4.08 or later, this test becomes flaky. Sometimes, the Emacs GC
+     doesn't garbage collect the above emacs reference, and so [alive_after = true]. We
+     don't understand why this is, but allocating a string of length >= 16 makes the test
+     succeed deterministically. *)
+  ignore (Value.of_utf8_bytes "aaaaaaaaaaaaaaaa" : Value.t);
   let alive_before = ocaml_value_is_alive () in
   make_ocaml_garbage_not_keep_emacs_values_alive ();
   (* We now make Emacs tell us the function id is garbage, at which point we remove the
