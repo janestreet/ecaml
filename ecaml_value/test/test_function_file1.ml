@@ -1,7 +1,7 @@
 open! Core_kernel
 open! Import
 
-let[@inline never] funcall0 f =
+let[@cold] funcall0 f =
   lambda_nullary_nil [%here] (fun () -> f ())
   |> Function.to_value
   |> Value.funcall0
