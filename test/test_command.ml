@@ -95,7 +95,7 @@ let%expect_test "[call_interactively] with an Async command" =
   return ()
 ;;
 
-let give_emacs_chance_to_signal () = ignore (Text.of_utf8_bytes "ignoreme")
+let give_emacs_chance_to_signal () = ignore (Text.of_utf8_bytes "ignoreme" : Text.t)
 
 let%expect_test "quit" =
   show_raise (fun () ->

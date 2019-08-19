@@ -173,7 +173,7 @@ let%expect_test "[wrap_existing]" =
     {|
     ("[Buffer_local.wrap_existing] on an Elisp variable that is not automatically buffer local"
      (symbol for-wrapping)) |}];
-  let _ = wrap ~make_buffer_local_always:true in
+  let (_ : string t) = wrap ~make_buffer_local_always:true in
   print_s [%sexp (Var.is_buffer_local_always var : bool)];
   [%expect {| true |}];
   return ()
