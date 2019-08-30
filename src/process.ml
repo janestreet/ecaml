@@ -141,7 +141,7 @@ let create_unix_network_process () ~filter ~name ~socket_path =
               [%here]
               ~docstring:"Network process filter."
               (Returns Value.Type.unit)
-              (let%map_open.Defun.Let_syntax () = return ()
+              (let%map_open.Defun () = return ()
                and process = required "process" t
                and output = required "output" Text.t in
                filter process output))
@@ -395,7 +395,7 @@ let extend_sentinel
     (Defun.lambda
        here
        returns
-       (let%map_open.Defun.Let_syntax () = return ()
+       (let%map_open.Defun () = return ()
         and process = required "process" value
         and event = required "event" value in
         let run_previous_sentinel () =
@@ -410,7 +410,7 @@ let extend_sentinel
           Background.run_in_background [%here] ~f:(fun () ->
             (sentinel ~event:(event |> Value.to_utf8_bytes_exn) : a))
         | Returns_deferred _ ->
-          let%bind.Async () =
+          let%bind.Deferred () =
             Value.Private.run_outside_async
               [%here]
               ~allowed_in_background:true

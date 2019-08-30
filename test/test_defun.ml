@@ -19,7 +19,7 @@ let%expect_test "[defun]" =
     here
     ~docstring:"Returns its own arguments as a sexp."
     (Returns return_type)
-    (let%map_open.Defun.Let_syntax () = return ()
+    (let%map_open.Defun () = return ()
      and i = required "int" int
      and s = required "string" string
      and s_o = optional "string-optional" string
@@ -60,7 +60,7 @@ let%expect_test "[defun ~interactive:(Args _)]" =
     ~docstring:""
     ~interactive:(Args (fun () -> return [ 13 |> Value.of_int_exn ]))
     (Returns Value.Type.unit)
-    (let%map_open.Defun.Let_syntax () = return ()
+    (let%map_open.Defun () = return ()
      and arg = required "arg" int in
      print_s [%sexp (arg : int)]);
   Symbol.funcall1_i symbol (15 |> Value.of_int_exn);
@@ -77,9 +77,9 @@ let%expect_test "[defun] tuple ordering" =
     here
     ~docstring:""
     (Returns return_type)
-    (let%map_open.Defun.Let_syntax () = return ()
+    (let%map_open.Defun () = return ()
      and difference =
-       let%map_open.Defun.Let_syntax minuend = required "minuend" Value.Type.int
+       let%map_open.Defun minuend = required "minuend" Value.Type.int
        and subtrahend = required "subtrahend" Value.Type.int in
        minuend - subtrahend
      in
@@ -128,7 +128,7 @@ let%expect_test "[defun] omitted optional arguments" =
     here
     ~docstring:""
     (Returns return_type)
-    (let%map_open.Defun.Let_syntax () = return ()
+    (let%map_open.Defun () = return ()
      and optional = optional "optional" int in
      [%message (optional : int option)]);
   print_funcallN symbol (List.init 1 ~f:Value.Type.(int |> to_value));
@@ -146,7 +146,7 @@ let%expect_test "[defun] type errors in required, optional, and rest arguments" 
       [%here]
       ~docstring:""
       (Returns Value.Type.unit)
-      (let%map_open.Defun.Let_syntax () = return ()
+      (let%map_open.Defun () = return ()
        and _ = make_arg "arg" int in
        assert false);
     require_does_raise [%here] ~hide_positions:true (fun () ->

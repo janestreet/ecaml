@@ -374,7 +374,7 @@ let set_revert_buffer_function here returns f =
     (Defun.lambda
        here
        returns
-       (let%map_open.Defun.Let_syntax () = return ()
+       (let%map_open.Defun () = return ()
         and () = required "ignore-auto" ignored
         and noconfirm = required "noconfirm" bool in
         f ~confirm:(not noconfirm)))

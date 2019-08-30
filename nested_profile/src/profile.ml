@@ -1,4 +1,5 @@
 open! Core_kernel
+open Float.Robustly_comparable
 open! Async_kernel
 
 module Start_location = struct

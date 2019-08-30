@@ -21,7 +21,7 @@ let%expect_test "mutual recursion between Emacs and OCaml" =
           (lambda
              [%here]
              (Returns Value.Type.int)
-             (let%map_open.Defun.Let_syntax () = return ()
+             (let%map_open.Defun () = return ()
               and i = required "int" int in
               loop i)));
   print_s [%message "result" ~_:(loop 5 : int)];

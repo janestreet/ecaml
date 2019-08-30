@@ -235,7 +235,7 @@ let defcustom
                      [%here]
                      (Returns Value.Type.unit)
                      (let var = Var.create symbol type_ in
-                      let%map_open.Defun.Let_syntax () = return ()
+                      let%map_open.Defun () = return ()
                       and _ = required "symbol" Symbol.t
                       and a = required "value" type_ in
                       on_set a;

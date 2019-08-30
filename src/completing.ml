@@ -230,7 +230,7 @@ let read_function_name =
        , Defun.lambda
            [%here]
            (Returns Value.Type.bool)
-           (let%map_open.Defun.Let_syntax () = return ()
+           (let%map_open.Defun () = return ()
             and f = required "f" Symbol.t in
             Symbol.function_is_defined f
             || is_some (Symbol.Property.get Symbol.Property.function_documentation f))

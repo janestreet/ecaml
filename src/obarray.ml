@@ -15,7 +15,7 @@ let iter t ~f =
     Defun.lambda
       [%here]
       (Returns Value.Type.unit)
-      (let%map_open.Defun.Let_syntax () = return ()
+      (let%map_open.Defun () = return ()
        and symbol = required "symbol" Symbol.t in
        f symbol)
   in

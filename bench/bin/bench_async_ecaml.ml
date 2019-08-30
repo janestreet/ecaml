@@ -5,7 +5,7 @@ let () =
   Command.run
     (Command.async
        ~summary:"Run ecaml_async benchmarks with the normal async_unix scheduler"
-       (let%map_open.Command.Let_syntax () = return () in
+       (let%map_open.Command () = return () in
         fun () ->
           let%bind time_per_ping =
             Ecaml_bench.Bench_async_ecaml.benchmark_small_pings ()

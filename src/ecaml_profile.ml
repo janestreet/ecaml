@@ -239,7 +239,7 @@ let initialize () =
     ~docstring:"profile an elisp function using Nested_profile"
     ~should_profile:false
     (Returns Value.Type.value)
-    (let%map_open.Defun.Let_syntax () = return ()
+    (let%map_open.Defun () = return ()
      and description = required "description" string
      and f = required "function" value in
      profile Sync (lazy [%message description]) (fun () -> Value.funcall0 f));
@@ -260,7 +260,7 @@ let initialize () =
             in
             return [ function_name |> Value.intern ]))
     (Returns Value.Type.unit)
-    (let%map_open.Defun.Let_syntax () = return ()
+    (let%map_open.Defun () = return ()
      and fn = required "function" Symbol.t in
      Advice.around_values
        ("ecaml-profile-wrapper-for-" ^ Symbol.name fn |> Symbol.intern)

@@ -332,7 +332,7 @@ let print_args =
   lambda
     [%here]
     (Returns Value.Type.value)
-    (let%map_open.Defun.Let_syntax () = return ()
+    (let%map_open.Defun () = return ()
      and args = rest "args" value in
      print_s [%message (args : t list)];
      list args)
@@ -421,7 +421,7 @@ let print_num_args =
   lambda
     [%here]
     (Returns Value.Type.value)
-    (let%map_open.Defun.Let_syntax () = return ()
+    (let%map_open.Defun () = return ()
      and args = rest "args" value in
      print_s [%message "" ~num_args:(List.length args : int)];
      list args)
