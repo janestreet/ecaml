@@ -356,7 +356,6 @@ let indent_region ?start ?end_ () =
 
 module Blocking = struct
   let change_major_mode = Major_mode.Blocking.change_in_current_buffer
-  let save = save_buffer
 end
 
 let change_major_mode major_mode = Major_mode.change_to major_mode ~in_:(get ())

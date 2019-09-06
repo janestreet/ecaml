@@ -137,7 +137,7 @@ let%expect_test "obsolete an undefined variable" =
 
     Documentation:
     Not documented as a variable. |}];
-  make_variable_obsolete obsolete ~current ~since:"now";
+  make_variable_obsolete obsolete ~current:(Some current) ~since:"now";
   show ();
   [%expect
     {|
@@ -185,7 +185,7 @@ let%expect_test "obsolete an defined variable" =
 
     Documentation:
     Not documented as a variable. |}];
-  make_variable_obsolete obsolete ~current ~since:"now";
+  make_variable_obsolete obsolete ~current:(Some current) ~since:"now";
   show ();
   [%expect
     {|
@@ -207,7 +207,7 @@ let%expect_test "obsolete an defined variable" =
 let%expect_test "define an obsoleted variable" =
   let obsolete = "obsolete3" |> Symbol.intern in
   let current = "current3" |> Symbol.intern in
-  make_variable_obsolete obsolete ~current ~since:"now";
+  make_variable_obsolete obsolete ~current:(Some current) ~since:"now";
   ignore
     (defvar
        obsolete
@@ -224,6 +224,30 @@ let%expect_test "define an obsoleted variable" =
 
       This variable is obsolete since now;
       use `current3' instead.
+
+    Documentation:
+    an obsolete variable |}];
+  return ()
+;;
+
+let%expect_test "define an obsoleted variable with no current replacement" =
+  let obsolete = "obsolete4" |> Symbol.intern in
+  make_variable_obsolete obsolete ~current:None ~since:"now";
+  ignore
+    (defvar
+       obsolete
+       [%here]
+       ~docstring:"an obsolete variable"
+       ~type_:Value.Type.bool
+       ~initial_value:false
+       ()
+     : _ Var.t);
+  print_endline (Help.describe_variable_text obsolete);
+  [%expect
+    {|
+    obsolete4's value is nil
+
+      This variable is obsolete since now.
 
     Documentation:
     an obsolete variable |}];

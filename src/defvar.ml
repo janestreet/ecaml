@@ -49,5 +49,5 @@ let defvaralias symbol here ?docstring ~alias_of () =
 
 let define_obsolete_alias obsolete here ?docstring ~alias_of ~since () =
   defvaralias obsolete here ?docstring ~alias_of ();
-  Obsolete.make_variable_obsolete obsolete ~current:alias_of ~since
+  Obsolete.make_variable_obsolete obsolete ~current:(Some alias_of) ~since
 ;;

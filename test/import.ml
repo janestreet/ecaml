@@ -1,13 +1,7 @@
 open! Core_kernel
 open! Async_kernel
+include Expect_test_helpers
 include Ecaml
-
-include (
-  Expect_test_helpers :
-    module type of struct
-    include Expect_test_helpers
-  end
-  with module Expect_test_config := Expect_test_helpers.Expect_test_config)
 
 let concat = String.concat
 

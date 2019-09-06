@@ -29,8 +29,10 @@ module Display_property = Display_property
 module Documentation = Documentation
 module Ecaml_profile = Ecaml_profile
 module Echo_area = Echo_area
+module Ediff = Ediff
 module Elisp_gc = Elisp_gc
 module Elisp_time = Elisp_time
+module Emacs_backtrace = Emacs_backtrace
 module Eval = Eval
 module Evil = Evil
 module Expect_test_config = Async_ecaml.Expect_test_config
@@ -83,6 +85,7 @@ module User = User
 module Value = Ecaml_value.Value
 module Valueable = Ecaml_value.Valueable
 module Var = Var
+module Variable_watcher = Variable_watcher
 module Vector = Vector
 module Window = Window
 module Working_directory = Working_directory
@@ -91,10 +94,9 @@ open! Async_kernel
 open! Import
 module Q = Q
 include Async_ecaml.Export
+include Composition_infix
 
-let ( << ) = ( << )
-and ( >> ) = ( >> )
-and concat = concat
+let concat = concat
 and defalias = Defun.defalias
 and defconst = Defconst.defconst
 and defconst_i = Defconst.defconst_i

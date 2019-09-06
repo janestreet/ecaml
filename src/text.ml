@@ -349,6 +349,13 @@ let propertize t properties =
   |> of_value_exn
 ;;
 
+let colorize t color =
+  propertize
+    t
+    [ T (Property_name.face, [ Face_spec.One.Attributes [ T (Foreground, Color color) ] ])
+    ]
+;;
+
 let get_text_property =
   Funcall.("get-text-property" <: int @-> Symbol.t @-> t @-> return value)
 ;;

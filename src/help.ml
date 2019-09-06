@@ -41,3 +41,18 @@ let describe_variable = Funcall.("describe-variable" <: Symbol.t @-> return nil)
 let describe_variable_text symbol =
   get_text_of_help ~invoke_help:(fun () -> describe_variable symbol)
 ;;
+
+let where_is_internal =
+  Funcall.(
+    "where-is-internal"
+    <: Symbol.t @-> nil_or Keymap.t @-> bool @-> return (nil_or Key_sequence.t))
+;;
+
+let where_is symbol = where_is_internal symbol None true
+
+let where_is_string symbol =
+  Option.value_map
+    (where_is symbol)
+    ~f:Key_sequence.description
+    ~default:(Symbol.name symbol)
+;;

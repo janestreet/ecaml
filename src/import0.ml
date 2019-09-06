@@ -11,8 +11,8 @@ module Valueable = Ecaml_value.Valueable
 let message = Ecaml_value.message
 let messagef = Ecaml_value.messagef
 let message_s = Ecaml_value.message_s
-let ( << ) f g x = f (g x)
-let ( >> ) f g x = g (f x)
+
+include Composition_infix
 
 let initialize_module =
   Printexc.record_backtrace true;

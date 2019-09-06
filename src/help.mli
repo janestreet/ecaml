@@ -20,3 +20,11 @@ val describe_variable_text : Symbol.t -> string
 val describe_minor_mode : Symbol.t -> unit
 
 val describe_minor_mode_text : Symbol.t -> string
+
+(** Return the key sequence bound to the given function. If multiple sequences are bound
+    to the given function, return the shortest.
+
+    [(describe-function 'where-is-internal)] *)
+val where_is : Symbol.t -> Key_sequence.t option
+
+val where_is_string : Symbol.t -> string

@@ -28,6 +28,16 @@ end
 (** [history] is the default history list used when reading from the minibuffer. *)
 val history : History.t
 
+module History_length : sig
+  type t =
+    | Truncate_after of int
+    | No_truncation
+  [@@deriving sexp_of]
+end
+
+(** [(describe-variable 'history-length)] *)
+val history_length : History_length.t Var.t
+
 (** [(describe-function 'read-from-minibuffer)]
     [(Info-goto-node "(elisp)Text from Minibuffer")] *)
 val read_from
@@ -61,6 +71,18 @@ val exit_hook : Hook.normal Hook.t
 (** [(describe-variable 'minibuffer-setup-hook)]
     [(Info-goto-node "(elisp)Minibuffer Misc")] *)
 val setup_hook : Hook.normal Hook.t
+
+(** [(describe-function 'active-minibuffer-window)] *)
+val active_window : unit -> Window.t option
+
+(** [(describe-function 'minibuffer-prompt)] *)
+val prompt : unit -> string option
+
+(** [(describe-function 'exit-minibuffer)]
+
+    This exits the minibuffer by throwing 'exit, so from OCaml's perspective it always
+    raises. *)
+val exit : unit -> never_returns
 
 module Blocking : sig
   (** [(describe-function 'y-or-n-p)]

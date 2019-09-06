@@ -282,7 +282,7 @@ let%expect_test "[Call.Input.File]" =
   let file = Caml.Filename.temp_file "" "" in
   Selected_window.Blocking.find_file file;
   Point.insert "foobar";
-  Current_buffer.Blocking.save ();
+  let%bind () = Current_buffer.save () in
   Buffer.Blocking.kill (Current_buffer.get ());
   test_call_result_exn () ~prog:"cat" ~args:[ file ];
   [%expect {|

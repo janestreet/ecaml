@@ -44,6 +44,31 @@ end
 
 let history : History.t = T Var.Wrap.("minibuffer-history" <: list string)
 
+module History_length = struct
+  type t =
+    | Truncate_after of int
+    | No_truncation
+  [@@deriving sexp_of]
+
+  let of_value_exn value =
+    if Value.is_integer value
+    then Truncate_after (Value.to_int_exn value)
+    else if Value.eq Value.t value
+    then No_truncation
+    else
+      raise_s [%sexp "Could not translate value to History_length.t", (value : Value.t)]
+  ;;
+
+  let to_value = function
+    | Truncate_after i -> Value.of_int_exn i
+    | No_truncation -> Value.t
+  ;;
+
+  let t = Value.Type.create [%sexp "history-length"] [%sexp_of: t] of_value_exn to_value
+end
+
+let history_length = Var.Wrap.("history-length" <: History_length.t)
+
 module Blocking = struct
   let y_or_n_p = Funcall.("y-or-n-p" <: string @-> return bool)
   let y_or_n ~prompt = y_or_n_p prompt
@@ -118,3 +143,16 @@ let read_from ~prompt ?initial_contents ?default_value ~history ?history_pos () 
 
 let exit_hook = Hook.create Q.minibuffer_exit_hook ~hook_type:Normal
 let setup_hook = Hook.create Q.minibuffer_setup_hook ~hook_type:Normal
+
+let active_window =
+  Funcall.("active-minibuffer-window" <: nullary @-> return (nil_or Window.t))
+;;
+
+let prompt = Funcall.("minibuffer-prompt" <: nullary @-> return (nil_or string))
+
+let exit =
+  let exit_minibuffer = Funcall.("exit-minibuffer" <: nullary @-> return nil) in
+  fun () ->
+    exit_minibuffer ();
+    assert false
+;;

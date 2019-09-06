@@ -7,4 +7,4 @@ open! Import
 val make_function_obsolete : Symbol.t -> current:Symbol.t -> since:string -> unit
 
 (** [(describe-function 'make-obsolete-variable)] *)
-val make_variable_obsolete : Symbol.t -> current:Symbol.t -> since:string -> unit
+val make_variable_obsolete : Symbol.t -> current:Symbol.t option -> since:string -> unit

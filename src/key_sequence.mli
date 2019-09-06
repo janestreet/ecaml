@@ -47,3 +47,6 @@ val read : unit -> prompt:string -> t
 val enqueue_unread_command_input : t -> unit
 
 val sigusr1 : t
+
+(** [(describe-function 'key-description)] *)
+val description : t -> string

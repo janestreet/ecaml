@@ -330,7 +330,6 @@ val revert : ?confirm:bool (** default is [false] *) -> unit -> unit Deferred.t
 
 module Blocking : sig
   val change_major_mode : Major_mode.t -> unit
-  val save : unit -> unit
 end
 
 (** [(describe-variable 'revert-buffer-function)] *)

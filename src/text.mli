@@ -122,6 +122,8 @@ end
     [(Info-goto-node "(elisp)Changing Properties")] *)
 val propertize : t -> Property.t list -> t
 
+val colorize : t -> Color.t -> t
+
 (** [property_value t ~at property_name] returns the value of [property_name] for the
     character after [at].  [at] is a zero-based index into [t]; [property_value] raises
     unless [0 <= at <= length t] (allowing [length] is different than OCaml).

@@ -12,5 +12,30 @@ include Value.Make_subtype (struct
     let is_in_subtype = Value.is_hash_table
   end)
 
-let create = Funcall.("make-hash-table" <: nullary @-> return t)
+module Test = struct
+  type t =
+    | Eq
+    | Eql
+    | Equal
+
+  let to_symbol = function
+    | Eq -> Symbol.intern "eq"
+    | Eql -> Symbol.intern "eql"
+    | Equal -> Symbol.intern "equal"
+  ;;
+end
+
+let make_hash_table = Funcall.("make-hash-table" <: Symbol.t @-> Symbol.t @-> return t)
+
+let create ?(test = Test.Eql) () =
+  make_hash_table (":test" |> Symbol.intern) (Test.to_symbol test)
+;;
+
 let keys = Funcall.("hash-table-keys" <: t @-> return (list string))
+let gethash = Funcall.("gethash" <: value @-> t @-> return (nil_or value))
+let find t key = gethash key t
+let puthash = Funcall.("puthash" <: value @-> value @-> t @-> return nil)
+let set t ~key ~data = puthash key data t
+let length = Funcall.("hash-table-count" <: t @-> return int)
+let remhash = Funcall.("remhash" <: value @-> t @-> return nil)
+let remove t key = remhash key t
