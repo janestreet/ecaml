@@ -76,13 +76,18 @@ module Record = struct
     ; stop : Time_ns.t
     ; message : Sexp.t Lazy.t
     ; children : t list
+    ; had_parallel_children : bool
     }
 
   let took t = Time_ns.diff t.stop t.start
 
-  let rec sexp_of_t ({ start = _; stop = _; message; children } as t) =
+  let rec sexp_of_t
+            ({ start = _; stop = _; message; children; had_parallel_children } as t)
+    =
     [%sexp
       (took t |> Time_ns.Span.to_string_hum : string)
+    , (if had_parallel_children then Some `parallel else None
+                                                         : ([ `parallel ] option[@sexp.option]))
     , (force message : Sexp.t)
     , (children : (t list[@sexp.omit_nil]))]
   ;;
@@ -170,7 +175,14 @@ module Record = struct
         let gap_fraction = Time_ns.Span.( // ) gap_took took in
         if Time_ns.Span.( = ) gap_took Time_ns.Span.zero || gap_fraction <. 0.01
         then ts
-        else { start; stop; message = lazy [%sexp "gap"]; children = [] } :: ts
+        else
+          { start
+          ; stop
+          ; message = lazy [%sexp "gap"]
+          ; children = []
+          ; had_parallel_children = false
+          }
+          :: ts
       in
       let last_stop, rev_children =
         List.fold
@@ -197,7 +209,11 @@ module Record = struct
       | Line_preceding_profile -> 1
     in
     let start = [%sexp (t.start : Time_ns.t)] |> Sexp.to_string in
-    let rec loop ({ message; children; _ } as t) ~depth ~parent_took =
+    let rec loop
+              ({ message; children; had_parallel_children; _ } as t)
+              ~depth
+              ~parent_took
+      =
       let took = took t in
       let percentage =
         match parent_took with
@@ -230,6 +246,7 @@ module Record = struct
               |> time_span_as_micros_with_two_digits_of_precision
               |> pad_left ~total_width:took_total_width
             ; " "
+            ; (if had_parallel_children then "[parallel] " else "")
             ; message |> sexp_to_string_on_one_line
             ; (match start_location with
                | Line_preceding_profile -> ""
@@ -278,31 +295,41 @@ module Frame = struct
     { message : Sexp.t Lazy.t
     ; start : Time_ns.Alternate_sexp.t Elide_in_test.t
     ; children : Record.t Queue.t
+    ; parent : t option
+    ; mutable pending_children : int
+    ; mutable max_pending_children : int
     }
   [@@deriving sexp_of]
 
-  let equal (t1 : t) t2 = phys_equal t1 t2
-  let create ~message = { message; start = now (); children = Queue.create () }
+  let create ~message ~parent =
+    { message
+    ; start = now ()
+    ; children = Queue.create ()
+    ; parent
+    ; pending_children = 0
+    ; max_pending_children = 0
+    }
+  ;;
 
-  let record { message; start; children } ~stop : Record.t =
-    { start; stop; message; children = children |> Queue.to_list }
+  let record
+        { message; start; children; parent = _; pending_children; max_pending_children }
+        ~stop
+    : Record.t
+    =
+    assert (pending_children = 0);
+    { start
+    ; stop
+    ; message
+    ; children = children |> Queue.to_list
+    ; had_parallel_children = max_pending_children > 1
+    }
   ;;
 end
 
 module Profile_context = struct
-  type t = Frame.t Stack.t
-
-  let t : t = Stack.create ()
-  let push frame = Stack.push t frame
-
-  let pop_exn () =
-    match Stack.pop t with
-    | None -> raise_s [%sexp "profile.ml bug: no context when a context was expected"]
-    | Some frame -> frame
-  ;;
-
-  let record_profile (record : Record.t) =
-    match Stack.top t with
+  let record_profile frame ~stop =
+    let record = Frame.record frame ~stop in
+    match frame.parent with
     | None ->
       if Time_ns.Span.( >= ) (Record.took record) !hide_top_level_if_less_than
       then (
@@ -314,11 +341,18 @@ module Profile_context = struct
             eprint_s
               [%message
                 "[Profile.output_profile] raised" (exn : exn) (backtrace : Backtrace.t)]))
-    | Some frame -> Queue.enqueue frame.children record
+    | Some parent -> Queue.enqueue parent.children record
   ;;
 
-  let reset () = Stack.clear t
-  let backtrace () = Stack.to_list t |> List.map ~f:(fun frame -> frame.message)
+  let backtrace frame =
+    let rec loop (frame : Frame.t) acc =
+      let acc = frame.message :: acc in
+      match frame.parent with
+      | None -> acc
+      | Some parent -> loop parent acc
+    in
+    List.rev (loop frame [])
+  ;;
 end
 
 let maybe_record_frame ?hide_if_less_than:local_hide_if_less_than (frame : Frame.t) ~stop
@@ -328,18 +362,17 @@ let maybe_record_frame ?hide_if_less_than:local_hide_if_less_than (frame : Frame
     Option.value local_hide_if_less_than ~default:!hide_if_less_than
   in
   if Time_ns.Span.( >= ) took hide_if_less_than
-  then Profile_context.record_profile (Frame.record frame ~stop)
+  then Profile_context.record_profile frame ~stop
 ;;
 
-let record_profile ?hide_if_less_than () ~expected_frame =
-  let frame = Profile_context.pop_exn () in
-  if not (Frame.equal frame expected_frame)
-  then (
-    Profile_context.reset ();
+let record_profile ?hide_if_less_than (frame : Frame.t) =
+  if frame.pending_children <> 0
+  then
     raise_s
-      [%sexp
-        "Nested [profile_async] exited out-of-order."
-      , { expected_frame : Frame.t; actual_frame = (frame : Frame.t) }]);
+      [%message
+        "Nested [profile Async] exited out-of-order."
+          ~message:(force frame.message : Sexp.t)
+          ~pending_children:(frame.pending_children : int)];
   maybe_record_frame ?hide_if_less_than frame ~stop:(now ())
 ;;
 
@@ -349,6 +382,16 @@ module Sync_or_async = struct
     | Async : _ Deferred.t t
   [@@deriving sexp_of]
 end
+
+let profile_context_key =
+  Univ_map.Key.create ~name:"Nested_profile.Profile.Frame" [%sexp_of: Frame.t]
+;;
+
+let current_profile_context () = Async_kernel_scheduler.find_local profile_context_key
+
+let with_profile_context frame ~f =
+  Async_kernel_scheduler.with_local profile_context_key frame ~f
+;;
 
 let profile
       (type a)
@@ -375,21 +418,39 @@ let profile
       | None -> message
       | Some tag -> lazy (List [ force message; tag ])
     in
-    let frame = Frame.create ~message in
-    Profile_context.push frame;
+    let parent = current_profile_context () in
+    let frame = Frame.create ~message ~parent in
+    let incr_pending_children =
+      match parent with
+      | None -> fun ~by:_ -> ()
+      | Some parent ->
+        fun ~by ->
+          parent.pending_children <- parent.pending_children + by;
+          parent.max_pending_children
+          <- Int.max parent.max_pending_children parent.pending_children
+    in
+    incr_pending_children ~by:1;
+    let f () = with_profile_context (Some frame) ~f in
     match sync_or_async with
     | Sync ->
-      Exn.protect ~f ~finally:(record_profile ?hide_if_less_than ~expected_frame:frame)
+      Exn.protect ~f ~finally:(fun () ->
+        record_profile ?hide_if_less_than frame;
+        incr_pending_children ~by:(-1))
     | Async ->
       Monitor.protect f ~finally:(fun () ->
-        record_profile ?hide_if_less_than ~expected_frame:frame ();
+        record_profile ?hide_if_less_than frame;
+        incr_pending_children ~by:(-1);
         return ()))
 ;;
 
 let backtrace () =
+  let frame = current_profile_context () in
   match !should_profile with
   | false -> None
-  | true -> Some (Profile_context.backtrace () |> List.map ~f:force)
+  | true ->
+    Some
+      (Option.value_map frame ~f:Profile_context.backtrace ~default:[]
+       |> List.map ~f:force)
 ;;
 
 module Private = struct
@@ -399,6 +460,15 @@ module Private = struct
 
   let record_frame ~start ~stop ~message =
     if !profiling_is_allowed && !should_profile
-    then maybe_record_frame { message; start; children = Queue.create () } ~stop
+    then
+      maybe_record_frame
+        { message
+        ; start
+        ; children = Queue.create ()
+        ; parent = current_profile_context ()
+        ; pending_children = 0
+        ; max_pending_children = 0
+        }
+        ~stop
   ;;
 end

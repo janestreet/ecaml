@@ -272,7 +272,28 @@ let initialize () =
             Sync
             (lazy [%sexp ((fn |> Symbol.to_value) :: args : Value.t list)])
             (fun () -> f args));
-     message (concat [ "You just added Ecaml profiling of ["; fn |> Symbol.name; "]" ]))
+     message (concat [ "You just added Ecaml profiling of ["; fn |> Symbol.name; "]" ]));
+  Defun.defun_nullary
+    ("ecaml-profile-test-parallel-profile" |> Symbol.intern)
+    [%here]
+    (Returns_deferred Value.Type.unit)
+    (fun () ->
+       profile
+         Async
+         (lazy [%sexp "The whole thing"])
+         (fun () ->
+            let%bind () =
+              profile
+                Async
+                (lazy [%sexp "branch1"])
+                (fun () -> Async.Clock.after (Time.Span.of_sec 1.))
+            and () =
+              profile
+                Async
+                (lazy [%sexp "branch2"])
+                (fun () -> Async.Clock.after (Time.Span.of_sec 0.8))
+            in
+            return ()))
 ;;
 
 module Private = struct

@@ -128,15 +128,9 @@ let%expect_test "bad call to profile_async" =
   let%bind () =
     [%expect
       {|
-    ("Nested [profile_async] exited out-of-order."
-     ((expected_frame (
-        (message outer)
-        (start   <elided-in-test>)
-        (children ())))
-      (actual_frame (
-        (message inner)
-        (start   <elided-in-test>)
-        (children ()))))) |}]
+    ("Nested [profile Async] exited out-of-order."
+     (message          outer)
+     (pending_children 1)) |}]
   in
   (* A bad call doesn't corrupt the profile stack. *)
   let%bind () = Test_profile_async.test () in
@@ -153,67 +147,68 @@ let%expect_test "bad call to profile_async" =
 ;;
 
 let%expect_test "parallel calls to profile_async" =
-  let old_try_with_log_exn = !Monitor.Expert.try_with_log_exn in
-  (* We have to set Monitor.Expert.try_with_log_exn because the exceptions we're raising
-     are raised to a monitor after they have exited, meaning they get Async.Logged, which
-     includes a time stamp.  Setting try_with_log_exn prevents timestamps from being
-     printed to the test output. *)
-  (Monitor.Expert.try_with_log_exn := fun exn -> print_s [%sexp (exn : exn)]);
+  let%bind () =
+    profile
+      Async
+      (lazy [%message "outer"])
+      (fun () ->
+         advance_clock_by (sec 0.1);
+         let%map () =
+           profile
+             Async
+             (lazy [%message "inner-a"])
+             (fun () ->
+                advance_clock_by (sec 0.01);
+                return ())
+         and () =
+           profile
+             Async
+             (lazy [%message "inner-b"])
+             (fun () ->
+                advance_clock_by (sec 0.01);
+                return ())
+         in
+         advance_clock_by (sec 0.1))
+  in
+  [%expect
+    {|
+    (220_000us [parallel] outer "1970-01-01 00:00:03.11Z" (
+       ( 45% 100_000us gap)
+       (  9%  20_000us inner-a)
+       (  9%  20_000us inner-b)
+       ( 45% 100_000us gap))) |}]
+;;
+
+
+let%expect_test "inner ends after outer ends" =
   let%bind () =
     show_raise_async (fun () ->
       profile
         Async
         (lazy [%message "outer"])
         (fun () ->
-           advance_clock_by (sec 0.1);
-           let%map () =
-             profile
-               Async
-               (lazy [%message "inner-a"])
-               (fun () ->
-                  advance_clock_by (sec 0.01);
-                  return ())
-           and () =
-             profile
-               Async
-               (lazy [%message "inner-b"])
-               (fun () ->
-                  advance_clock_by (sec 0.01);
-                  return ())
-           in
-           advance_clock_by (sec 0.1)))
+           don't_wait_for
+             (profile
+                Async
+                (lazy [%message "inner"])
+                (fun () ->
+                   Clock.advance clock ~by:(Time_ns.Span.of_ms 100.);
+                   return ()));
+           return ()))
   in
-  Monitor.Expert.try_with_log_exn := old_try_with_log_exn;
   [%expect
     {|
-    (monitor.ml.Error
-     "profile.ml bug: no context when a context was expected"
-     ("<backtrace elided in test>" "Caught by monitor finally"))
     (raised (
-      "Async finally"
-      (exn (
-        monitor.ml.Error
-        ("Nested [profile_async] exited out-of-order."
-         ((expected_frame (
-            (message inner-a)
-            (start   <elided-in-test>)
-            (children ())))
-          (actual_frame (
-            (message inner-b)
-            (start   <elided-in-test>)
-            (children ())))))
-        ("<backtrace elided in test>" "Caught by monitor finally")))
-      (finally_exn (
-        monitor.ml.Error
-        "profile.ml bug: no context when a context was expected"
-        ("<backtrace elided in test>" "Caught by monitor finally"))))) |}]
+      "Nested [profile Async] exited out-of-order."
+      (message          outer)
+      (pending_children 1))) |}]
 ;;
 
 let%expect_test "hide_if_less_than" =
   Test_profile.test () ~hide_if_less_than:(Time_ns.Span.of_ms 300.);
   [%expect
     {|
-    (1_000_000us foo "1970-01-01 00:00:03.23Z" (
+    (1_000_000us foo "1970-01-01 00:00:03.43Z" (
        ( 20%   200_000us gap)
        ( 50%   500_000us baz)
        ( 30%   300_000us gap))) |}]
@@ -225,7 +220,7 @@ let%expect_test "hide_if_less_than async" =
   in
   [%expect
     {|
-    (1_000_000us foo "1970-01-01 00:00:04.23Z" (
+    (1_000_000us foo "1970-01-01 00:00:04.43Z" (
        ( 20%   200_000us gap)
        ( 50%   500_000us baz)
        ( 30%   300_000us gap))) |}]
@@ -252,7 +247,7 @@ let%expect_test "calling [profile] within [output_profile]" =
     {|
     function supplied to [profile] ran
     function supplied to [profile] ran
-    (1_000_000us context "1970-01-01 00:00:05.23Z") |}]
+    (1_000_000us context "1970-01-01 00:00:05.43Z") |}]
 ;;
 
 let%expect_test "calling [profile] within the [Sexp.t Lazy.t] supplied to [profile]" =
@@ -269,7 +264,7 @@ let%expect_test "calling [profile] within the [Sexp.t Lazy.t] supplied to [profi
     outer call
     function supplied to [profile] ran
     ((rendering_took 1_000_000us)
-     (1_000_000us "outer context" "1970-01-01 00:00:07.23Z")) |}]
+     (1_000_000us "outer context" "1970-01-01 00:00:07.43Z")) |}]
 ;;
 
 let%expect_test "long line" =
@@ -279,7 +274,7 @@ let%expect_test "long line" =
       (lazy [%sexp "more than ten characters"])
       (fun () -> advance_clock_by (sec 1.)));
   [%expect {|
-    (1_000_000us ... "1970-01-01 00:00:09.23Z") |}]
+    (1_000_000us ... "1970-01-01 00:00:09.43Z") |}]
 ;;
 
 let%expect_test "zero time" =
@@ -292,7 +287,7 @@ let%expect_test "zero time" =
   [%expect
     {|
     ((rendering_took 0us)
-     (0us outer "1970-01-01 00:00:10.23Z" (
+     (0us outer "1970-01-01 00:00:10.43Z" (
        (  _% 0us inner)))) |}]
 ;;
 
@@ -300,7 +295,7 @@ let%expect_test "[start_location := Line_preceding_profile]" =
   Ref.set_temporarily start_location Line_preceding_profile ~f:(fun () ->
     profile Sync (lazy [%sexp "foo"]) (fun () -> advance_clock_by (sec 1.)));
   [%expect {|
-    ("1970-01-01 00:00:10.23Z"
+    ("1970-01-01 00:00:10.43Z"
      (1_000_000us foo)) |}]
 ;;
 
@@ -350,7 +345,7 @@ let%expect_test "[profile] message that raises" =
       (fun () -> advance_clock_by (sec 1.)));
   [%expect
     {|
-    (1_000_000us ("[Profile.profile] message raised" (exn raising) (backtrace ("<backtrace elided in test>"))) "1970-01-01 00:00:13.23Z") |}]
+    (1_000_000us ("[Profile.profile] message raised" (exn raising) (backtrace ("<backtrace elided in test>"))) "1970-01-01 00:00:13.43Z") |}]
 ;;
 
 let%expect_test "[backtrace]" =
@@ -391,7 +386,7 @@ let%expect_test "[tag_frames_with]" =
     [%expect
       {|
     function supplied to [profile] ran
-    (1_000_000us context "1970-01-01 00:00:14.23Z") |}]
+    (1_000_000us context "1970-01-01 00:00:14.43Z") |}]
   in
   Ref.set_temporarily
     tag_frames_with
@@ -400,7 +395,7 @@ let%expect_test "[tag_frames_with]" =
   [%expect
     {|
     function supplied to [profile] ran
-    (1_000_000us (context "hello world") "1970-01-01 00:00:15.23Z") |}]
+    (1_000_000us (context "hello world") "1970-01-01 00:00:15.43Z") |}]
 ;;
 
 let%expect_test "[tag_frames_with] runs before f" =
@@ -417,7 +412,7 @@ let%expect_test "[tag_frames_with] runs before f" =
            advance_clock_by (sec 1.)));
   [%expect
     {|
-      (1_000_000us ("Increment some_int" ((some_int 0))) "1970-01-01 00:00:16.23Z") |}]
+      (1_000_000us ("Increment some_int" ((some_int 0))) "1970-01-01 00:00:16.43Z") |}]
 ;;
 
 let%expect_test "[tag_frames_with] raises" =
@@ -428,5 +423,5 @@ let%expect_test "[tag_frames_with] raises" =
   [%expect
     {|
     function supplied to [profile] ran
-    (1_000_000us (context ("[Profile.tag_frames_with] raised" (exn "Hello world") (backtrace ("<backtrace elided in test>")))) "1970-01-01 00:00:17.23Z") |}]
+    (1_000_000us (context ("[Profile.tag_frames_with] raised" (exn "Hello world") (backtrace ("<backtrace elided in test>")))) "1970-01-01 00:00:17.43Z") |}]
 ;;

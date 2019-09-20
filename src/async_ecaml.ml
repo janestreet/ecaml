@@ -298,9 +298,19 @@ let in_emacs_have_lock_do_cycle () =
              their deferreds get filled. *)
           let ran_pending_calls = run_pending_emacs_calls () in
           t.am_running_async_cycle <- true;
+          let old_execution_context =
+            Async_kernel.Async_kernel_scheduler.current_execution_context ()
+          in
           Exn.protect
             ~f:(fun () -> Async_kernel.Async_kernel_scheduler.Private.(run_cycle (t ())))
-            ~finally:(fun () -> t.am_running_async_cycle <- false);
+            ~finally:(fun () ->
+              (* Restore the execution context effective before running cycles.  This
+                 prevents background jobs from raising exceptions to random monitors,
+                 because the execution context of whichever job happened to run last would
+                 have been left intact. *)
+              Async_kernel.Async_kernel_scheduler.Private.(
+                set_execution_context (t ()) old_execution_context);
+              t.am_running_async_cycle <- false);
           if max_cycles > 0 && (ran_pending_calls || Scheduler.num_pending_jobs () > 0)
           then run_cycles (max_cycles - 1)
         in
@@ -400,11 +410,6 @@ let start_scheduler () =
                   in_emacs_have_lock_do_cycle ())
               with
               | exn -> message_s [%sexp "Error in async keepalive timer", (exn : exn)]));
-    Set_once.set_exn Ecaml_callback.set_async_execution_context [%here] (fun () ->
-      if not t.am_running_async_cycle
-      then
-        Async_kernel.Async_kernel_scheduler.Private.(
-          set_execution_context (t ()) main_execution_context));
     (* The default [max_inter_cycle_timeout] is much smaller.  Setting it to 1s reduces
        load on emacs. *)
     Scheduler.set_max_inter_cycle_timeout
@@ -467,7 +472,7 @@ module Private = struct
                 ~profile_backtrace:
                   (Nested_profile.Profile.backtrace () : Sexp.t list option)];
         let rec run_cycles_until_filled deferred =
-          if Command.quit_requested ()
+          if Ref.set_temporarily Profile.should_profile false ~f:Command.quit_requested
           then error_s [%message "Blocking operation interrupted"]
           else (
             match Async.Deferred.peek deferred with
@@ -496,7 +501,7 @@ module Private = struct
     if not allowed_in_background
     then
       Background.assert_foreground
-        ~message:[%sexp "[run_oustide_async] called unsafely in background"]
+        ~message:[%sexp "[run_outside_async] called unsafely in background"]
         here;
     let open Async in
     Deferred.create (fun result ->
@@ -658,5 +663,33 @@ let initialize () =
               then message_s [%message "Slow [In_thread.run]" (elapsed : Time_ns.Span.t)];
               loop (i - 1))
           in
-          loop 100))
+          loop 100));
+  let dummy_key = Univ_map.Key.create ~name:"dummy" [%sexp_of: int] in
+  Defun.defun_nullary_nil
+    ("ecaml-async-test-execution-context-reset" |> Symbol.intern)
+    [%here]
+    ~docstring:
+      {|
+Demonstrate a bug in Async_ecaml's handling of execution contexts.
+
+In non-async Ecaml defuns, running some Elisp code that then calls back into Ecaml will
+not preserve the current Async execution context.
+|}
+    ~interactive:No_arg
+    (fun () ->
+       (* The key-value pair starts out absent. *)
+       assert (Option.is_none (Async.Scheduler.find_local dummy_key));
+       let print_data =
+         Function.create_nullary [%here] (fun () ->
+           match Async.Scheduler.find_local dummy_key with
+           | None -> Echo_area.message "BUG: execution context is not preserved"
+           | Some data ->
+             Echo_area.message_s [%message "Execution context preserved" (data : int)])
+         |> Function.to_value
+       in
+       Async.Scheduler.with_local dummy_key (Some 42) ~f:(fun () ->
+         (* The key-value pair is present. *)
+         assert (Option.is_some (Async.Scheduler.find_local dummy_key));
+         Form.list [ Form.symbol ("funcall" |> Symbol.intern); Form.quote print_data ]
+         |> Form.eval_i))
 ;;

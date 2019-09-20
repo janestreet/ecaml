@@ -20,8 +20,6 @@ val end_of_module_initialization : (unit -> unit) t
     enter OCaml from emacs, provided of course that there are values to collect. *)
 val free_embedded_caml_values : (Caml_embedded_id.t array -> unit) t
 
-val set_async_execution_context : (unit -> unit) Set_once.t
-
 (** [report_exn_when_calling_callback] is called when the infrastructure that calls a
     callbacks raises.  This is a rare situation, e.g. [Out_of_memory]. *)
 val report_exn_when_calling_callback : exn -> unit

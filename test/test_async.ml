@@ -269,7 +269,7 @@ let%expect_test "[run_outside_async ~allowed_in_background:false]" =
     ("Assertion failed -- running in background job"
      ((background_job_started_at app/emacs/lib/ecaml/test/test_async.ml:LINE:COL)
       (assertion_failed_at app/emacs/lib/ecaml/test/test_async.ml:LINE:COL))
-     "[run_oustide_async] called unsafely in background") |}];
+     "[run_outside_async] called unsafely in background") |}];
   return ()
 ;;
 

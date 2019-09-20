@@ -1,7 +1,7 @@
 (library (name ecaml_value) (public_name ecaml.ecaml_value)
  (libraries async_unix core_kernel nested_profile core_kernel.univ)
- (preprocess (pps ppx_jane -annotated-ignores)) (c_flags :standard -std=c99)
- (c_names ecaml_stubs generated_stubs))
+ (c_flags :standard -std=c99) (c_names ecaml_stubs generated_stubs)
+ (preprocess (pps ppx_jane)))
 
 (rule (targets generated_stubs.c) (deps ../gen/gen_c.exe)
  (action
