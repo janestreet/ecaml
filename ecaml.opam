@@ -18,7 +18,7 @@ depends: [
   "core_kernel"
   "expect_test_helpers_kernel"
   "ppx_jane"
-  "dune"                       {build & >= "1.5.1"}
+  "dune"                       {>= "1.5.1"}
 ]
 synopsis: "Library for writing Emacs plugin in OCaml"
 description: "
