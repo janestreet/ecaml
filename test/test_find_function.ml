@@ -10,7 +10,9 @@ module Q = struct
 end
 
 let%expect_test "[find_function]" =
-  Echo_area.inhibit_messages Sync (fun () -> find_function Q.find_function);
+  let%bind () =
+    Echo_area.inhibit_messages Async (fun () -> find_function Q.find_function)
+  in
   print_s [%sexp (Current_buffer.get () : Buffer.t)];
   [%expect {| "#<buffer find-func.el.gz>" |}];
   return ()

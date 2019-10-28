@@ -59,15 +59,6 @@ let%expect_test "[set_temporarily]" =
   return ()
 ;;
 
-let%expect_test "[Blocking.find_file]" =
-  Blocking.find_file "test_selected_window.ml";
-  print_endline
-    (String.sub ~pos:0 ~len:10 (Current_buffer.contents () |> Text.to_utf8_bytes));
-  [%expect {| open! Core |}];
-  Buffer.Blocking.kill (Current_buffer.get ());
-  return ()
-;;
-
 let%expect_test "[find_file]" =
   let%bind () = find_file "test_selected_window.ml" in
   print_endline

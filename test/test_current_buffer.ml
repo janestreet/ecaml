@@ -213,7 +213,7 @@ let%expect_test "[file_name]" =
   in
   show_file_basename ();
   [%expect {| () |}];
-  Selected_window.Blocking.find_file "test_current_buffer.ml";
+  let%bind () = Selected_window.find_file "test_current_buffer.ml" in
   show_file_basename ();
   [%expect {| (test_current_buffer.ml) |}];
   Buffer.Blocking.kill (get ());
@@ -1015,6 +1015,25 @@ let%expect_test "[save_excursion Async] from background job" =
   return ()
 ;;
 
+let%expect_test "[set_temporarily] killing old buffer" =
+  let buffer = Buffer.create ~name:"z" in
+  let old = get () in
+  let%bind () =
+    set_temporarily Async buffer ~f:(fun () ->
+      let%bind () = Buffer.kill old in
+      show ();
+      [%expect {| "#<buffer z>" |}];
+      return ())
+  in
+  show ();
+  [%expect {| "#<buffer z>" |}];
+  print_s [%sexp (Buffer.is_live (get ()) : bool)];
+  [%expect {| true |}];
+  print_s [%sexp (Buffer.is_live old : bool)];
+  [%expect {| false |}];
+  return ()
+;;
+
 let%expect_test "[set_revert_buffer_function]" =
   set_temporarily_to_temp_buffer Async (fun () ->
     set_revert_buffer_function [%here] (Returns Value.Type.unit) (fun ~confirm ->
@@ -1060,7 +1079,7 @@ let%expect_test "[kill] with deferred kill hook" =
 
 let%expect_test "[save]" =
   let file = Caml.Filename.temp_file "" "" in
-  Selected_window.Blocking.find_file file;
+  let%bind () = Selected_window.find_file file in
   Point.insert "foobar";
   let%bind () = save () in
   let%bind () = kill () in
@@ -1078,24 +1097,24 @@ let%expect_test "[bury]" =
   print_s [%sexp (Buffer.all_live () : Buffer.t list)];
   [%expect
     {|
-    ("#<buffer *scratch*>"
-     "#<buffer  *Minibuf-0*>"
-     "#<buffer *Messages*>"
-     "#<buffer  *code-conversion-work*>"
-     "#<buffer b1>"
-     "#<buffer b2>"
-     "#<buffer zzz>") |}];
-  bury ();
-  print_s [%sexp (Buffer.all_live () : Buffer.t list)];
-  [%expect
-    {|
     ("#<buffer  *Minibuf-0*>"
      "#<buffer *Messages*>"
      "#<buffer  *code-conversion-work*>"
      "#<buffer b1>"
      "#<buffer b2>"
      "#<buffer zzz>"
-     "#<buffer *scratch*>") |}];
+     "#<buffer z>") |}];
+  bury ();
+  print_s [%sexp (Buffer.all_live () : Buffer.t list)];
+  [%expect
+    {|
+    ("#<buffer  *Minibuf-0*>"
+     "#<buffer  *code-conversion-work*>"
+     "#<buffer b1>"
+     "#<buffer b2>"
+     "#<buffer zzz>"
+     "#<buffer z>"
+     "#<buffer *Messages*>") |}];
   return ()
 ;;
 
@@ -1109,15 +1128,19 @@ let%expect_test "[paragraph_start], [paragraph_separate]" =
 ;;
 
 let%expect_test "[describe_mode]" =
-  Current_buffer.set_temporarily_to_temp_buffer Sync (fun () ->
-    Current_buffer.Blocking.change_major_mode Major_mode.Fundamental.major_mode;
-    describe_mode ();
-    Selected_window.other_window 1;
-    print_endline
-      (Current_buffer.contents ()
-       |> Text.to_utf8_bytes
-       |> String.tr ~target:'\012' ~replacement:'\n');
-    Selected_window.quit ());
+  let%bind () =
+    Current_buffer.set_temporarily_to_temp_buffer Async (fun () ->
+      let%map () =
+        Current_buffer.change_major_mode Major_mode.Fundamental.major_mode
+      in
+      describe_mode ();
+      Selected_window.other_window 1;
+      print_endline
+        (Current_buffer.contents ()
+         |> Text.to_utf8_bytes
+         |> String.tr ~target:'\012' ~replacement:'\n');
+      Selected_window.quit ())
+  in
   [%expect
     {|
     Type C-x 1 to delete the help window, C-M-v to scroll help.

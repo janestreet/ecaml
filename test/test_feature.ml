@@ -41,6 +41,7 @@ let%expect_test "[all_provided]" =
 (abbrev
  backquote
  base64
+ bookmark
  button
  case-table
  cham
@@ -118,6 +119,7 @@ let%expect_test "[all_provided]" =
  obarray
  overlay
  page
+ pp
  prog-mode
  regexp-opt
  register

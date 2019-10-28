@@ -45,54 +45,57 @@ let entries =
 ;;
 
 let draw_and_print ?sort_by entries =
-  Current_buffer.Blocking.change_major_mode (major_mode t);
+  let%bind () = Current_buffer.change_major_mode (major_mode t) in
   draw ?sort_by t entries;
-  printf "%s" (Current_buffer.contents () |> Text.to_utf8_bytes)
+  printf "%s" (Current_buffer.contents () |> Text.to_utf8_bytes);
+  return ()
 ;;
 
 (* The header is drawn in an overlay, and so is not part of the buffer contents. *)
 let%expect_test "draw table" =
-  Current_buffer.set_temporarily_to_temp_buffer Sync (fun () ->
-    draw_and_print entries;
+  Current_buffer.set_temporarily_to_temp_buffer Async (fun () ->
+    let%bind () = draw_and_print entries in
     [%expect {|
       b    1   y
       a    2   z
-      c    3   x |}]);
-  return ()
+      c    3   x |}];
+    return ())
 ;;
 
 let%expect_test "sort" =
-  Current_buffer.set_temporarily_to_temp_buffer Sync (fun () ->
-    draw_and_print ~sort_by:("s1", `Ascending) entries;
+  Current_buffer.set_temporarily_to_temp_buffer Async (fun () ->
+    let%bind () = draw_and_print ~sort_by:("s1", `Ascending) entries in
     [%expect {|
       a    2   z
       b    1   y
       c    3   x |}];
-    draw_and_print ~sort_by:("s1", `Descending) entries;
+    let%bind () = draw_and_print ~sort_by:("s1", `Descending) entries in
     [%expect {|
       c    3   x
       b    1   y
       a    2   z |}];
-    draw_and_print ~sort_by:("s3", `Ascending) entries;
+    let%bind () = draw_and_print ~sort_by:("s3", `Ascending) entries in
     [%expect {|
       c    3   x
       b    1   y
       a    2   z |}];
-    draw_and_print ~sort_by:("s3", `Descending) entries;
+    let%bind () = draw_and_print ~sort_by:("s3", `Descending) entries in
     [%expect {|
       a    2   z
       b    1   y
       c    3   x |}];
-    require_does_raise [%here] (fun () ->
-      draw_and_print ~sort_by:("i2", `Ascending) entries);
+    let%bind () =
+      require_does_raise_async [%here] (fun () ->
+        draw_and_print ~sort_by:("i2", `Ascending) entries)
+    in
     [%expect {|
-      ("Column is not sortable" i2) |}]);
-  return ()
+      ("Column is not sortable" i2) |}];
+    return ())
 ;;
 
 let%expect_test "id at point" =
-  Current_buffer.set_temporarily_to_temp_buffer Sync (fun () ->
-    draw_and_print entries;
+  Current_buffer.set_temporarily_to_temp_buffer Async (fun () ->
+    let%bind () = draw_and_print entries in
     [%expect {|
       b    1   y
       a    2   z
@@ -105,13 +108,13 @@ let%expect_test "id at point" =
     [%expect {| (a) |}];
     Point.goto_max ();
     print_s [%sexp (get_id_at_point_exn t : string option)];
-    [%expect {| () |}]);
-  return ()
+    [%expect {| () |}];
+    return ())
 ;;
 
 let%expect_test "move_point_to_id" =
-  Current_buffer.set_temporarily_to_temp_buffer Sync (fun () ->
-    draw_and_print entries;
+  Current_buffer.set_temporarily_to_temp_buffer Async (fun () ->
+    let%bind () = draw_and_print entries in
     [%expect {|
       b    1   y
       a    2   z
@@ -124,6 +127,6 @@ let%expect_test "move_point_to_id" =
     [%expect {| (b) |}];
     Tabulated_list.move_point_to_id t "c";
     print_s [%sexp (get_id_at_point_exn t : string option)];
-    [%expect {| (c) |}]);
-  return ()
+    [%expect {| (c) |}];
+    return ())
 ;;

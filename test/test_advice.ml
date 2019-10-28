@@ -25,7 +25,7 @@ let advice_name = "test-advice" |> Symbol.intern
 
 let%expect_test "" =
   initialize ();
-  Advice.around_values advice_name [%here] ~for_function (fun inner rest ->
+  Advice.around_values advice_name [%here] ~for_function Sync (fun inner rest ->
     print_s [%message "advice" (rest : Value.t list)];
     let inner_result = inner ((0 |> Value.of_int_exn) :: rest) in
     print_s [%message "advice" (inner_result : Value.t)];
@@ -92,5 +92,39 @@ let%expect_test "[around_funcall ~on_parse_error]" =
   [%expect {|
     (test-function (args (1)))
     (call (result 13)) |}];
+  return ()
+;;
+
+let%expect_test "Async advice" =
+  initialize ();
+  Advice.around_values advice_name [%here] ~for_function Async (fun inner rest ->
+    let%map () = Clock.after (sec 0.001) in
+    print_s [%message "advice" (rest : Value.t list)];
+    let inner_result = inner ((0 |> Value.of_int_exn) :: rest) in
+    print_s [%message "advice" (inner_result : Value.t)];
+    Value.Type.(int |> to_value) (1 + (inner_result |> Value.to_int_exn)));
+  let call_test_function () =
+    Async_ecaml.Private.run_outside_async [%here] call_test_function
+  in
+  let%bind () = call_test_function () in
+  [%expect
+    {|
+    (advice (rest (1)))
+    (test-function (args (0 1)))
+    (advice (inner_result 13))
+    (call (result 14)) |}];
+  Advice.remove advice_name ~for_function;
+  let%bind () = call_test_function () in
+  [%expect {|
+    (test-function (args (1)))
+    (call (result 13)) |}];
+  Advice.add_predefined_function advice_name ~for_function;
+  let%bind () = call_test_function () in
+  [%expect
+    {|
+    (advice (rest (1)))
+    (test-function (args (0 1)))
+    (advice (inner_result 13))
+    (call (result 14)) |}];
   return ()
 ;;

@@ -83,9 +83,3 @@ val prompt : unit -> string option
     This exits the minibuffer by throwing 'exit, so from OCaml's perspective it always
     raises. *)
 val exit : unit -> never_returns
-
-module Blocking : sig
-  (** [(describe-function 'y-or-n-p)]
-      [(Info-goto-node "(elisp)Yes-or-No Queries")] *)
-  val y_or_n : prompt:string -> bool
-end

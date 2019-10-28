@@ -82,3 +82,15 @@ val end_ : ?update:bool (** default is [false] *) -> t -> Position.t
 
 (** [(describe-function 'window-frame)] *)
 val frame : t -> Frame.t
+
+(** [(describe-function 'fit-window-to-buffer)] *)
+val fit_to_buffer
+  :  ?max_columns:int
+  -> ?max_lines:int
+  -> ?min_columns:int
+  -> ?min_lines:int
+  -> ?preserve_size:bool
+  -> t
+  -> unit
+
+module Tree = Window0.Tree

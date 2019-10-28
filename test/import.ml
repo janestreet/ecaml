@@ -58,7 +58,7 @@ let print_s ?(hide_positions = false) ?(templatize_current_directory = false) se
        |> fun string ->
        String.Search_pattern.replace_all
          (String.Search_pattern.create
-            (File.truename Current_buffer.(get_buffer_local directory)))
+            (File.truename Current_buffer.(get_buffer_local_exn directory)))
          ~in_:string
          ~with_:"<current-directory>/")
 ;;

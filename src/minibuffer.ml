@@ -1,4 +1,5 @@
 open! Core_kernel
+open! Async_kernel
 open! Import
 
 module Q = struct
@@ -69,28 +70,39 @@ end
 
 let history_length = Var.Wrap.("history-length" <: History_length.t)
 
-module Blocking = struct
-  let y_or_n_p = Funcall.("y-or-n-p" <: string @-> return bool)
-  let y_or_n ~prompt = y_or_n_p prompt
+let y_or_n =
+  let y_or_n_p = Funcall.("y-or-n-p" <: string @-> return bool) in
+  fun ~prompt ->
+    Async_ecaml.Private.run_outside_async [%here] (fun () -> y_or_n_p prompt)
+;;
 
+include struct
+  open struct
   let y_or_n_p_with_timeout =
     Funcall.("y-or-n-p-with-timeout" <: string @-> float @-> Symbol.t @-> return value)
   ;;
+end
 
-  let y_or_n_with_timeout ~prompt ~timeout:(span, a) : _ Y_or_n_with_timeout.t =
-    let result =
-      y_or_n_p_with_timeout prompt (span |> Time_ns.Span.to_sec) Q.default_value
-    in
-    if Value.is_nil result
-    then N
-    else if Value.equal result Value.t
-    then Y
-    else Timeout a
+  let y_or_n_with_timeout ~prompt ~timeout:(span, a) =
+    Async_ecaml.Private.run_outside_async [%here] (fun () ->
+      let result =
+        y_or_n_p_with_timeout prompt (span |> Time_ns.Span.to_sec) Q.default_value
+      in
+      if Value.is_nil result
+      then Y_or_n_with_timeout.N
+      else if Value.equal result Value.t
+      then Y
+      else Timeout a)
   ;;
+end
 
-  let yes_or_no_p = Funcall.("yes-or-no-p" <: string @-> return bool)
-  let yes_or_no ~prompt = yes_or_no_p prompt
+let yes_or_no =
+  let yes_or_no_p = Funcall.("yes-or-no-p" <: string @-> return bool) in
+  fun ~prompt ->
+    Async_ecaml.Private.run_outside_async [%here] (fun () -> yes_or_no_p prompt)
+;;
 
+let read_from =
   let read_from_minibuffer =
     Funcall.(
       "read-from-minibuffer"
@@ -101,44 +113,19 @@ module Blocking = struct
          @-> value
          @-> nil_or string
          @-> return string)
-  ;;
-
-  let read_from ~prompt ?initial_contents ?default_value ~history ?history_pos () =
-    let history = History.symbol history |> Symbol.to_value in
-    read_from_minibuffer
-      prompt
-      initial_contents
-      None
-      false
-      (match history_pos with
-       | None -> history
-       | Some i -> Value.cons history (i |> Value.of_int_exn))
-      default_value
-  ;;
-end
-
-let y_or_n ~prompt =
-  Async_ecaml.Private.run_outside_async [%here] (fun () -> Blocking.y_or_n ~prompt)
-;;
-
-let y_or_n_with_timeout ~prompt ~timeout =
-  Async_ecaml.Private.run_outside_async [%here] (fun () ->
-    Blocking.y_or_n_with_timeout ~prompt ~timeout)
-;;
-
-let yes_or_no ~prompt =
-  Async_ecaml.Private.run_outside_async [%here] (fun () -> Blocking.yes_or_no ~prompt)
-;;
-
-let read_from ~prompt ?initial_contents ?default_value ~history ?history_pos () =
-  Async_ecaml.Private.run_outside_async [%here] (fun () ->
-    Blocking.read_from
-      ~prompt
-      ?initial_contents
-      ?default_value
-      ~history
-      ?history_pos
-      ())
+  in
+  fun ~prompt ?initial_contents ?default_value ~history ?history_pos () ->
+    Async_ecaml.Private.run_outside_async [%here] (fun () ->
+      let history = History.symbol history |> Symbol.to_value in
+      read_from_minibuffer
+        prompt
+        initial_contents
+        None
+        false
+        (match history_pos with
+         | None -> history
+         | Some i -> Value.cons history (i |> Value.of_int_exn))
+        default_value)
 ;;
 
 let exit_hook = Hook.create Q.minibuffer_exit_hook ~hook_type:Normal

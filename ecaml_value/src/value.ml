@@ -424,6 +424,7 @@ let message_zero_alloc t =
   raise_if_emacs_signaled ()
 ;;
 
+let message_t t = funcall2_i Q.message percent_s t
 let messagef fmt = ksprintf message fmt
 
 let message_s : Sexp.t -> unit = function
@@ -878,4 +879,5 @@ module Private = struct
   ;;
 
   let message_zero_alloc = message_zero_alloc
+  let message_t = message_t
 end

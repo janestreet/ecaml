@@ -4,7 +4,7 @@ include Face0
 
 let defface name here ~docstring ~customization_group specs =
   Form.(
-    eval_i
+    Blocking.eval_i
       (list
          [ symbol Q.defface
          ; symbol (Symbol.intern name)

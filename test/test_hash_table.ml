@@ -30,10 +30,10 @@ let%expect_test "[find], [set], [remove]" =
 
 let%expect_test "[keys]" =
   let t = create () in
-  print_s [%sexp (keys t : string list)];
+  print_s [%sexp (keys t : Value.t list)];
   [%expect {| () |}];
   set t ~key ~data;
-  print_s [%sexp (keys t : string list)];
+  print_s [%sexp (keys t : Value.t list)];
   [%expect {| (foo) |}];
   return ()
 ;;

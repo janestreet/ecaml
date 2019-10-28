@@ -691,5 +691,5 @@ not preserve the current Async execution context.
          (* The key-value pair is present. *)
          assert (Option.is_some (Async.Scheduler.find_local dummy_key));
          Form.list [ Form.symbol ("funcall" |> Symbol.intern); Form.quote print_data ]
-         |> Form.eval_i))
+         |> Form.Blocking.eval_i))
 ;;

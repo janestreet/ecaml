@@ -204,3 +204,6 @@ val recenter : ?screen_line:int -> unit -> unit
 
 (** [(describe-function 'function-called-at-point)] *)
 val function_called_at : unit -> Symbol.t option
+
+(** [(describe-function 'variable-at-point)] *)
+val variable_at : unit -> Symbol.t option

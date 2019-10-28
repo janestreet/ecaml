@@ -3,8 +3,11 @@ open! Import
 module Current_buffer = Current_buffer0
 include Key_sequence0
 
-let execute_kbd_macro = Funcall.("execute-kbd-macro" <: t @-> return nil)
-let execute t = Value.Private.run_outside_async [%here] (fun () -> execute_kbd_macro t)
+let execute =
+  let execute_kbd_macro = Funcall.("execute-kbd-macro" <: t @-> return nil) in
+  fun t -> Value.Private.run_outside_async [%here] (fun () -> execute_kbd_macro t)
+;;
+
 let am_executing = Var.Wrap.("executing-kbd-macro" <: bool)
 
 let read_key_sequence_vector =

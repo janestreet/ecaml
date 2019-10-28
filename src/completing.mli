@@ -48,6 +48,12 @@ val read_function_name
   -> history:Minibuffer.History.t
   -> string Deferred.t
 
+(** Read a variable name in the same manner as [describe-variable]. *)
+val read_variable_name
+  :  prompt:string
+  -> history:Minibuffer.History.t
+  -> string Deferred.t
+
 (** [(describe-function 'completing-read-multiple)] **)
 val read_multiple
   :  prompt:string (** typically ends with ": " *)
@@ -59,16 +65,3 @@ val read_multiple
   -> history:Minibuffer.History.t
   -> unit
   -> string list Deferred.t
-
-module Blocking : sig
-  (** [(describe-function 'completing-read)] **)
-  val read
-    :  prompt:string (** typically ends with ": " *)
-    -> collection:Collection.t
-    -> ?require_match:Require_match.t (** default is [Require_match.default] *)
-    -> ?initial_input:Initial_input.t (** default is Empty *)
-    -> ?default:string
-    -> history:Minibuffer.History.t
-    -> unit
-    -> string
-end

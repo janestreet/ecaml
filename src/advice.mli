@@ -7,6 +7,10 @@
     A function may have multiple pieces of advice, which are composed by nesting earlier
     advice within later advice.
 
+    If async advice is added to an elisp function, that function must be called with
+    [run_outside_async] or it will raise at runtime. This cannot be detected at compile
+    time because one can add advice at runtime.
+
     [(Info-goto-node "(elisp)Advising Functions")] *)
 
 open! Core_kernel
@@ -21,11 +25,12 @@ open! Import
 val around_values
   :  Symbol.t
   -> Source_code_position.t
+  -> (Value.t, 'a) Sync_or_async.t
   -> ?docstring:string
   -> for_function:Symbol.t
   -> ?interactive:Defun.Interactive.t
   -> ?should_profile:bool
-  -> ((Value.t list -> Value.t) -> Value.t list -> Value.t)
+  -> ((Value.t list -> Value.t) -> Value.t list -> 'a)
   -> unit
 
 module On_parse_error : sig

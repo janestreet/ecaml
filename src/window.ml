@@ -35,8 +35,6 @@ module Include_minibuffer = struct
   let t = type_
 end
 
-let equal = eq
-
 let window_list =
   Funcall.(
     "window-list"
@@ -88,3 +86,19 @@ let set_start = Funcall.("set-window-start" <: t @-> Position.t @-> return nil)
 let window_end = Funcall.("window-end" <: t @-> Value.Type.bool @-> return Position.t)
 let end_ ?(update = false) t = window_end t update
 let frame = Funcall.("window-frame" <: t @-> return Frame.t)
+
+let fit_window_to_buffer =
+  Funcall.(
+    "fit-window-to-buffer"
+    <: t
+       @-> nil_or int
+       @-> nil_or int
+       @-> nil_or int
+       @-> nil_or int
+       @-> nil_or bool
+       @-> return nil)
+;;
+
+let fit_to_buffer ?max_columns ?max_lines ?min_columns ?min_lines ?preserve_size t =
+  fit_window_to_buffer t max_lines min_lines max_columns min_columns preserve_size
+;;

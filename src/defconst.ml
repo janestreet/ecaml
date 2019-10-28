@@ -22,7 +22,7 @@ let defconst_i symbol here ~docstring ~(type_ : _ Value.Type.t) ~value =
     ; Form.quote (Value.Type.to_value type_ value)
     ; Form.string (docstring |> String.strip)
     ]
-  |> Form.eval_i
+  |> Form.Blocking.eval_i
 ;;
 
 let defconst symbol here ~docstring ~type_ ~value =

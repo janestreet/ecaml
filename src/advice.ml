@@ -9,7 +9,15 @@ let add_predefined_function advice_name ~for_function =
   advice_add for_function Q.K.around advice_name
 ;;
 
-let add_internal advice_name here ~for_function ?docstring ?interactive ?should_profile f
+let add_internal
+      advice_name
+      here
+      ~for_function
+      ?docstring
+      ?interactive
+      ?should_profile
+      sync_or_async
+      f
   =
   Defun.defun
     advice_name
@@ -17,7 +25,7 @@ let add_internal advice_name here ~for_function ?docstring ?interactive ?should_
     ?docstring
     ?interactive
     ?should_profile
-    (Returns Value.Type.value)
+    (Defun.Returns.returns sync_or_async Value.Type.value)
     (let open Defun.Let_syntax in
      let%map_open () = return ()
      and inner = required "inner" value
@@ -29,6 +37,7 @@ let add_internal advice_name here ~for_function ?docstring ?interactive ?should_
 let around_values
       advice_name
       here
+      sync_or_async
       ?docstring
       ~for_function
       ?interactive
@@ -42,6 +51,7 @@ let around_values
     ~for_function
     ?interactive
     ?should_profile
+    sync_or_async
     (fun inner rest -> f (Value.funcallN ?should_profile inner) rest)
 ;;
 
@@ -70,6 +80,7 @@ let around_funcall
     ?docstring
     ?interactive
     ?should_profile
+    Sync
     (fun inner rest ->
        Funcall.Private.apply
          funcall

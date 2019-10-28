@@ -12,7 +12,7 @@ let after_load here feature ~f =
       Value.nil)
   in
   Form.(
-    eval_i
+    Blocking.eval_i
       (list
          [ symbol Q.eval_after_load
          ; quote (feature |> Symbol.to_value)

@@ -464,7 +464,7 @@ let%expect_test "Elisp throw translated into OCaml and back" =
   let form =
     Form.(list [ symbol (Symbol.intern "funcall"); quote (Function.to_value fn) ])
   in
-  (try Form.eval_i form with
+  (try Form.Blocking.eval_i form with
    | exn ->
      print_s [%sexp "Outer Ecaml function caught exception", (sexp_of_throw exn : Sexp.t)]);
   [%expect
@@ -489,7 +489,7 @@ let%expect_test "[catch]ing a [throw] that travels through Ecaml" =
      let%map_open f = required "f" value in
      Value.funcall0_i f);
   let value =
-    Form.eval_string
+    Form.Blocking.eval_string
       {|
 (catch 'some-tag
   (some-ecaml-function (lambda () (throw 'some-tag 13))))
@@ -510,7 +510,7 @@ let%expect_test "rendering OCaml exceptions in Emacs and Ocaml" =
         ~f:(fun () ->
           ignore
             (Value.funcall1
-               ("(lambda (f) (funcall f))" |> Form.eval_string)
+               ("(lambda (f) (funcall f))" |> Form.Blocking.eval_string)
                (lambda_nullary_nil [%here] (fun () -> raise_s message)
                 |> Function.to_value)
              : Value.t));

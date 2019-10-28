@@ -81,9 +81,8 @@ val buffer_local_variables : t -> (Symbol.t * Value.t option) list
 (** [(describe-function 'find-file-noselect)]
     [(Info-goto-node "(elisp)Visiting Functions")]
 
-    See also [Selected_window.find_file].
-*)
-val find_file_noselect : Filename.t -> t
+    See also [Selected_window.find_file]. *)
+val find_file_noselect : Filename.t -> t Deferred.t
 
 (** From [(Info-goto-node "(emacs)Select Buffer")]:
 

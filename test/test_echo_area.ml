@@ -58,6 +58,15 @@ let%expect_test "[message_s]" =
   return ()
 ;;
 
+let%expect_test "[message_text]" =
+  message_text (Text.colorize (Text.of_utf8_bytes "hello") Color.red);
+  show ();
+  [%expect {|
+    hello
+    hello |}];
+  return ()
+;;
+
 let%expect_test "[message ~echo:false]" =
   message "foo" ~echo:false;
   [%expect {| |}];
@@ -72,4 +81,29 @@ let%expect_test "[inhibit_messages]" =
   show ();
   [%expect {| hello |}];
   return ()
+;;
+
+let%expect_test "[inhibit_messages] in background job" =
+  Deferred.create (fun ivar ->
+    Background.don't_wait_for [%here] (fun () ->
+      inhibit_messages Sync (fun () -> message "hello");
+      [%expect {||}];
+      show ();
+      [%expect {| hello |}];
+      let%bind () =
+        show_raise_async ~hide_positions:true (fun () ->
+          inhibit_messages Async (fun () ->
+            message "world";
+            return ()))
+      in
+      [%expect
+        {|
+        (raised (
+          "Assertion failed -- running in background job"
+          ((background_job_started_at
+            app/emacs/lib/ecaml/test/test_echo_area.ml:LINE:COL)
+           (assertion_failed_at app/emacs/lib/ecaml/src/echo_area.ml:LINE:COL))
+          "Echo_area.inhibit_messages called asynchronously in background job")) |}];
+      Ivar.fill ivar ();
+      return ()))
 ;;

@@ -28,5 +28,4 @@ val remove : t -> Value.t -> unit
 val length : t -> int
 
 (** [(describe-function 'hash-table-keys)] *)
-val keys : t -> string list
-
+val keys : t -> Value.t list

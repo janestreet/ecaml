@@ -13,6 +13,14 @@ let symbol = Var.symbol
 let var (t : _ t) : _ Var.t = t
 
 let wrap_existing ?(make_buffer_local_always = false) symbol type_ =
+  (* We raise if [symbol] isn't bound.  This fits with the naming [wrap_existing symbol]
+     implying that [symbol] exists.  Also, it avoids calling
+     [Var.make_buffer_local_always] on an unbound variable, which would set the variable
+     to nil, which is probably not desired. *)
+  if not (Current_buffer.variable_is_defined symbol)
+  then
+    raise_s
+      [%message "[Buffer_local.wrap_existing] of undefined symbol" (symbol : Symbol.t)];
   let var = Var.create symbol type_ in
   if make_buffer_local_always
   then Var.make_buffer_local_always var

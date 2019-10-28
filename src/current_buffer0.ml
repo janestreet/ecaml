@@ -9,10 +9,12 @@ let set = Funcall.("set-buffer" <: Buffer.t @-> return nil)
 let set_temporarily sync_or_async buffer ~f =
   let old = get () in
   set buffer;
-  Sync_or_async.protect [%here] sync_or_async ~f ~finally:(fun () -> set old)
+  Sync_or_async.protect [%here] sync_or_async ~f ~finally:(fun () ->
+    if Buffer.is_live old then set old)
 ;;
 
 let boundp = Funcall.("boundp" <: Symbol.t @-> return bool)
+let variable_is_defined = boundp
 let value_is_defined (var : _ Var.t) = boundp var.symbol
 let symbol_value = Funcall.("symbol-value" <: Symbol.t @-> return value)
 

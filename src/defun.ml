@@ -237,7 +237,8 @@ module Interactive = struct
           then (
             let form = Form.of_value_exn value in
             Args
-              (fun () -> Deferred.return (Form.eval form |> Value.to_list_exn ~f:Fn.id)))
+              (fun () ->
+                 Deferred.return (Form.Blocking.eval form |> Value.to_list_exn ~f:Fn.id)))
           else (
             match value |> Value.to_utf8_bytes_exn with
             | "i" -> Ignored

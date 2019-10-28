@@ -19,7 +19,7 @@ let save_sync save_function args f =
   let r = ref None in
   let f = Defun.lambda_nullary_nil [%here] (fun () -> r := Some (f ())) in
   ignore
-    (Form.eval
+    (Form.Blocking.eval
        (Form.list
           (List.concat
              [ [ save_function |> Form.symbol ]

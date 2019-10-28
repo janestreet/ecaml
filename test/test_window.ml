@@ -74,3 +74,48 @@ let%expect_test "[delete_exn]" =
      (width (Error (wrong-type-argument (window-live-p "#<window 1>"))))) |}];
   return ()
 ;;
+
+let%expect_test "[Tree]" =
+  let show () =
+    let window_tree = Frame.window_tree (frame (Selected_window.get ())) in
+    print_s [%sexp (window_tree : Window.Tree.t)];
+    List.iter (all_in_selected_frame ()) ~f:show
+  in
+  show ();
+  [%expect
+    {|
+    (Window "#<window 4 on *scratch*>")
+    ((body_height (Ok 8))
+     (buffer      (Ok "#<buffer *scratch*>"))
+     (height      (Ok 9))
+     (is_live     (Ok true))
+     (point       (Ok 2))
+     (width       (Ok 10))) |}];
+  Selected_window.split_vertically_exn ();
+  show ();
+  [%expect
+    {|
+    (Combination
+      (children (
+        (Window "#<window 4 on *scratch*>")
+        (Window "#<window 6 on *scratch*>")))
+      (direction Top_to_bottom)
+      (edges (
+        (bottom 10)
+        (left   0)
+        (right  10)
+        (top    1))))
+    ((body_height (Ok 4))
+     (buffer      (Ok "#<buffer *scratch*>"))
+     (height      (Ok 5))
+     (is_live     (Ok true))
+     (point       (Ok 2))
+     (width       (Ok 10)))
+    ((body_height (Ok 3))
+     (buffer      (Ok "#<buffer *scratch*>"))
+     (height      (Ok 4))
+     (is_live     (Ok true))
+     (point       (Ok 2))
+     (width       (Ok 10))) |}];
+  return ()
+;;

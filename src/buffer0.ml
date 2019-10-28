@@ -19,3 +19,5 @@ let kill t =
   Value.Private.run_outside_async [%here] ~allowed_in_background:true (fun () ->
     Blocking.kill t)
 ;;
+
+let is_live t = Generated_bindings.buffer_live_p (t |> to_value)

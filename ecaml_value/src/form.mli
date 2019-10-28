@@ -2,19 +2,20 @@
     [(Info-goto-node "(elisp)Forms")]. *)
 
 open! Core_kernel
+open! Async_kernel
 open! Import
 include Value.Subtype
 
 (** [(describe-function 'eval)] *)
-val eval : t -> Value.t
+val eval : t -> Value.t Deferred.t
 
-val eval_i : t -> unit
+val eval_i : t -> unit Deferred.t
 
 (** [(describe-function 'read)] *)
 val read : string -> t
 
 (** [eval_string string] = [eval (read string)] *)
-val eval_string : string -> Value.t
+val eval_string : string -> Value.t Deferred.t
 
 val nil : t
 val string : string -> t
@@ -37,3 +38,9 @@ val lambda
 (** A function call, macro application, or special form.
     [(Info-goto-node "(elisp)Classifying Lists")]. *)
 val list : t list -> t
+
+module Blocking : sig
+  val eval : t -> Value.t
+  val eval_i : t -> unit
+  val eval_string : string -> Value.t
+end

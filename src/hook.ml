@@ -155,11 +155,12 @@ let add ?(buffer_local = false) ?(one_shot = false) ?(where = Where.Start) t fun
 ;;
 
 let clear t = Current_buffer.set_value t.var []
-let run_hooks = Funcall.("run-hooks" <: Symbol.t @-> return nil)
 
-let run t =
-  let symbol = t |> symbol in
-  Value.Private.run_outside_async [%here] (fun () -> run_hooks symbol)
+let run =
+  let run_hooks = Funcall.("run-hooks" <: Symbol.t @-> return nil) in
+  fun t ->
+    let symbol = t |> symbol in
+    Value.Private.run_outside_async [%here] (fun () -> run_hooks symbol)
 ;;
 
 let after_load = create Q.after_load_functions ~hook_type:File

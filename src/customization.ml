@@ -57,7 +57,7 @@ module Group = struct
         (here |> Source_code_position.to_string)
     in
     Form.(
-      eval_i
+      Blocking.eval_i
         (list
            (List.concat
               [ [ Q.defgroup |> symbol; group_name |> symbol; nil; docstring |> string ]
@@ -249,7 +249,7 @@ let defcustom
        |> Form.of_value_exn
      in
      if show_form then message_s [%sexp (form : Form.t)];
-     ignore (Form.eval form : Value.t)
+     ignore (Form.Blocking.eval form : Value.t)
    with
    | exn ->
      raise_s

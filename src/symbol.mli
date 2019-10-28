@@ -61,6 +61,8 @@ module Property : sig
       Most functions use (1), but some use (2), e.g. a [defalias] like [abbrev-get]
       or an advised function like [next-error]. *)
   val function_documentation : Value.t t
+
+  val variable_documentation : Value.t t
 end
 
 module type Subtype = sig
@@ -78,3 +80,9 @@ module Make_subtype (Arg : sig
     val module_name : string
     val to_symbol : t -> symbol
   end) : Subtype with type t := Arg.t
+
+module Compare_name : sig
+  type t = symbol [@@deriving sexp_of]
+
+  include Comparator.S with type t := t
+end

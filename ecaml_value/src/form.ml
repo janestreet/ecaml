@@ -26,8 +26,6 @@ include Value.Make_subtype (struct
 let string s = s |> Value.of_utf8_bytes |> of_value_exn
 let symbol s = s |> Symbol.to_value |> of_value_exn
 let int i = i |> Value.of_int_exn |> of_value_exn
-let eval t = Symbol.funcall1 Q.eval (t |> to_value)
-let eval_i t = ignore (eval t : Value.t)
 
 let read =
   Feature.require Q.thingatpt;
@@ -36,7 +34,19 @@ let read =
     |> of_value_exn
 ;;
 
-let eval_string string = eval (read string)
+module Blocking = struct
+  let eval t = Symbol.funcall1 Q.eval (t |> to_value)
+  let eval_i t = ignore (eval t : Value.t)
+  let eval_string string = eval (read string)
+end
+
+let eval t = Value.Private.run_outside_async [%here] (fun () -> Blocking.eval t)
+let eval_i t = Value.Private.run_outside_async [%here] (fun () -> Blocking.eval_i t)
+
+let eval_string t =
+  Value.Private.run_outside_async [%here] (fun () -> Blocking.eval_string t)
+;;
+
 let list ts = Value.list (ts : t list :> Value.t list) |> of_value_exn
 let nil = list []
 let q value = Value.list [ Symbol.to_value Q.quote; value ]

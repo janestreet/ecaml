@@ -374,5 +374,8 @@ module type Value = sig
       -> 'a Deferred.t
 
     val message_zero_alloc : t -> unit
+
+    (** [message_t t] is equivalent to the elisp expression [(message "%s" t)]. *)
+    val message_t : t -> unit
   end
 end

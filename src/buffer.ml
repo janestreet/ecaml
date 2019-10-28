@@ -8,15 +8,12 @@ module Q = struct
   let visible = "visible" |> Symbol.intern
 end
 
-let revert_buffer = Funcall.("revert-buffer" <: bool @-> bool @-> bool @-> return bool)
-
 module Process = Process0
 module Window = Window0
 include Buffer0
 
 type buffer = t [@@deriving sexp_of]
 
-let is_live t = Generated_bindings.buffer_live_p (t |> to_value)
 let name = Funcall.("buffer-name" <: t @-> return (nil_or string))
 
 module Compare_by_name = struct
@@ -88,7 +85,10 @@ let buffer_local_variables t =
     else Value.car_exn value |> Symbol.of_value_exn, Some (Value.cdr_exn value))
 ;;
 
-let find_file_noselect = Funcall.("find-file-noselect" <: string @-> return t)
+let find_file_noselect =
+  let f = Funcall.("find-file-noselect" <: string @-> return t) in
+  fun filename -> Value.Private.run_outside_async [%here] (fun () -> f filename)
+;;
 
 let is_internal_or_dead t =
   match name t with
@@ -124,14 +124,14 @@ module Which_buffers = struct
   let t = type_
 end
 
-let save_some_buffers =
-  Funcall.("save-some-buffers" <: bool @-> Which_buffers.t @-> return nil)
-;;
-
-let save_some ?(query = true) ?(which_buffers = Which_buffers.File_visiting) () =
-  Value.Private.run_outside_async [%here] (fun () ->
-    try save_some_buffers (not query) which_buffers with
-    | exn -> raise_s [%message "[Buffer.save_some]" (exn : exn)])
+let save_some =
+  let save_some_buffers =
+    Funcall.("save-some-buffers" <: bool @-> Which_buffers.t @-> return nil)
+  in
+  fun ?(query = true) ?(which_buffers = Which_buffers.File_visiting) () ->
+    Value.Private.run_outside_async [%here] (fun () ->
+      try save_some_buffers (not query) which_buffers with
+      | exn -> raise_s [%message "[Buffer.save_some]" (exn : exn)])
 ;;
 
 let with_temp_buffer f =
@@ -143,9 +143,13 @@ let with_temp_buffer f =
       | _ -> ())
 ;;
 
-let revert ?(confirm = false) t =
-  let noconfirm = not confirm in
-  Value.Private.run_outside_async [%here] ~allowed_in_background:noconfirm (fun () ->
-    Current_buffer0.set_temporarily Sync t ~f:(fun () ->
-      ignore (revert_buffer false noconfirm false : bool)))
+let revert =
+  let revert_buffer =
+    Funcall.("revert-buffer" <: bool @-> bool @-> bool @-> return bool)
+  in
+  fun ?(confirm = false) t ->
+    let noconfirm = not confirm in
+    Value.Private.run_outside_async [%here] ~allowed_in_background:noconfirm (fun () ->
+      Current_buffer0.set_temporarily Sync t ~f:(fun () ->
+        ignore (revert_buffer false noconfirm false : bool)))
 ;;

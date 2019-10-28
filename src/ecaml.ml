@@ -7,6 +7,7 @@ module Async_ecaml = Async_ecaml
 module Auto_mode_alist = Auto_mode_alist
 module Background = Background
 module Backup = Backup
+module Bookmark = Bookmark
 module Browse_url = Browse_url
 module Buffer = Buffer
 module Buffer_local = Buffer_local
@@ -33,6 +34,7 @@ module Ediff = Ediff
 module Elisp_gc = Elisp_gc
 module Elisp_time = Elisp_time
 module Emacs_backtrace = Emacs_backtrace
+module Emacs_version = Emacs_version
 module Eval = Eval
 module Evil = Evil
 module Expect_test_config = Async_ecaml.Expect_test_config
@@ -59,6 +61,7 @@ module Major_mode = Major_mode
 module Marker = Marker
 module Minibuffer = Minibuffer
 module Minor_mode = Minor_mode
+module Mode_line = Mode_line
 module Modified_tick = Modified_tick
 module Obarray = Obarray
 module Obsolete = Obsolete
@@ -116,6 +119,7 @@ and lambda_nullary_nil = Defun.lambda_nullary_nil
 and message = Echo_area.message
 and messagef = Echo_area.messagef
 and message_s = Echo_area.message_s
+and message_text = Echo_area.message_text
 and print_s = print_s
 and raise_string = raise_string
 and sec_ns = sec_ns
@@ -142,21 +146,23 @@ let inhibit_read_only = Current_buffer.inhibit_read_only
 let () =
   if not am_running_inline_test
   then (
-    let reported_recent_keys = ref false in
+    let should_reopen_stdin = ref true in
     Background.Clock.every [%here] Time.Span.second (fun () ->
       match Unix.fstat Unix.stdin with
       | _ -> ()
       | exception _ ->
-        let recent_keys =
-          if !reported_recent_keys
-          then [||]
-          else (
-            reported_recent_keys := true;
-            Input_event.recent_commands_and_keys ())
-        in
-        message_s
-          [%message.omit_nil
-            "stdin is closed" (recent_keys : Input_event.Command_or_key.t array)]))
+        if !should_reopen_stdin
+        then (
+          let new_fd = Unix.openfile "/dev/null" [ O_RDONLY ] 0o666 in
+          should_reopen_stdin := Core.Unix.File_descr.equal new_fd Unix.stdin;
+          message_s
+            ~echo:false
+            [%message.omit_nil
+              "stdin was closed"
+                (should_reopen_stdin : bool ref)
+                ~recent_keys:
+                  (Input_event.recent_commands_and_keys ()
+                   : Input_event.Command_or_key.t array)])))
 ;;
 
 let () =

@@ -31,3 +31,10 @@ let set_selected_temporarily sync_or_async t ~f =
 let is_live = Funcall.("frame-live-p" <: t @-> return bool)
 let terminal = Funcall.("frame-terminal" <: t @-> return Terminal.t)
 let inherited_parameters = Var.Wrap.("frame-inherited-parameters" <: list Symbol.t)
+
+let window_tree =
+  let f =
+    Funcall.("window-tree" <: nil_or t @-> return (tuple Window0.Tree.t ignored))
+  in
+  fun t -> fst (f (Some t))
+;;

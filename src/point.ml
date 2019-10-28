@@ -171,3 +171,11 @@ let recenter ?screen_line () = recenter screen_line
 let function_called_at =
   Funcall.("function-called-at-point" <: nullary @-> return (nil_or Symbol.t))
 ;;
+
+let variable_at =
+  (* [variable-at-point] returns 0 if there is no variable found. *)
+  let variable_at_point = Funcall.("variable-at-point" <: nullary @-> return value) in
+  fun () ->
+    let ret = variable_at_point () in
+    if Value.is_symbol ret then Some (Symbol.of_value_exn ret) else None
+;;

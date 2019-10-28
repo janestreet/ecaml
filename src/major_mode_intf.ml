@@ -49,10 +49,6 @@ module type Major_mode = sig
       previous call to [wrap_existing] or creates one with the [Undistinguished] name. *)
   val find_or_wrap_existing : Source_code_position.t -> Symbol.t -> t
 
-  module Blocking : sig
-    val change_in_current_buffer : t -> unit
-  end
-
   val change_to : t -> in_:Buffer.t -> unit Deferred.t
 
   (** [(describe-function 'fundamental-mode)]

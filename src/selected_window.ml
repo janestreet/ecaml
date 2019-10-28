@@ -37,15 +37,12 @@ let set_temporarily sync_or_async window ~f =
   Save_wrappers.with_selected_window sync_or_async (window |> Window.to_value) f
 ;;
 
-module Blocking = struct
-  let find_file = Funcall.("find-file" <: string @-> return nil)
-  let view_file = Funcall.("view-file" <: string @-> return nil)
-end
-
-let find_file path =
-  Value.Private.run_outside_async [%here] (fun () -> Blocking.find_file path)
+let find_file =
+  let find_file = Funcall.("find-file" <: string @-> return nil) in
+  fun path -> Value.Private.run_outside_async [%here] (fun () -> find_file path)
 ;;
 
-let view_file path =
-  Value.Private.run_outside_async [%here] (fun () -> Blocking.view_file path)
+let view_file =
+  let view_file = Funcall.("view-file" <: string @-> return nil) in
+  fun path -> Value.Private.run_outside_async [%here] (fun () -> view_file path)
 ;;

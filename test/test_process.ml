@@ -280,7 +280,7 @@ let%expect_test "[Call.Input.Dev_null]" =
 
 let%expect_test "[Call.Input.File]" =
   let file = Caml.Filename.temp_file "" "" in
-  Selected_window.Blocking.find_file file;
+  let%bind () = Selected_window.find_file file in
   Point.insert "foobar";
   let%bind () = Current_buffer.save () in
   Buffer.Blocking.kill (Current_buffer.get ());
@@ -448,7 +448,7 @@ let%expect_test "[shell_command_exn ~working_directory]" =
     [%here]
     (module String)
     (shell_command_exn "pwd" ~working_directory:Of_current_buffer)
-    (Current_buffer.(get_buffer_local directory)
+    (Current_buffer.(get_buffer_local_exn directory)
      |> File.truename
      |> Filename.of_directory);
   return ()

@@ -7,7 +7,7 @@ let%expect_test "[eval]" =
   List.iter
     [ "13"; "(+ 1 4)"; "((lambda (x) (+ x 1)) 13)"; "(+ \"foo\")" ]
     ~f:(fun (string : string) ->
-      let value = Or_error.try_with (fun () -> eval (string |> read)) in
+      let value = Or_error.try_with (fun () -> Blocking.eval_string string) in
       print_s [%message "" ~_:(string : string) "-->" ~_:(value : Value.t Or_error.t)]);
   [%expect
     {|
@@ -19,7 +19,8 @@ let%expect_test "[eval]" =
 ;;
 
 let%expect_test "[eval_string]" =
-  print_s [%sexp (eval_string "(+ 1 2)" : Value.t)];
+  let%bind v = eval_string "(+ 1 2)" in
+  print_s [%sexp (v : Value.t)];
   [%expect {| 3 |}];
   return ()
 ;;

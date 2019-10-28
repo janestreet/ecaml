@@ -89,7 +89,7 @@ let create =
                  (args
                   @ (optional_args |> Option.value ~default:[])
                   @ [ rest_arg |> Option.value ~default:Q.nil ])))
-    |> F.eval
+    |> F.Blocking.eval
     |> of_value_exn
 ;;
 

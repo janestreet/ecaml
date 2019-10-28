@@ -12,28 +12,6 @@ end
 
 include Current_buffer0
 
-module Window_display_state = struct
-  include Value.Make_subtype (struct
-      let here = [%here]
-      let name = "Buffer.window-display-state"
-
-      let is_in_subtype =
-        let open Value in
-        is_cons
-          ~car:Position.is_in_subtype
-          ~cdr:(is_cons ~car:Position.is_in_subtype ~cdr:Position.is_in_subtype)
-      ;;
-    end)
-
-  let get = Funcall.("Buffer.window-display-state" <: nullary @-> return t)
-  let restore = Funcall.("Buffer.restore-window-display-state" <: t @-> return nil)
-
-  let save f =
-    let t = get () in
-    Exn.protect ~f ~finally:(fun () -> restore t)
-  ;;
-end
-
 let get_buffer_local = Buffer_local.Private.get_in_current_buffer
 let get_buffer_local_exn = Buffer_local.Private.get_in_current_buffer_exn
 let set_buffer_local = Buffer_local.Private.set_in_current_buffer
@@ -51,10 +29,14 @@ let major_mode () =
   Major_mode.find_or_wrap_existing [%here] (get_buffer_local Major_mode.major_mode_var)
 ;;
 
-let set_auto_mode = Funcall.("set-auto-mode" <: nil_or bool @-> return nil)
-let set_auto_mode ?keep_mode_if_same () = set_auto_mode keep_mode_if_same
+let set_auto_mode =
+  let set_auto_mode = Funcall.("set-auto-mode" <: nil_or bool @-> return nil) in
+  fun ?keep_mode_if_same () ->
+    Value.Private.run_outside_async [%here] (fun () -> set_auto_mode keep_mode_if_same)
+;;
+
 let bury = Funcall.("bury-buffer" <: nullary @-> return nil)
-let directory = Buffer_local.Wrap.("default-directory" <: string)
+let directory = Buffer_local.Wrap.("default-directory" <: nil_or string)
 let describe_mode = Funcall.("describe-mode" <: nullary @-> return nil)
 let is_modified = Funcall.("buffer-modified-p" <: nullary @-> return bool)
 let set_modified = Funcall.("set-buffer-modified-p" <: bool @-> return nil)
@@ -145,16 +127,16 @@ let contents ?start ?end_ ?(text_properties = false) () =
     (or_point_max end_)
 ;;
 
-let kill_buffer = Funcall.("kill-buffer" <: nullary @-> return nil)
-
-let kill () =
-  Value.Private.run_outside_async [%here] ~allowed_in_background:true kill_buffer
+let kill =
+  let kill_buffer = Funcall.("kill-buffer" <: nullary @-> return nil) in
+  fun () ->
+    Value.Private.run_outside_async [%here] ~allowed_in_background:true kill_buffer
 ;;
 
-let save_buffer = Funcall.("save-buffer" <: nullary @-> return nil)
-
-let save () =
-  Value.Private.run_outside_async [%here] ~allowed_in_background:true save_buffer
+let save =
+  let save_buffer = Funcall.("save-buffer" <: nullary @-> return nil) in
+  fun () ->
+    Value.Private.run_outside_async [%here] ~allowed_in_background:true save_buffer
 ;;
 
 let erase = Funcall.("erase-buffer" <: nullary @-> return nil)
@@ -167,7 +149,6 @@ let save_current_buffer f = Save_wrappers.save_current_buffer f
 let save_excursion f = Save_wrappers.save_excursion f
 let save_mark_and_excursion f = Save_wrappers.save_mark_and_excursion f
 let save_restriction f = Save_wrappers.save_restriction f
-let save_window_display_state = Window_display_state.save
 let set_multibyte = Funcall.("set-buffer-multibyte" <: bool @-> return nil)
 
 let enable_multibyte_characters =
@@ -353,10 +334,6 @@ let indent_region ?start ?end_ () =
   Echo_area.inhibit_messages Sync (fun () ->
     indent_region (or_point_min start) (or_point_max end_))
 ;;
-
-module Blocking = struct
-  let change_major_mode = Major_mode.Blocking.change_in_current_buffer
-end
 
 let change_major_mode major_mode = Major_mode.change_to major_mode ~in_:(get ())
 let revert ?confirm () = Buffer.revert ?confirm (get ())

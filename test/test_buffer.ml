@@ -218,7 +218,7 @@ let%expect_test "[buffer_local_variables]" =
 ;;
 
 let%expect_test "[find_file_noselect] on a file that exists" =
-  let t = find_file_noselect "test_buffer.ml" in
+  let%bind t = find_file_noselect "test_buffer.ml" in
   show t;
   [%expect {| "#<buffer test_buffer.ml>" |}];
   Blocking.kill t;
@@ -226,7 +226,7 @@ let%expect_test "[find_file_noselect] on a file that exists" =
 ;;
 
 let%expect_test "[find_file_noselect] on a non-existent file" =
-  let t = find_file_noselect "zzz" in
+  let%bind t = find_file_noselect "zzz" in
   show t;
   [%expect {| "#<buffer zzz>" |}];
   Blocking.kill t;

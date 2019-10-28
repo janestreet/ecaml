@@ -20,7 +20,7 @@ val set_buffer_local : 'a Buffer_local.t -> 'a -> unit
 
 (** [(describe-variable 'default-directory)]
     [(Info-goto-node "(elisp)File Name Expansion")] *)
-val directory : Filename.t Buffer_local.t
+val directory : Filename.t option Buffer_local.t
 
 (** [(describe-variable 'buffer-undo-list)]
     [(Info-goto-node "(elisp)Undo")]
@@ -105,7 +105,7 @@ val major_mode : unit -> Major_mode.t
 val change_major_mode : Major_mode.t -> unit Deferred.t
 
 (** [(describe-function 'set-auto-mode)] *)
-val set_auto_mode : ?keep_mode_if_same:bool -> unit -> unit
+val set_auto_mode : ?keep_mode_if_same:bool -> unit -> unit Deferred.t
 
 (** [(describe-function 'make-local-variable)]
     [(Info-goto-node "(elisp)Creating Buffer-Local")] *)
@@ -181,9 +181,6 @@ val save_mark_and_excursion : (_, 'a) Sync_or_async.t -> (unit -> 'a) -> 'a
 
 (** [(describe-function 'save-restriction)] *)
 val save_restriction : (_, 'a) Sync_or_async.t -> (unit -> 'a) -> 'a
-
-(** Preserve the buffer's point and first displayed visual line. *)
-val save_window_display_state : (unit -> 'a) -> 'a
 
 (** [(describe-function 'set-buffer-multibyte)].
     [(Info-goto-node "(elisp)Selecting a Representation")]. *)
@@ -328,10 +325,6 @@ val indent_region
     [(Info-goto-node "(elisp)Reverting")] *)
 val revert : ?confirm:bool (** default is [false] *) -> unit -> unit Deferred.t
 
-module Blocking : sig
-  val change_major_mode : Major_mode.t -> unit
-end
-
 (** [(describe-variable 'revert-buffer-function)] *)
 val set_revert_buffer_function
   :  Source_code_position.t
@@ -361,10 +354,3 @@ val append_to : string -> unit
 val inhibit_read_only : (_, 'a) Sync_or_async.t -> (unit -> 'a) -> 'a
 val line_and_column_of_position : Position.t -> Line_and_column.t
 val position_of_line_and_column : Line_and_column.t -> Position.t
-
-module Window_display_state : sig
-  type t [@@deriving sexp_of]
-
-  val get : unit -> t
-  val restore : t -> unit
-end

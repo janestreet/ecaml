@@ -14,4 +14,4 @@ val load : ?message:bool (** default is [true] *) -> string -> unit Deferred.t
 
 (** [(describe-variable 'load-path)]
     [(Info-goto-node "(elisp)Library Search")] *)
-val path : unit -> string list
+val path : string list Var.t

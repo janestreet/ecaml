@@ -43,7 +43,7 @@ let%expect_test "[exists], [is_*]" =
 ;;
 
 let%expect_test "[is_below]" =
-  let dir = Current_buffer.(get_buffer_local directory) in
+  let dir = Current_buffer.(get_buffer_local_exn directory) in
   let is_below ?debug file ~dir =
     let result = is_below file ~dir in
     match debug with
@@ -134,7 +134,7 @@ let%expect_test "[write]" =
   let file = "z.tmp" in
   write file "stuff\n";
   let show_contents () =
-    Selected_window.Blocking.find_file file;
+    let%bind () = Selected_window.find_file file in
     print_string (Current_buffer.contents () |> Text.to_utf8_bytes);
     Current_buffer.kill ()
   in

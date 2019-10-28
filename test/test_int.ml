@@ -2,7 +2,7 @@ open! Core_kernel
 open! Async_kernel
 open! Import
 
-let eval_int_var string = Form.eval (string |> Symbol.intern |> Form.symbol)
+let eval_int_var string = Form.Blocking.eval (string |> Symbol.intern |> Form.symbol)
 let most_negative_fixnum_value = eval_int_var "most-negative-fixnum"
 let most_positive_fixnum_value = eval_int_var "most-positive-fixnum"
 let most_negative_fixnum = Value.emacs_min_int
@@ -143,7 +143,7 @@ let%expect_test "[Value.of_int]" =
 ;;
 
 let%expect_test "ints coming from emacs are not boxed" =
-  let v = Form.eval (Form.read "123456") in
+  let%bind v = Form.eval_string "123456" in
   print_s [%message "Value" (v : Value.t) ~boxed:(Obj.is_block (Obj.repr v) : bool)];
   require [%here] (Value.to_int_exn v = 123_456);
   [%expect {|

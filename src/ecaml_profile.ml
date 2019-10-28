@@ -91,6 +91,13 @@ frame.  The output is added to the profile frame. |}
     ()
 ;;
 
+(* Store as strings because we only need them as strings for completion anyway. *)
+let profiled_elisp_functions = Hash_set.create (module String)
+
+let elisp_function_wrapper_name fn =
+  "ecaml-profile-wrapper-for-" ^ Symbol.name fn |> Symbol.intern
+;;
+
 let initialize () =
   let (_ : _ Customization.t) =
     Customization.defcustom_enum
@@ -263,16 +270,45 @@ let initialize () =
     (let%map_open.Defun () = return ()
      and fn = required "function" Symbol.t in
      Advice.around_values
-       ("ecaml-profile-wrapper-for-" ^ Symbol.name fn |> Symbol.intern)
+       (elisp_function_wrapper_name fn)
        [%here]
        ~for_function:fn
        ~should_profile:false
+       Sync
        (fun f args ->
           profile
             Sync
             (lazy [%sexp ((fn |> Symbol.to_value) :: args : Value.t list)])
             (fun () -> f args));
+     Hash_set.add profiled_elisp_functions (Symbol.name fn);
      message (concat [ "You just added Ecaml profiling of ["; fn |> Symbol.name; "]" ]));
+  Defun.defun
+    ("ecaml-unprofile-elisp-function" |> Symbol.intern)
+    [%here]
+    ~docstring:"Remove the profiling wrapper from the given function."
+    ~interactive:
+      (let history =
+         Minibuffer.History.find_or_create
+           ("ecaml-unprofile-elisp-function-history" |> Symbol.intern)
+           [%here]
+       in
+       Args
+         (fun () ->
+            let%bind function_name =
+              Completing.read
+                ()
+                ~prompt:"Unprofile function: "
+                ~history
+                ~collection:(This (Hash_set.to_list profiled_elisp_functions))
+                ~require_match:True
+            in
+            return [ function_name |> Value.intern ]))
+    (Returns Value.Type.unit)
+    (let%map_open.Defun () = return ()
+     and fn = required "function" Symbol.t in
+     Advice.remove (elisp_function_wrapper_name fn) ~for_function:fn;
+     Hash_set.remove profiled_elisp_functions (Symbol.name fn);
+     message (concat [ "You just removed Ecaml profiling of ["; fn |> Symbol.name; "]" ]));
   Defun.defun_nullary
     ("ecaml-profile-test-parallel-profile" |> Symbol.intern)
     [%here]

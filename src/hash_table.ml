@@ -31,7 +31,7 @@ let create ?(test = Test.Eql) () =
   make_hash_table (":test" |> Symbol.intern) (Test.to_symbol test)
 ;;
 
-let keys = Funcall.("hash-table-keys" <: t @-> return (list string))
+let keys = Funcall.("hash-table-keys" <: t @-> return (list value))
 let gethash = Funcall.("gethash" <: value @-> t @-> return (nil_or value))
 let find t key = gethash key t
 let puthash = Funcall.("puthash" <: value @-> value @-> t @-> return nil)

@@ -57,3 +57,6 @@ val terminal : t -> Terminal.t
 
 (** [(describe-variable 'frame-inherited-parameters)] *)
 val inherited_parameters : Symbol.t list Var.t
+
+(** [(describe-function 'window-tree)] *)
+val window_tree : t -> Window0.Tree.t

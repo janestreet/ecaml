@@ -13,13 +13,19 @@ module type Current_buffer0_public = sig
       [(describe-function 'with-current-buffer)]. *)
   val set_temporarily : (_, 'a) Sync_or_async.t -> Buffer0.t -> f:(unit -> 'a) -> 'a
 
+  (** [(describe-function 'boundp)]
+
+      [variable_is_defined] can be locally false in a buffer but true for that symbol
+      globally, so it is defined in [Current_buffer]. *)
+  val variable_is_defined : Symbol.t -> bool
+
   (** [(describe-function 'symbol-value)] *)
   val symbol_value : Symbol.t -> Value.t
 
-  (** [(describe-function 'symbol-value)   ] *)
+  (** [(describe-function 'symbol-value)] *)
   val value : 'a Var.t -> 'a option
 
-  (** [(describe-function 'symbol-value)   ] *)
+  (** [(describe-function 'symbol-value)] *)
   val value_exn : 'a Var.t -> 'a
 
   (** [value_opt_exn] is like [value_exn], except that it raises if the variable is
@@ -27,7 +33,7 @@ module type Current_buffer0_public = sig
       with a default value of nil. *)
   val value_opt_exn : 'a option Var.t -> 'a
 
-  (** [(describe-function 'set)]. *)
+  (** [(describe-function 'set)] *)
   val set_value : 'a Var.t -> 'a -> unit
 
   val set_values : Var.And_value.t list -> unit
@@ -48,7 +54,7 @@ module type Current_buffer0_public = sig
     -> f:(unit -> 'a)
     -> 'a
 
-  (** [(describe-function 'bound-and-true-p]. *)
+  (** [(describe-function 'bound-and-true-p)] *)
   val has_non_null_value : _ Var.t -> bool
 end
 

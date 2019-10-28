@@ -28,15 +28,16 @@ let run_after_i ?repeat here span ~f ~name =
 ;;
 
 let cancel = Funcall.("cancel-timer" <: t @-> return nil)
-let sit_for = Funcall.("sit-for" <: float @-> bool @-> return nil)
 
-let sit_for ?(redisplay = true) span =
-  Value.Private.run_outside_async [%here] (fun () ->
-    sit_for (span |> to_seconds) (not redisplay))
+let sit_for =
+  let sit_for = Funcall.("sit-for" <: float @-> bool @-> return nil) in
+  fun ?(redisplay = true) span ->
+    Value.Private.run_outside_async [%here] (fun () ->
+      sit_for (span |> to_seconds) (not redisplay))
 ;;
 
-let sleep_for = Funcall.("sleep-for" <: float @-> return nil)
-
-let sleep_for span =
-  Value.Private.run_outside_async [%here] (fun () -> sleep_for (span |> to_seconds))
+let sleep_for =
+  let sleep_for = Funcall.("sleep-for" <: float @-> return nil) in
+  fun span ->
+    Value.Private.run_outside_async [%here] (fun () -> sleep_for (span |> to_seconds))
 ;;

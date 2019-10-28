@@ -58,7 +58,7 @@ let%expect_test "[define_derived_mode]" =
   let show_major_mode () =
     print_s [%sexp (Current_buffer.major_mode () : t)] ~hide_positions:true
   in
-  Current_buffer.set_temporarily_to_temp_buffer Sync (fun () ->
+  Current_buffer.set_temporarily_to_temp_buffer Async (fun () ->
     show_major_mode ();
     [%expect
       {|
@@ -71,7 +71,7 @@ let%expect_test "[define_derived_mode]" =
          (hook_type Normal)
          (value ())))
        (syntax_table_var (fundamental-mode-syntax-table syntax-table))) |}];
-    Current_buffer.Blocking.change_major_mode M.major_mode;
+    let%bind () = Current_buffer.change_major_mode M.major_mode in
     [%expect {| initialized |}];
     show_major_mode ();
     [%expect
@@ -84,8 +84,8 @@ let%expect_test "[define_derived_mode]" =
          (symbol    test-major-mode-hook)
          (hook_type Normal)
          (value (()))))
-       (syntax_table_var (test-major-mode-syntax-table syntax-table))) |}]);
-  return ()
+       (syntax_table_var (test-major-mode-syntax-table syntax-table))) |}];
+    return ())
 ;;
 
 let%expect_test "[hook]" =

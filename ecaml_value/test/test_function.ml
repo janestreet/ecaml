@@ -35,7 +35,7 @@ let%expect_test "mutual recursion between Emacs and OCaml" =
   return ()
 ;;
 
-let eval_string s = s |> Form.read |> Form.eval
+let eval_string s = s |> Form.Blocking.eval_string
 
 let emacs_raise () =
   Funcall.("signal" <: Symbol.t @-> int @-> return nil) ("error" |> Symbol.intern) 13
@@ -140,15 +140,14 @@ let%expect_test "raising from OCaml to OCaml through many layers of Emacs" =
 
 let%expect_test "function descriptions" =
   let describe_function symbol =
-    Form.eval
-      (Form.read
-         (String.concat
-            [ "(with-temp-buffer\n\
-              \  (let ((standard-output (current-buffer)))\n\
-              \    (describe-function-1 '"
-            ; symbol |> Symbol.name
-            ; ")\n    (buffer-string)))"
-            ]))
+    Form.Blocking.eval_string
+      (String.concat
+         [ "(with-temp-buffer\n\
+           \  (let ((standard-output (current-buffer)))\n\
+           \    (describe-function-1 '"
+         ; symbol |> Symbol.name
+         ; ")\n    (buffer-string)))"
+         ])
     |> Value.to_utf8_bytes_exn
   in
   let do_nothing _ = Value.nil in

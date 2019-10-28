@@ -31,16 +31,10 @@ let equal t1 t2 = Symbol.equal t1.symbol t2.symbol
 let compare_name t1 t2 = Symbol.compare_name t1.symbol t2.symbol
 let t_by_symbol : t String.Table.t = Hashtbl.create (module String)
 
-module Blocking = struct
-  let change_in_current_buffer t =
-    Funcall.(symbol t |> Symbol.name <: nullary @-> return nil) ()
-  ;;
-end
-
 let change_to t ~in_:buffer =
   Value.Private.run_outside_async [%here] ~allowed_in_background:true (fun () ->
     Current_buffer.set_temporarily Sync buffer ~f:(fun () ->
-      Blocking.change_in_current_buffer t))
+      Funcall.(symbol t |> Symbol.name <: nullary @-> return nil) ()))
 ;;
 
 let add wrapped_at name symbol =
@@ -124,7 +118,7 @@ let define_derived_mode
     | None -> Defun.lambda_nullary_nil here ident
     | Some (returns, f) -> Defun.lambda_nullary here returns f
   in
-  Form.eval_i
+  Form.Blocking.eval_i
     (Form.list
        [ Q.define_derived_mode |> Form.symbol
        ; symbol |> Form.symbol

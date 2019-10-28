@@ -52,18 +52,16 @@ module Raw_prefix_argument = struct
   let numeric_value = Funcall.("prefix-numeric-value" <: t @-> return int)
 end
 
-let call_interactively = Funcall.("call-interactively" <: value @-> bool @-> return nil)
-
-let call_interactively
-      ?(raw_prefix_argument = Raw_prefix_argument.Absent)
-      ?(record = false)
-      command
-  =
-  Value.Private.run_outside_async [%here] (fun () ->
-    Current_buffer.set_value
-      Raw_prefix_argument.for_current_command
-      raw_prefix_argument;
-    call_interactively command record)
+let call_interactively =
+  let call_interactively =
+    Funcall.("call-interactively" <: value @-> bool @-> return nil)
+  in
+  fun ?(raw_prefix_argument = Raw_prefix_argument.Absent) ?(record = false) command ->
+    Value.Private.run_outside_async [%here] (fun () ->
+      Current_buffer.set_value
+        Raw_prefix_argument.for_current_command
+        raw_prefix_argument;
+      call_interactively command record)
 ;;
 
 let inhibit_quit = Var.Wrap.("inhibit-quit" <: bool)

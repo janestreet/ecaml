@@ -17,7 +17,8 @@ let%expect_test "list reverse expect test" =
 ;;
 
 let%expect_test "Emacs math" =
-  Form.eval ("(+ 1 2)" |> Form.read) |> Value.to_int_exn |> printf "%d\n";
+  let%bind v = Form.eval_string "(+ 1 2)" in
+  v |> Value.to_int_exn |> printf "%d\n";
   [%expect {| 3 |}];
   return ()
 ;;

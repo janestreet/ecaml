@@ -83,7 +83,7 @@ let define_minor_mode
       ; Documentation.Special_sequence.keymap keymap_var.symbol
       ]
   in
-  Form.eval_i
+  Form.Blocking.eval_i
     (Form.list
        [ Q.define_minor_mode |> Form.symbol
        ; name |> Form.symbol

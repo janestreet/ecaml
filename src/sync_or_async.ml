@@ -5,6 +5,7 @@ open! Async_kernel
 type ('a, 'b) t =
   | Sync : ('a, 'a) t
   | Async : ('a, 'a Deferred.t) t
+[@@deriving sexp_of]
 
 let async_protect ~f ~finally =
   Monitor.protect f ~finally:(fun () ->

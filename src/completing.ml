@@ -90,7 +90,7 @@ end
 
 module Collection = (val Ocaml_or_elisp_value.make Value.Type.(list string_cached))
 
-module Blocking = struct
+let completing_read =
   let completing_read =
     Funcall.(
       "completing-read"
@@ -102,46 +102,45 @@ module Blocking = struct
          @-> Symbol.t
          @-> nil_or string
          @-> return string)
-  ;;
+  in
+  fun ~prompt
+    ~collection
+    ?(predicate = Value.nil)
+    ?(require_match = Require_match.default)
+    ?(initial_input = Initial_input.Empty)
+    ?default
+    ~history
+    () ->
+    Async_ecaml.Private.run_outside_async [%here] (fun () ->
+      let prompt =
+        match default with
+        | None -> prompt
+        | Some d -> concat [ prompt; "(default = "; d; ") " ]
+      in
+      completing_read
+        prompt
+        collection
+        predicate
+        require_match
+        initial_input
+        (Minibuffer.History.symbol history)
+        default)
+;;
 
-  let completing_read
-        ~prompt
-        ~collection
-        ?(predicate = Value.nil)
-        ?(require_match = Require_match.default)
-        ?(initial_input = Initial_input.Empty)
-        ?default
-        ~history
-        ()
-    =
-    let prompt =
-      match default with
-      | None -> prompt
-      | Some d -> concat [ prompt; "(default = "; d; ") " ]
-    in
-    completing_read
-      prompt
-      collection
-      predicate
-      require_match
-      initial_input
-      (Minibuffer.History.symbol history)
-      default
-  ;;
+let read ~prompt ~collection ?require_match ?initial_input ?default ~history () =
+  completing_read
+    ~prompt
+    ~collection:(collection |> Collection.to_value)
+    ?require_match
+    ?initial_input
+    ?default
+    ~history
+    ()
+;;
 
-  let read ~prompt ~collection ?require_match ?initial_input ?default ~history () =
-    completing_read
-      ~prompt
-      ~collection:(collection |> Collection.to_value)
-      ?require_match
-      ?initial_input
-      ?default
-      ~history
-      ()
-  ;;
+let crm_separator = Var.Wrap.("crm-separator" <: string)
 
-  let crm_separator = Var.Wrap.("crm-separator" <: string)
-
+let read_multiple =
   let completing_read_multiple =
     Funcall.(
       "completing-read-multiple"
@@ -153,91 +152,59 @@ module Blocking = struct
          @-> Symbol.t
          @-> nil_or string
          @-> return (list string))
-  ;;
-
-  let read_multiple
-        ~prompt
-        ~collection
-        ?(require_match = Require_match.False)
-        ?(separator_regexp = "[ \t]*,[ \t]*")
-        ?(initial_input = Initial_input.Empty)
-        ?default
-        ~history
-        ()
-    =
-    let predicate = Value.nil in
-    let prompt =
-      match default with
-      | None -> prompt
-      | Some d -> concat [ prompt; "(default = "; d; ") " ]
-    in
-    Current_buffer.set_value_temporarily
-      Sync
-      crm_separator
-      separator_regexp
-      ~f:(fun () ->
-        completing_read_multiple
-          prompt
-          (collection |> Collection.to_value)
-          predicate
-          require_match
-          initial_input
-          (Minibuffer.History.symbol history)
-          default)
-  ;;
-end
-
-let completing_read
-      ~prompt
-      ~collection
-      ?predicate
-      ?require_match
-      ?initial_input
-      ?default
-      ~history
-      ()
-  =
-  Async_ecaml.Private.run_outside_async [%here] (fun () ->
-    Blocking.completing_read
-      ~prompt
-      ~collection
-      ?predicate
-      ?require_match
-      ?initial_input
-      ?default
-      ~history
-      ())
+  in
+  fun ~prompt
+    ~collection
+    ?(require_match = Require_match.False)
+    ?(separator_regexp = "[ \t]*,[ \t]*")
+    ?(initial_input = Initial_input.Empty)
+    ?default
+    ~history
+    () ->
+    Async_ecaml.Private.run_outside_async [%here] (fun () ->
+      let predicate = Value.nil in
+      let prompt =
+        match default with
+        | None -> prompt
+        | Some d -> concat [ prompt; "(default = "; d; ") " ]
+      in
+      Current_buffer.set_value_temporarily
+        Sync
+        crm_separator
+        separator_regexp
+        ~f:(fun () ->
+          completing_read_multiple
+            prompt
+            (collection |> Collection.to_value)
+            predicate
+            require_match
+            initial_input
+            (Minibuffer.History.symbol history)
+            default))
 ;;
 
-let read ~prompt ~collection ?require_match ?initial_input ?default ~history () =
-  Async_ecaml.Private.run_outside_async [%here] (fun () ->
-    Blocking.read
-      ~prompt
-      ~collection
-      ?require_match
-      ?initial_input
-      ?default
-      ~history
-      ())
+let symbol_collection =
+  lazy
+    (Feature.require ("help-fns" |> Symbol.intern);
+     "help--symbol-completion-table" |> Symbol.intern |> Symbol.function_exn)
 ;;
 
 let read_function_name =
   (* The code below is based on [describe-function]'s [interactive] spec. *)
-  let collection_and_predicate =
+  let predicate =
     lazy
-      (Feature.require ("help-fns" |> Symbol.intern);
-       ( "help--symbol-completion-table" |> Symbol.intern |> Symbol.function_exn
-       , Defun.lambda
-           [%here]
-           (Returns Value.Type.bool)
-           (let%map_open.Defun () = return ()
-            and f = required "f" Symbol.t in
-            Symbol.function_is_defined f
-            || is_some (Symbol.Property.get Symbol.Property.function_documentation f))
-         |> Function.to_value ))
+      (Defun.lambda
+         [%here]
+         (Returns Value.Type.bool)
+         (let%map_open.Defun () = return ()
+          and f = required "f" Symbol.t in
+          Symbol.function_is_defined f
+          || is_some (Symbol.Property.get Symbol.Property.function_documentation f))
+       |> Function.to_value)
   in
   fun ~prompt ~history ->
-    let collection, predicate = force collection_and_predicate in
+    let collection = force symbol_collection in
+    let predicate = force predicate in
     let%bind name =
       completing_read
         ~prompt
@@ -252,24 +219,31 @@ let read_function_name =
     return name
 ;;
 
-let read_multiple
-      ~prompt
-      ~collection
-      ?require_match
-      ?separator_regexp
-      ?initial_input
-      ?default
-      ~history
-      ()
-  =
-  Async_ecaml.Private.run_outside_async [%here] (fun () ->
-    Blocking.read_multiple
-      ~prompt
-      ~collection
-      ?require_match
-      ?separator_regexp
-      ?initial_input
-      ?default
-      ~history
-      ())
+let read_variable_name =
+  let predicate =
+    lazy
+      (Defun.lambda
+         [%here]
+         (Returns Value.Type.bool)
+         (let%map_open.Defun () = return ()
+          and var = required "var" Symbol.t in
+          Current_buffer.variable_is_defined var
+          || is_some (Symbol.Property.get Symbol.Property.variable_documentation var))
+       |> Function.to_value)
+  in
+  fun ~prompt ~history ->
+    let collection = force symbol_collection in
+    let predicate = force predicate in
+    let%bind name =
+      completing_read
+        ~prompt
+        ~collection
+        ~predicate
+        ~require_match:True
+        ?default:(Point.variable_at () |> Option.map ~f:Symbol.name)
+        ~history
+        ()
+    in
+    if String.is_empty name then raise_s [%message "Did not enter a variable name"];
+    return name
 ;;

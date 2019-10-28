@@ -56,6 +56,10 @@ module Property = struct
   let function_documentation =
     create ("function-documentation" |> intern) Value.Type.value
   ;;
+
+  let variable_documentation =
+    create ("variable-documentation" |> intern) Value.Type.value
+  ;;
 end
 
 module type Subtype = sig
@@ -99,4 +103,15 @@ struct
           (concat [ "["; Arg.module_name; ".of_value_exn] got unexpected value" ])
             (value : Value.t)]
   ;;
+end
+
+module Compare_name = struct
+  module T = struct
+    type t = symbol [@@deriving sexp_of]
+
+    let compare = compare_name
+  end
+
+  include T
+  include Comparator.Make (T)
 end

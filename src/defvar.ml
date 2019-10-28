@@ -24,7 +24,7 @@ let defvar
       ()
   =
   ignore
-    (Form.eval
+    (Form.Blocking.eval
        ([ Q.defvar |> Symbol.to_value
         ; symbol |> Symbol.to_value
         ; Value.list
