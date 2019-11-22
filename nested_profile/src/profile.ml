@@ -1,5 +1,4 @@
 open! Core_kernel
-open Float.Robustly_comparable
 open! Async_kernel
 
 module Start_location = struct
@@ -169,11 +168,13 @@ module Record = struct
     if List.is_empty t.children
     then t
     else (
-      let took = took t in
       let maybe_add_gap ts ~start ~stop =
         let gap_took = Time_ns.diff stop start in
-        let gap_fraction = Time_ns.Span.( // ) gap_took took in
-        if Time_ns.Span.( = ) gap_took Time_ns.Span.zero || gap_fraction <. 0.01
+        (* We hide the gap frame if it took less than [!hide_if_less_than], like all other
+           frames.  We also hide the gap frame if it took less than 1us, since a gap frame
+           that says 0us would be noise. *)
+        if Time_ns.Span.( < ) gap_took !hide_if_less_than
+        || Time_ns.Span.( < ) gap_took Time_ns.Span.microsecond
         then ts
         else
           { start
