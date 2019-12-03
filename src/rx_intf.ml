@@ -27,27 +27,31 @@ module T = struct
   type t =
     | Any_char
     | Any_in of Char_class.t list
-    (** [Exactly s] matches exactly the string [s] (e.g., '.' only matches '.') *)
     | Exactly of string
+    (** [Exactly s] matches exactly the string [s] (e.g., '.' only matches '.') *)
     | Line of Start_or_end.t
     | None_in of Char_class.t list
     | One_or_more of t
     | Or of t list
+    | Pattern of string
     (** [Pattern s] interprets [s] as a regexp (e.g., '.' matches any character) *)
-    | Pattern of string (** Matches zero characters, but only where the point is. *)
-    | Point
+    | Point (** Matches zero characters, but only where the point is. *)
     | Repeat of
         { min : int
         ; max : int option
         ; t : t
         }
     | Seq of t list
+    | Submatch of t
     (** Text matched by [Submatch] can be retrieved using [Regexp.Last_match.text_exn
         ~subexp:index].
 
         [index] is the number of parentheses to the left of this submatch in the regexp
         pattern. *)
-    | Submatch of t
+    | Submatch_n of
+        { index : int
+        ; t : t
+        }
     (** Text matched by [Submatch_n] can be retrieved using [Regexp.Last_match.text_exn
         ~subexp:index].
 
@@ -55,10 +59,6 @@ module T = struct
         regexp pattern. If [index] is greater, it will shadow the submatch that would have
         been assigned that index. If [index] is less, then it is an error to use the
         resulting regexp. *)
-    | Submatch_n of
-        { index : int
-        ; t : t
-        }
     | Zero_or_more of t
     | Zero_or_one of t
   [@@deriving sexp_of]
