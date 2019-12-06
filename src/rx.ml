@@ -38,8 +38,8 @@ module Char_class = struct
   let to_forms ts =
     let chars, other_ts =
       List.partition_map ts ~f:(function
-        | Chars_in s -> `Fst s
-        | Range _ as t -> `Snd t)
+        | Chars_in s -> First s
+        | Range _ as t -> Second t)
     in
     let chars =
       List.fold chars ~init:Char.Set.empty ~f:(fun init s ->
