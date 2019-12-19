@@ -138,7 +138,7 @@ end = struct
 
   let create () =
     let write_to_request_cycle =
-      Unix.socket ~domain:PF_UNIX ~kind:SOCK_STREAM ~protocol:0
+      Unix.socket ~domain:PF_UNIX ~kind:SOCK_STREAM ~protocol:0 ()
     in
     { client_process = None
     ; exists_unread_byte = false

@@ -11,9 +11,9 @@ let concat = String.concat
 let ignore_stderr () =
   let module Unix = Core.Unix in
   let saved_stderr = Unix.dup Unix.stderr in
-  Unix.dup2 ~src:(Unix.openfile "/dev/null" ~mode:[ O_WRONLY ]) ~dst:Unix.stderr;
+  Unix.dup2 ~src:(Unix.openfile "/dev/null" ~mode:[ O_WRONLY ]) ~dst:Unix.stderr ();
   stage (fun () ->
-    Unix.dup2 ~src:saved_stderr ~dst:Unix.stderr;
+    Unix.dup2 ~src:saved_stderr ~dst:Unix.stderr ();
     Unix.close saved_stderr)
 ;;
 
@@ -115,10 +115,10 @@ let with_input (type a) string (f : unit -> a Deferred.t) : a Deferred.t =
      raise_s
        [%message
          "[with_input] doesn't support strings this long" ~_:(String.length string : int)]);
-  Unix.dup2 ~src:r ~dst:Unix.stdin;
+  Unix.dup2 ~src:r ~dst:Unix.stdin ();
   Unix.close r;
   Monitor.protect f ~finally:(fun () ->
-    Unix.dup2 ~src:stdin_to_restore ~dst:Unix.stdin;
+    Unix.dup2 ~src:stdin_to_restore ~dst:Unix.stdin ();
     return ())
 ;;
 
