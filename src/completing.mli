@@ -42,6 +42,15 @@ val read
   -> unit
   -> string Deferred.t
 
+val read_map_key
+  :  prompt:string (** typically ends with ": " *)
+  -> collection:'a String.Map.t
+  -> ?initial_input:Initial_input.t (** default is Empty *)
+  -> ?default:string
+  -> history:Minibuffer.History.t
+  -> unit
+  -> 'a Deferred.t
+
 (** Read a function name in the same manner as [describe-function]. *)
 val read_function_name
   :  prompt:string

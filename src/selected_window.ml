@@ -12,10 +12,21 @@ let set ?(move_to_front_of_buffer_list = true) window =
   select_window window (not move_to_front_of_buffer_list)
 ;;
 
-let switch_to_buffer = Funcall.("switch-to-buffer" <: Buffer.t @-> return nil)
+module Blocking = struct
+  let switch_to_buffer = Funcall.("switch-to-buffer" <: Buffer.t @-> return nil)
+end
+
+let switch_to_buffer buffer =
+  Value.Private.run_outside_async [%here] (fun () -> Blocking.switch_to_buffer buffer)
+;;
 
 let switch_to_buffer_other_window =
-  Funcall.("switch-to-buffer-other-window" <: Buffer.t @-> return nil)
+  let switch_to_buffer_other_window =
+    Funcall.("switch-to-buffer-other-window" <: Buffer.t @-> return nil)
+  in
+  fun buffer ->
+    Value.Private.run_outside_async [%here] (fun () ->
+      switch_to_buffer_other_window buffer)
 ;;
 
 let split_horizontally_exn =
@@ -25,7 +36,11 @@ let split_horizontally_exn =
 let split_sensibly_exn = Funcall.("split-window-sensibly" <: nullary @-> return nil)
 let split_vertically_exn = Funcall.("split-window-vertically" <: nullary @-> return nil)
 let find_file_other_window = Funcall.("find-file-other-window" <: string @-> return nil)
-let quit = Funcall.("quit-window" <: nullary @-> return nil)
+
+let quit =
+  let quit = Funcall.("quit-window" <: nullary @-> return nil) in
+  fun () -> Value.Private.run_outside_async [%here] quit
+;;
 
 let save_window_excursion sync_or_async f =
   Save_wrappers.save_window_excursion sync_or_async f

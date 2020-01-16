@@ -59,7 +59,7 @@ let%expect_test "[message_s]" =
 ;;
 
 let%expect_test "[message_text]" =
-  message_text (Text.colorize (Text.of_utf8_bytes "hello") Color.red);
+  message_text (Text.colorize (Text.of_utf8_bytes "hello") ~color:Color.red);
   show ();
   [%expect {|
     hello

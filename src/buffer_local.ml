@@ -74,6 +74,10 @@ let set t a buffer =
   Current_buffer.set_temporarily Sync buffer ~f:(fun () -> set_in_current_buffer t a)
 ;;
 
+let set_temporarily_in_current_buffer sync_or_async t a ~f =
+  Current_buffer.set_value_temporarily sync_or_async t a ~f
+;;
+
 let get_in_current_buffer t =
   match Current_buffer.value_exn t with
   | t -> t
@@ -124,4 +128,5 @@ module Private = struct
   let get_in_current_buffer = get_in_current_buffer
   let get_in_current_buffer_exn = get_in_current_buffer_exn
   let set_in_current_buffer = set_in_current_buffer
+  let set_temporarily_in_current_buffer = set_temporarily_in_current_buffer
 end

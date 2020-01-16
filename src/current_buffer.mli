@@ -18,6 +18,13 @@ val get_buffer_local : 'a Buffer_local.t -> 'a
 val get_buffer_local_exn : 'a option Buffer_local.t -> 'a
 val set_buffer_local : 'a Buffer_local.t -> 'a -> unit
 
+val set_buffer_local_temporarily
+  :  (_, 'a) Sync_or_async.t
+  -> 'b Buffer_local.t
+  -> 'b
+  -> f:(unit -> 'a)
+  -> 'a
+
 (** [(describe-variable 'default-directory)]
     [(Info-goto-node "(elisp)File Name Expansion")] *)
 val directory : Filename.t option Buffer_local.t
@@ -336,6 +343,22 @@ val set_revert_buffer_function
     This function was introduced in Emacs 26 and the value is an error if an earlier
     version of emacs is used. *)
 val replace_buffer_contents : (Buffer.t -> unit) Or_error.t
+
+(** [replace_string ~from ~to_] replaces all occurrences of [from] with [to_].  It is like
+    [(describe-function 'replace-string)], but doesn't actually call that,
+    because its documentation says:
+
+    {v
+      This function is for interactive use only;
+      in Lisp code use `search-forward' and `replace-match' instead.
+    v} *)
+val replace_string
+  :  ?start:Position.t (** default is [Point.min ()] *)
+  -> ?end_:Position.t (** default is [Point.max ()] *)
+  -> from:string
+  -> to_:string
+  -> unit
+  -> unit
 
 (** [(describe-function 'buffer-size)] *)
 val size : unit -> int

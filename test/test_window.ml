@@ -3,7 +3,7 @@ open! Async_kernel
 open! Import
 open! Window
 
-let show_all () = print_s [%sexp (all_in_selected_frame () : t list)]
+let show_all () = print_s [%sexp (Frame.window_list () : t list)]
 
 let%expect_test "[all_in_selected_frame]" =
   show_all ();
@@ -25,7 +25,7 @@ let show t =
         ~width:(try_with (fun () -> width_exn t) : int Or_error.t)]
 ;;
 
-let t = List.hd_exn (all_in_selected_frame ())
+let t = List.hd_exn (Frame.window_list ())
 
 let%expect_test "accessors" =
   show t;
@@ -79,7 +79,7 @@ let%expect_test "[Tree]" =
   let show () =
     let window_tree = Frame.window_tree (frame (Selected_window.get ())) in
     print_s [%sexp (window_tree : Window.Tree.t)];
-    List.iter (all_in_selected_frame ()) ~f:show
+    List.iter (Frame.window_list ()) ~f:show
   in
   show ();
   [%expect

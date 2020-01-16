@@ -18,7 +18,8 @@ type keymap = t [@@deriving sexp_of]
 let equal = eq
 let parent = Funcall.("keymap-parent" <: t @-> return (nil_or t))
 let set_parent = Funcall.("set-keymap-parent" <: t @-> nil_or t @-> return nil)
-let set_transient = Funcall.("set-transient-map" <: t @-> return nil)
+let set_transient = Funcall.("set-transient-map" <: t @-> bool @-> return nil)
+let set_transient ?(keep_if_used = false) t = set_transient t keep_if_used
 
 module Kind = struct
   type t =

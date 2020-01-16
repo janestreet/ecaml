@@ -1,49 +1,7 @@
 open! Core_kernel
+open! Async_kernel
 open! Import
-
-module Q = struct
-  include Q
-
-  let never = "never" |> Symbol.intern
-end
-
 include Window0
-
-module Include_minibuffer = struct
-  module T = struct
-    type t =
-      | Yes
-      | No
-      | Only_if_active
-    [@@deriving enumerate, sexp_of]
-  end
-
-  include T
-
-  let never = Q.never |> Symbol.to_value
-
-  let type_ =
-    Value.Type.enum
-      [%sexp "include-minibuffer"]
-      (module T)
-      (function
-        | Yes -> Value.t
-        | No -> never
-        | Only_if_active -> Value.nil)
-  ;;
-
-  let t = type_
-end
-
-let window_list =
-  Funcall.(
-    "window-list"
-    <: nil_or Frame.t @-> nil_or Include_minibuffer.t @-> nil_or t @-> return (list t))
-;;
-
-let all_in_selected_frame ?include_minibuffer () =
-  window_list None include_minibuffer None
-;;
 
 let body_height_exn = Funcall.("window-body-height" <: t @-> return int)
 let buffer = Funcall.("window-buffer" <: t @-> return (nil_or Buffer.t))
@@ -60,12 +18,18 @@ let is_live = Funcall.("window-live-p" <: t @-> return bool)
 let point_exn = Funcall.("window-point" <: t @-> return Position.t)
 let width_exn = Funcall.("window-width" <: t @-> return int)
 
-let set_window_buffer =
-  Funcall.("set-window-buffer" <: t @-> Buffer.t @-> bool @-> return nil)
-;;
+module Blocking = struct
+  let set_buffer_exn =
+    let set_window_buffer =
+      Funcall.("set-window-buffer" <: t @-> Buffer.t @-> bool @-> return nil)
+    in
+    fun ?(keep_margins = false) t buffer -> set_window_buffer t buffer keep_margins
+  ;;
+end
 
-let set_buffer_exn ?(keep_margins = false) t buffer =
-  set_window_buffer t buffer keep_margins
+let set_buffer_exn ?keep_margins t buffer =
+  Value.Private.run_outside_async [%here] (fun () ->
+    Blocking.set_buffer_exn ?keep_margins t buffer)
 ;;
 
 let set_point_exn = Funcall.("set-window-point" <: t @-> Position.t @-> return nil)

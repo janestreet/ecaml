@@ -42,19 +42,20 @@ module Cycle_report = struct
     let open Async in
     message "Collecting 10 seconds of cycle data...";
     measuring := true;
-    let%map () = Clock_ns.after (sec_ns 10.) in
+    let%bind () = Clock_ns.after (sec_ns 10.) in
     measuring := false;
     let samples = !cycles in
     cycles := [];
     let buffer = Buffer.find_or_create ~name:"cycle report" in
-    Selected_window.switch_to_buffer buffer;
+    let%bind () = Selected_window.switch_to_buffer buffer in
     List.iter samples ~f:(fun sample ->
       Point.insert (sprintf !"%{Time_ns.Span}\n" sample));
     let avg =
       let sum = List.fold_left ~init:Time_ns.Span.zero ~f:Time_ns.Span.( + ) samples in
       Time_ns.Span.(sum / Float.of_int (List.length samples))
     in
-    Point.insert (sprintf !"Average cycle time: %{Time_ns.Span}\n" avg)
+    Point.insert (sprintf !"Average cycle time: %{Time_ns.Span}\n" avg);
+    return ()
   ;;
 end
 
@@ -224,6 +225,15 @@ module Pending_emacs_call = struct
   type t = T : 'a call -> t
 end
 
+module Pending_foreground_block_on_async = struct
+  type t =
+    { context : Sexp.t Lazy.t option
+    ; execution_context : Async.Execution_context.t
+    ; f : unit -> unit Async.Deferred.t
+    ; here : Source_code_position.t
+    }
+end
+
 type t =
   { (* [am_running_async_cycle] is set to [true] while we're running an Async cycle.
        During an Async cycle, we avoid running nested Async cycles or
@@ -237,6 +247,8 @@ type t =
   ; mutable last_cycle_finished_at : Time_ns.t
   ; scheduler : Scheduler.t
   ; mutable pending_emacs_calls : Pending_emacs_call.t Queue.t
+  ; mutable pending_foreground_block_on_asyncs :
+      Pending_foreground_block_on_async.t Queue.t
   }
 
 let t =
@@ -249,6 +261,7 @@ let t =
   ; last_cycle_finished_at = Time_ns.epoch
   ; scheduler = Scheduler.t ()
   ; pending_emacs_calls = Queue.create ()
+  ; pending_foreground_block_on_asyncs = Queue.create ()
   }
 ;;
 
@@ -263,68 +276,165 @@ let run_pending_emacs_calls () =
       let run_job () = Result.try_with pending_emacs_call.f in
       let result =
         match pending_emacs_call.running_in_background with
-        | Some location -> Background.run_in_background location ~f:run_job
-        | None -> run_job ()
+        | Some location ->
+          Background.Private.mark_running_in_background location ~f:run_job
+        | None ->
+          (* If we're in this branch, that means this job was enqueued in the foreground,
+             and so the foreground is blocking on the result of this job. So we make sure
+             this job sees that it is running in the foreground. *)
+          Background.Private.mark_running_in_foreground ~f:run_job
       in
       Scheduler.lock t.scheduler;
       Ivar.fill pending_emacs_call.result result));
   has_work_to_do
 ;;
 
-(* When the scheduler requests an Async cycle, [in_emacs_have_lock_do_cycle] runs the
-   cycle inside the emacs thread and notifies the scheduler when it is finished. *)
-let in_emacs_have_lock_do_cycle () =
-  if (not (Value.Expert.have_active_env ()))
-  || not (Scheduler.am_holding_lock t.scheduler)
-  then raise_s [%sexp "[in_emacs_have_lock_do_cycle] should only be called by emacs"];
-  (* If we are already running an Async cycle, then we can't start a new one, so we do
-     nothing.  We can reach here with [t.am_running_async_cycle = true] if Ecaml calls a
-     blocking Elisp function without using [run_outside_async].  We are in the middle of a
-     long, possibly unending, code transition in which we are wrapping such calls with
-     [run_outside_async]. *)
-  if not t.am_running_async_cycle
-  then (
-    if debug
-    then Debug.eprint_s [%message "running a cycle" ~time:(Time.now () : Time.t)];
-    List.iter t.exceptions_raised_outside_emacs_env ~f:(fun exn ->
-      message_s [%sexp (exn : exn)]);
-    t.exceptions_raised_outside_emacs_env <- [];
-    let time = Time.now () in
-    Exn.protect
-      ~f:(fun () ->
-        Async.Unix.Private.Wait.check_all ();
-        let rec run_cycles max_cycles =
-          (* Pending emacs calls may have been enqueued from outside of Async. Run them so
-             their deferreds get filled. *)
-          let ran_pending_calls = run_pending_emacs_calls () in
-          t.am_running_async_cycle <- true;
-          let old_execution_context =
-            Async_kernel.Async_kernel_scheduler.current_execution_context ()
+module Block_on_async = struct
+  module Context_backtrace = struct
+    module Frame = struct
+      type t =
+        { here : Source_code_position.t
+        ; context : Sexp.t Lazy.t
+        ; created_at : Core.Time_ns.t opaque_in_test
+        }
+      [@@deriving sexp_of]
+    end
+
+    type t = Frame.t list [@@deriving sexp_of]
+  end
+
+  let context_backtrace : Context_backtrace.t ref = ref []
+  let am_blocking_on_async () = not (List.is_empty !context_backtrace)
+
+  let rec if_safe_run_pending () =
+    assert (not t.am_running_async_cycle);
+    if (not (am_blocking_on_async ()))
+    && not (Queue.is_empty t.pending_foreground_block_on_asyncs)
+    then (
+      let pending_foreground_block_on_asyncs = t.pending_foreground_block_on_asyncs in
+      t.pending_foreground_block_on_asyncs <- Queue.create ();
+      Queue.iter
+        pending_foreground_block_on_asyncs
+        ~f:(fun { context; execution_context; f; here } ->
+          (* We ignore any error because [within_context] already sent it to
+             [execution_context]'s monitor. *)
+          let (_ : (unit, unit) result) =
+            Scheduler.within_context execution_context (fun () ->
+              block_on_async here ?context f)
           in
-          Exn.protect
-            ~f:(fun () -> Async_kernel.Async_kernel_scheduler.Private.(run_cycle (t ())))
-            ~finally:(fun () ->
-              (* Restore the execution context effective before running cycles.  This
-                 prevents background jobs from raising exceptions to random monitors,
-                 because the execution context of whichever job happened to run last would
-                 have been left intact. *)
-              Async_kernel.Async_kernel_scheduler.Private.(
-                set_execution_context (t ()) old_execution_context);
-              t.am_running_async_cycle <- false);
-          if max_cycles > 0 && (ran_pending_calls || Scheduler.num_pending_jobs () > 0)
-          then run_cycles (max_cycles - 1)
-        in
-        (* 5 was chosen as an arbitrary limit to prevent the emacs toplevel from being
-           starved if an Async job misbehaves. *)
-        run_cycles 5)
-      ~finally:(fun () ->
-        t.last_cycle_finished_at <- Time_ns.now ();
-        if debug
+          ()))
+
+  (* When the scheduler requests an Async cycle, [in_emacs_have_lock_do_cycle] runs the
+     cycle inside the emacs thread and notifies the scheduler when it is finished. *)
+  and in_emacs_have_lock_do_cycle () =
+    if (not (Value.Expert.have_active_env ()))
+    || not (Scheduler.am_holding_lock t.scheduler)
+    then raise_s [%sexp "[in_emacs_have_lock_do_cycle] should only be called by emacs"];
+    (* If we are already running an Async cycle, then we can't start a new one, so we do
+       nothing.  We can reach here with [t.am_running_async_cycle = true] if Ecaml calls a
+       blocking Elisp function without using [run_outside_async].  We are in the middle of a
+       long, possibly unending, code transition in which we are wrapping such calls with
+       [run_outside_async]. *)
+    if not t.am_running_async_cycle
+    then (
+      if debug
+      then Debug.eprint_s [%message "running a cycle" ~time:(Time.now () : Time.t)];
+      if_safe_run_pending ();
+      List.iter t.exceptions_raised_outside_emacs_env ~f:(fun exn ->
+        message_s [%sexp (exn : exn)]);
+      t.exceptions_raised_outside_emacs_env <- [];
+      let time = Time.now () in
+      Exn.protect
+        ~f:(fun () ->
+          Async.Unix.Private.Wait.check_all ();
+          let rec run_cycles max_cycles =
+            (* Pending emacs calls may have been enqueued from outside of Async. Run them so
+               their deferreds get filled. *)
+            let ran_pending_calls = run_pending_emacs_calls () in
+            t.am_running_async_cycle <- true;
+            let old_execution_context =
+              Async_kernel.Async_kernel_scheduler.current_execution_context ()
+            in
+            Exn.protect
+              ~f:(fun () ->
+                Async_kernel.Async_kernel_scheduler.Private.(run_cycle (t ())))
+              ~finally:(fun () ->
+                (* Restore the execution context effective before running cycles.  This
+                   prevents background jobs from raising exceptions to random monitors,
+                   because the execution context of whichever job happened to run last would
+                   have been left intact. *)
+                Async_kernel.Async_kernel_scheduler.Private.(
+                  set_execution_context (t ()) old_execution_context);
+                t.am_running_async_cycle <- false);
+            if max_cycles > 0 && (ran_pending_calls || Scheduler.num_pending_jobs () > 0)
+            then run_cycles (max_cycles - 1)
+          in
+          (* 5 was chosen as an arbitrary limit to prevent the emacs toplevel from being
+             starved if an Async job misbehaves. *)
+          run_cycles 5)
+        ~finally:(fun () ->
+          t.last_cycle_finished_at <- Time_ns.now ();
+          if debug
+          then
+            Debug.eprint_s
+              [%message "cycle took" ~time:(Time.diff (Time.now ()) time : Time.Span.t)];
+          Thread_safe_sleeper.wake_up t.cycle_done_sleeper))
+
+  and block_on_async
+    : type a.
+      _
+      -> ?context:_
+      -> ?for_testing_allow_nested_block_on_async:_
+      -> (unit -> a Async.Deferred.t)
+      -> a
+    =
+    fun here ?context ?(for_testing_allow_nested_block_on_async = false) f ->
+    assert (Scheduler.am_holding_lock t.scheduler);
+    Ref.set_temporarily
+      context_backtrace
+      (if for_testing_allow_nested_block_on_async
+       then []
+       else
+         { here
+         ; context = Option.value context ~default:(lazy [%message])
+         ; created_at = Time_ns.now ()
+         }
+         :: !context_backtrace)
+      ~f:(fun () ->
+        if t.am_running_async_cycle
         then
-          Debug.eprint_s
-            [%message "cycle took" ~time:(Time.diff (Time.now ()) time : Time.Span.t)];
-        Thread_safe_sleeper.wake_up t.cycle_done_sleeper))
-;;
+          raise_s
+            [%message.omit_nil
+              "Called [block_on_async] in the middle of an Async job!"
+                (context_backtrace : Context_backtrace.t ref)
+                ~profile_backtrace:
+                  (Nested_profile.Profile.backtrace () : Sexp.t list option)];
+        let rec run_cycles_until_filled deferred =
+          if Ref.set_temporarily Profile.should_profile false ~f:Command.quit_requested
+          then error_s [%message "Blocking operation interrupted"]
+          else (
+            match Async.Deferred.peek deferred with
+            | Some result -> result
+            | None ->
+              (* [Thread.delay] gives the scheduler thread time to run before we run a
+                 cycle. *)
+              Scheduler.unlock t.scheduler;
+              Thread.delay (Time.Span.of_us 10. |> Time.Span.to_sec);
+              Scheduler.lock t.scheduler;
+              in_emacs_have_lock_do_cycle ();
+              run_cycles_until_filled deferred)
+        in
+        let deferred =
+          Async.(
+            Monitor.try_with ~extract_exn:true ~run:`Schedule f
+            >>| Or_error.of_exn_result)
+        in
+        let result = run_cycles_until_filled deferred in
+        match result with
+        | Ok x -> x
+        | Error error -> Error.raise error)
+  ;;
+end
 
 (* [request_emacs_run_cycle] requests the emacs main thread to run a cycle. It hands over
    the Async lock in the process. *)
@@ -387,8 +497,10 @@ let start_scheduler () =
       (Returns Value.Type.unit)
       (let open Defun.Let_syntax in
        let%map_open () = return () in
-       in_emacs_have_lock_do_cycle ());
-    Cycle_requester.register_cycle_handler t.cycle_requester in_emacs_have_lock_do_cycle;
+       Block_on_async.in_emacs_have_lock_do_cycle ());
+    Cycle_requester.register_cycle_handler
+      t.cycle_requester
+      Block_on_async.in_emacs_have_lock_do_cycle;
     (* It is possible that emacs doesn't respond to a cycle request (maybe because emacs
        is under high load). Instead of letting the scheduler block forever on a cycle that
        will never run, we add a timer to ensure we run a cycle once per
@@ -407,7 +519,7 @@ let start_scheduler () =
                      max_inter_cycle_timeout
                 then (
                   Cycle_requester.byte_was_probably_lost t.cycle_requester;
-                  in_emacs_have_lock_do_cycle ())
+                  Block_on_async.in_emacs_have_lock_do_cycle ())
               with
               | exn -> message_s [%sexp "Error in async keepalive timer", (exn : exn)]));
     (* The default [max_inter_cycle_timeout] is much smaller.  Setting it to 1s reduces
@@ -451,50 +563,27 @@ module Export = struct
 end
 
 module Private = struct
-  module Context_backtrace = struct
-    type t = (Source_code_position.t * Sexp.t Lazy.t) list [@@deriving sexp_of]
-  end
+  let block_on_async = Block_on_async.block_on_async
 
-  let context_backtrace : Context_backtrace.t ref = ref []
-
-  let block_on_async here ?context f =
+  let enqueue_foreground_block_on_async
+        here
+        ?context
+        ?(raise_exceptions_to_monitor = Async.Monitor.main)
+        f
+    =
     assert (Scheduler.am_holding_lock t.scheduler);
-    Ref.set_temporarily
-      context_backtrace
-      ((here, Option.value context ~default:(lazy [%message])) :: !context_backtrace)
-      ~f:(fun () ->
-        if t.am_running_async_cycle
-        then
-          raise_s
-            [%message.omit_nil
-              "Called [block_on_async] in the middle of an Async job!"
-                (context_backtrace : Context_backtrace.t ref)
-                ~profile_backtrace:
-                  (Nested_profile.Profile.backtrace () : Sexp.t list option)];
-        let rec run_cycles_until_filled deferred =
-          if Ref.set_temporarily Profile.should_profile false ~f:Command.quit_requested
-          then error_s [%message "Blocking operation interrupted"]
-          else (
-            match Async.Deferred.peek deferred with
-            | Some result -> result
-            | None ->
-              (* [Thread.delay] gives the scheduler thread time to run before we run a
-                 cycle. *)
-              Scheduler.unlock t.scheduler;
-              Thread.delay (Time.Span.of_us 10. |> Time.Span.to_sec);
-              Scheduler.lock t.scheduler;
-              in_emacs_have_lock_do_cycle ();
-              run_cycles_until_filled deferred)
-        in
-        let deferred =
-          Async.(
-            Monitor.try_with ~extract_exn:true ~run:`Schedule f
-            >>| Or_error.of_exn_result)
-        in
-        let result = run_cycles_until_filled deferred in
-        match result with
-        | Ok x -> x
-        | Error error -> Error.raise error)
+    Queue.enqueue
+      t.pending_foreground_block_on_asyncs
+      { context
+      ; execution_context =
+          (* The current execution context's monitor may not be valid when [f] is run,
+             which might be long after that monitor has returned. *)
+          Async.Execution_context.create_like
+            (Scheduler.current_execution_context t.scheduler)
+            ~monitor:raise_exceptions_to_monitor
+      ; f
+      ; here
+      }
   ;;
 
   let run_outside_async here ?(allowed_in_background = false) f =
@@ -519,7 +608,15 @@ module Private = struct
   ;;
 
   let () =
-    Set_once.set_exn Value.Private.Block_on_async.set_once [%here] { f = block_on_async };
+    Set_once.set_exn
+      Value.Private.Block_on_async.set_once
+      [%here]
+      { f = Block_on_async.block_on_async ~for_testing_allow_nested_block_on_async:false
+      };
+    Set_once.set_exn
+      Value.Private.Enqueue_foreground_block_on_async.set_once
+      [%here]
+      { f = enqueue_foreground_block_on_async };
     Set_once.set_exn
       Value.Private.Run_outside_async.set_once
       [%here]
@@ -531,7 +628,10 @@ module Expect_test_config = struct
   include Async.Expect_test_config_with_unit_expect
 
   let run f =
-    Private.block_on_async [%here] ~context:(lazy [%message "Expect_test_config.run"]) f
+    Block_on_async.block_on_async
+      [%here]
+      ~context:(lazy [%message "Expect_test_config.run"])
+      f
   ;;
 end
 
@@ -691,5 +791,21 @@ not preserve the current Async execution context.
          (* The key-value pair is present. *)
          assert (Option.is_some (Async.Scheduler.find_local dummy_key));
          Form.list [ Form.symbol ("funcall" |> Symbol.intern); Form.quote print_data ]
-         |> Form.Blocking.eval_i))
+         |> Form.Blocking.eval_i));
+  Defun.defun_nullary_nil
+    ("ecaml-async-test-enqueue-block-on-async" |> Symbol.intern)
+    [%here]
+    ~interactive:No_arg
+    (fun () ->
+       let open Async in
+       Background.don't_wait_for [%here] (fun () ->
+         let%map () = Clock.after (sec 1.) in
+         Background.schedule_foreground_block_on_async [%here] (fun () ->
+           let%bind () = Clock.after (sec 1.) in
+           let%bind () =
+             Selected_window.switch_to_buffer
+               (Buffer.find_or_create ~name:"test buffer")
+           in
+           Point.insert "Hello foreground world!";
+           return ())))
 ;;

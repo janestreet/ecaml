@@ -57,8 +57,20 @@ module Private : sig
   val block_on_async
     :  Source_code_position.t
     -> ?context:Sexp.t Lazy.t
+    -> ?for_testing_allow_nested_block_on_async:bool
     -> (unit -> 'a Deferred.t)
     -> 'a
+
+  (** [enqueue_foreground_block_on_async here f] is like [block_on_async here f], except
+      that it does not run immediately, and it can be run from inside another
+      [block_on_async] or an Async job. Async_ecaml will run [f] at some point, when no
+      other [block_on_async] is running. *)
+  val enqueue_foreground_block_on_async
+    :  Source_code_position.t
+    -> ?context:Sexp.t Lazy.t
+    -> ?raise_exceptions_to_monitor:Monitor.t
+    -> (unit -> unit Deferred.t)
+    -> unit
 
   (** [run_outside_async f] schedules [f] to run at some point in the future, outside of
       Async, i.e. not during an Async cycle and without holding the Async lock.

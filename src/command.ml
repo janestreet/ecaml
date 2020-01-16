@@ -74,3 +74,11 @@ let quit_requested () =
   try Current_buffer.value_exn quit_flag with
   | _ -> true
 ;;
+
+let abort_recursive_edit () =
+  let abort_recursive_edit =
+    Funcall.("abort-recursive-edit" <: nullary @-> return nil)
+  in
+  abort_recursive_edit ();
+  assert false
+;;

@@ -11,6 +11,14 @@ open! Import0
     jobs created by running [f] as background jobs. *)
 val don't_wait_for : Source_code_position.t -> (unit -> unit Deferred.t) -> unit
 
+(** From a background job, become a foreground job.  We implement this by waiting until no
+    other foreground jobs are running, then blocking emacs until the [Deferred.t] is
+    resolved. *)
+val schedule_foreground_block_on_async
+  :  Source_code_position.t
+  -> (unit -> unit Deferred.t)
+  -> unit
+
 module Clock : sig
   (** [every'] is like [Async.Clock.every'], except that it marks
       the repeating jobs as background jobs. *)
@@ -46,4 +54,14 @@ val currently_running_in_background : unit -> Source_code_position.t option
 
 val am_running_in_background : unit -> bool
 val am_running_in_foreground : unit -> bool
-val run_in_background : Source_code_position.t -> f:(unit -> 'a) -> 'a
+
+module Private : sig
+  val mark_running_in_background : Source_code_position.t -> f:(unit -> 'a) -> 'a
+  val mark_running_in_foreground : f:(unit -> 'a) -> 'a
+
+  val schedule_foreground_block_on_async
+    :  Source_code_position.t
+    -> ?raise_exceptions_to_monitor:Monitor.t (** for testing, default: Monitor.main *)
+    -> (unit -> unit Deferred.t)
+    -> unit
+end

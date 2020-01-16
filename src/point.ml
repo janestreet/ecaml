@@ -165,6 +165,7 @@ let looking_at ?(update_last_match = update_last_match_default) regexp =
     if update_last_match then looking_at regexp else looking_at_p regexp)
 ;;
 
+let case_fold_search = Buffer_local.Wrap.("case-fold-search" <: bool)
 let recenter = Funcall.("recenter" <: nil_or int @-> return nil)
 let recenter ?screen_line () = recenter screen_line
 
@@ -179,3 +180,5 @@ let variable_at =
     let ret = variable_at_point () in
     if Value.is_symbol ret then Some (Symbol.of_value_exn ret) else None
 ;;
+
+let yank = Funcall.("yank" <: nullary @-> return nil)

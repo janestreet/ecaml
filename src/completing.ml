@@ -138,6 +138,21 @@ let read ~prompt ~collection ?require_match ?initial_input ?default ~history () 
     ()
 ;;
 
+let read_map_key ~prompt ~collection ?initial_input ?default ~history () =
+  let%bind choice =
+    read
+      ~prompt
+      ~collection:
+        (This (Map.keys collection))
+      ~require_match:True
+      ?initial_input
+      ?default
+      ~history
+      ()
+  in
+  return (Map.find_exn collection choice)
+;;
+
 let crm_separator = Var.Wrap.("crm-separator" <: string)
 
 let read_multiple =

@@ -3,7 +3,7 @@ open! Async_kernel
 open! Import
 open! Selected_window
 
-let show_all () = print_s [%sexp (Window.all_in_selected_frame () : Window.t list)]
+let show_all () = print_s [%sexp (Frame.window_list () : Window.t list)]
 let show () = print_s [%sexp (get () : Window.t)]
 
 let%expect_test "[get]" =
@@ -14,7 +14,7 @@ let%expect_test "[get]" =
 
 let%expect_test "[switch_to_buffer]" =
   Current_buffer.set_temporarily_to_temp_buffer Sync (fun () ->
-    switch_to_buffer (Current_buffer.get ());
+    Blocking.switch_to_buffer (Current_buffer.get ());
     show ());
   [%expect {| "#<window 1 on *temp-buffer*>" |}];
   return ()
@@ -34,7 +34,7 @@ let%expect_test "[split_vertically_exn]" =
 ;;
 
 let window1, window4 =
-  match Window.all_in_selected_frame () with
+  match Frame.window_list () with
   | [ x; y ] -> x, y
   | [ w ] -> w, w
   | _ -> raise_s [%message [%here]]

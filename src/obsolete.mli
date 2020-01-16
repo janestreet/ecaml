@@ -6,7 +6,7 @@ open! Import
 (** [(describe-function 'make-obsolete)]
 
     Note: this does not define a function alias. See [Defun.define_obsolete_alias]. *)
-val make_function_obsolete : Symbol.t -> current:Symbol.t -> since:string -> unit
+val make_function_obsolete : Symbol.t -> current:Symbol.t option -> since:string -> unit
 
 (** [(describe-function 'make-obsolete-variable)]
 

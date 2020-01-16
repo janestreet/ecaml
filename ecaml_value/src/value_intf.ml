@@ -351,6 +351,19 @@ module type Value = sig
       val set_once : t Set_once.t
     end
 
+    module Enqueue_foreground_block_on_async : sig
+      type t =
+        { f :
+            Source_code_position.t
+            -> ?context:Sexp.t Lazy.t
+            -> ?raise_exceptions_to_monitor:Monitor.t
+            -> (unit -> unit Deferred.t)
+            -> unit
+        }
+
+      val set_once : t Set_once.t
+    end
+
     module Run_outside_async : sig
       type t =
         { f :
@@ -366,6 +379,13 @@ module type Value = sig
       -> ?context:Sexp.t Lazy.t
       -> (unit -> 'a Deferred.t)
       -> 'a
+
+    val enqueue_foreground_block_on_async
+      :  Source_code_position.t
+      -> ?context:Sexp.t Lazy.t
+      -> ?raise_exceptions_to_monitor:Monitor.t
+      -> (unit -> unit Deferred.t)
+      -> unit
 
     val run_outside_async
       :  Source_code_position.t

@@ -1130,7 +1130,7 @@ let%expect_test "[paragraph_start], [paragraph_separate]" =
 let%expect_test "[describe_mode]" =
   let%bind () =
     Current_buffer.set_temporarily_to_temp_buffer Async (fun () ->
-      let%map () =
+      let%bind () =
         Current_buffer.change_major_mode Major_mode.Fundamental.major_mode
       in
       describe_mode ();
@@ -1300,5 +1300,23 @@ let%expect_test "[chars_modified_tick]" =
   [%expect {|
     1
     2 |}];
+  return ()
+;;
+
+let%expect_test "[replace_string]" =
+  set_temporarily_to_temp_buffer Sync (fun () ->
+    Point.insert {|
+abc
+def
+abc
+def
+|};
+    replace_string ~from:"ab" ~to_:"ba" ();
+    print_endline (contents () |> Text.to_utf8_bytes);
+    [%expect {|
+      bac
+      def
+      bac
+      def |}]);
   return ()
 ;;

@@ -193,6 +193,9 @@ val search_backward_regexp_exn : (Regexp.t -> unit) with_search_options
 val search_forward_regexp : (Regexp.t -> bool) with_search_options
 val search_forward_regexp_exn : (Regexp.t -> unit) with_search_options
 
+(** [(describe-variable 'case-fold-search)] *)
+val case_fold_search : bool Buffer_local.t
+
 (** [looking_at regexp] returns [true] if the text after point matches [regexp].
     [(describe-function 'looking-at)]
     [(describe-function 'looking-at-p)]
@@ -207,3 +210,6 @@ val function_called_at : unit -> Symbol.t option
 
 (** [(describe-function 'variable-at-point)] *)
 val variable_at : unit -> Symbol.t option
+
+(** [(describe-function 'yank)] *)
+val yank : unit -> unit

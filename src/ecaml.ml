@@ -1,6 +1,7 @@
 (* We export all the Ecaml modules before doing [open!]s, because we want to
    export Ecaml modules that shadow [Core_kernel] ones. *)
 
+module Abbrev = Abbrev
 module Advice = Advice
 module Ansi_color = Ansi_color
 module Async_ecaml = Async_ecaml
@@ -13,6 +14,7 @@ module Buffer = Buffer
 module Buffer_local = Buffer_local
 module Caml_embed = Ecaml_value.Caml_embed
 module Char_code = Char_code
+module Clipboard = Clipboard
 module Color = Color
 module Command = Command
 module Comment = Comment
@@ -54,6 +56,7 @@ module Hook = Hook
 module Input_event = Input_event
 module Key_sequence = Key_sequence
 module Keymap = Keymap
+module Kill_ring = Kill_ring
 module Line_and_column = Line_and_column
 module Load = Load
 module Load_history = Load_history
@@ -133,9 +136,11 @@ let provide =
     ~f:(fun () -> message_s [%message "Loaded Ecaml."]);
   Async_ecaml.initialize ();
   Caml_embed.initialize;
+  Clipboard.initialize ();
   Import.initialize_module;
   Ecaml_profile.initialize ();
   Find_function.initialize ();
+  Kill_ring.initialize ();
   User.initialize ();
   Value.initialize_module;
   (Feature.provide [@warning "-3"])

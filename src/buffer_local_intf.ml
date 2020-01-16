@@ -95,5 +95,12 @@ module type Buffer_local = sig
     val get_in_current_buffer : 'a t -> 'a
     val get_in_current_buffer_exn : 'a option t -> 'a
     val set_in_current_buffer : 'a t -> 'a -> unit
+
+    val set_temporarily_in_current_buffer
+      :  (_, 'a) Sync_or_async.t
+      -> 'b t
+      -> 'b
+      -> f:(unit -> 'a)
+      -> 'a
   end
 end

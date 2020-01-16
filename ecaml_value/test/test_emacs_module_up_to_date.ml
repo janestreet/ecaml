@@ -3,7 +3,9 @@ open! Async_kernel
 open! Import
 
 let%expect_test "[emacs-module.h] is up to date" =
-  let expected_file = Jenga_rules.Config.emacs_build_dir ^/ "src/emacs-module.h" in
+  let expected_file =
+    Jenga_rules_integration_normal_scrutiny.Emacs.emacs_build_dir ^/ "src/emacs-module.h"
+  in
   let expected_contents = In_channel.read_all expected_file in
   let actual_contents = In_channel.read_all "../src/emacs-module.h" in
   require

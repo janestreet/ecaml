@@ -14,10 +14,10 @@ val get : unit -> Window.t
 val set : ?move_to_front_of_buffer_list:bool -> Window.t -> unit
 
 (** [(describe-function 'switch-to-buffer)] *)
-val switch_to_buffer : Buffer.t -> unit
+val switch_to_buffer : Buffer.t -> unit Deferred.t
 
 (** [(describe-function 'switch-to-buffer-other-window)] *)
-val switch_to_buffer_other_window : Buffer.t -> unit
+val switch_to_buffer_other_window : Buffer.t -> unit Deferred.t
 
 (** [(describe-function 'split-window-horizontally)] *)
 val split_horizontally_exn : unit -> unit
@@ -49,7 +49,7 @@ val set_temporarily : (_, 'a) Sync_or_async.t -> Window.t -> f:(unit -> 'a) -> '
 val save_window_excursion : (_, 'a) Sync_or_async.t -> (unit -> 'a) -> 'a
 
 (** [(describe-function 'quit-window)] *)
-val quit : unit -> unit
+val quit : unit -> unit Deferred.t
 
 (** [(describe-function 'other-window)] *)
 val other_window : int -> unit
@@ -59,3 +59,7 @@ val height : unit -> int
 
 (** [(describe-function 'window-width)] *)
 val width : unit -> int
+
+module Blocking : sig
+  val switch_to_buffer : Buffer.t -> unit
+end

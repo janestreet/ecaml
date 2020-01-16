@@ -313,11 +313,16 @@ module Frame = struct
   ;;
 
   let record
-        { message; start; children; parent = _; pending_children; max_pending_children }
+        { message
+        ; start
+        ; children
+        ; parent = _
+        ; pending_children = _
+        ; max_pending_children
+        }
         ~stop
     : Record.t
     =
-    assert (pending_children = 0);
     { start
     ; stop
     ; message
@@ -366,14 +371,17 @@ let maybe_record_frame ?hide_if_less_than:local_hide_if_less_than (frame : Frame
   then Profile_context.record_profile frame ~stop
 ;;
 
+let on_async_out_of_order = ref (fun sexp -> raise_s (force sexp))
+
 let record_profile ?hide_if_less_than (frame : Frame.t) =
   if frame.pending_children <> 0
   then
-    raise_s
-      [%message
-        "Nested [profile Async] exited out-of-order."
-          ~message:(force frame.message : Sexp.t)
-          ~pending_children:(frame.pending_children : int)];
+    !on_async_out_of_order
+      (lazy
+        [%message
+          "Nested [profile Async] exited out-of-order."
+            ~message:(force frame.message : Sexp.t)
+            ~pending_children:(frame.pending_children : int)]);
   maybe_record_frame ?hide_if_less_than frame ~stop:(now ())
 ;;
 
@@ -454,10 +462,13 @@ let backtrace () =
        |> List.map ~f:force)
 ;;
 
+let disown f = with_profile_context None ~f
+
 module Private = struct
   module Clock = Clock
 
   let clock = clock
+  let on_async_out_of_order = on_async_out_of_order
 
   let record_frame ~start ~stop ~message =
     if !profiling_is_allowed && !should_profile

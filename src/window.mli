@@ -10,23 +10,13 @@
     [(Info-goto-node "(elisp)Windows")]. *)
 
 open! Core_kernel
+open! Async_kernel
 open! Import
 
 type t = Window0.t [@@deriving sexp_of]
 
 include Equal.S with type t := t
 include Value.Subtype with type t := t
-
-module Include_minibuffer : sig
-  type t =
-    | Yes
-    | No
-    | Only_if_active
-  [@@deriving sexp_of]
-end
-
-(** [(describe-function 'window-list)] *)
-val all_in_selected_frame : ?include_minibuffer:Include_minibuffer.t -> unit -> t list
 
 (** [(describe-function 'window-live-p)]. *)
 val is_live : t -> bool
@@ -56,7 +46,7 @@ val set_buffer_exn
   :  ?keep_margins:bool (** default is [false] *)
   -> t
   -> Buffer.t
-  -> unit
+  -> unit Deferred.t
 
 (** [(describe-function 'set-window-point)] *)
 val set_point_exn : t -> Position.t -> unit
@@ -94,3 +84,11 @@ val fit_to_buffer
   -> unit
 
 module Tree = Window0.Tree
+
+module Blocking : sig
+  val set_buffer_exn
+    :  ?keep_margins:bool (** default is [false] *)
+    -> t
+    -> Buffer.t
+    -> unit
+end

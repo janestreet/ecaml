@@ -141,6 +141,19 @@ module Block_on_async = struct
   let set_once : t Set_once.t = Set_once.create ()
 end
 
+module Enqueue_foreground_block_on_async = struct
+  type t =
+    { f :
+        Source_code_position.t
+        -> ?context:Sexp.t Lazy.t
+        -> ?raise_exceptions_to_monitor:Monitor.t
+        -> (unit -> unit Deferred.t)
+        -> unit
+    }
+
+  let set_once : t Set_once.t = Set_once.create ()
+end
+
 module Run_outside_async = struct
   type t =
     { f :
@@ -868,10 +881,19 @@ end
 
 module Private = struct
   module Block_on_async = Block_on_async
+  module Enqueue_foreground_block_on_async = Enqueue_foreground_block_on_async
   module Run_outside_async = Run_outside_async
 
   let block_on_async here ?context f =
     (Set_once.get_exn Block_on_async.set_once here).f here ?context f
+  ;;
+
+  let enqueue_foreground_block_on_async here ?context ?raise_exceptions_to_monitor f =
+    (Set_once.get_exn Enqueue_foreground_block_on_async.set_once here).f
+      here
+      ?context
+      ?raise_exceptions_to_monitor
+      f
   ;;
 
   let run_outside_async here ?allowed_in_background f =

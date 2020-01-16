@@ -15,6 +15,7 @@ include Current_buffer0
 let get_buffer_local = Buffer_local.Private.get_in_current_buffer
 let get_buffer_local_exn = Buffer_local.Private.get_in_current_buffer_exn
 let set_buffer_local = Buffer_local.Private.set_in_current_buffer
+let set_buffer_local_temporarily = Buffer_local.Private.set_temporarily_in_current_buffer
 
 let set_temporarily_to_temp_buffer sync_or_async f =
   let t = Buffer.create ~name:"*temp-buffer*" in
@@ -401,4 +402,13 @@ let line_and_column_of_position position =
   save_excursion Sync (fun () ->
     Point.goto_char position;
     Point.get_line_and_column ())
+;;
+
+let replace_string ?start ?end_ ~from ~to_ () =
+  let end_ = or_point_max end_ in
+  save_excursion Sync (fun () ->
+    Point.goto_char (or_point_min start);
+    while Point.search_forward from ~bound:end_ ~update_last_match:true do
+      Regexp.Last_match.replace to_
+    done)
 ;;

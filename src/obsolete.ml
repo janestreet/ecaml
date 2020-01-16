@@ -2,7 +2,7 @@ open! Core_kernel
 open! Import
 
 let make_obsolete =
-  Funcall.("make-obsolete" <: Symbol.t @-> Symbol.t @-> string @-> return nil)
+  Funcall.("make-obsolete" <: Symbol.t @-> nil_or Symbol.t @-> string @-> return nil)
 ;;
 
 let make_function_obsolete obsolete ~current ~since =

@@ -153,3 +153,7 @@ let revert =
       Current_buffer0.set_temporarily Sync t ~f:(fun () ->
         ignore (revert_buffer false noconfirm false : bool)))
 ;;
+
+let kill_buffer_query_functions =
+  Var.Wrap.("kill-buffer-query-functions" <: list Function.t)
+;;

@@ -46,6 +46,17 @@ val all_visible : unit -> t list
 (** [(describe-function 'frame-list)] *)
 val all_live : unit -> t list
 
+module Include_minibuffer : sig
+  type t =
+    | Yes
+    | No
+    | Only_if_active
+  [@@deriving sexp_of]
+end
+
+(** [(describe-function 'window-list)] *)
+val window_list : ?include_minibuffer:Include_minibuffer.t -> unit -> Window0.t list
+
 (** [(describe-function 'frame-live-p)] *)
 val is_live : t -> bool
 

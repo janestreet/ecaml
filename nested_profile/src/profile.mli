@@ -70,6 +70,12 @@ val start_location : Start_location.t ref
     Returns [None] if [should_profile] is false. *)
 val backtrace : unit -> Sexp.t list option
 
+(** [disown f] runs [f] as though it were at top level, rather than whatever the current
+    context is.  In other words, it causes the parent (current) context to disown children
+    created by [f].  This is useful for background jobs that might outlive their parents,
+    since Nested_profile requires that parents wait for their children. *)
+val disown : (unit -> 'a) -> 'a
+
 module Private : sig
   module Clock : sig
     type t [@@deriving sexp_of]
@@ -81,4 +87,5 @@ module Private : sig
 
   val record_frame : start:Time_ns.t -> stop:Time_ns.t -> message:Sexp.t Lazy.t -> unit
   val clock : Clock.t ref
+  val on_async_out_of_order : (Sexp.t Lazy.t -> unit) ref
 end

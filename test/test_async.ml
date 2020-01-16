@@ -46,7 +46,8 @@ let%expect_test "[block_on_async] with a quit" =
       Or_error.try_with Funcall.(fname <: nullary @-> return nil))
   in
   print_s [%sexp (quit : _ Or_error.t)];
-  [%expect {| (Error ("Blocking operation interrupted")) |}];
+  [%expect {|
+    (Error ("Blocking operation interrupted")) |}];
   return ()
 ;;
 
@@ -58,8 +59,12 @@ let%expect_test "Nested calls to block_on_async raise" =
     (raised (
       "Called [block_on_async] in the middle of an Async job!"
       (context_backtrace (
-        (app/emacs/lib/ecaml/test/test_async.ml:LINE:COL ())
-        (app/emacs/lib/ecaml/src/async_ecaml.ml:LINE:COL Expect_test_config.run))))) |}];
+        ((here app/emacs/lib/ecaml/test/test_async.ml:LINE:COL)
+         (context ())
+         (created_at _))
+        ((here app/emacs/lib/ecaml/src/async_ecaml.ml:LINE:COL)
+         (context    Expect_test_config.run)
+         (created_at _)))))) |}];
   return ()
 ;;
 
@@ -78,8 +83,12 @@ let%expect_test "Nested calls to block_on_async include Nested_profile backtrace
     (raised (
       "Called [block_on_async] in the middle of an Async job!"
       (context_backtrace (
-        (app/emacs/lib/ecaml/test/test_async.ml:LINE:COL ())
-        (app/emacs/lib/ecaml/src/async_ecaml.ml:LINE:COL Expect_test_config.run)))
+        ((here app/emacs/lib/ecaml/test/test_async.ml:LINE:COL)
+         (context ())
+         (created_at _))
+        ((here app/emacs/lib/ecaml/src/async_ecaml.ml:LINE:COL)
+         (context    Expect_test_config.run)
+         (created_at _))))
       (profile_backtrace ("Some badly-behaved function")))) |}];
   return ()
 ;;
@@ -161,8 +170,12 @@ let%expect_test "Nested calls to block_on_async raise, even via elisp" =
     (raised ((
       "Called [block_on_async] in the middle of an Async job!"
       (context_backtrace (
-        (app/emacs/lib/ecaml/test/test_async.ml:LINE:COL (block-on-async))
-        (app/emacs/lib/ecaml/src/async_ecaml.ml:LINE:COL Expect_test_config.run)))))) |}];
+        ((here app/emacs/lib/ecaml/test/test_async.ml:LINE:COL)
+         (context (block-on-async))
+         (created_at _))
+        ((here app/emacs/lib/ecaml/src/async_ecaml.ml:LINE:COL)
+         (context    Expect_test_config.run)
+         (created_at _))))))) |}];
   return ()
 ;;
 
@@ -292,3 +305,87 @@ let%expect_test "raise in [Background.don't_wait_for]" =
     ("background job raised" (job_created_at _) "something bad happened") |}];
   return ()
 ;;
+
+module Test_enqueue_block_on_async = struct
+  (* We need a custom [Expect_test_config.run] (which implements [let%expect_test])
+     because [Async_ecaml.Expect_test_config.run] uses vanilla [block_on_async], which
+     disallows nested calls to [block_on_async].  And we need to test [become_async],
+     which does a [block_on_async], inside of [let%expect_test]. *)
+  module Expect_test_config = struct
+    include Async_ecaml.Expect_test_config
+
+    let run f =
+      Async_ecaml.Private.block_on_async
+        [%here]
+        ~for_testing_allow_nested_block_on_async:true
+        f
+    ;;
+  end
+
+  let%expect_test "[become_foreground]" =
+    let%bind () =
+      Deferred.create (fun test_finished ->
+        Background.don't_wait_for [%here] (fun () ->
+          print_endline "background";
+          require [%here] (Background.am_running_in_background ());
+          Background.schedule_foreground_block_on_async [%here] (fun () ->
+            print_endline "foreground";
+            require [%here] (Background.am_running_in_foreground ());
+            Ivar.fill test_finished ();
+            return ());
+          return ()))
+    in
+    [%expect {|
+      background
+      foreground |}];
+    return ()
+  ;;
+
+  let%expect_test "[schedule_foreground_block_on_async] and [run_outside_async]" =
+    let%bind () =
+      Deferred.create (fun test_finished ->
+        Background.don't_wait_for [%here] (fun () ->
+          print_endline "background";
+          require [%here] (Background.am_running_in_background ());
+          Background.schedule_foreground_block_on_async [%here] (fun () ->
+            print_endline "foreground";
+            require [%here] (Background.am_running_in_foreground ());
+            let%bind () =
+              Async_ecaml.Private.run_outside_async [%here] (fun () ->
+                print_endline "outside async";
+                require [%here] (Background.am_running_in_foreground ()))
+            in
+            Ivar.fill test_finished ();
+            return ());
+          return ()))
+    in
+    [%expect {|
+      background
+      foreground
+      outside async |}];
+    return ()
+  ;;
+
+  let%expect_test "raise in [schedule_foreground_block_on_async]" =
+    let%bind () =
+      Deferred.create (fun test_finished ->
+        let monitor = Monitor.create ~name:"test monitor" () in
+        Monitor.detach_and_iter_errors monitor ~f:(fun exn ->
+          print_s [%sexp (exn : exn)];
+          Ivar.fill test_finished ());
+        Background.don't_wait_for [%here] (fun () ->
+          Background.Private.schedule_foreground_block_on_async
+            [%here]
+            ~raise_exceptions_to_monitor:monitor
+            (fun () ->
+               require [%here] (Background.am_running_in_foreground ());
+               raise_s [%message "Raise an exception!"]);
+          return ()))
+    in
+    [%expect
+      {|
+      (monitor.ml.Error "Raise an exception!" (
+        "<backtrace elided in test>" "Caught by monitor test monitor")) |}];
+    return ()
+  ;;
+end

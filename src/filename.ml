@@ -1,4 +1,5 @@
 open! Core_kernel
+open! Async_kernel
 open! Import0
 
 include (
@@ -46,13 +47,20 @@ let file_relative_name = Funcall.("file-relative-name" <: t @-> t @-> return t)
 let make_relative t ~relative_to = file_relative_name t relative_to
 let expand_file_name = Funcall.("expand-file-name" <: t @-> t @-> return t)
 let expand t ~in_dir = expand_file_name t in_dir
+let temporary_directory_var = Var.Wrap.("temporary-file-directory" <: t)
+let temporary_directory () = Current_buffer0.value_exn temporary_directory_var
 
-let temporary_file_directory =
-  let temporary_file_directory = "temporary-file-directory" in
-  let funcall = Funcall.(temporary_file_directory <: nullary @-> return t) in
-  let variable = Var.Wrap.(temporary_file_directory <: t) in
+let temporary_directory_for_current_buffer =
+  let function_symbol = Symbol.intern "temporary-file-directory" in
+  let funcall = Funcall.("temporary-file-directory" <: nullary @-> return t) in
   fun () ->
-    if Symbol.function_is_defined (Symbol.intern temporary_file_directory)
+    if Symbol.function_is_defined function_symbol
     then funcall ()
-    else Current_buffer0.value_exn variable
+    else temporary_directory ()
+;;
+
+let read =
+  let read_file_name = Funcall.("read-file-name" <: string @-> return t) in
+  fun ~prompt ->
+    Value.Private.run_outside_async [%here] (fun () -> read_file_name prompt)
 ;;

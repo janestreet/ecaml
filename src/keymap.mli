@@ -47,7 +47,7 @@ val global : unit -> t
 val set_global : t -> unit
 
 (** [(describe-function 'set-transient-map)] *)
-val set_transient : t -> unit
+val set_transient : ?keep_if_used:bool (** default is [false] *) -> t -> unit
 
 module Entry : sig
   type t =

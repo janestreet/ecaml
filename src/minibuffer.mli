@@ -83,3 +83,6 @@ val prompt : unit -> string option
     This exits the minibuffer by throwing 'exit, so from OCaml's perspective it always
     raises. *)
 val exit : unit -> never_returns
+
+(** [(describe-function 'minibuffer-depth)] *)
+val depth : unit -> int

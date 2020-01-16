@@ -143,3 +143,5 @@ let exit =
     exit_minibuffer ();
     assert false
 ;;
+
+let depth = Funcall.("minibuffer-depth" <: nullary @-> return int)

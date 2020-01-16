@@ -52,3 +52,6 @@ val quit_flag : bool Var.t
 
 val quit_requested : unit -> bool
 val request_quit : unit -> unit
+
+(** [(describe-function 'abort-recursive-edit)] *)
+val abort_recursive_edit : unit -> never_returns

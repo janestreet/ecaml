@@ -407,7 +407,7 @@ let extend_sentinel
         match returns with
         | Returns _ ->
           run_previous_sentinel ();
-          Background.run_in_background [%here] ~f:(fun () ->
+          Background.Private.mark_running_in_background [%here] ~f:(fun () ->
             (sentinel ~event:(event |> Value.to_utf8_bytes_exn) : a))
         | Returns_deferred _ ->
           let%bind.Deferred () =
@@ -416,7 +416,7 @@ let extend_sentinel
               ~allowed_in_background:true
               run_previous_sentinel
           in
-          Background.run_in_background [%here] ~f:(fun () ->
+          Background.Private.mark_running_in_background [%here] ~f:(fun () ->
             sentinel ~event:(event |> Value.to_utf8_bytes_exn))))
 ;;
 

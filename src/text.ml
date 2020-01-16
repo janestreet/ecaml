@@ -349,7 +349,7 @@ let propertize t properties =
   |> of_value_exn
 ;;
 
-let colorize t color =
+let colorize t ~color =
   propertize
     t
     [ T (Property_name.face, [ Face_spec.One.Attributes [ T (Foreground, Color color) ] ])

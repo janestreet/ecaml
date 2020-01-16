@@ -152,6 +152,8 @@ let initialize () =
   then
     (* We start initializing the profile buffer, so that it exists when we need it. *)
     ignore (Profile_buffer.profile_buffer () : Buffer.t option);
+  (Profile.Private.on_async_out_of_order
+   := fun (lazy sexp) -> Echo_area.inhibit_messages Sync (fun () -> message_s sexp));
   (Profile.sexp_of_time_ns
    := fun time_ns ->
      match [%sexp (time_ns : Core.Time_ns.t)] with

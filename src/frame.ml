@@ -1,5 +1,12 @@
 open! Core_kernel
 open! Import0
+
+module Q = struct
+  include Q
+
+  let never = "never" |> Symbol.intern
+end
+
 include Frame0
 
 let other_frame = Funcall.("other-frame" <: int @-> return nil)
@@ -22,6 +29,43 @@ let parameters t =
 let is_visible = Funcall.("frame-visible-p" <: t @-> return bool)
 let all_visible = Funcall.("visible-frame-list" <: nullary @-> return (list t))
 let all_live = Funcall.("frame-list" <: nullary @-> return (list t))
+
+module Include_minibuffer = struct
+  module T = struct
+    type t =
+      | Yes
+      | No
+      | Only_if_active
+    [@@deriving enumerate, sexp_of]
+  end
+
+  include T
+
+  let never = Q.never |> Symbol.to_value
+
+  let type_ =
+    Value.Type.enum
+      [%sexp "include-minibuffer"]
+      (module T)
+      (function
+        | Yes -> Value.t
+        | No -> never
+        | Only_if_active -> Value.nil)
+  ;;
+
+  let t = type_
+end
+
+let window_list =
+  Funcall.(
+    "window-list"
+    <: nil_or t
+       @-> nil_or Include_minibuffer.t
+       @-> nil_or Window0.t
+       @-> return (list Window0.t))
+;;
+
+let window_list ?include_minibuffer () = window_list None include_minibuffer None
 let set_selected = Funcall.("select-frame" <: t @-> return nil)
 
 let set_selected_temporarily sync_or_async t ~f =

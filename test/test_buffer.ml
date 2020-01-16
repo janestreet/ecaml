@@ -133,7 +133,7 @@ let%expect_test "[displayed_in]" =
     let show_displayed_in () = print_s [%sexp (displayed_in t : Window.t list)] in
     show_displayed_in ();
     [%expect {| () |}];
-    Selected_window.switch_to_buffer t;
+    Selected_window.Blocking.switch_to_buffer t;
     show_displayed_in ();
     [%expect {| ("#<window 1 on *temp-buffer*>") |}];
     Selected_window.split_vertically_exn ();

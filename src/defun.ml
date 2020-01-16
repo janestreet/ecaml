@@ -302,7 +302,7 @@ let defalias symbol here ?docstring ~alias_of () =
 
 let define_obsolete_alias obsolete here ?docstring ~alias_of ~since () =
   defalias obsolete here ?docstring ~alias_of ();
-  Obsolete.make_function_obsolete obsolete ~current:alias_of ~since
+  Obsolete.make_function_obsolete obsolete ~current:(Some alias_of) ~since
 ;;
 
 let defun_raw symbol here ?docstring ?interactive ~args ?optional_args ?rest_arg f =
