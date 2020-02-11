@@ -9,6 +9,8 @@ include module type of struct
   include Ecaml_value.Symbol
 end
 
+type symbol := t
+
 (** Accessors *)
 
 (** [(describe-function 'symbol-name)    ] *)
@@ -30,8 +32,6 @@ val gensym : ?prefix:string -> unit -> t
 
 (** [(describe-function 'fset)]. *)
 val set_function : t -> Value.t -> unit
-
-type symbol = t
 
 module Property : sig
   type 'a t [@@deriving sexp_of]

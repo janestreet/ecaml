@@ -89,6 +89,7 @@ module type Customization = sig
 
   val value : 'a t -> 'a
   val set_value : 'a t -> 'a -> unit
+  val set_value_temporarily : 'a t -> 'a -> f:(unit -> 'b) -> 'b
   val var : 'a t -> 'a Var.t
   val symbol : _ t -> Symbol.t
   val standard_value : 'a t -> 'a

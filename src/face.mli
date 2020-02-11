@@ -191,20 +191,20 @@ module Attribute : sig
     | Width : Width.t t
   [@@deriving sexp_of]
 
+  type 'a attribute := 'a t
+
   val to_symbol : _ t -> Symbol.t
   val of_value_exn : 'a t -> Value.t -> 'a
   val to_value : 'a t -> 'a -> Value.t
   val unspecified_value : 'a t -> 'a
 
   module Packed : sig
-    type 'a attribute = 'a t
     type t = T : _ attribute -> t
 
     include Symbol.Subtype with type t := t
 
     val all : t list
   end
-  with type 'a attribute := 'a t
 
   (** A relative value is one that doesn’t entirely override whatever is inherited from
       another face.  For most attributes, the only relative value is [Unspecified].

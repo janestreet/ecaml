@@ -74,6 +74,7 @@ module Overlay = Overlay
 module Plist = Plist
 module Point = Point
 module Position = Position
+module Print = Print
 module Process = Process
 module Regexp = Regexp
 module Rx = Rx

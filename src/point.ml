@@ -97,9 +97,6 @@ let marker_at_max = Funcall.("point-max-marker" <: nullary @-> return Marker.t)
 let next_line = Funcall.("next-line" <: nullary @-> return nil)
 let previous_line = Funcall.("previous-line" <: nullary @-> return nil)
 let scroll_up = Funcall.("scroll-up" <: int @-> return nil)
-
-type 'a with_search_options = ?bound:Position.t -> ?update_last_match:bool -> 'a
-
 let update_last_match_default = false
 
 let handle_last_match ?(update_last_match = update_last_match_default) f =

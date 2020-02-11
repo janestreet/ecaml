@@ -197,6 +197,7 @@ module Property_name = struct
   end
 
   type 'a t = (module S with type Property_value.t = 'a)
+  type 'a property_name = 'a t
 
   let name (type a) (t : a t) =
     let module T = (val t) in
@@ -226,7 +227,6 @@ module Property_name = struct
   end
 
   module Packed = struct
-    type 'a property_name = 'a t
     type t = T : _ property_name -> t
 
     let sexp_of_t (T p) = [%sexp (p : _ t)]

@@ -69,11 +69,28 @@ module Elide_in_test = struct
   ;;
 end
 
+module Message : sig
+  type t [@@deriving sexp_of]
+
+  val create : Sexp.t Lazy.t -> t
+  val am_forcing : unit -> bool
+  val force : t -> Sexp.t
+end = struct
+  type t = Sexp.t Lazy.t [@@deriving sexp_of]
+
+  let create t = t
+  let am_forcing_ref = ref false
+  let am_forcing () = !am_forcing_ref
+  let force t = Ref.set_temporarily am_forcing_ref true ~f:(fun () -> force t)
+end
+
+let am_forcing_message = Message.am_forcing
+
 module Record = struct
   type t =
     { start : Time_ns.t
     ; stop : Time_ns.t
-    ; message : Sexp.t Lazy.t
+    ; message : Message.t
     ; children : t list
     ; had_parallel_children : bool
     }
@@ -87,7 +104,7 @@ module Record = struct
       (took t |> Time_ns.Span.to_string_hum : string)
     , (if had_parallel_children then Some `parallel else None
                                                          : ([ `parallel ] option[@sexp.option]))
-    , (force message : Sexp.t)
+    , (Message.force message : Sexp.t)
     , (children : (t list[@sexp.omit_nil]))]
   ;;
 
@@ -179,7 +196,7 @@ module Record = struct
         else
           { start
           ; stop
-          ; message = lazy [%sexp "gap"]
+          ; message = Message.create (lazy [%sexp "gap"])
           ; children = []
           ; had_parallel_children = false
           }
@@ -233,7 +250,7 @@ module Record = struct
       in
       let message =
         with_profiling_disallowed (fun () ->
-          try force message with
+          try Message.force message with
           | exn ->
             let backtrace = Backtrace.Exn.most_recent () in
             [%message
@@ -293,7 +310,7 @@ end
 
 module Frame = struct
   type t =
-    { message : Sexp.t Lazy.t
+    { message : Message.t
     ; start : Time_ns.Alternate_sexp.t Elide_in_test.t
     ; children : Record.t Queue.t
     ; parent : t option
@@ -303,7 +320,7 @@ module Frame = struct
   [@@deriving sexp_of]
 
   let create ~message ~parent =
-    { message
+    { message = Message.create message
     ; start = now ()
     ; children = Queue.create ()
     ; parent
@@ -380,7 +397,7 @@ let record_profile ?hide_if_less_than (frame : Frame.t) =
       (lazy
         [%message
           "Nested [profile Async] exited out-of-order."
-            ~message:(force frame.message : Sexp.t)
+            ~message:(Message.force frame.message : Sexp.t)
             ~pending_children:(frame.pending_children : int)]);
   maybe_record_frame ?hide_if_less_than frame ~stop:(now ())
 ;;
@@ -459,7 +476,7 @@ let backtrace () =
   | true ->
     Some
       (Option.value_map frame ~f:Profile_context.backtrace ~default:[]
-       |> List.map ~f:force)
+       |> List.map ~f:Message.force)
 ;;
 
 let disown f = with_profile_context None ~f
@@ -474,7 +491,7 @@ module Private = struct
     if !profiling_is_allowed && !should_profile
     then
       maybe_record_frame
-        { message
+        { message = Message.create message
         ; start
         ; children = Queue.create ()
         ; parent = current_profile_context ()

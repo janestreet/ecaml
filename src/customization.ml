@@ -183,6 +183,12 @@ let set_value t a =
     (Value.list [ Var.symbol t |> Symbol.to_value; a |> Value.Type.to_value t.type_ ])
 ;;
 
+let set_value_temporarily t a ~f =
+  let old = value t in
+  set_value t a;
+  protect ~f ~finally:(fun () -> set_value t old)
+;;
+
 let standard_value = Var.default_value_exn
 
 let defcustom

@@ -10,7 +10,7 @@ open! Core_kernel
 open! Import
 include Value.Subtype
 
-type keymap = t
+type keymap := t
 
 include Equal.S with type t := t
 

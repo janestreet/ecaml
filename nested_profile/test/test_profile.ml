@@ -425,3 +425,12 @@ let%expect_test "[tag_frames_with] raises" =
     function supplied to [profile] ran
     (1_000_000us (context ("[Profile.tag_frames_with] raised" (exn "Hello world") (backtrace ("<backtrace elided in test>")))) "1970-01-01 00:00:17.43Z") |}]
 ;;
+
+let%expect_test "[am_forcing_message]" =
+  let sexp () = [%sexp (am_forcing_message () : bool)] in
+  print_s (sexp ());
+  let%bind () = [%expect {| false |}] in
+  profile Sync (lazy (sexp ())) (fun () -> advance_clock_by (sec 1.));
+  let%bind () = [%expect {| (1_000_000us true "1970-01-01 00:00:18.43Z") |}] in
+  return ()
+;;

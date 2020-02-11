@@ -343,9 +343,9 @@ let defun
       symbol
       here
       ?docstring
-      ?should_profile
       ?define_keys
       ?obsoletes
+      ?should_profile
       ?interactive
       ?evil_config
       returns
@@ -371,6 +371,7 @@ let defun_nullary
       ?docstring
       ?define_keys
       ?obsoletes
+      ?should_profile
       ?interactive
       ?evil_config
       returns
@@ -382,6 +383,7 @@ let defun_nullary
     ?docstring
     ?define_keys
     ?obsoletes
+    ?should_profile
     ?interactive
     ?evil_config
     returns
@@ -396,6 +398,7 @@ let defun_nullary_nil
       ?docstring
       ?define_keys
       ?obsoletes
+      ?should_profile
       ?interactive
       ?evil_config
       f
@@ -406,6 +409,7 @@ let defun_nullary_nil
     ?docstring
     ?define_keys
     ?obsoletes
+    ?should_profile
     ?interactive
     ?evil_config
     (Returns Value.Type.unit)

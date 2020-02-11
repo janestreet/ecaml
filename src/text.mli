@@ -74,6 +74,7 @@ end
 (** [(Info-goto-node "(elisp)Text Properties")] *)
 module Property_name : sig
   type 'a t [@@deriving sexp_of]
+  type 'a property_name := 'a t
 
   (** [(Info-goto-node "(elisp)Special Properties")] *)
   val face : Face_spec.t t
@@ -103,12 +104,10 @@ module Property_name : sig
   val create_and_register : (module S with type Property_value.t = 'a) -> 'a t
 
   module Packed : sig
-    type 'a property_name
     type t = T : _ property_name -> t [@@deriving sexp_of]
 
     val name : t -> Symbol.t
   end
-  with type 'a property_name := 'a t
 end
 
 (** [(Info-goto-node "(elisp)Text Properties")] *)

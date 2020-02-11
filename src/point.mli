@@ -179,7 +179,7 @@ val scroll_up : int -> unit
     [(describe-function 'search-backward-regexp)]
     [(describe-function 'search-forward-regexp)] *)
 
-type 'a with_search_options =
+type 'a with_search_options :=
   ?bound:Position.t (** default is no bound *)
   -> ?update_last_match:bool (** default is [false] *)
   -> 'a

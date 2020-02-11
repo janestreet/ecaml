@@ -339,6 +339,9 @@ module type Value = sig
   end
 
   module Private : sig
+    val ecaml_profile_print_length : int option ref
+    val ecaml_profile_print_level : int option ref
+
     (** These functions are defined in Async_ecaml. This module exists to avoid
         dependency cycles. *)
     module Block_on_async : sig

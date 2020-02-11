@@ -16,6 +16,8 @@ end
 
 include T
 
+type window = t [@@deriving sexp_of]
+
 module Edges = struct
   type t =
     { bottom : int
@@ -40,8 +42,6 @@ module Edges = struct
 end
 
 module Tree = struct
-  type window = t [@@deriving sexp_of]
-
   module Direction = struct
     module T = struct
       type t =

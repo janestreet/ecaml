@@ -30,6 +30,73 @@ let%expect_test "UTF-8" =
   return ()
 ;;
 
+let%expect_test "[sexp_of_t] on a hash table respects [Print.length]" =
+  let test size =
+    let htbl = Hash_table.create () in
+    for i = 1 to size do
+      let i = Value.of_int_exn i in
+      Hash_table.set htbl ~key:i ~data:i
+    done;
+    Current_buffer.set_value_temporarily Sync Print.length (Some 10) ~f:(fun () ->
+      show (htbl |> Hash_table.to_value))
+  in
+  test 1;
+  [%expect
+    {|
+      "#s(hash-table size 65 test eql rehash-size 1.5 rehash-threshold 0.8125 data (1 1 ...))" |}];
+  test 20;
+  [%expect
+    {|
+    "#s(hash-table size 65 test eql rehash-size 1.5 rehash-threshold 0.8125 data (1 1 2 2 3 3 4 4 5 5 6 6 7 7 8 8 9 9 10 10 ...))" |}];
+  return ()
+;;
+
+let%expect_test "[sexp_of_t] on a vector respects [print_length]" =
+  let show_vector size =
+    Current_buffer.set_value_temporarily Sync Print.length (Some 10) ~f:(fun () ->
+      show (Vector.of_list (List.init size ~f:Value.of_int_exn) |> Vector.to_value))
+  in
+  show_vector 2;
+  [%expect {| "[0 1]" |}];
+  show_vector 20;
+  [%expect {| "[0 1 2 3 4 5 6 7 8 9 ...]" |}];
+  return ()
+;;
+
+let%expect_test "[sexp_of_t] on a list respects [print_length]" =
+  let test size =
+    Current_buffer.set_value_temporarily Sync Print.length (Some 10) ~f:(fun () ->
+      show (List.init size ~f:Fn.id |> Value.Type.(to_value (list int))))
+  in
+  test 2;
+  [%expect {| (0 1) |}];
+  test 20;
+  [%expect {| (0 1 2 3 4 5 6 7 8 9 . ...) |}];
+  return ()
+;;
+
+let%expect_test "[sexp_of_t] respects [print_level]" =
+  let rec value i =
+    if i = 0
+    then Value.nil
+    else (
+      let v = value (i - 1) in
+      Value.cons v v)
+  in
+  Current_buffer.set_value_temporarily Sync Print.level (Some 3) ~f:(fun () ->
+    show (value 7));
+  [%expect
+    {|
+    (((... ... ... ... ...) (... ... ... ...) (... ... ...) (... ...) (...) nil)
+     ((... ... ... ...) (... ... ...) (... ...) (...) nil)
+     ((... ... ...) (... ...) (...) nil)
+     ((... ...) (...) nil)
+     ((...) nil)
+     (nil)
+     nil) |}];
+  return ()
+;;
+
 let%expect_test "[is_array]" =
   test_predicate is_array nil;
   [%expect {| false |}];

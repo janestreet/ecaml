@@ -117,7 +117,10 @@ module Q = struct
   and message = "message" |> intern
   and nil = "nil" |> intern
   and prin1_to_string = "prin1-to-string" |> intern
+  and print_length = "print-length" |> intern
+  and print_level = "print-level" |> intern
   and processp = "processp" |> intern
+  and set = "set" |> intern
   and stringp = "stringp" |> intern
   and substring_no_properties = "substring-no-properties" |> intern
   and symbol_value = "symbol-value" |> intern
@@ -382,7 +385,9 @@ let[@inline always] to_int_exn (t : t) =
   else (Obj.magic t : int)
 ;;
 
-let get_int_var string = funcall1 Q.symbol_value (string |> intern) |> to_int_exn
+let get_var symbol = funcall1 Q.symbol_value symbol
+let set_var symbol value = funcall2_i Q.set symbol value
+let get_int_var string = get_var (string |> intern) |> to_int_exn
 let debug_on_error () = is_not_nil (funcall1 Q.symbol_value Q.debug_on_error)
 let emacs_min_int = get_int_var "most-negative-fixnum"
 let emacs_max_int = get_int_var "most-positive-fixnum"
@@ -584,8 +589,20 @@ let might_be_a_sexp string =
   n >= 2 && Char.equal string.[0] '(' && Char.equal string.[n - 1] ')'
 ;;
 
-let rec sexp_of_t t : Sexp.t =
-  if is_string t && not (text_has_properties t)
+let with_print_config ~print_length ~print_level ~f =
+  let old_print_length = get_var Q.print_length in
+  let old_print_level = get_var Q.print_level in
+  set_var Q.print_length (print_length |> of_int_exn);
+  set_var Q.print_level (print_level |> of_int_exn);
+  protect ~f ~finally:(fun () ->
+    set_var Q.print_length old_print_length;
+    set_var Q.print_level old_print_level)
+;;
+
+let rec sexp_of_t_internal t ~print_length ~print_level : Sexp.t =
+  if print_length <= 0 || print_level <= 0
+  then [%message "..."]
+  else if is_string t && not (text_has_properties t)
   then (
     let string = t |> to_utf8_bytes_exn in
     if not (might_be_a_sexp string)
@@ -596,14 +613,20 @@ let rec sexp_of_t t : Sexp.t =
       | exception _ -> Atom string))
   else if is_cons t
   then (
-    let car = sexp_of_t (car_exn t) in
-    let cdr = sexp_of_t (cdr_exn t) in
+    let car =
+      sexp_of_t_internal (car_exn t) ~print_length ~print_level:(print_level - 1)
+    in
+    let cdr =
+      sexp_of_t_internal (cdr_exn t) ~print_length:(print_length - 1) ~print_level
+    in
     match cdr with
     | Atom "nil" -> List [ car ]
     | Atom _ -> List [ car; Atom "."; cdr ]
     | List sexps -> List (car :: sexps))
   else (
-    let sexp_string = prin1_to_string t in
+    let sexp_string =
+      with_print_config ~print_length ~print_level ~f:(fun () -> prin1_to_string t)
+    in
     let sexp_string =
       (* Emacs prefixes some values (like buffers, markers, etc) with [#], which then
          makes the sexp unparseable.  So in this case we strip the [#]. *)
@@ -614,6 +637,25 @@ let rec sexp_of_t t : Sexp.t =
     match Sexp.of_string sexp_string with
     | sexp -> sexp
     | exception _ -> Atom sexp_string)
+;;
+
+let ecaml_profile_print_length = ref None
+let ecaml_profile_print_level = ref None
+
+let sexp_of_t t =
+  let print_length, print_level =
+    if Profile.am_forcing_message ()
+    then !ecaml_profile_print_length, !ecaml_profile_print_level
+    else (
+      let int_or_nil symbol =
+        let value = get_var symbol in
+        if is_nil value then None else Some (value |> to_int_exn)
+      in
+      int_or_nil Q.print_length, int_or_nil Q.print_level)
+  in
+  let print_length = Option.value print_length ~default:emacs_max_int in
+  let print_level = Option.value print_level ~default:emacs_max_int in
+  sexp_of_t_internal t ~print_length ~print_level
 ;;
 
 let initialize_module =
@@ -900,6 +942,8 @@ module Private = struct
     (Set_once.get_exn Run_outside_async.set_once here).f here ?allowed_in_background f
   ;;
 
+  let ecaml_profile_print_length = ecaml_profile_print_length
+  let ecaml_profile_print_level = ecaml_profile_print_level
   let message_zero_alloc = message_zero_alloc
   let message_t = message_t
 end

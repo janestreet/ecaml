@@ -9,7 +9,7 @@ open! Ecaml_filename
 open! Async_kernel
 include Value.Subtype with type t = Buffer0.t
 
-type buffer = t
+type buffer := t
 
 include Equal.S with type t := t
 module Compare_by_name : Comparable.S_plain with type t = t

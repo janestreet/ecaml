@@ -45,6 +45,11 @@ val profile
   -> (unit -> 'a)
   -> 'a
 
+(** [am_forcing_message ()] returns true when profiling is calling [force] on a message
+    supplied to [profile].  This is useful if you want to have a [sexp_of_t] function
+    behave differently when producing messages. *)
+val am_forcing_message : unit -> bool
+
 val approximate_line_length_limit : int ref
 val should_profile : bool ref
 val hide_if_less_than : Time_ns.Span.t ref

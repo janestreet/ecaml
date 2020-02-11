@@ -71,18 +71,20 @@ module type Defun = sig
     val returns : ('a, 'b) Sync_or_async.t -> 'a Value.Type.t -> ('a, 'b) t
   end
 
-  val defun
-    :  Symbol.t
+  type 'a defun :=
+    Symbol.t
     -> Source_code_position.t
     -> ?docstring:string
-    -> ?should_profile:bool
     -> ?define_keys:(Keymap.t * string) list
     -> ?obsoletes:Symbol.t
+    -> ?should_profile:bool
     -> ?interactive:Interactive.t
     -> ?evil_config:Evil.Config.t
-    -> (_, 'a) Returns.t
-    -> 'a t
-    -> unit
+    -> 'a
+
+  val defun : ((_, 'a) Returns.t -> 'a t -> unit) defun
+  val defun_nullary : ((_, 'a) Returns.t -> (unit -> 'a) -> unit) defun
+  val defun_nullary_nil : ((unit -> unit) -> unit) defun
 
   (** [(describe-function 'defalias)]
       [(Info-goto-node "(elisp)Defining Functions")] *)
@@ -104,29 +106,6 @@ module type Defun = sig
     -> alias_of:Symbol.t
     -> since:string
     -> unit
-    -> unit
-
-  val defun_nullary
-    :  Symbol.t
-    -> Source_code_position.t
-    -> ?docstring:string
-    -> ?define_keys:(Keymap.t * string) list
-    -> ?obsoletes:Symbol.t
-    -> ?interactive:Interactive.t
-    -> ?evil_config:Evil.Config.t
-    -> (_, 'a) Returns.t
-    -> (unit -> 'a)
-    -> unit
-
-  val defun_nullary_nil
-    :  Symbol.t
-    -> Source_code_position.t
-    -> ?docstring:string
-    -> ?define_keys:(Keymap.t * string) list
-    -> ?obsoletes:Symbol.t
-    -> ?interactive:Interactive.t
-    -> ?evil_config:Evil.Config.t
-    -> (unit -> unit)
     -> unit
 
   val lambda

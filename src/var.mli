@@ -10,7 +10,7 @@ type 'a t =
   }
 [@@deriving fields, sexp_of]
 
-type 'a var = 'a t
+type 'a var := 'a t
 
 val create : Symbol.t -> 'a Value.Type.t -> 'a t
 

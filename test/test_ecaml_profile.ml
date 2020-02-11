@@ -2,6 +2,7 @@ open! Core_kernel
 open! Async_kernel
 open! Import
 open! Nested_profile
+open! Ecaml_profile
 
 let sec = Time_ns.Span.of_sec
 
@@ -79,5 +80,49 @@ let%expect_test "tag-frame-function" =
     {|
     ((rendering_took 0us)
      (300_000us (nest "hello world") (19:00:00.000000000-05:00 1969-12-31))) |}];
+  return ()
+;;
+
+let show_in_message value =
+  test_setup ~f:(fun _ -> profile Sync (lazy [%sexp (value : Value.t)]) ignore)
+;;
+
+let%expect_test "[Value.sexp_of_t] respect [print_length] in profile records" =
+  let test size =
+    show_in_message (List.init size ~f:Fn.id |> Value.Type.(to_value (list int)))
+  in
+  test 10;
+  [%expect
+    {|
+    ((rendering_took 0us)
+     (0us (0 1 2 3 4 5 6 7 8 9 . ...) (19:00:00.000000000-05:00 1969-12-31))) |}];
+  Customization.set_value_temporarily print_length (Some 3) ~f:(fun () -> test 10);
+  [%expect
+    {|
+    ((rendering_took 0us)
+     (0us (0 1 2 . ...) (19:00:00.000000000-05:00 1969-12-31))) |}];
+  return ()
+;;
+
+let%expect_test "[Value.sexp_of_t] respect [print_level] in profile records" =
+  let rec value i =
+    if i = 0
+    then Value.nil
+    else (
+      let v = value (i - 1) in
+      Value.cons v v)
+  in
+  let v7 = value 7 in
+  show_in_message v7;
+  [%expect
+    {|
+    ((rendering_took 0us)
+     (0us (((((((nil) nil) (nil) nil) ((nil) nil) (nil) nil) (((nil) nil) (nil) nil) ((nil) nil) (nil) nil) ((((nil) nil) (nil) nil) ((nil) nil) (nil) nil) (((nil) nil) (nil) nil) ((nil) nil) (nil) nil) (((((nil) nil) (nil) nil) ((nil) nil) (nil) nil) (((nil) nil) (nil) nil) ((nil) nil) (nil) nil) ((((nil) nil) (nil) nil) ((nil) nil) (nil) nil) (((nil) nil) (nil) nil) ((nil) nil) (nil) nil) (19:00:00.000000000-05:00 1969-12-31))) |}];
+  Customization.set_value_temporarily print_level (Some 3) ~f:(fun () ->
+    show_in_message v7);
+  [%expect
+    {|
+    ((rendering_took 0us)
+     (0us (((... ... ... ... ...) (... ... ... ...) (... ... ...) (... ...) (...) nil) ((... ... ... ...) (... ... ...) (... ...) (...) nil) ((... ... ...) (... ...) (...) nil) ((... ...) (...) nil) ((...) nil) (nil) nil) (19:00:00.000000000-05:00 1969-12-31))) |}];
   return ()
 ;;

@@ -2,6 +2,38 @@ open! Core_kernel
 open! Async_kernel
 open! Import
 
+let print_length =
+  Customization.defcustom
+    ("ecaml-profile-print-length" |> Symbol.intern)
+    [%here]
+    ~docstring:
+      {|
+Use this as `print-length' for converting Elisp values to sexps in profile records.
+|}
+    ~group:Customization.Group.ecaml
+    ~type_:Value.Type.(nil_or int)
+    ~customization_type:Integer
+    ~standard_value:(Some 10)
+    ~on_set:(fun o -> Value.Private.ecaml_profile_print_length := o)
+    ()
+;;
+
+let print_level =
+  Customization.defcustom
+    ("ecaml-profile-print-level" |> Symbol.intern)
+    [%here]
+    ~docstring:
+      {|
+Use this as `print-level' for converting Elisp values to sexps in profile records.
+|}
+    ~group:Customization.Group.ecaml
+    ~type_:Value.Type.(nil_or int)
+    ~customization_type:Integer
+    ~standard_value:(Some 10)
+    ~on_set:(fun o -> Value.Private.ecaml_profile_print_level := o)
+    ()
+;;
+
 include (val Major_mode.define_derived_mode
                ("ecaml-profile-mode" |> Symbol.intern)
                [%here]
@@ -118,7 +150,7 @@ let initialize () =
       ~group:Customization.Group.ecaml
       ~type_:Value.Type.bool
       ~customization_type:Boolean
-      ~standard_value:false
+      ~standard_value:(System.is_interactive ())
       ~on_set:(fun bool -> Profile.should_profile := bool)
       ()
   in
@@ -333,6 +365,69 @@ let initialize () =
             in
             return ()))
 ;;
+
+module Benchmarks = struct
+  let helper_name = "ecaml-profile-benchmark-rendering-helper"
+
+  let () =
+    Defun.defun
+      (helper_name |> Symbol.intern)
+      [%here]
+      (Returns Value.Type.unit)
+      (let%map_open.Defun () = return ()
+       and _ignored = required "large-data-structure" value in
+       ())
+  ;;
+
+  let make_benchmark ~name ~create =
+    Defun.defun_nullary_nil
+      ("ecaml-profile-benchmark-rendering-" ^ name |> Symbol.intern)
+      [%here]
+      ~interactive:No_arg
+      (fun () ->
+         (* We [Profile.disown] because we want to render the profile below under the
+            settings of our own choosing, rather than have it incorporated into
+            the profile of the outer command. *)
+         Profile.disown (fun () ->
+           let data = create () in
+           Ref.set_temporarily Profile.should_profile true ~f:(fun () ->
+             Ref.set_temporarily
+               Profile.hide_if_less_than
+               Time_ns.Span.zero
+               ~f:(fun () ->
+                 Ref.set_temporarily
+                   Profile.hide_top_level_if_less_than
+                   Time_ns.Span.zero
+                   ~f:(fun () -> Funcall.(helper_name <: value @-> return nil) data)))))
+  ;;
+
+  let large_string = lazy (String.make 1024 'a' |> Value.of_utf8_bytes)
+  let copies_of_string = 1024 * 64
+
+  let () =
+    make_benchmark ~name:"hash-table" ~create:(fun () ->
+      let large_hash_table = Hash_table.create () in
+      for i = 0 to copies_of_string do
+        Hash_table.set
+          large_hash_table
+          ~key:(Value.of_int_exn i)
+          ~data:(force large_string)
+      done;
+      large_hash_table |> Hash_table.to_value)
+  ;;
+
+  let () =
+    make_benchmark ~name:"list" ~create:(fun () ->
+      List.init copies_of_string ~f:(fun _ -> force large_string)
+      |> Value.Type.(to_value (list value)))
+  ;;
+
+  let () =
+    make_benchmark ~name:"vector" ~create:(fun () ->
+      Vector.of_list (List.init copies_of_string ~f:(fun _ -> force large_string))
+      |> Vector.to_value)
+  ;;
+end
 
 module Private = struct
   let tag_function = tag_function

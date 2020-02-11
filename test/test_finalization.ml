@@ -125,18 +125,3 @@ let%expect_test "Emacs objects no longer referenced from OCaml can be gc'ed by E
  *   return ()
  * ;; *)
 
-let%expect_test "finalization of an Emacs function" =
-  let r = ref 14 in
-  let f _ =
-    r := 14;
-    Value.nil
-  in
-  Core.Gc.Expert.add_finalizer_exn f (fun _ ->
-    print_s [%message "finalized" (r : int ref)]);
-  ignore (Function.create [%here] ~args:[] f : Function.t);
-  make_ocaml_garbage_not_keep_emacs_values_alive ();
-  emacs_garbage_collect ();
-  Gc.compact ();
-  [%expect {| (finalized (r 14)) |}];
-  return ()
-;;

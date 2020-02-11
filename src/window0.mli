@@ -3,6 +3,8 @@ open! Import0
 include Value.Subtype
 include Equal.S with type t := t
 
+type window := t
+
 module Edges : sig
   (** [(Info-goto-node "(elisp) Coordinates and Windows")] *)
   type t =
@@ -18,7 +20,6 @@ end
 
 module Tree : sig
   (** [(Info-goto-node "(elisp) Windows and Frames")] *)
-  type window = t [@@deriving sexp_of]
 
   module Direction : sig
     type t =
