@@ -110,27 +110,26 @@ let%expect_test "profile_async" =
 
 let%expect_test "bad call to profile_async" =
   let%bind () =
-    require_does_raise_async [%here] (fun () ->
-      profile
-        Async
-        (lazy [%message "outer"])
-        (fun () ->
-           don't_wait_for
-             (profile
-                Async
-                (lazy [%message "inner"])
-                (fun () ->
-                   advance_clock_by (sec 0.1);
-                   Deferred.never ()));
-           advance_clock_by (sec 0.01);
-           return ()))
+    profile
+      Async
+      (lazy [%message "outer"])
+      (fun () ->
+         don't_wait_for
+           (profile
+              Async
+              (lazy [%message "inner"])
+              (fun () ->
+                 advance_clock_by (sec 0.1);
+                 Deferred.never ()));
+         advance_clock_by (sec 0.01);
+         return ())
   in
   let%bind () =
     [%expect
       {|
-    ("Nested [profile Async] exited out-of-order."
-     (message          outer)
-     (pending_children 1)) |}]
+    ("Nested [profile Async] exited out-of-order." (message outer)
+     (pending_children 1))
+    (110_000us outer "1970-01-01 00:00:02Z") |}]
   in
   (* A bad call doesn't corrupt the profile stack. *)
   let%bind () = Test_profile_async.test () in
@@ -182,26 +181,24 @@ let%expect_test "parallel calls to profile_async" =
 
 let%expect_test "inner ends after outer ends" =
   let%bind () =
-    show_raise_async (fun () ->
-      profile
-        Async
-        (lazy [%message "outer"])
-        (fun () ->
-           don't_wait_for
-             (profile
-                Async
-                (lazy [%message "inner"])
-                (fun () ->
-                   Clock.advance clock ~by:(Time_ns.Span.of_ms 100.);
-                   return ()));
-           return ()))
+    profile
+      Async
+      (lazy [%message "outer"])
+      (fun () ->
+         don't_wait_for
+           (profile
+              Async
+              (lazy [%message "inner"])
+              (fun () ->
+                 Clock.advance clock ~by:(Time_ns.Span.of_ms 100.);
+                 return ()));
+         return ())
   in
   [%expect
     {|
-    (raised (
-      "Nested [profile Async] exited out-of-order."
-      (message          outer)
-      (pending_children 1))) |}]
+    ("Nested [profile Async] exited out-of-order." (message outer)
+     (pending_children 1))
+    (100_000us outer "1970-01-01 00:00:03.33Z") |}]
 ;;
 
 let%expect_test "hide_if_less_than" =

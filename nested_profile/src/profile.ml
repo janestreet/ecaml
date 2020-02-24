@@ -388,17 +388,23 @@ let maybe_record_frame ?hide_if_less_than:local_hide_if_less_than (frame : Frame
   then Profile_context.record_profile frame ~stop
 ;;
 
-let on_async_out_of_order = ref (fun sexp -> raise_s (force sexp))
+let on_async_out_of_order =
+  ref (fun sexp -> !output_profile (Sexp.to_string_hum (force sexp) ^ "\n"))
+;;
 
 let record_profile ?hide_if_less_than (frame : Frame.t) =
   if frame.pending_children <> 0
-  then
+  then (
+    (* Pull this out of the record eagerly so we don't have problems with the lazy
+       expression being evaluated later, where there might be an intervening write to
+       [frame.pending_children]. *)
+    let pending_children = frame.pending_children in
     !on_async_out_of_order
       (lazy
         [%message
           "Nested [profile Async] exited out-of-order."
             ~message:(Message.force frame.message : Sexp.t)
-            ~pending_children:(frame.pending_children : int)]);
+            (pending_children : int)]));
   maybe_record_frame ?hide_if_less_than frame ~stop:(now ())
 ;;
 
