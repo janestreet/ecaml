@@ -93,17 +93,28 @@ module Record = struct
     ; message : Message.t
     ; children : t list
     ; had_parallel_children : bool
+    ; pending_children : int
     }
 
   let took t = Time_ns.diff t.stop t.start
 
   let rec sexp_of_t
-            ({ start = _; stop = _; message; children; had_parallel_children } as t)
+            ({ start = _
+             ; stop = _
+             ; message
+             ; children
+             ; had_parallel_children
+             ; pending_children
+             } as t)
     =
     [%sexp
       (took t |> Time_ns.Span.to_string_hum : string)
     , (if had_parallel_children then Some `parallel else None
                                                          : ([ `parallel ] option[@sexp.option]))
+    , (if pending_children <> 0
+       then Some (`pending_children pending_children)
+       else None
+            : ([ `pending_children of int ] option[@sexp.option]))
     , (Message.force message : Sexp.t)
     , (children : (t list[@sexp.omit_nil]))]
   ;;
@@ -199,6 +210,7 @@ module Record = struct
           ; message = Message.create (lazy [%sexp "gap"])
           ; children = []
           ; had_parallel_children = false
+          ; pending_children = 0
           }
           :: ts
       in
@@ -228,7 +240,7 @@ module Record = struct
     in
     let start = [%sexp (t.start : Time_ns.t)] |> Sexp.to_string in
     let rec loop
-              ({ message; children; had_parallel_children; _ } as t)
+              ({ message; children; had_parallel_children; pending_children; _ } as t)
               ~depth
               ~parent_took
       =
@@ -265,6 +277,10 @@ module Record = struct
               |> pad_left ~total_width:took_total_width
             ; " "
             ; (if had_parallel_children then "[parallel] " else "")
+            ; (match pending_children with
+               | 0 -> ""
+               | 1 -> "[1 pending child] "
+               | n -> sprintf "[%d pending children] " n)
             ; message |> sexp_to_string_on_one_line
             ; (match start_location with
                | Line_preceding_profile -> ""
@@ -330,13 +346,7 @@ module Frame = struct
   ;;
 
   let record
-        { message
-        ; start
-        ; children
-        ; parent = _
-        ; pending_children = _
-        ; max_pending_children
-        }
+        { message; start; children; parent = _; pending_children; max_pending_children }
         ~stop
     : Record.t
     =
@@ -345,6 +355,7 @@ module Frame = struct
     ; message
     ; children = children |> Queue.to_list
     ; had_parallel_children = max_pending_children > 1
+    ; pending_children
     }
   ;;
 end

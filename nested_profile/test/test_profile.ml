@@ -109,6 +109,7 @@ let%expect_test "profile_async" =
 ;;
 
 let%expect_test "bad call to profile_async" =
+  let child_exits = Ivar.create () in
   let%bind () =
     profile
       Async
@@ -120,7 +121,7 @@ let%expect_test "bad call to profile_async" =
               (lazy [%message "inner"])
               (fun () ->
                  advance_clock_by (sec 0.1);
-                 Deferred.never ()));
+                 Ivar.read child_exits));
          advance_clock_by (sec 0.01);
          return ())
   in
@@ -129,8 +130,12 @@ let%expect_test "bad call to profile_async" =
       {|
     ("Nested [profile Async] exited out-of-order." (message outer)
      (pending_children 1))
-    (110_000us outer "1970-01-01 00:00:02Z") |}]
+    (110_000us [1 pending child] outer "1970-01-01 00:00:02Z") |}]
   in
+  (* The child exiting at this point will not lead to any output. *)
+  Ivar.fill child_exits ();
+  let%bind () = Scheduler.yield_until_no_jobs_remain () in
+  let%bind () = [%expect {| |}] in
   (* A bad call doesn't corrupt the profile stack. *)
   let%bind () = Test_profile_async.test () in
   [%expect
@@ -198,7 +203,7 @@ let%expect_test "inner ends after outer ends" =
     {|
     ("Nested [profile Async] exited out-of-order." (message outer)
      (pending_children 1))
-    (100_000us outer "1970-01-01 00:00:03.33Z") |}]
+    (100_000us [1 pending child] outer "1970-01-01 00:00:03.33Z") |}]
 ;;
 
 let%expect_test "hide_if_less_than" =
