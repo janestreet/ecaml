@@ -4,7 +4,10 @@ open! Import
 
 val initialize : unit -> unit
 
-module Expect_test_config : module type of Expect_test_config_with_unit_expect
+module Expect_test_config :
+  Expect_test_config_types.S
+  with type 'a IO_flush.t = 'a
+   and type 'a IO_run.t = 'a Deferred.t
 
 module Export : sig
   module Clock : sig
