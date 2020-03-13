@@ -131,6 +131,10 @@ and wrap_message = Echo_area.wrap_message
 
 module Returns = Defun.Returns
 
+open struct
+  module Unix = Caml_unix
+end
+
 let provide =
   Ecaml_callback.(register end_of_module_initialization)
     ~should_run_holding_async_lock:true
