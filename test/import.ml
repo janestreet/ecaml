@@ -1,6 +1,7 @@
 open! Core_kernel
 open! Async_kernel
-include Expect_test_helpers
+include Expect_test_helpers_core
+include Expect_test_helpers_async
 include Ecaml
 
 let concat = String.concat
@@ -53,7 +54,7 @@ let print_s ?(hide_positions = false) ?(templatize_current_directory = false) se
       (sexp
        |> Sexp_pretty.sexp_to_string
        |> (if hide_positions
-           then Expect_test_helpers_kernel.hide_positions_in_string
+           then Expect_test_helpers_core.hide_positions_in_string
            else Fn.id)
        |> fun string ->
        String.Search_pattern.replace_all

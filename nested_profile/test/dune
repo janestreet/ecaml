@@ -1,3 +1,4 @@
 (library (name nested_profile_test)
- (libraries async core expect_test_helpers nested_profile)
+ (libraries async core expect_test_helpers_async expect_test_helpers_core
+  nested_profile)
  (preprocess (pps ppx_jane -allow-unannotated-ignores)))

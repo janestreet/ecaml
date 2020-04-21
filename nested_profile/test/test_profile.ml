@@ -3,7 +3,8 @@ open! Async
 open! Nested_profile
 open! Nested_profile.Profile
 open! Nested_profile.Profile.Private
-open! Expect_test_helpers
+open! Expect_test_helpers_core
+open! Expect_test_helpers_async
 
 let _ = Profile.should_profile := true
 let sec = Time_ns.Span.of_sec

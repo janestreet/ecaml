@@ -21,7 +21,7 @@ let initialize_module =
 
 let concat = String.concat
 let debug = false
-let print_s = Expect_test_helpers_kernel.print_s
+let print_s = Expect_test_helpers_core.print_s
 let eprint_s = Core_kernel.Debug.eprint_s
 let raise_string s = raise_s [%sexp (String.strip (concat s) : string)]
 let sec_ns = Time_ns.Span.of_sec
