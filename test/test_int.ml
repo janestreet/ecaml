@@ -63,34 +63,34 @@ let%expect_test "[Value.of_int]" =
        Error (
          "validation errors" ((
            overflow-error
-           "value -4611686018427387904 < bound -2305843009213693952")))))
+           "value -4_611_686_018_427_387_904 < bound -2_305_843_009_213_693_952")))))
      (i' (
        Error (
          "validation errors" ((
            overflow-error
-           "value -4611686018427387904 < bound -2305843009213693952"))))))
+           "value -4_611_686_018_427_387_904 < bound -2_305_843_009_213_693_952"))))))
     ((i -4_611_686_018_427_387_903)
      (v (
        Error (
          "validation errors" ((
            overflow-error
-           "value -4611686018427387903 < bound -2305843009213693952")))))
+           "value -4_611_686_018_427_387_903 < bound -2_305_843_009_213_693_952")))))
      (i' (
        Error (
          "validation errors" ((
            overflow-error
-           "value -4611686018427387903 < bound -2305843009213693952"))))))
+           "value -4_611_686_018_427_387_903 < bound -2_305_843_009_213_693_952"))))))
     ((i -2_305_843_009_213_693_953)
      (v (
        Error (
          "validation errors" ((
            overflow-error
-           "value -2305843009213693953 < bound -2305843009213693952")))))
+           "value -2_305_843_009_213_693_953 < bound -2_305_843_009_213_693_952")))))
      (i' (
        Error (
          "validation errors" ((
            overflow-error
-           "value -2305843009213693953 < bound -2305843009213693952"))))))
+           "value -2_305_843_009_213_693_953 < bound -2_305_843_009_213_693_952"))))))
     ((i -2_305_843_009_213_693_952)
      (v  (Ok -2305843009213693952))
      (i' (Ok -2_305_843_009_213_693_952)))
@@ -116,29 +116,35 @@ let%expect_test "[Value.of_int]" =
      (v (
        Error (
          "validation errors" ((
-           overflow-error "value 2305843009213693952 > bound 2305843009213693951")))))
+           overflow-error
+           "value 2_305_843_009_213_693_952 > bound 2_305_843_009_213_693_951")))))
      (i' (
        Error (
          "validation errors" ((
-           overflow-error "value 2305843009213693952 > bound 2305843009213693951"))))))
+           overflow-error
+           "value 2_305_843_009_213_693_952 > bound 2_305_843_009_213_693_951"))))))
     ((i 4_611_686_018_427_387_902)
      (v (
        Error (
          "validation errors" ((
-           overflow-error "value 4611686018427387902 > bound 2305843009213693951")))))
+           overflow-error
+           "value 4_611_686_018_427_387_902 > bound 2_305_843_009_213_693_951")))))
      (i' (
        Error (
          "validation errors" ((
-           overflow-error "value 4611686018427387902 > bound 2305843009213693951"))))))
+           overflow-error
+           "value 4_611_686_018_427_387_902 > bound 2_305_843_009_213_693_951"))))))
     ((i 4_611_686_018_427_387_903)
      (v (
        Error (
          "validation errors" ((
-           overflow-error "value 4611686018427387903 > bound 2305843009213693951")))))
+           overflow-error
+           "value 4_611_686_018_427_387_903 > bound 2_305_843_009_213_693_951")))))
      (i' (
        Error (
          "validation errors" ((
-           overflow-error "value 4611686018427387903 > bound 2305843009213693951")))))) |}];
+           overflow-error
+           "value 4_611_686_018_427_387_903 > bound 2_305_843_009_213_693_951")))))) |}];
   return ()
 ;;
 
