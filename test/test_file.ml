@@ -143,8 +143,8 @@ let%expect_test "[write]" =
   write file "more stuff\n" ~append:true;
   let%bind () = show_contents () in
   [%expect {|
-      stuff
-      more stuff |}];
+    stuff
+    more stuff |}];
   File.delete file;
   return ()
 ;;

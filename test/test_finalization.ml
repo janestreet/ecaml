@@ -16,7 +16,7 @@ let make_ocaml_garbage_not_keep_emacs_values_alive () =
 ;;
 
 let emacs_garbage_collect =
-  let garbage_collect = Funcall.("garbage-collect" <: nullary @-> return nil) in
+  let garbage_collect = Funcall.Wrap.("garbage-collect" <: nullary @-> return nil) in
   fun () ->
     garbage_collect ();
     (* Remove reference to OCaml values that are no longer referenced by emacs. We need to

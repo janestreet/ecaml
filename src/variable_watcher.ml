@@ -62,7 +62,7 @@ type t =
   }
 
 let add_variable_watcher =
-  Funcall.("add-variable-watcher" <: Symbol.type_ @-> Function.type_ @-> return nil)
+  Funcall.Wrap.("add-variable-watcher" <: Symbol.type_ @-> Function.type_ @-> return nil)
 ;;
 
 let add here var ~f =
@@ -72,7 +72,8 @@ let add here var ~f =
 ;;
 
 let remove_variable_watcher =
-  Funcall.("remove-variable-watcher" <: Symbol.type_ @-> Function.type_ @-> return nil)
+  Funcall.Wrap.(
+    "remove-variable-watcher" <: Symbol.type_ @-> Function.type_ @-> return nil)
 ;;
 
 let remove { symbol; watcher } = remove_variable_watcher symbol watcher

@@ -256,3 +256,12 @@ val extend_sentinel
   -> (unit, 'a) Defun.Returns.t
   -> sentinel:(event:string -> 'a)
   -> unit
+
+(** Prefer [extend_sentinel], which doesn't clobber existing sentinels.
+    [(describe-function 'set-process-sentinel)] *)
+val set_sentinel
+  :  Source_code_position.t
+  -> t
+  -> (unit, 'a) Defun.Returns.t
+  -> sentinel:(event:string -> 'a)
+  -> unit

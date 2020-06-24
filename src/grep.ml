@@ -33,14 +33,17 @@ module Save_buffers = struct
   let t = type_
 end
 
-let save_buffers = Var.Wrap.("grep-save-buffers" <: Save_buffers.t)
-let use_null_device = Var.Wrap.("grep-use-null-device" <: bool)
-let grep = Funcall.("grep" <: string @-> return nil)
+let save_buffers = Customization.Wrap.("grep-save-buffers" <: Save_buffers.t)
+let use_null_device = Customization.Wrap.("grep-use-null-device" <: bool)
+let grep = Funcall.Wrap.("grep" <: string @-> return nil)
 
 let grep ~command =
   (* Prevent [grep] from appending [/dev/null] to the command. *)
-  Current_buffer.set_value_temporarily Sync use_null_device false ~f:(fun () ->
-    grep command)
+  Current_buffer.set_value_temporarily
+    Sync
+    (use_null_device |> Customization.var)
+    false
+    ~f:(fun () -> grep command)
 ;;
 
 include (val Major_mode.wrap_existing "grep-mode" [%here])

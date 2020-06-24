@@ -2,7 +2,7 @@ open! Core_kernel
 open! Import
 
 let advice_add =
-  Funcall.("advice-add" <: Symbol.t @-> Symbol.t @-> Symbol.t @-> return nil)
+  Funcall.Wrap.("advice-add" <: Symbol.t @-> Symbol.t @-> Symbol.t @-> return nil)
 ;;
 
 let add_predefined_function advice_name ~for_function =
@@ -100,5 +100,8 @@ let around_funcall
                 Value.funcallN inner rest))
 ;;
 
-let advice_remove = Funcall.("advice-remove" <: Symbol.t @-> Symbol.t @-> return nil)
+let advice_remove =
+  Funcall.Wrap.("advice-remove" <: Symbol.t @-> Symbol.t @-> return nil)
+;;
+
 let remove advice_name ~for_function = advice_remove for_function advice_name

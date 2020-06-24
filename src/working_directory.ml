@@ -13,9 +13,9 @@ let to_filename = function
   | This s -> s
 ;;
 
-let within t ~f =
+let within t sync_or_async ~f =
   Current_buffer.set_value_temporarily
-    Sync
+    sync_or_async
     (Buffer_local.var Current_buffer.directory)
     (Some (t |> to_filename))
     ~f

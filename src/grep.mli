@@ -21,4 +21,4 @@ module Save_buffers : sig
 end
 
 (** [(describe-variable 'grep-save-buffers)] *)
-val save_buffers : Save_buffers.t Var.t
+val save_buffers : Save_buffers.t Customization.t

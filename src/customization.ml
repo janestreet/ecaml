@@ -6,32 +6,32 @@ module Q = struct
   include Q
 
   let alist = "alist" |> Symbol.intern
-  and boolean = "boolean" |> Symbol.intern
-  and character = "character" |> Symbol.intern
-  and choice = "choice" |> Symbol.intern
-  and coding_system = "coding-system" |> Symbol.intern
-  and color = "color" |> Symbol.intern
-  and cons = "cons" |> Symbol.intern
-  and const = "const" |> Symbol.intern
-  and defcustom = "defcustom" |> Symbol.intern
-  and defgroup = "defgroup" |> Symbol.intern
-  and directory = "directory" |> Symbol.intern
-  and file = "file" |> Symbol.intern
-  and float = "float" |> Symbol.intern
-  and function_ = "function" |> Symbol.intern
-  and group = "group" |> Symbol.intern
-  and hook = "hook" |> Symbol.intern
-  and integer = "integer" |> Symbol.intern
-  and plist = "plist" |> Symbol.intern
-  and radio = "radio" |> Symbol.intern
-  and repeat = "repeat" |> Symbol.intern
-  and set = "set" |> Symbol.intern
-  and string = "string" |> Symbol.intern
-  and variable = "variable" |> Symbol.intern
+  let boolean = "boolean" |> Symbol.intern
+  let character = "character" |> Symbol.intern
+  let choice = "choice" |> Symbol.intern
+  let coding_system = "coding-system" |> Symbol.intern
+  let color = "color" |> Symbol.intern
+  let cons = "cons" |> Symbol.intern
+  let const = "const" |> Symbol.intern
+  let defcustom = "defcustom" |> Symbol.intern
+  let defgroup = "defgroup" |> Symbol.intern
+  let directory = "directory" |> Symbol.intern
+  let file = "file" |> Symbol.intern
+  let float = "float" |> Symbol.intern
+  let function_ = "function" |> Symbol.intern
+  let group = "group" |> Symbol.intern
+  let hook = "hook" |> Symbol.intern
+  let integer = "integer" |> Symbol.intern
+  let plist = "plist" |> Symbol.intern
+  let radio = "radio" |> Symbol.intern
+  let repeat = "repeat" |> Symbol.intern
+  let set = "set" |> Symbol.intern
+  let string = "string" |> Symbol.intern
+  let variable = "variable" |> Symbol.intern
 end
 
-let customize_group = Funcall.("customize-group" <: Symbol.t @-> return nil)
-let customize_variable = Funcall.("customize-variable" <: Symbol.t @-> return nil)
+let customize_group = Funcall.Wrap.("customize-group" <: Symbol.t @-> return nil)
+let customize_variable = Funcall.Wrap.("customize-variable" <: Symbol.t @-> return nil)
 let q value = Value.list [ Symbol.to_value Q.quote; value ]
 
 module Group = struct
@@ -176,7 +176,7 @@ type 'a t = 'a Var.t [@@deriving sexp_of]
 let var t = t
 let symbol = Var.symbol
 let value = Current_buffer0.value_exn
-let custom_set_variables = Funcall.("custom-set-variables" <: value @-> return nil)
+let custom_set_variables = Funcall.Wrap.("custom-set-variables" <: value @-> return nil)
 
 let set_value t a =
   custom_set_variables
@@ -190,6 +190,8 @@ let set_value_temporarily t a ~f =
 ;;
 
 let standard_value = Var.default_value_exn
+
+module Wrap = Var.Wrap
 
 let defcustom
       ?(show_form = false)

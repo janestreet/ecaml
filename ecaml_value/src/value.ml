@@ -22,14 +22,12 @@ module Funcall_exit = struct
     | Throw of Emacs_value.t * Emacs_value.t
   [@@deriving variants]
 
-  let initialize_module =
+  let () =
     assert (Variants.return.rank = 0);
     assert (Variants.signal.rank = 1);
     assert (Variants.throw.rank = 2)
   ;;
 end
-
-let initialize_module = Funcall_exit.initialize_module
 
 external have_active_env : unit -> bool = "ecaml_have_active_env"
 
@@ -91,47 +89,47 @@ let intern string =
 
 module Q = struct
   let append = "append" |> intern
-  and arrayp = "arrayp" |> intern
-  and backtrace = "backtrace" |> intern
-  and bufferp = "bufferp" |> intern
-  and car = "car" |> intern
-  and cadr = "cadr" |> intern
-  and cdr = "cdr" |> intern
-  and commandp = "commandp" |> intern
-  and cons = "cons" |> intern
-  and consp = "consp" |> intern
-  and debug_on_error = "debug-on-error" |> intern
-  and equal = "equal" |> intern
-  and equal_including_properties = "equal-including-properties" |> intern
-  and error = "error" |> intern
-  and eventp = "eventp" |> intern
-  and floatp = "floatp" |> intern
-  and fontp = "fontp" |> intern
-  and framep = "framep" |> intern
-  and functionp = "functionp" |> intern
-  and hash_table_p = "hash-table-p" |> intern
-  and keymapp = "keymapp" |> intern
-  and length = "length" |> intern
-  and list = "list" |> intern
-  and markerp = "markerp" |> intern
-  and message = "message" |> intern
-  and nil = "nil" |> intern
-  and prin1_to_string = "prin1-to-string" |> intern
-  and print_length = "print-length" |> intern
-  and print_level = "print-level" |> intern
-  and processp = "processp" |> intern
-  and set = "set" |> intern
-  and stringp = "stringp" |> intern
-  and substring_no_properties = "substring-no-properties" |> intern
-  and symbol_value = "symbol-value" |> intern
-  and symbolp = "symbolp" |> intern
-  and syntax_table_p = "syntax-table-p" |> intern
-  and t = "t" |> intern
-  and timerp = "timerp" |> intern
-  and vector = "vector" |> intern
-  and vectorp = "vectorp" |> intern
-  and window_configuration_p = "window-configuration-p" |> intern
-  and windowp = "windowp" |> intern
+  let arrayp = "arrayp" |> intern
+  let backtrace = "backtrace" |> intern
+  let bufferp = "bufferp" |> intern
+  let car = "car" |> intern
+  let cadr = "cadr" |> intern
+  let cdr = "cdr" |> intern
+  let commandp = "commandp" |> intern
+  let cons = "cons" |> intern
+  let consp = "consp" |> intern
+  let debug_on_error = "debug-on-error" |> intern
+  let equal = "equal" |> intern
+  let equal_including_properties = "equal-including-properties" |> intern
+  let error = "error" |> intern
+  let eventp = "eventp" |> intern
+  let floatp = "floatp" |> intern
+  let fontp = "fontp" |> intern
+  let framep = "framep" |> intern
+  let functionp = "functionp" |> intern
+  let hash_table_p = "hash-table-p" |> intern
+  let keymapp = "keymapp" |> intern
+  let length = "length" |> intern
+  let list = "list" |> intern
+  let markerp = "markerp" |> intern
+  let message = "message" |> intern
+  let nil = "nil" |> intern
+  let prin1_to_string = "prin1-to-string" |> intern
+  let print_length = "print-length" |> intern
+  let print_level = "print-level" |> intern
+  let processp = "processp" |> intern
+  let set = "set" |> intern
+  let stringp = "stringp" |> intern
+  let substring_no_properties = "substring-no-properties" |> intern
+  let symbol_value = "symbol-value" |> intern
+  let symbolp = "symbolp" |> intern
+  let syntax_table_p = "syntax-table-p" |> intern
+  let t = "t" |> intern
+  let timerp = "timerp" |> intern
+  let vector = "vector" |> intern
+  let vectorp = "vectorp" |> intern
+  let window_configuration_p = "window-configuration-p" |> intern
+  let windowp = "windowp" |> intern
 end
 
 module Block_on_async = struct
@@ -658,8 +656,7 @@ let sexp_of_t t =
   sexp_of_t_internal t ~print_length ~print_level
 ;;
 
-let initialize_module =
-  initialize_module;
+let () =
   Sexplib.Conv.Exn_converter.add [%extension_constructor Elisp_signal] (function
     | Elisp_signal { symbol; data } ->
       if eq symbol Q.error

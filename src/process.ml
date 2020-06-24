@@ -6,19 +6,19 @@ module Q = struct
   include Q
 
   let call_process = "call-process" |> Symbol.intern
-  and call_process_region = "call-process-region" |> Symbol.intern
-  and closed = "closed" |> Symbol.intern
-  and connect = "connect" |> Symbol.intern
-  and exit_ = "exit" |> Symbol.intern
-  and failed = "failed" |> Symbol.intern
-  and listen = "listen" |> Symbol.intern
-  and local = "local" |> Symbol.intern
-  and make_network_process = "make-network-process" |> Symbol.intern
-  and open_ = "open" |> Symbol.intern
-  and run = "run" |> Symbol.intern
-  and signal = "signal" |> Symbol.intern
-  and start_process = "start-process" |> Symbol.intern
-  and stop = "stop" |> Symbol.intern
+  let call_process_region = "call-process-region" |> Symbol.intern
+  let closed = "closed" |> Symbol.intern
+  let connect = "connect" |> Symbol.intern
+  let exit_ = "exit" |> Symbol.intern
+  let failed = "failed" |> Symbol.intern
+  let listen = "listen" |> Symbol.intern
+  let local = "local" |> Symbol.intern
+  let make_network_process = "make-network-process" |> Symbol.intern
+  let open_ = "open" |> Symbol.intern
+  let run = "run" |> Symbol.intern
+  let signal = "signal" |> Symbol.intern
+  let start_process = "start-process" |> Symbol.intern
+  let stop = "stop" |> Symbol.intern
 end
 
 include Process0
@@ -40,32 +40,28 @@ module Status = struct
 
   include T
 
-  let type_ =
-    Value.Type.enum
-      [%sexp "process-status"]
-      (module T)
-      (Symbol.to_value
-       << function
-         | Closed -> Q.closed
-         | Connect -> Q.connect
-         | Exit -> Q.exit_
-         | Failed -> Q.failed
-         | Listen -> Q.listen
-         | Open -> Q.open_
-         | Run -> Q.run
-         | Signal -> Q.signal
-         | Stop -> Q.stop)
-  ;;
-
-  let t = type_
-  let of_value_exn = Value.Type.of_value_exn type_
-  let to_value = Value.Type.to_value type_
+  include Valueable.Remove_t
+      ((val Valueable.of_type
+              (Value.Type.enum
+                 [%sexp "process-status"]
+                 (module T)
+                 (Symbol.to_value
+                  << function
+                    | Closed -> Q.closed
+                    | Connect -> Q.connect
+                    | Exit -> Q.exit_
+                    | Failed -> Q.failed
+                    | Listen -> Q.listen
+                    | Open -> Q.open_
+                    | Run -> Q.run
+                    | Signal -> Q.signal
+                    | Stop -> Q.stop))))
 end
 
-let is_alive = Funcall.("process-live-p" <: t @-> return bool)
+let is_alive = Funcall.Wrap.("process-live-p" <: t @-> return bool)
 let equal = eq
-let buffer = Funcall.("process-buffer" <: t @-> return (nil_or Buffer.t))
-let process_command = Funcall.("process-command" <: t @-> return value)
+let buffer = Funcall.Wrap.("process-buffer" <: t @-> return (nil_or Buffer.t))
+let process_command = Funcall.Wrap.("process-command" <: t @-> return value)
 
 let command t =
   let v = process_command t in
@@ -74,19 +70,25 @@ let command t =
   else Some (v |> Value.to_list_exn ~f:Value.to_utf8_bytes_exn)
 ;;
 
-let name = Funcall.("process-name" <: t @-> return string)
-let process_id = Funcall.("process-id" <: t @-> return (nil_or int))
+let name = Funcall.Wrap.("process-name" <: t @-> return string)
+let process_id = Funcall.Wrap.("process-id" <: t @-> return (nil_or int))
 let pid t = process_id t |> Option.map ~f:Pid.of_int
-let mark = Funcall.("process-mark" <: t @-> return Marker.t)
-let query_on_exit = Funcall.("process-query-on-exit-flag" <: t @-> return bool)
+let mark = Funcall.Wrap.("process-mark" <: t @-> return Marker.t)
+let query_on_exit = Funcall.Wrap.("process-query-on-exit-flag" <: t @-> return bool)
 
 let set_query_on_exit =
-  Funcall.("set-process-query-on-exit-flag" <: t @-> bool @-> return nil)
+  Funcall.Wrap.("set-process-query-on-exit-flag" <: t @-> bool @-> return nil)
 ;;
 
-let get_property = Funcall.("process-get" <: t @-> Symbol.t @-> return (nil_or value))
-let set_property = Funcall.("process-put" <: t @-> Symbol.t @-> value @-> return nil)
-let status = Funcall.("process-status" <: t @-> return Status.t)
+let get_property =
+  Funcall.Wrap.("process-get" <: t @-> Symbol.t @-> return (nil_or value))
+;;
+
+let set_property =
+  Funcall.Wrap.("process-put" <: t @-> Symbol.t @-> value @-> return nil)
+;;
+
+let status = Funcall.Wrap.("process-status" <: t @-> return Status.t)
 
 module Exit_status = struct
   type t =
@@ -96,7 +98,7 @@ module Exit_status = struct
   [@@deriving sexp]
 end
 
-let process_exit_status = Funcall.("process-exit-status" <: t @-> return int)
+let process_exit_status = Funcall.Wrap.("process-exit-status" <: t @-> return int)
 
 let exit_status t : Exit_status.t =
   match status t with
@@ -105,8 +107,8 @@ let exit_status t : Exit_status.t =
   | Closed | Connect | Failed | Listen | Open | Run | Stop -> Not_exited
 ;;
 
-let find_by_name = Funcall.("get-process" <: string @-> return (nil_or t))
-let all_emacs_children = Funcall.("process-list" <: nullary @-> return (list t))
+let find_by_name = Funcall.Wrap.("get-process" <: string @-> return (nil_or t))
+let all_emacs_children = Funcall.Wrap.("process-list" <: nullary @-> return (list t))
 
 let create prog args ~name ?buffer () =
   Symbol.funcallN
@@ -121,7 +123,7 @@ let create prog args ~name ?buffer () =
   |> of_value_exn
 ;;
 
-let kill = Funcall.("delete-process" <: t @-> return nil)
+let kill = Funcall.Wrap.("delete-process" <: t @-> return nil)
 
 let create_unix_network_process () ~filter ~name ~socket_path =
   of_value_exn
@@ -253,7 +255,7 @@ let call_region_exn
       prog
       args
   =
-  Working_directory.within working_directory ~f:(fun () ->
+  Working_directory.within working_directory Sync ~f:(fun () ->
     let start, end_, delete =
       match input with
       | Region { start; end_; delete } ->
@@ -281,7 +283,7 @@ let call_result_exn
       prog
       args
   =
-  Working_directory.within working_directory ~f:(fun () ->
+  Working_directory.within working_directory Sync ~f:(fun () ->
     Symbol.funcallN
       Q.call_process
       ([ prog |> Value.of_utf8_bytes
@@ -376,10 +378,30 @@ let shell_command_expect_no_output_exn ?input ?working_directory ?verbose_exn co
   call_expect_no_output_exn bash [ "-c"; command ] ?input ?working_directory ?verbose_exn
 ;;
 
-let process_sentinel = Funcall.("process-sentinel" <: t @-> return (nil_or Function.t))
+let process_sentinel =
+  Funcall.Wrap.("process-sentinel" <: t @-> return (nil_or Function.t))
+;;
 
 let set_process_sentinel =
-  Funcall.("set-process-sentinel" <: t @-> Function.t @-> return nil)
+  Funcall.Wrap.("set-process-sentinel" <: t @-> Function.t @-> return nil)
+;;
+
+let set_sentinel
+      (type a)
+      here
+      t
+      (returns : (unit, a) Defun.Returns.t)
+      ~(sentinel : event:string -> a)
+  =
+  set_process_sentinel
+    t
+    (Defun.lambda
+       here
+       returns
+       (let%map_open.Defun () = return ()
+        and _process = required "process" type_
+        and event = required "event" string in
+        sentinel ~event))
 ;;
 
 let extend_sentinel

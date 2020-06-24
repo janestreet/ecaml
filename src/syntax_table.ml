@@ -8,10 +8,10 @@ include Value.Make_subtype (struct
   end)
 
 let equal = eq
-let standard = Funcall.("standard-syntax-table" <: nullary @-> return t) ()
-let make_syntax_table = Funcall.("make-syntax-table" <: nil_or t @-> return t)
+let standard = Funcall.Wrap.("standard-syntax-table" <: nullary @-> return t) ()
+let make_syntax_table = Funcall.Wrap.("make-syntax-table" <: nil_or t @-> return t)
 let create ?parent () = make_syntax_table parent
-let copy = Funcall.("copy-syntax-table" <: t @-> return t)
+let copy = Funcall.Wrap.("copy-syntax-table" <: t @-> return t)
 
 module Class = struct
   module T = struct
@@ -116,7 +116,7 @@ module Descriptor = struct
 end
 
 let modify_syntax_entry =
-  Funcall.("modify-syntax-entry" <: Char_code.t @-> value @-> t @-> return nil)
+  Funcall.Wrap.("modify-syntax-entry" <: Char_code.t @-> value @-> t @-> return nil)
 ;;
 
 let set t char_code class_ flags =

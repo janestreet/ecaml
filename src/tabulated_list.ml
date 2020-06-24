@@ -202,11 +202,11 @@ let tabulated_list_sort_key_var =
 ;;
 
 let tabulated_list_init_header =
-  Funcall.("tabulated-list-init-header" <: nullary @-> return nil)
+  Funcall.Wrap.("tabulated-list-init-header" <: nullary @-> return nil)
 ;;
 
 let tabulated_list_print =
-  Funcall.("tabulated-list-print" <: bool @-> bool @-> return nil)
+  Funcall.Wrap.("tabulated-list-print" <: bool @-> bool @-> return nil)
 ;;
 
 let draw ?sort_by t rows =
@@ -267,7 +267,7 @@ let create major_mode columns ~id_equal ~id_type ~id_of_record =
 ;;
 
 let tabulated_list_get_id =
-  Funcall.("tabulated-list-get-id" <: nullary @-> return (nil_or value))
+  Funcall.Wrap.("tabulated-list-get-id" <: nullary @-> return (nil_or value))
 ;;
 
 let get_id_at_point_exn t =

@@ -2,9 +2,12 @@ open! Core_kernel
 open! Async
 open! Import
 
-val initialize : unit -> unit
-
 module Expect_test_config :
+  Expect_test_config_types.S
+  with type 'a IO_flush.t = 'a
+   and type 'a IO_run.t = 'a Deferred.t
+
+module Expect_test_config_allowing_nested_block_on_async :
   Expect_test_config_types.S
   with type 'a IO_flush.t = 'a
    and type 'a IO_run.t = 'a Deferred.t
@@ -75,18 +78,35 @@ module Private : sig
     -> (unit -> unit Deferred.t)
     -> unit
 
-  (** [run_outside_async f] schedules [f] to run at some point in the future, outside of
+  (** [run_outside_async f] is the idiomatic way to call functions [f] where [f] only
+      wraps a single call into Elisp, and [f] would otherwise raise {[
+
+        "Called [block_on_async] in the middle of an Async job!"
+
+      ]}.
+
+      [f] should do nothing but make the one call into elisp, unless you can show that the
+      work done in OCaml is safe to run with pre-emptive multi-threading semantics.
+
+      [run_outside_async f] schedules [f] to run at some point in the future, outside of
       Async, i.e. not during an Async cycle and without holding the Async lock.
-      [run_outside_async] returns a deferred that is filled with the result of [f].  Use
-      [run_outside_async] to wrap blocking Elisp functions, e.g. [read-from-minibuffer].
-      For such functions, Emacs, while waiting, will run timers and network handlers, and
-      hence will run Async cycles.  Because [run_outside_async] runs [f] outside of a
-      Async, Emacs will be able to run cycles as needed.  Also, because
-      [run_outside_async] releases the Async lock, the Async scheduler thread will be able
-      to run and request cycles. *)
+
+      This is necessary so that Emacs will run timers and network handlers while waiting
+      for [f], and hence will request and run the Async cycles needed by [f]. *)
   val run_outside_async
     :  Source_code_position.t
     -> ?allowed_in_background:bool (** default is [false] *)
     -> (unit -> 'a)
     -> 'a Deferred.t
+
+  (** [run_outside_asyncN] are convenience wrappers around [run_outside_async] for common
+      function arities. Feel free to add more as necessary. *)
+
+  val run_outside_async1
+    :  Source_code_position.t
+    -> ?allowed_in_background:bool (** default is [false] *)
+    -> ('a -> 'r)
+    -> 'a
+    -> 'r Deferred.t
+
 end

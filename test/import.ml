@@ -25,11 +25,10 @@ let ignoring_stderr f =
 
 let background color : Text.Face_spec.t = [ Attributes [ T (Background, Color color) ] ]
 let foreground color : Text.Face_spec.t = [ Attributes [ T (Foreground, Color color) ] ]
-
 let background_blue = background Color.blue
-and background_red = background Color.red
-and foreground_red = foreground Color.red
-and foreground_blue = foreground Color.blue
+let background_red = background Color.red
+let foreground_red = foreground Color.red
+let foreground_blue = foreground Color.blue
 
 let show_last_match ?subexp () =
   let module Last_match = Regexp.Last_match in
@@ -129,7 +128,7 @@ let%expect_test "[with_input] with too long string" =
   return ()
 ;;
 
-let () = Current_buffer.set_value Backup.make_backup_files false
+let () = Customization.set_value Backup.make_backup_files false
 
 let while_ predicate ~do_ =
   Deferred.repeat_until_finished () (fun () ->

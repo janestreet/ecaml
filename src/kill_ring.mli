@@ -13,5 +13,3 @@ val is_empty : unit -> bool
 val kill_new : Text.t -> unit
 
 (** See [Current_buffer.yank] for yanking from the kill ring. *)
-
-val initialize : unit -> unit

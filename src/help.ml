@@ -17,7 +17,7 @@ let get_text_of_help ~invoke_help =
     |> String.strip)
 ;;
 
-let describe_function = Funcall.("describe-function" <: Symbol.t @-> return nil)
+let describe_function = Funcall.Wrap.("describe-function" <: Symbol.t @-> return nil)
 
 let describe_function_text ?(obscure_symbol = false) symbol =
   let s = get_text_of_help ~invoke_help:(fun () -> describe_function symbol) in
@@ -30,20 +30,26 @@ let describe_function_text ?(obscure_symbol = false) symbol =
   else s
 ;;
 
-let describe_minor_mode = Funcall.("describe-minor-mode" <: Symbol.t @-> return nil)
+let describe_key = Funcall.Wrap.("describe-key" <: Key_sequence.t @-> return nil)
+
+let describe_key_text key_sequence =
+  get_text_of_help ~invoke_help:(fun () -> describe_key key_sequence)
+;;
+
+let describe_minor_mode = Funcall.Wrap.("describe-minor-mode" <: Symbol.t @-> return nil)
 
 let describe_minor_mode_text symbol =
   get_text_of_help ~invoke_help:(fun () -> describe_minor_mode symbol)
 ;;
 
-let describe_variable = Funcall.("describe-variable" <: Symbol.t @-> return nil)
+let describe_variable = Funcall.Wrap.("describe-variable" <: Symbol.t @-> return nil)
 
 let describe_variable_text symbol =
   get_text_of_help ~invoke_help:(fun () -> describe_variable symbol)
 ;;
 
 let where_is_internal =
-  Funcall.(
+  Funcall.Wrap.(
     "where-is-internal"
     <: Symbol.t @-> nil_or Keymap.t @-> bool @-> return (nil_or Key_sequence.t))
 ;;

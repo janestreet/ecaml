@@ -23,7 +23,17 @@ module type S = sig
   include Value.Type.S
 end
 
+module Obsoletes = struct
+  module Since = struct
+    type t = Since of string [@@deriving sexp_of]
+  end
+
+  type t = Symbol.t * Since.t [@@deriving sexp_of]
+end
+
 module type Defun = sig
+  module Obsoletes = Obsoletes
+
   type 'a t [@@deriving sexp_of]
 
   module Open_on_rhs_intf : sig
@@ -76,9 +86,10 @@ module type Defun = sig
     -> Source_code_position.t
     -> ?docstring:string
     -> ?define_keys:(Keymap.t * string) list
-    -> ?obsoletes:Symbol.t
+    -> ?obsoletes:Obsoletes.t
     -> ?should_profile:bool
     -> ?interactive:Interactive.t
+    -> ?disabled:bool (** See {!Symbol.Property.function_disabled}  *)
     -> ?evil_config:Evil.Config.t
     -> 'a
 

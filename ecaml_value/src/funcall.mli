@@ -1,27 +1,25 @@
-(** A typeful interface for calling Elisp, as [external] does for C. E.g., {[
-
-      let not : bool -> bool = "not" <: bool @-> return bool
-
-      let about_emacs : unit -> unit = "about-emacs" <: nullary @-> return nil
-
-    ]} *)
+(** A typeful interface for calling Elisp, as [external] does for C.  *)
 
 open! Core_kernel
 open! Import
 
 type 'a t
 
-val return : 'a Value.Type.t -> 'a t
-val nil : unit Value.Type.t
-val nullary : unit Value.Type.t
+(** [Wrap] wraps an Elisp function as an OCaml function.  Idiomatic use looks like:
 
-(** ["foo" <: ty] imports Elisp function whose name is "foo" and whose type is [ty], like
-    how [foo :> ty] types an OCaml value. *)
-val ( <: ) : string -> 'a t -> 'a
+    {[
+      let not = Funcall.Wrap.("not" <: bool @-> return bool)
+      let about_emacs = Funcall.Wrap.("about-emacs" <: nullary @-> return nil)
+    ]} *)
+module Wrap : sig
+  val return : 'a Value.Type.t -> 'a t
+  val nil : unit Value.Type.t
+  val nullary : unit Value.Type.t
+  val ( <: ) : string -> 'a t -> 'a
+  val ( @-> ) : 'a Value.Type.t -> 'b t -> ('a -> 'b) t
 
-val ( @-> ) : 'a Value.Type.t -> 'b t -> ('a -> 'b) t
-
-include Value.Type.S
+  include Value.Type.S
+end
 
 module Private : sig
   val apply : 'a t -> 'a -> Value.t list -> on_parse_error:(exn -> Value.t) -> Value.t

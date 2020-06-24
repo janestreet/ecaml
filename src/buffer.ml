@@ -14,7 +14,7 @@ include Buffer0
 
 type buffer = t [@@deriving sexp_of]
 
-let name = Funcall.("buffer-name" <: t @-> return (nil_or string))
+let name = Funcall.Wrap.("buffer-name" <: t @-> return (nil_or string))
 
 module Compare_by_name = struct
   module T = struct
@@ -27,8 +27,8 @@ module Compare_by_name = struct
   include Comparable.Make_plain (T)
 end
 
-let file_name = Funcall.("buffer-file-name" <: t @-> return (nil_or string))
-let process = Funcall.("get-buffer-process" <: t @-> return (nil_or Process.t))
+let file_name = Funcall.Wrap.("buffer-file-name" <: t @-> return (nil_or string))
+let process = Funcall.Wrap.("get-buffer-process" <: t @-> return (nil_or Process.t))
 
 let process_exn t =
   match process t with
@@ -36,8 +36,8 @@ let process_exn t =
   | None -> raise_s [%message "buffer does not have a process" ~_:(t : t)]
 ;;
 
-let all_live = Funcall.("buffer-list" <: nullary @-> return (list t))
-let get_buffer = Funcall.("get-buffer" <: string @-> return (nil_or t))
+let all_live = Funcall.Wrap.("buffer-list" <: nullary @-> return (list t))
+let get_buffer = Funcall.Wrap.("get-buffer" <: string @-> return (nil_or t))
 let find ~name = get_buffer name
 
 let find_exn ~name =
@@ -46,13 +46,14 @@ let find_exn ~name =
   | None -> raise_s [%message "no buffer named" ~_:(name : string)]
 ;;
 
-let get_file_buffer = Funcall.("get-file-buffer" <: string @-> return (nil_or t))
+let get_file_buffer = Funcall.Wrap.("get-file-buffer" <: string @-> return (nil_or t))
 let find_visiting ~file = get_file_buffer file
-let get_buffer_create = Funcall.("get-buffer-create" <: string @-> return t)
+let get_buffer_create = Funcall.Wrap.("get-buffer-create" <: string @-> return t)
 let find_or_create ~name = get_buffer_create name
 
 let get_buffer_window_list =
-  Funcall.("get-buffer-window-list" <: t @-> bool @-> value @-> return (list Window.t))
+  Funcall.Wrap.(
+    "get-buffer-window-list" <: t @-> bool @-> value @-> return (list Window.t))
 ;;
 
 let displayed_in ?(current_frame_only = false) t =
@@ -62,11 +63,11 @@ let displayed_in ?(current_frame_only = false) t =
     (if current_frame_only then Value.nil else Q.visible |> Symbol.to_value)
 ;;
 
-let display = Funcall.("display-buffer" <: t @-> return (nil_or Window.t))
+let display = Funcall.Wrap.("display-buffer" <: t @-> return (nil_or Window.t))
 let display_i t = ignore (display t : Window0.t option)
 
 let buffer_local_value =
-  Funcall.("buffer-local-value" <: Symbol.t @-> t @-> return value)
+  Funcall.Wrap.("buffer-local-value" <: Symbol.t @-> t @-> return value)
 ;;
 
 let buffer_local_value t (var : _ Var.t) =
@@ -74,7 +75,7 @@ let buffer_local_value t (var : _ Var.t) =
 ;;
 
 let buffer_local_variables =
-  Funcall.("buffer-local-variables" <: t @-> return (list value))
+  Funcall.Wrap.("buffer-local-variables" <: t @-> return (list value))
 ;;
 
 let buffer_local_variables t =
@@ -86,7 +87,7 @@ let buffer_local_variables t =
 ;;
 
 let find_file_noselect =
-  let f = Funcall.("find-file-noselect" <: string @-> return t) in
+  let f = Funcall.Wrap.("find-file-noselect" <: string @-> return t) in
   fun filename -> Value.Private.run_outside_async [%here] (fun () -> f filename)
 ;;
 
@@ -126,7 +127,7 @@ end
 
 let save_some =
   let save_some_buffers =
-    Funcall.("save-some-buffers" <: bool @-> Which_buffers.t @-> return nil)
+    Funcall.Wrap.("save-some-buffers" <: bool @-> Which_buffers.t @-> return nil)
   in
   fun ?(query = true) ?(which_buffers = Which_buffers.File_visiting) () ->
     Value.Private.run_outside_async [%here] (fun () ->
@@ -145,7 +146,7 @@ let with_temp_buffer f =
 
 let revert =
   let revert_buffer =
-    Funcall.("revert-buffer" <: bool @-> bool @-> bool @-> return bool)
+    Funcall.Wrap.("revert-buffer" <: bool @-> bool @-> bool @-> return bool)
   in
   fun ?(confirm = false) t ->
     let noconfirm = not confirm in
@@ -156,4 +157,10 @@ let revert =
 
 let kill_buffer_query_functions =
   Var.Wrap.("kill-buffer-query-functions" <: list Function.t)
+;;
+
+let modified_tick = Funcall.Wrap.("buffer-modified-tick" <: t @-> return Modified_tick.t)
+
+let chars_modified_tick =
+  Funcall.Wrap.("buffer-chars-modified-tick" <: t @-> return Modified_tick.t)
 ;;

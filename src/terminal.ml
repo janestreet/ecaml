@@ -8,7 +8,7 @@ module Q = struct
   let x = "x" |> Symbol.intern
 end
 
-let is_terminal = Funcall.("terminal-live-p" <: value @-> return bool)
+let is_terminal = Funcall.Wrap.("terminal-live-p" <: value @-> return bool)
 
 include Value.Make_subtype (struct
     let name = "terminal"
@@ -44,9 +44,9 @@ module Type = struct
   let t = type_
 end
 
-let all_live = Funcall.("terminal-list" <: nullary @-> return (list t))
-let terminal_type = Funcall.("terminal-live-p" <: t @-> return Type.t)
-let name = Funcall.("terminal-name" <: t @-> return string)
+let all_live = Funcall.Wrap.("terminal-list" <: nullary @-> return (list t))
+let terminal_type = Funcall.Wrap.("terminal-live-p" <: t @-> return Type.t)
+let name = Funcall.Wrap.("terminal-name" <: t @-> return string)
 
 let graphical t =
   match terminal_type t with

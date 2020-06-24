@@ -5,8 +5,8 @@ module Q = struct
   include Q
 
   let margin = "margin" |> Symbol.intern
-  and left_margin = "left-margin" |> Symbol.intern
-  and right_margin = "right-margin" |> Symbol.intern
+  let left_margin = "left-margin" |> Symbol.intern
+  let right_margin = "right-margin" |> Symbol.intern
 end
 
 module Margin = struct

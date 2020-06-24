@@ -6,21 +6,21 @@ module Q = struct
   include Q
 
   let any = "any" |> Symbol.intern
-  and anything = "anything" |> Symbol.intern
-  and line_end = "line-end" |> Symbol.intern
-  and line_start = "line-start" |> Symbol.intern
-  and not_ = "not" |> Symbol.intern
-  and one_or_more = "one-or-more" |> Symbol.intern
-  and or_ = "or" |> Symbol.intern
-  and point = "point" |> Symbol.intern
-  and seq = "seq" |> Symbol.intern
-  and submatch = "submatch" |> Symbol.intern
-  and submatch_n = "submatch-n" |> Symbol.intern
-  and sym_eq = "=" |> Symbol.intern
-  and sym_ge = ">=" |> Symbol.intern
-  and sym_star_star = "**" |> Symbol.intern
-  and zero_or_more = "zero-or-more" |> Symbol.intern
-  and zero_or_one = "zero-or-one" |> Symbol.intern
+  let anything = "anything" |> Symbol.intern
+  let line_end = "line-end" |> Symbol.intern
+  let line_start = "line-start" |> Symbol.intern
+  let not_ = "not" |> Symbol.intern
+  let one_or_more = "one-or-more" |> Symbol.intern
+  let or_ = "or" |> Symbol.intern
+  let point = "point" |> Symbol.intern
+  let seq = "seq" |> Symbol.intern
+  let submatch = "submatch" |> Symbol.intern
+  let submatch_n = "submatch-n" |> Symbol.intern
+  let sym_eq = "=" |> Symbol.intern
+  let sym_ge = ">=" |> Symbol.intern
+  let sym_star_star = "**" |> Symbol.intern
+  let zero_or_more = "zero-or-more" |> Symbol.intern
+  let zero_or_one = "zero-or-one" |> Symbol.intern
 end
 
 module Char_class = struct
@@ -99,5 +99,5 @@ and to_form t =
   | Zero_or_one t -> to_form (Repeat { min = 0; max = Some 1; t })
 ;;
 
-let rx_to_string = Funcall.("rx-to-string" <: Form.t @-> return string)
+let rx_to_string = Funcall.Wrap.("rx-to-string" <: Form.t @-> return string)
 let pattern t = rx_to_string (to_form t)

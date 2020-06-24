@@ -116,3 +116,9 @@ val revert : ?confirm:bool (** default is [false] *) -> t -> unit Deferred.t
 
 (** [(describe-variable 'kill-buffer-query-functions)] *)
 val kill_buffer_query_functions : Function.t list Var.t
+
+(** [(describe-function 'buffer-modified-tick)] *)
+val modified_tick : t -> Modified_tick.t
+
+(** [(describe-function 'buffer-chars-modified-tick)] *)
+val chars_modified_tick : t -> Modified_tick.t

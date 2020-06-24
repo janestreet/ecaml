@@ -31,7 +31,9 @@ val to_list : t -> Input_event.t list
 val create_exn : string -> t
 
 (** [(describe-function 'execute-kbd-macro)]
-    [(Info-goto-node "(elisp)Keyboard Macros")] *)
+    [(Info-goto-node "(elisp)Keyboard Macros")]
+    Warning: [execute-kbd-macro] sets the current buffer to the selected window's buffer.
+*)
 val execute : t -> unit Deferred.t
 
 (** [(describe-variable 'executing-kbd-macro)]

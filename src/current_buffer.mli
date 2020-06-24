@@ -103,7 +103,7 @@ val read_only : bool Buffer_local.t
 (** [(describe-variable 'transient-mark-mode)]
     [(describe-function 'transient-mark-mode)]
     [(Info-goto-node "(elisp)The Mark")] *)
-val transient_mark_mode : bool Var.t
+val transient_mark_mode : bool Customization.t
 
 (** [(describe-variable 'major-mode)]
     [(Info-goto-node "(elisp)Auto Major Mode")] *)

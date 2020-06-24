@@ -5,7 +5,12 @@ open! Import
 
 type 'a t
 
-val register : 'a t -> f:'a -> should_run_holding_async_lock:bool -> unit
+val register
+  :  'a t
+  -> Source_code_position.t
+  -> f:'a
+  -> should_run_holding_async_lock:bool
+  -> unit
 
 (** [dispatch_function] is how Emacs calls from C to OCaml. *)
 val dispatch_function : (Caml_embedded_id.t -> Value.t array -> Value.t) t
@@ -23,5 +28,3 @@ val free_embedded_caml_values : (Caml_embedded_id.t array -> unit) t
 (** [report_exn_when_calling_callback] is called when the infrastructure that calls a
     callbacks raises.  This is a rare situation, e.g. [Out_of_memory]. *)
 val report_exn_when_calling_callback : exn -> unit
-
-val initialize_module : unit

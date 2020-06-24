@@ -141,6 +141,9 @@ end = struct
     let write_to_request_cycle =
       Unix.socket ~domain:PF_UNIX ~kind:SOCK_STREAM ~protocol:0 ()
     in
+    (* If the scheduler blocks trying to write to this socket, emacs will deadlock. Making
+       the socket nonblocking prevents this. *)
+    Unix.set_nonblock write_to_request_cycle;
     { client_process = None
     ; exists_unread_byte = false
     ; server_process = None
@@ -156,9 +159,15 @@ end = struct
        [write] blocking, deadlocking emacs. *)
     if not t.exists_unread_byte
     then (
+      (* This code is based on the [Async_unix.Interruptor] idiom for notifying the
+         interruptor pipe, which uses a nonblocking file descriptor, doesn't give up the
+         OCaml lock and raises if the write would block.  We don't explicitly handle
+         EWOULDBLOCK and EAGAIN, since we already discard all exceptions anyways. *)
       try
         ignore
-          (Unix.single_write t.write_to_request_cycle ~buf:(Bytes.of_string "\x05")
+          (Unix.write_assume_fd_is_nonblocking
+             t.write_to_request_cycle
+             (Bytes.of_string "\x05")
            : int);
         t.exists_unread_byte <- true
       with
@@ -454,8 +463,11 @@ let request_emacs_run_cycle scheduler_thread_id () =
 let lock_async_during_module_initialization () =
   (* Acquire the Async lock, releasing it once module initialization is done. *)
   Ecaml_callback.(register end_of_module_initialization)
+    [%here]
     ~should_run_holding_async_lock:false
-    ~f:(fun () -> Scheduler.unlock t.scheduler)
+    ~f:(fun () ->
+      message_s [%message "Loaded Ecaml."];
+      Scheduler.unlock t.scheduler)
 ;;
 
 let max_inter_cycle_timeout = Time_ns.Span.second
@@ -607,6 +619,10 @@ module Private = struct
     >>| Result.ok_exn
   ;;
 
+  let run_outside_async1 here ?allowed_in_background f a =
+    run_outside_async here ?allowed_in_background (fun () -> f a)
+  ;;
+
   let () =
     Set_once.set_exn
       Value.Private.Block_on_async.set_once
@@ -635,6 +651,14 @@ module Expect_test_config = struct
   ;;
 end
 
+module Expect_test_config_allowing_nested_block_on_async = struct
+  include Expect_test_config
+
+  let run f =
+    Block_on_async.block_on_async [%here] ~for_testing_allow_nested_block_on_async:true f
+  ;;
+end
+
 let shutdown () =
   let status = !Scheduler_status.status in
   Scheduler_status.status := Stopped;
@@ -654,7 +678,7 @@ let shutdown () =
             raise_s [%sexp "Async shutdown"])
 ;;
 
-let initialize () =
+let () =
   start_scheduler ();
   lock_async_during_module_initialization ();
   Defun.defun_nullary_nil

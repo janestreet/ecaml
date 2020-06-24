@@ -14,12 +14,17 @@ module type S = sig
   type name += Major_mode
 
   val major_mode : t
+  val enabled_in_current_buffer : unit -> bool
 end
 
 module type Major_mode = sig
   type t [@@deriving sexp_of]
 
   include Equal.S with type t := t
+
+  module Compare_by_name : sig
+    type nonrec t = t [@@deriving compare, equal, hash, sexp_of]
+  end
 
   (** Accessors *)
   val symbol : t -> Symbol.t

@@ -2,7 +2,7 @@ open! Core_kernel
 open! Import
 
 let standard_output = Var.Wrap.("standard-output" <: value)
-let backtrace = Funcall.("backtrace" <: nullary @-> return nil)
+let backtrace = Funcall.Wrap.("backtrace" <: nullary @-> return nil)
 
 let get () =
   Current_buffer.set_temporarily_to_temp_buffer Sync (fun () ->

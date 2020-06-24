@@ -6,10 +6,10 @@ module Q = struct
   let cl = "cl" |> intern
 end
 
-let name = Funcall.("symbol-name" <: t @-> return string)
+let name = Funcall.Wrap.("symbol-name" <: t @-> return string)
 let compare_name t1 t2 = String.compare (name t1) (name t2)
-let function_is_defined = Funcall.("fboundp" <: t @-> return bool)
-let symbol_function = Funcall.("symbol-function" <: t @-> return value)
+let function_is_defined = Funcall.Wrap.("fboundp" <: t @-> return bool)
+let symbol_function = Funcall.Wrap.("symbol-function" <: t @-> return value)
 
 let function_exn t =
   if not (function_is_defined t)
@@ -19,17 +19,17 @@ let function_exn t =
   symbol_function t
 ;;
 
-let make_symbol = Funcall.("make-symbol" <: string @-> return t)
+let make_symbol = Funcall.Wrap.("make-symbol" <: string @-> return t)
 let create ~name = make_symbol name
 let require_cl = Memo.unit (fun () -> Ecaml_value.Feature.require Q.cl)
-let gensym = Funcall.("gensym" <: nil_or string @-> return t)
+let gensym = Funcall.Wrap.("gensym" <: nil_or string @-> return t)
 
 let gensym ?prefix () =
   require_cl ();
   gensym prefix
 ;;
 
-let set_function = Funcall.("fset" <: t @-> value @-> return nil)
+let set_function = Funcall.Wrap.("fset" <: t @-> value @-> return nil)
 
 type symbol = t [@@deriving sexp_of]
 
@@ -41,7 +41,7 @@ module Property = struct
   [@@deriving sexp_of]
 
   let create name type_ = { name; type_ }
-  let get = Funcall.("get" <: t @-> t @-> return value)
+  let get = Funcall.Wrap.("get" <: t @-> t @-> return value)
   let get { name; type_ } sym = get sym name |> Value.Type.(nil_or type_ |> of_value_exn)
 
   let get_exn t symbol =
@@ -50,7 +50,7 @@ module Property = struct
     | None -> raise_s [%message (symbol : symbol) "has no property" (t.name : symbol)]
   ;;
 
-  let put = Funcall.("put" <: t @-> t @-> value @-> return nil)
+  let put = Funcall.Wrap.("put" <: t @-> t @-> value @-> return nil)
   let put { name; type_ } sym value = put sym name (value |> Value.Type.to_value type_)
 
   let function_documentation =
@@ -60,6 +60,8 @@ module Property = struct
   let variable_documentation =
     create ("variable-documentation" |> intern) Value.Type.value
   ;;
+
+  let function_disabled = create ("disabled" |> intern) Value.Type.bool
 end
 
 module type Subtype = sig

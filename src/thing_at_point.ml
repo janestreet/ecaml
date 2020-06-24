@@ -5,14 +5,14 @@ module Q = struct
   include Q
 
   let bounds_of_thing_at_point = "bounds-of-thing-at-point" |> Symbol.intern
-  and email = "email" |> Symbol.intern
-  and filename = "filename" |> Symbol.intern
-  and line = "line" |> Symbol.intern
-  and page = "page" |> Symbol.intern
-  and sentence = "sentence" |> Symbol.intern
-  and url = "url" |> Symbol.intern
-  and whitespace = "whitespace" |> Symbol.intern
-  and word = "word" |> Symbol.intern
+  let email = "email" |> Symbol.intern
+  let filename = "filename" |> Symbol.intern
+  let line = "line" |> Symbol.intern
+  let page = "page" |> Symbol.intern
+  let sentence = "sentence" |> Symbol.intern
+  let url = "url" |> Symbol.intern
+  let whitespace = "whitespace" |> Symbol.intern
+  let word = "word" |> Symbol.intern
 end
 
 type t =
@@ -67,7 +67,7 @@ let with_settings t ~f =
 ;;
 
 let thing_at_point =
-  Funcall.("thing-at-point" <: Symbol.t @-> bool @-> return (nil_or Text.t))
+  Funcall.Wrap.("thing-at-point" <: Symbol.t @-> bool @-> return (nil_or Text.t))
 ;;
 
 let find ?(text_properties = false) thing =
@@ -75,14 +75,14 @@ let find ?(text_properties = false) thing =
     thing_at_point (thing |> to_symbol) (not text_properties))
 ;;
 
-let forward_thing = Funcall.("forward-thing" <: Symbol.t @-> int @-> return bool)
+let forward_thing = Funcall.Wrap.("forward-thing" <: Symbol.t @-> int @-> return bool)
 
 let forward ?(n = 1) thing =
   with_settings thing ~f:(fun () -> forward_thing (thing |> to_symbol) n)
 ;;
 
 let bounds_of_thing_at_point =
-  Funcall.(
+  Funcall.Wrap.(
     "bounds-of-thing-at-point"
     <: Symbol.t @-> return (nil_or (tuple Position.t Position.t)))
 ;;
@@ -97,14 +97,14 @@ let did_not_raise f x =
   | exception _ -> false
 ;;
 
-let beginning_of_thing = Funcall.("beginning-of-thing" <: Symbol.t @-> return nil)
+let beginning_of_thing = Funcall.Wrap.("beginning-of-thing" <: Symbol.t @-> return nil)
 
 let beginning_exn thing =
   with_settings thing ~f:(fun () -> beginning_of_thing (thing |> to_symbol))
 ;;
 
 let beginning = did_not_raise beginning_exn
-let end_of_thing = Funcall.("end-of-thing" <: Symbol.t @-> return nil)
+let end_of_thing = Funcall.Wrap.("end-of-thing" <: Symbol.t @-> return nil)
 let end_exn thing = with_settings thing ~f:(fun () -> end_of_thing (thing |> to_symbol))
 let end_ = did_not_raise end_exn
 let bounds_prop = Symbol.Property.create Q.bounds_of_thing_at_point Function.t

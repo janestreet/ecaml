@@ -38,6 +38,7 @@ let create =
   (* [dispatch_function] is registered and emacs [dispatch] function is created before any
      callback is created and can be called *)
   Ecaml_callback.(register dispatch_function)
+    [%here]
     ~should_run_holding_async_lock:true
     ~f:(fun callback_id args ->
       if !Expert.raise_in_dispatch

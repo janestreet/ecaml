@@ -4,7 +4,6 @@ module Ecaml_callback = Ecaml_value.Ecaml_callback
 module Form = Ecaml_value.Form
 module Funcall = Ecaml_value.Funcall
 module Function = Ecaml_value.Function
-module Generated_bindings = Ecaml_value.Generated_bindings
 module Value = Ecaml_value.Value
 module Valueable = Ecaml_value.Valueable
 
@@ -14,7 +13,7 @@ let message_s = Ecaml_value.message_s
 
 include Composition_infix
 
-let initialize_module =
+let () =
   Printexc.record_backtrace true;
   Sexp.of_int_style := `Underscores
 ;;

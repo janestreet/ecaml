@@ -16,9 +16,9 @@ include Value.Make_subtype (struct
 type keymap = t [@@deriving sexp_of]
 
 let equal = eq
-let parent = Funcall.("keymap-parent" <: t @-> return (nil_or t))
-let set_parent = Funcall.("set-keymap-parent" <: t @-> nil_or t @-> return nil)
-let set_transient = Funcall.("set-transient-map" <: t @-> bool @-> return nil)
+let parent = Funcall.Wrap.("keymap-parent" <: t @-> return (nil_or t))
+let set_parent = Funcall.Wrap.("set-keymap-parent" <: t @-> nil_or t @-> return nil)
+let set_transient = Funcall.Wrap.("set-transient-map" <: t @-> bool @-> return nil)
 let set_transient ?(keep_if_used = false) t = set_transient t keep_if_used
 
 module Kind = struct
@@ -28,8 +28,11 @@ module Kind = struct
   [@@deriving sexp_of]
 end
 
-let make_keymap = Funcall.("make-keymap" <: nil_or string @-> return t)
-let make_sparse_keymap = Funcall.("make-sparse-keymap" <: nil_or string @-> return t)
+let make_keymap = Funcall.Wrap.("make-keymap" <: nil_or string @-> return t)
+
+let make_sparse_keymap =
+  Funcall.Wrap.("make-sparse-keymap" <: nil_or string @-> return t)
+;;
 
 let create ?(kind = Kind.Sparse) ?menu_name () =
   (match kind with
@@ -38,9 +41,9 @@ let create ?(kind = Kind.Sparse) ?menu_name () =
     menu_name
 ;;
 
-let deep_copy = Funcall.("copy-keymap" <: t @-> return t)
-let global = Funcall.("current-global-map" <: nullary @-> return t)
-let set_global = Funcall.("use-global-map" <: t @-> return nil)
+let deep_copy = Funcall.Wrap.("copy-keymap" <: t @-> return t)
+let global = Funcall.Wrap.("current-global-map" <: nullary @-> return t)
+let set_global = Funcall.Wrap.("use-global-map" <: t @-> return nil)
 
 module Entry = struct
   type t =
@@ -87,7 +90,9 @@ module Entry = struct
   let t = type_
 end
 
-let lookup_key = Funcall.("lookup-key" <: t @-> Key_sequence.t @-> bool @-> return value)
+let lookup_key =
+  Funcall.Wrap.("lookup-key" <: t @-> Key_sequence.t @-> bool @-> return value)
+;;
 
 let lookup_key_exn ?(accept_defaults = false) t key_sequence =
   let result = lookup_key t key_sequence accept_defaults in
@@ -101,7 +106,7 @@ let lookup_key_exn ?(accept_defaults = false) t key_sequence =
 ;;
 
 let define_key =
-  Funcall.("define-key" <: t @-> Key_sequence.t @-> Entry.t @-> return nil)
+  Funcall.Wrap.("define-key" <: t @-> Key_sequence.t @-> Entry.t @-> return nil)
 ;;
 
 let minor_mode_map_alist =
@@ -137,5 +142,5 @@ let override_minor_mode_map symbol ~f =
 ;;
 
 let special_event_map = Var.Wrap.("special-event-map" <: t)
-let suppress_keymap = Funcall.("suppress-keymap" <: t @-> bool @-> return nil)
+let suppress_keymap = Funcall.Wrap.("suppress-keymap" <: t @-> bool @-> return nil)
 let suppress_keymap ?(suppress_digits = false) t = suppress_keymap t suppress_digits

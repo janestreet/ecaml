@@ -495,7 +495,7 @@ let print_num_args =
   |> Function.to_value
 ;;
 
-let length = Funcall.("length" <: value @-> return value)
+let length = Funcall.Wrap.("length" <: value @-> return value)
 
 let%expect_test "[funcallN_array{,_i}] with many arguments" =
   let array = Array.create nil ~len:3_500_000 in
@@ -518,7 +518,7 @@ let%expect_test "Elisp throw translated into OCaml and back" =
     lambda_nullary_nil [%here] (fun () ->
       (* Catching an Elisp_throw here checks that throws are translated from elisp to
          ecaml correctly. *)
-      try Funcall.("top-level" <: nullary @-> return nil) () with
+      try Funcall.Wrap.("top-level" <: nullary @-> return nil) () with
       | exn ->
         print_s
           [%sexp
@@ -572,7 +572,7 @@ let%expect_test "rendering OCaml exceptions in Emacs and Ocaml" =
     try
       Current_buffer.set_value_temporarily
         Sync
-        Debugger.debug_on_error
+        (Debugger.debug_on_error |> Customization.var)
         debug_on_error
         ~f:(fun () ->
           ignore

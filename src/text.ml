@@ -5,13 +5,13 @@ module Q = struct
   include Q
 
   let background_color = "background-color" |> Symbol.intern
-  and concat = "concat" |> Symbol.intern
-  and display = "display" |> Symbol.intern
-  and font_lock_face = "font-lock-face" |> Symbol.intern
-  and foreground_color = "foreground-color" |> Symbol.intern
-  and mouse_face = "mouse-face" |> Symbol.intern
-  and propertize = "propertize" |> Symbol.intern
-  and string = "string" |> Symbol.intern
+  let concat = "concat" |> Symbol.intern
+  let display = "display" |> Symbol.intern
+  let font_lock_face = "font-lock-face" |> Symbol.intern
+  let foreground_color = "foreground-color" |> Symbol.intern
+  let mouse_face = "mouse-face" |> Symbol.intern
+  let propertize = "propertize" |> Symbol.intern
+  let string = "string" |> Symbol.intern
 end
 
 include Value.Make_subtype (struct
@@ -20,8 +20,8 @@ include Value.Make_subtype (struct
     let is_in_subtype = Value.is_string
   end)
 
-let char_code = Funcall.("aref" <: t @-> int @-> return Char_code.t)
-let set_char_code = Funcall.("aset" <: t @-> int @-> Char_code.t @-> return nil)
+let char_code = Funcall.Wrap.("aref" <: t @-> int @-> return Char_code.t)
+let set_char_code = Funcall.Wrap.("aset" <: t @-> int @-> Char_code.t @-> return nil)
 let of_utf8_bytes string = string |> Value.of_utf8_bytes |> of_value_exn
 let to_utf8_bytes t = t |> to_value |> Value.to_utf8_bytes_exn
 
@@ -43,8 +43,13 @@ module Compare_as_string = struct
   include Comparable.Make (T)
 end
 
-let length = Funcall.("length" <: t @-> return int)
+let length = Funcall.Wrap.("length" <: t @-> return int)
 let concat ts = Symbol.funcallN Q.concat (ts : t list :> Value.t list) |> of_value_exn
+
+let substring =
+  let substring = Funcall.Wrap.("substring" <: t @-> int @-> int @-> return t) in
+  fun t ~start ~end_ -> substring t start end_
+;;
 
 module Face_spec = struct
   module One = struct
@@ -357,7 +362,7 @@ let colorize t ~color =
 ;;
 
 let get_text_property =
-  Funcall.("get-text-property" <: int @-> Symbol.t @-> t @-> return value)
+  Funcall.Wrap.("get-text-property" <: int @-> Symbol.t @-> t @-> return value)
 ;;
 
 let property_value t ~at property_name =
@@ -367,7 +372,10 @@ let property_value t ~at property_name =
   else Some (value |> Property_name.of_value_exn property_name)
 ;;
 
-let text_properties_at = Funcall.("text-properties-at" <: int @-> t @-> return value)
+let text_properties_at =
+  Funcall.Wrap.("text-properties-at" <: int @-> t @-> return value)
+;;
+
 let properties t ~at = text_properties_at at t |> Property.of_property_list_exn
 
 let get_start start =
@@ -383,7 +391,7 @@ let get_end t end_ =
 ;;
 
 let put_text_property =
-  Funcall.(
+  Funcall.Wrap.(
     "put-text-property" <: int @-> int @-> Symbol.t @-> value @-> t @-> return nil)
 ;;
 
@@ -397,7 +405,7 @@ let set_property ?start ?end_ t property_name property_value =
 ;;
 
 let add_text_properties =
-  Funcall.("add-text-properties" <: int @-> int @-> list value @-> t @-> return nil)
+  Funcall.Wrap.("add-text-properties" <: int @-> int @-> list value @-> t @-> return nil)
 ;;
 
 let add_properties ?start ?end_ t properties =
@@ -409,7 +417,7 @@ let add_properties ?start ?end_ t properties =
 ;;
 
 let set_text_properties =
-  Funcall.("set-text-properties" <: int @-> int @-> list value @-> t @-> return nil)
+  Funcall.Wrap.("set-text-properties" <: int @-> int @-> list value @-> t @-> return nil)
 ;;
 
 let set_properties ?start ?end_ t properties =
@@ -421,7 +429,7 @@ let set_properties ?start ?end_ t properties =
 ;;
 
 let remove_list_of_text_properties =
-  Funcall.(
+  Funcall.Wrap.(
     "remove-list-of-text-properties"
     <: int @-> int @-> list Symbol.t @-> t @-> return nil)
 ;;
@@ -434,10 +442,10 @@ let remove_properties ?start ?end_ t property_names =
     t
 ;;
 
-let is_multibyte = Funcall.("multibyte-string-p" <: t @-> return bool)
-let num_bytes = Funcall.("string-bytes" <: t @-> return int)
-let to_multibyte = Funcall.("string-to-multibyte" <: t @-> return t)
-let to_unibyte_exn = Funcall.("string-to-unibyte" <: t @-> return t)
+let is_multibyte = Funcall.Wrap.("multibyte-string-p" <: t @-> return bool)
+let num_bytes = Funcall.Wrap.("string-bytes" <: t @-> return int)
+let to_multibyte = Funcall.Wrap.("string-to-multibyte" <: t @-> return t)
+let to_unibyte_exn = Funcall.Wrap.("string-to-unibyte" <: t @-> return t)
 
 let of_char_array chars =
   Symbol.funcallN_array Q.string (Array.map chars ~f:Char_code.to_value) |> of_value_exn

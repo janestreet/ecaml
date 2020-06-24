@@ -7,7 +7,7 @@ let show () = print_s [%sexp (get () : Buffer.t)]
 let show_point () = print_s [%message "" ~point:(Point.get () : Position.t)]
 
 let%expect_test "[set_transient_mark_mode], [transient_mark_mode_is_enabled]" =
-  let show () = print_s [%sexp (value_exn transient_mark_mode : bool)] in
+  let show () = print_s [%sexp (Customization.value transient_mark_mode : bool)] in
   show ();
   [%expect {| false |}];
   Current_buffer.set_temporarily_to_temp_buffer Sync (fun () ->
@@ -16,7 +16,7 @@ let%expect_test "[set_transient_mark_mode], [transient_mark_mode_is_enabled]" =
     Current_buffer.set_temporarily_to_temp_buffer Sync (fun () ->
       show ();
       [%expect {| false |}];
-      set_value transient_mark_mode true;
+      set_value (transient_mark_mode |> Customization.var) true;
       show ();
       [%expect {| true |}]);
     show ();
@@ -27,8 +27,8 @@ let%expect_test "[set_transient_mark_mode], [transient_mark_mode_is_enabled]" =
 ;;
 
 let%expect_test "enable transient-mark-mode for the duration of this file" =
-  set_value transient_mark_mode true;
-  print_s [%sexp (value_exn transient_mark_mode : bool)];
+  set_value (transient_mark_mode |> Customization.var) true;
+  print_s [%sexp (Customization.value transient_mark_mode : bool)];
   [%expect {| true |}];
   return ()
 ;;
@@ -830,7 +830,7 @@ let%expect_test "[delete_region]" =
 
 let%expect_test "[indent_region]" =
   set_temporarily_to_temp_buffer Sync (fun () ->
-    Funcall.("c-mode" <: nullary @-> return nil) ();
+    Funcall.Wrap.("c-mode" <: nullary @-> return nil) ();
     Point.insert "void f () {\n      foo;\n      bar;\n      }";
     indent_region ();
     print_string (contents () |> Text.to_utf8_bytes);

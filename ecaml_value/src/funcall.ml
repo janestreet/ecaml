@@ -6,31 +6,6 @@ type _ t =
   | Nullary : 'b Value.Type.t -> (unit -> 'b) t
   | Return : 'a Value.Type.t -> 'a t
 
-let return type_ = Return type_
-
-let nullary =
-  Value.Type.create
-    [%sexp "funcall-nullary-placeholder-value"]
-    [%sexp_of: unit]
-    ignore
-    (const Value.nil)
-;;
-
-let nil = Value.Type.ignored
-
-let ( @-> ) (type a b) (type_ : a Value.Type.t) (t : b t) =
-  match t with
-  | Cons _ ->
-    (match Type_equal.Id.same (Value.Type.id type_) (Value.Type.id nullary) with
-     | true -> raise_s [%message "Function already has arguments, cannot be nullary."]
-     | false -> Cons (type_, t))
-  | Nullary _ -> raise_s [%message "Cannot add arguments to nullary function."]
-  | Return return_type ->
-    (match Type_equal.Id.same_witness (Value.Type.id type_) (Value.Type.id nullary) with
-     | Some Type_equal.T -> Nullary return_type
-     | None -> Cons (type_, t))
-;;
-
 let return_type_of_value symbol (type_ : 'a Value.Type.t) value =
   match Value.Type.of_value_exn type_ value with
   | x -> x
@@ -120,11 +95,6 @@ let wrap_unrolled : type a. a t -> Value.t -> a =
   | t -> wrap t symbol
 ;;
 
-let ( <: ) elisp_function =
-  let v = elisp_function |> Value.intern in
-  fun t -> wrap_unrolled t v
-;;
-
 let apply t f args ~on_parse_error =
   let wrong_number_of_args message =
     raise_s [%message message (arity t : int) (args : Value.t list)]
@@ -155,7 +125,41 @@ let apply t f args ~on_parse_error =
   apply t f args
 ;;
 
-include (Value.Type : Value.Type.S)
+module Wrap = struct
+  let return type_ = Return type_
+
+  let nullary =
+    Value.Type.create
+      [%sexp "funcall-nullary-placeholder-value"]
+      [%sexp_of: unit]
+      ignore
+      (const Value.nil)
+  ;;
+
+  let nil = Value.Type.ignored
+
+  let ( @-> ) (type a b) (type_ : a Value.Type.t) (t : b t) =
+    match t with
+    | Cons _ ->
+      (match Type_equal.Id.same (Value.Type.id type_) (Value.Type.id nullary) with
+       | true -> raise_s [%message "Function already has arguments, cannot be nullary."]
+       | false -> Cons (type_, t))
+    | Nullary _ -> raise_s [%message "Cannot add arguments to nullary function."]
+    | Return return_type ->
+      (match
+         Type_equal.Id.same_witness (Value.Type.id type_) (Value.Type.id nullary)
+       with
+       | Some Type_equal.T -> Nullary return_type
+       | None -> Cons (type_, t))
+  ;;
+
+  let ( <: ) elisp_function =
+    let v = elisp_function |> Value.intern in
+    fun t -> wrap_unrolled t v
+  ;;
+
+  include (Value.Type : Value.Type.S)
+end
 
 module Private = struct
   let apply = apply

@@ -32,12 +32,25 @@ let report_exn_when_calling_callback =
      | _ -> eprint_s sexp)
 ;;
 
+let registered_callbacks : Source_code_position.t String.Table.t = String.Table.create ()
+
 let register
       (type callback)
       (t : callback t)
+      here
       ~(f : callback)
       ~should_run_holding_async_lock
   =
+  (match Hashtbl.find registered_callbacks t.name with
+   | Some already_registered_at ->
+     raise_s
+       [%sexp
+         "Multiple registrations for ecaml callback"
+       , { name : string = t.name
+         ; already_registered_at : Source_code_position.t
+         ; repeat_registration_at : Source_code_position.t = here
+         }]
+   | None -> Hashtbl.set registered_callbacks ~key:t.name ~data:here);
   let with_lock f =
     if Scheduler.am_holding_lock scheduler then f () else Scheduler.with_lock scheduler f
   in
@@ -77,6 +90,7 @@ let end_of_module_initialization =
 let () =
   register
     { arity = Arity1; name = "no_active_env" }
+    [%here]
     ~f:(fun () ->
       eprint_s
         [%message
@@ -85,4 +99,3 @@ let () =
 ;;
 
 let free_embedded_caml_values = { arity = Arity1; name = "free_embedded_caml_values" }
-let initialize_module = ()

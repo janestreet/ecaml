@@ -1,7 +1,7 @@
 open! Core_kernel
 open! Async_kernel
 open! Import
-open! Funcall
+open! Funcall.Wrap
 open Value.Type
 
 let%expect_test _ =

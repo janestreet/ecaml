@@ -6,8 +6,8 @@ module Q = struct
   include Q
 
   let default_value = "default-value" |> Symbol.intern
-  and minibuffer_exit_hook = "minibuffer-exit-hook" |> Symbol.intern
-  and minibuffer_setup_hook = "minibuffer-setup-hook" |> Symbol.intern
+  let minibuffer_exit_hook = "minibuffer-exit-hook" |> Symbol.intern
+  let minibuffer_setup_hook = "minibuffer-setup-hook" |> Symbol.intern
 end
 
 module Y_or_n_with_timeout = struct
@@ -68,10 +68,10 @@ module History_length = struct
   let t = Value.Type.create [%sexp "history-length"] [%sexp_of: t] of_value_exn to_value
 end
 
-let history_length = Var.Wrap.("history-length" <: History_length.t)
+let history_length = Customization.Wrap.("history-length" <: History_length.t)
 
 let y_or_n =
-  let y_or_n_p = Funcall.("y-or-n-p" <: string @-> return bool) in
+  let y_or_n_p = Funcall.Wrap.("y-or-n-p" <: string @-> return bool) in
   fun ~prompt ->
     Async_ecaml.Private.run_outside_async [%here] (fun () -> y_or_n_p prompt)
 ;;
@@ -79,7 +79,8 @@ let y_or_n =
 include struct
   open struct
   let y_or_n_p_with_timeout =
-    Funcall.("y-or-n-p-with-timeout" <: string @-> float @-> Symbol.t @-> return value)
+    Funcall.Wrap.(
+      "y-or-n-p-with-timeout" <: string @-> float @-> Symbol.t @-> return value)
   ;;
 end
 
@@ -97,14 +98,14 @@ end
 end
 
 let yes_or_no =
-  let yes_or_no_p = Funcall.("yes-or-no-p" <: string @-> return bool) in
+  let yes_or_no_p = Funcall.Wrap.("yes-or-no-p" <: string @-> return bool) in
   fun ~prompt ->
     Async_ecaml.Private.run_outside_async [%here] (fun () -> yes_or_no_p prompt)
 ;;
 
 let read_from =
   let read_from_minibuffer =
-    Funcall.(
+    Funcall.Wrap.(
       "read-from-minibuffer"
       <: string
          @-> nil_or string
@@ -132,16 +133,16 @@ let exit_hook = Hook.create Q.minibuffer_exit_hook ~hook_type:Normal
 let setup_hook = Hook.create Q.minibuffer_setup_hook ~hook_type:Normal
 
 let active_window =
-  Funcall.("active-minibuffer-window" <: nullary @-> return (nil_or Window.t))
+  Funcall.Wrap.("active-minibuffer-window" <: nullary @-> return (nil_or Window.t))
 ;;
 
-let prompt = Funcall.("minibuffer-prompt" <: nullary @-> return (nil_or string))
+let prompt = Funcall.Wrap.("minibuffer-prompt" <: nullary @-> return (nil_or string))
 
 let exit =
-  let exit_minibuffer = Funcall.("exit-minibuffer" <: nullary @-> return nil) in
+  let exit_minibuffer = Funcall.Wrap.("exit-minibuffer" <: nullary @-> return nil) in
   fun () ->
     exit_minibuffer ();
     assert false
 ;;
 
-let depth = Funcall.("minibuffer-depth" <: nullary @-> return int)
+let depth = Funcall.Wrap.("minibuffer-depth" <: nullary @-> return int)

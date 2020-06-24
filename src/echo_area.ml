@@ -39,3 +39,8 @@ let wrap_message ?echo message ~f =
     message_s ?echo [%sexp (concat [ message; "raised" ] : string)];
     raise exn
 ;;
+
+let clear =
+  let message = Funcall.Wrap.("message" <: value @-> return nil) in
+  fun () -> message Value.nil
+;;

@@ -1,5 +1,6 @@
 open! Core_kernel
 open! Import0
+include Var_intf
 module Buffer = Buffer0
 
 type 'a t =
@@ -35,15 +36,15 @@ module Wrap = struct
 end
 
 let symbol_as_value t = t.symbol |> Symbol.to_value
-let default_value = Funcall.("default-value" <: Symbol.t @-> return value)
+let default_value = Funcall.Wrap.("default-value" <: Symbol.t @-> return value)
 let default_value_exn t = default_value t.symbol |> Value.Type.of_value_exn t.type_
-let default_boundp = Funcall.("default-boundp" <: Symbol.t @-> return bool)
+let default_boundp = Funcall.Wrap.("default-boundp" <: Symbol.t @-> return bool)
 let default_value_is_defined t = default_boundp t.symbol
-let set_default = Funcall.("set-default" <: Symbol.t @-> value @-> return nil)
+let set_default = Funcall.Wrap.("set-default" <: Symbol.t @-> value @-> return nil)
 let set_default_value t a = set_default t.symbol (a |> Value.Type.to_value t.type_)
 
 let make_variable_buffer_local =
-  Funcall.("make-variable-buffer-local" <: Symbol.t @-> return nil)
+  Funcall.Wrap.("make-variable-buffer-local" <: Symbol.t @-> return nil)
 ;;
 
 let make_buffer_local_always t =
@@ -52,7 +53,7 @@ let make_buffer_local_always t =
 ;;
 
 let local_variable_if_set_p =
-  Funcall.("local-variable-if-set-p" <: Symbol.t @-> Buffer.t @-> return bool)
+  Funcall.Wrap.("local-variable-if-set-p" <: Symbol.t @-> Buffer.t @-> return bool)
 ;;
 
 let is_buffer_local_if_set t buffer = local_variable_if_set_p t.symbol buffer

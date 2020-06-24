@@ -2,28 +2,43 @@ open! Core_kernel
 open! Import
 module Current_buffer = Current_buffer0
 
-include Value.Make_subtype (struct
-    let name = "regexp"
-    let here = [%here]
-    let is_in_subtype = Value.is_string
-  end)
+module Strict = struct
+  include Value.Make_subtype (struct
+      let name = "regexp"
+      let here = [%here]
+      let is_in_subtype = Value.is_string
+    end)
 
-let of_pattern string = string |> Value.of_utf8_bytes |> of_value_exn
+  let of_pattern string = string |> Value.of_utf8_bytes |> of_value_exn
+end
+
+type t = Strict.t Lazy.t [@@deriving sexp_of]
+
+let of_value_exn value = value |> Strict.of_value_exn |> Lazy.from_val
+let to_value t = t |> force |> Strict.to_value
+let type_ = Value.Type.create [%message "Regexp.t"] [%sexp_of: t] of_value_exn to_value
+let t = type_
+let of_pattern string = string |> Strict.of_pattern |> Lazy.from_val
 let to_pattern t = t |> to_value |> Value.to_utf8_bytes_exn
-let of_rx rx = of_pattern (Rx.pattern rx)
+let of_rx rx = lazy (Strict.of_pattern (Rx.pattern rx))
 let match_anything = of_pattern ""
 let match_nothing = of_pattern "z^"
-let quote = Funcall.("regexp-quote" <: string @-> return t)
-let regexp_opt = Funcall.("regexp-opt" <: list string @-> return t)
 
-let any_quote strings =
-  match strings with
-  | [] ->
-    (* Elisp's [regexp-opt] returns the wrong regexp for an empty list.  It returns a
-       regexp that matches anything, when it should return a regexp that matches
-       nothing. *)
-    match_nothing
-  | _ -> regexp_opt strings
+let quote =
+  let quote = Funcall.Wrap.("regexp-quote" <: string @-> return Strict.t) in
+  fun string -> lazy (quote string)
+;;
+
+let any_quote =
+  let regexp_opt = Funcall.Wrap.("regexp-opt" <: list string @-> return Strict.t) in
+  fun strings ->
+    match strings with
+    | [] ->
+      (* Elisp's [regexp-opt] returns the wrong regexp for an empty list.  It returns a
+         regexp that matches anything, when it should return a regexp that matches
+         nothing. *)
+      match_nothing
+    | _ -> lazy (regexp_opt strings)
 ;;
 
 let any_pattern patterns = of_pattern (concat ~sep:{|\||} patterns)
@@ -50,7 +65,7 @@ module Last_match = struct
     }
   [@@deriving sexp_of]
 
-  let match_data = Funcall.("match-data" <: nullary @-> return value)
+  let match_data = Funcall.Wrap.("match-data" <: nullary @-> return value)
 
   let get () =
     match !Location.last with
@@ -64,7 +79,7 @@ module Last_match = struct
     | None -> raise_s [%message "Prior [Regexp] match did not match"]
   ;;
 
-  let set_match_data = Funcall.("set-match-data" <: value @-> return nil)
+  let set_match_data = Funcall.Wrap.("set-match-data" <: value @-> return nil)
 
   let set t =
     Location.last := t.location;
@@ -80,11 +95,11 @@ module Last_match = struct
   ;;
 
   let match_string =
-    Funcall.("match-string" <: int @-> nil_or Text.t @-> return (nil_or Text.t))
+    Funcall.Wrap.("match-string" <: int @-> nil_or Text.t @-> return (nil_or Text.t))
   ;;
 
   let match_string_no_properties =
-    Funcall.(
+    Funcall.Wrap.(
       "match-string-no-properties" <: int @-> nil_or Text.t @-> return (nil_or Text.t))
   ;;
 
@@ -127,11 +142,14 @@ module Last_match = struct
             (subexp : int)]
   ;;
 
-  let start_exn = pos "start" Funcall.("match-beginning" <: int @-> return (nil_or int))
-  let end_exn = pos "end" Funcall.("match-end" <: int @-> return (nil_or int))
+  let start_exn =
+    pos "start" Funcall.Wrap.("match-beginning" <: int @-> return (nil_or int))
+  ;;
+
+  let end_exn = pos "end" Funcall.Wrap.("match-end" <: int @-> return (nil_or int))
 
   let replace_match =
-    Funcall.(
+    Funcall.Wrap.(
       "replace-match"
       <: string @-> bool @-> bool @-> nil_or string @-> nil_or int @-> return nil)
   ;;
@@ -140,11 +158,11 @@ module Last_match = struct
 end
 
 let string_match =
-  Funcall.("string-match" <: t @-> Text.t @-> nil_or int @-> return (nil_or int))
+  Funcall.Wrap.("string-match" <: t @-> Text.t @-> nil_or int @-> return (nil_or int))
 ;;
 
 let string_match_p =
-  Funcall.("string-match-p" <: t @-> Text.t @-> nil_or int @-> return (nil_or int))
+  Funcall.Wrap.("string-match-p" <: t @-> Text.t @-> nil_or int @-> return (nil_or int))
 ;;
 
 let match_ ?start ?(update_last_match = false) t text =
@@ -174,7 +192,7 @@ let extract ?start ?subexp t text =
 let extract_string ?start ?subexp t s = extract ?start ?subexp t (Text.of_utf8_bytes s)
 
 let replace_regexp_in_string =
-  Funcall.("replace-regexp-in-string" <: t @-> Text.t @-> Text.t @-> return Text.t)
+  Funcall.Wrap.("replace-regexp-in-string" <: t @-> Text.t @-> Text.t @-> return Text.t)
 ;;
 
 let replace t ~with_ ~in_ = replace_regexp_in_string t with_ in_

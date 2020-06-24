@@ -116,7 +116,7 @@ let show_string_bytes string =
 ;;
 
 let%expect_test "show steps in the rendering of [text] in the malformed UTF-8 test" =
-  let text = Funcall.("format" <: string @-> string @-> return Text.t) "%S" "ÄÅÇ" in
+  let text = Funcall.Wrap.("format" <: string @-> string @-> return Text.t) "%S" "ÄÅÇ" in
   let text_bytes = text |> to_utf8_bytes in
   show_string_bytes text_bytes;
   [%expect

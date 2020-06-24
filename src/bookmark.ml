@@ -12,10 +12,7 @@ include (
     include Stringable.S with type t := t
   end)
 
-let type_ = Value.Type.string
-let of_value_exn = Value.Type.of_value_exn type_
-let t = type_
-let to_value = Value.Type.to_value type_
+include (val Valueable.of_type Value.Type.string)
 
 module Property = struct
   type 'a t =
@@ -42,16 +39,12 @@ end
 module Record = struct
   type t = Value.t Map.M(Symbol.Compare_name).t [@@deriving sexp_of]
 
-  let type_ =
-    Value.Type.(map (list (tuple Symbol.type_ value)))
-      ~name:[%message "bookmark-record"]
-      ~of_:(Map.of_alist_exn (module Symbol.Compare_name))
-      ~to_:Map.to_alist
-  ;;
-
-  let of_value_exn = Value.Type.of_value_exn type_
-  let t = type_
-  let to_value = Value.Type.to_value type_
+  include Valueable.Remove_t
+      ((val Valueable.of_type
+              (Value.Type.(map (list (tuple Symbol.type_ value)))
+                 ~name:[%message "bookmark-record"]
+                 ~of_:(Map.of_alist_exn (module Symbol.Compare_name))
+                 ~to_:Map.to_alist)))
 
   let get t { Property.symbol; type_ } =
     Map.find t symbol |> Option.map ~f:(Value.Type.of_value_exn type_)
@@ -77,11 +70,14 @@ module Record = struct
   ;;
 end
 
-let bookmark_store = Funcall.("bookmark-store" <: t @-> Record.t @-> bool @-> return nil)
+let bookmark_store =
+  Funcall.Wrap.("bookmark-store" <: t @-> Record.t @-> bool @-> return nil)
+;;
+
 let set t bookmark_record ~no_overwrite = bookmark_store t bookmark_record no_overwrite
 
 let bookmark_get_bookmark_record =
-  Funcall.("bookmark-get-bookmark-record" <: value @-> return Record.t)
+  Funcall.Wrap.("bookmark-get-bookmark-record" <: value @-> return Record.t)
 ;;
 
 let param of_record_exn =
@@ -96,17 +92,14 @@ module Make_record_function = struct
       ; suggested_bookmark_name : string option
       }
 
-    let type_ =
-      Value.Type.(map (tuple (option string) Record.t))
-        ~name:[%sexp "bookmark-make-record-function-return-type"]
-        ~of_:(fun (suggested_bookmark_name, record) ->
-          { record; suggested_bookmark_name })
-        ~to_:(fun { record; suggested_bookmark_name } -> suggested_bookmark_name, record)
-    ;;
-
-    let t = type_
-    let of_value_exn = Value.Type.of_value_exn type_
-    let to_value = Value.Type.to_value type_
+    include Valueable.Remove_t
+        ((val Valueable.of_type
+                (Value.Type.(map (tuple (nil_or string) Record.t))
+                   ~name:[%sexp "bookmark-make-record-function-return-type"]
+                   ~of_:(fun (suggested_bookmark_name, record) ->
+                     { record; suggested_bookmark_name })
+                   ~to_:(fun { record; suggested_bookmark_name } ->
+                     suggested_bookmark_name, record))))
   end
 
   type t = unit -> Return_type.t
@@ -124,7 +117,7 @@ module Make_record_function = struct
   ;;
 
   let bookmark_make_record_default =
-    Funcall.(
+    Funcall.Wrap.(
       "bookmark-make-record-default"
       <: nil_or bool @-> nil_or bool @-> nil_or Position.t @-> return Return_type.t)
   ;;

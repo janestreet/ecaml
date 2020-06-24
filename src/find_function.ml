@@ -3,7 +3,7 @@ open! Async_kernel
 open! Import
 
 let find_function =
-  let f = Funcall.("find-function" <: Symbol.t @-> return nil) in
+  let f = Funcall.Wrap.("find-function" <: Symbol.t @-> return nil) in
   fun symbol -> Async_ecaml.Private.run_outside_async [%here] (fun () -> f symbol)
 ;;
 
@@ -48,4 +48,4 @@ let advise_for_ocaml () =
        | Some x -> x)
 ;;
 
-let initialize () = advise_for_ocaml ()
+let () = advise_for_ocaml ()

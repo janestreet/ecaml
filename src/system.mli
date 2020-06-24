@@ -30,7 +30,7 @@ val is_interactive : unit -> bool
 val hostname : unit -> string
 
 (** [(describe-variable 'exec-path)] *)
-val exec_path : string list Var.t
+val exec_path : string list Customization.t
 
 module Var_and_value : sig
   type t =

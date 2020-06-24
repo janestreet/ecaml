@@ -7,4 +7,4 @@ include Value.Make_subtype (struct
     let is_in_subtype = Value.is_frame
   end)
 
-let selected = Funcall.("selected-frame" <: nullary @-> return t)
+let selected = Funcall.Wrap.("selected-frame" <: nullary @-> return t)

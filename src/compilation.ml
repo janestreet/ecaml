@@ -6,7 +6,7 @@ let buffer_name_function =
 ;;
 
 let compilation_next_error =
-  Funcall.(
+  Funcall.Wrap.(
     "compilation-next-error" <: int @-> nil_or bool @-> nil_or Position.t @-> return nil)
 ;;
 

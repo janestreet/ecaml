@@ -8,11 +8,11 @@ include Value.Make_subtype (struct
   end)
 
 let equal = eq
-let generate_new_buffer = Funcall.("generate-new-buffer" <: string @-> return t)
+let generate_new_buffer = Funcall.Wrap.("generate-new-buffer" <: string @-> return t)
 let create ~name = generate_new_buffer name
 
 module Blocking = struct
-  let kill = Funcall.("kill-buffer" <: t @-> return nil)
+  let kill = Funcall.Wrap.("kill-buffer" <: t @-> return nil)
 end
 
 let kill t =
@@ -20,4 +20,4 @@ let kill t =
     Blocking.kill t)
 ;;
 
-let is_live t = Generated_bindings.buffer_live_p (t |> to_value)
+let is_live = Funcall.Wrap.("buffer-live-p" <: t @-> return bool)

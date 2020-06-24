@@ -7,4 +7,4 @@ open! Async_kernel
 open! Import
 
 (** [(describe-variable 'save-abbrevs)] *)
-val save_abbrevs : bool Var.t
+val save_abbrevs : bool Customization.t

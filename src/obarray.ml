@@ -8,7 +8,7 @@ include Value.Make_subtype (struct
   end)
 
 let standard = Current_buffer.value_exn Var.Wrap.("obarray" <: t)
-let mapatoms = Funcall.("mapatoms" <: Function.t @-> t @-> return nil)
+let mapatoms = Funcall.Wrap.("mapatoms" <: Function.t @-> t @-> return nil)
 
 let iter t ~f =
   let f =

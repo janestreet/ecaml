@@ -115,6 +115,8 @@ module type Customization = sig
     -> unit
     -> 'a t
 
+  module Wrap : Var.Wrap with type 'a t := 'a t
+
   (** [(describe-function 'customize-variable)]
       [(Info-goto-node "(emacs)Specific customization")] *)
   val customize_variable : Symbol.t -> unit

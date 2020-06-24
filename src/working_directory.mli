@@ -8,4 +8,4 @@ type t =
 [@@deriving sexp_of]
 
 val to_filename : t -> string
-val within : t -> f:(unit -> 'a) -> 'a
+val within : t -> (_, 'r) Sync_or_async.t -> f:(unit -> 'r) -> 'r

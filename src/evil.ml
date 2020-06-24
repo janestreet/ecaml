@@ -7,8 +7,12 @@ module Q = struct
   let evilified = "evilified" |> Symbol.intern
 end
 
+let is_in_use () =
+  Feature.is_provided Q.evil
+;;
+
 let evil_declare_ignore_repeat =
-  Funcall.("evil-declare-ignore-repeat" <: Symbol.t @-> return ignored)
+  Funcall.Wrap.("evil-declare-ignore-repeat" <: Symbol.t @-> return ignored)
 ;;
 
 let declare_ignore_repeat command =
@@ -45,6 +49,11 @@ module State = struct
   let t = type_
   let var = Var.Wrap.("evil-state" <: t)
   let get () = Current_buffer.value_exn var
+
+  let insert =
+    let evil_insert = Funcall.Wrap.("evil-insert" <: value @-> return nil) in
+    fun () -> evil_insert Value.nil
+  ;;
 end
 
 module Escape = struct

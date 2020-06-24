@@ -6,7 +6,7 @@ module Q = struct
   include Q
 
   let confirm = "confirm" |> Symbol.intern
-  and confirm_after_completion = "confirm-after-completion" |> Symbol.intern
+  let confirm_after_completion = "confirm-after-completion" |> Symbol.intern
 end
 
 module Initial_input = struct
@@ -92,7 +92,7 @@ module Collection = (val Ocaml_or_elisp_value.make Value.Type.(list string_cache
 
 let completing_read =
   let completing_read =
-    Funcall.(
+    Funcall.Wrap.(
       "completing-read"
       <: string
          @-> value
@@ -157,7 +157,7 @@ let crm_separator = Var.Wrap.("crm-separator" <: string)
 
 let read_multiple =
   let completing_read_multiple =
-    Funcall.(
+    Funcall.Wrap.(
       "completing-read-multiple"
       <: string
          @-> value

@@ -5,14 +5,14 @@ module Q = struct
   include Q
 
   let save_current_buffer = "save-current-buffer" |> Symbol.intern
-  and save_excursion = "save-excursion" |> Symbol.intern
-  and save_mark_and_excursion = "save-mark-and-excursion" |> Symbol.intern
-  and save_match_data = "save-match-data" |> Symbol.intern
-  and save_restriction = "save-restriction" |> Symbol.intern
-  and save_selected_window = "save-selected-window" |> Symbol.intern
-  and save_window_excursion = "save-window-excursion" |> Symbol.intern
-  and with_selected_frame = "with-selected-frame" |> Symbol.intern
-  and with_selected_window = "with-selected-window" |> Symbol.intern
+  let save_excursion = "save-excursion" |> Symbol.intern
+  let save_mark_and_excursion = "save-mark-and-excursion" |> Symbol.intern
+  let save_match_data = "save-match-data" |> Symbol.intern
+  let save_restriction = "save-restriction" |> Symbol.intern
+  let save_selected_window = "save-selected-window" |> Symbol.intern
+  let save_window_excursion = "save-window-excursion" |> Symbol.intern
+  let with_selected_frame = "with-selected-frame" |> Symbol.intern
+  let with_selected_window = "with-selected-window" |> Symbol.intern
 end
 
 let save_sync save_function args f =

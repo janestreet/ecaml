@@ -15,6 +15,6 @@ include Value.Make_subtype (struct
     ;;
   end)
 
-let get = Funcall.("plist-get" <: t @-> Symbol.t @-> return (nil_or value))
-let set = Funcall.("plist-put" <: t @-> Symbol.t @-> value @-> return nil)
-let of_symbol = Funcall.("symbol-plist" <: Symbol.t @-> return t)
+let get = Funcall.Wrap.("plist-get" <: t @-> Symbol.t @-> return (nil_or value))
+let set = Funcall.Wrap.("plist-put" <: t @-> Symbol.t @-> value @-> return nil)
+let of_symbol = Funcall.Wrap.("symbol-plist" <: Symbol.t @-> return t)

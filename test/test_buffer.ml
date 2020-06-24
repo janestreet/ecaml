@@ -237,7 +237,9 @@ let%expect_test "[save_some]" =
   let restore = unstage (ignore_stderr ()) in
   let save_some ?which_buffers () = save_some () ?which_buffers ~query:false in
   let%bind () = save_some () in
-  let file = "z.tmp" in
+  let file = File.make_temp_file ~prefix:"" ~suffix:".tmp" in
+  let basename = Filename.nondirectory file in
+  let normalize string = string |> replace_s ~pattern:basename ~with_:"$BASENAME" in
   let is_modified () = print_s [%sexp (Current_buffer.is_modified () : bool)] in
   let%bind () = Selected_window.find_file file in
   Point.insert "foo";
@@ -246,15 +248,15 @@ let%expect_test "[save_some]" =
   [%expect {| false |}];
   Current_buffer.erase ();
   let print_buffer_and_return bool b =
-    print_s [%sexp (b : Buffer.t)];
+    print_s ([%sexp (b : Buffer.t)] |> normalize);
     bool
   in
   let%bind () = save_some () ~which_buffers:(These (print_buffer_and_return false)) in
-  [%expect {| "#<buffer z.tmp>" |}];
+  [%expect {| "#<buffer $BASENAME>" |}];
   is_modified ();
   [%expect {| true |}];
   let%bind () = save_some () ~which_buffers:(These (print_buffer_and_return true)) in
-  [%expect {| "#<buffer z.tmp>" |}];
+  [%expect {| "#<buffer $BASENAME>" |}];
   is_modified ();
   [%expect {| false |}];
   let%bind () = Current_buffer.kill () in
@@ -276,4 +278,26 @@ let%expect_test "[revert]" =
     [%expect {| "foo\n" |}];
     let%bind () = Current_buffer.kill () in
     return ())
+;;
+
+let%expect_test "[modified_tick], [chars_modified_tick]" =
+  Current_buffer.set_temporarily_to_temp_buffer Sync (fun () ->
+    let t = Current_buffer.get () in
+    let tick1 = modified_tick t in
+    let chars_tick1 = chars_modified_tick t in
+    (* Inserting a character updates both to the same value. *)
+    Point.insert "a";
+    let tick2 = modified_tick t in
+    let chars_tick2 = chars_modified_tick t in
+    require [%here] (Modified_tick.( > ) tick2 tick1);
+    require [%here] (Modified_tick.( > ) chars_tick2 chars_tick1);
+    require [%here] (Modified_tick.( = ) chars_tick2 tick2);
+    (* Changing a property updates [modified_tick] but not [chars_modified_tick]. *)
+    Current_buffer.set_text_property Text.Property_name.face [];
+    let tick3 = modified_tick t in
+    let chars_tick3 = chars_modified_tick t in
+    require [%here] (Modified_tick.( > ) tick3 tick2);
+    require [%here] (Modified_tick.( = ) chars_tick3 chars_tick2));
+  [%expect {| |}];
+  return ()
 ;;

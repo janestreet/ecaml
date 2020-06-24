@@ -38,7 +38,9 @@ let%expect_test "mutual recursion between Emacs and OCaml" =
 let eval_string s = s |> Form.Blocking.eval_string
 
 let emacs_raise () =
-  Funcall.("signal" <: Symbol.t @-> int @-> return nil) ("error" |> Symbol.intern) 13
+  Funcall.Wrap.("signal" <: Symbol.t @-> int @-> return nil)
+    ("error" |> Symbol.intern)
+    13
 ;;
 
 let emacs_try_with =
@@ -81,7 +83,7 @@ let%expect_test "error-symbol preservation when Emacs signal crosses OCaml" =
         ,error))))"
        |> eval_string)
       (lambda_nullary_nil [%here] (fun () ->
-         Funcall.("signal" <: Symbol.t @-> value @-> return nil)
+         Funcall.Wrap.("signal" <: Symbol.t @-> value @-> return nil)
            ("arith-error" |> Symbol.intern)
            Value.nil)
        |> Function.to_value)
@@ -124,13 +126,17 @@ let%expect_test "raising from OCaml to OCaml through many layers of Emacs" =
        [%here]
        [%message "Backtrace has no frames from" Test_function_file1.filename]);
   [%expect {| |}];
-  Current_buffer.set_value_temporarily Sync Debugger.debug_on_error true ~f:(fun () ->
-    let show_errors = false in
-    match show_errors with
-    | true ->
-      Ref.set_temporarily Backtrace.elide false ~f:(fun () ->
-        require_does_raise ~show_backtrace:true [%here] (fun () -> loop 1))
-    | false -> require_does_raise [%here] (fun () -> loop 1));
+  Current_buffer.set_value_temporarily
+    Sync
+    (Debugger.debug_on_error |> Customization.var)
+    true
+    ~f:(fun () ->
+      let show_errors = false in
+      match show_errors with
+      | true ->
+        Ref.set_temporarily Backtrace.elide false ~f:(fun () ->
+          require_does_raise ~show_backtrace:true [%here] (fun () -> loop 1))
+      | false -> require_does_raise [%here] (fun () -> loop 1));
   [%expect
     {|
     (((foo bar baz) (backtrace ("<backtrace elided in test>")))

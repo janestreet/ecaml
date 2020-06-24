@@ -11,4 +11,4 @@ module Format = struct
   let in_buffer = Buffer_local.Wrap.("mode-line-format" <: t)
 end
 
-let text = Funcall.("format-mode-line" <: Format.t @-> return Text.t)
+let text = Funcall.Wrap.("format-mode-line" <: Format.t @-> return Text.t)

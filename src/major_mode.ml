@@ -31,10 +31,22 @@ let equal t1 t2 = Symbol.equal t1.symbol t2.symbol
 let compare_name t1 t2 = Symbol.compare_name t1.symbol t2.symbol
 let t_by_symbol : t String.Table.t = Hashtbl.create (module String)
 
+module Compare_by_name = struct
+  type nonrec t = t [@@deriving sexp_of]
+
+  let to_string = symbol >> Symbol.name
+  let hash = to_string >> String.hash
+  let hash_fold_t state t = String.hash_fold_t state (to_string t)
+  let equal t1 t2 = String.equal (to_string t1) (to_string t2)
+  let compare = Comparable.lift String.compare ~f:to_string
+end
+
+let major_mode_var = Buffer_local.Wrap.("major-mode" <: Symbol.t)
+
 let change_to t ~in_:buffer =
   Value.Private.run_outside_async [%here] ~allowed_in_background:true (fun () ->
     Current_buffer.set_temporarily Sync buffer ~f:(fun () ->
-      Funcall.(symbol t |> Symbol.name <: nullary @-> return nil) ()))
+      Funcall.Wrap.(symbol t |> Symbol.name <: nullary @-> return nil) ()))
 ;;
 
 let add wrapped_at name symbol =
@@ -71,6 +83,12 @@ let wrap_existing name wrapped_at =
               (name : string)
               (wrapped_at : Source_code_position.t)
               ~previous_def:(t : t)]
+    ;;
+
+    let enabled_in_current_buffer () =
+      Buffer_local.get major_mode_var (Current_buffer0.get ())
+      |> Symbol.name
+      |> String.( = ) name
     ;;
   end : S)
 ;;
@@ -144,8 +162,7 @@ let define_derived_mode
   m
 ;;
 
-let major_mode_var = Buffer_local.Wrap.("major-mode" <: Symbol.t)
-let derived_mode_p = Funcall.("derived-mode-p" <: Symbol.t @-> return bool)
+let derived_mode_p = Funcall.Wrap.("derived-mode-p" <: Symbol.t @-> return bool)
 
 let is_derived t ~from =
   Current_buffer0.(

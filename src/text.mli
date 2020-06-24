@@ -34,6 +34,11 @@ val num_bytes : t -> int
 (** [(describe-function 'concat)] *)
 val concat : t list -> t
 
+(** [(describe-function 'substring)]
+
+    [start] is inclusive, [end_] is exclusive. *)
+val substring : t -> start:int -> end_:int -> t
+
 (** [(Info-goto-node "(elisp)Special Properties")] *)
 module Face_spec : sig
   module One : sig

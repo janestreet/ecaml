@@ -9,8 +9,8 @@ include Value.Make_subtype (struct
 
 let of_int_exn int = int |> Value.of_int_exn |> of_value_exn
 let to_int t = t |> to_value |> Value.to_int_exn
-let to_byte_position = Funcall.("position-bytes" <: t @-> return int)
-let of_byte_position = Funcall.("byte-to-position" <: int @-> return t)
+let to_byte_position = Funcall.Wrap.("position-bytes" <: t @-> return int)
+let of_byte_position = Funcall.Wrap.("byte-to-position" <: int @-> return t)
 let compare t1 t2 = Int.compare (to_int t1) (to_int t2)
 let add t1 t2 = of_int_exn (to_int t1 + t2)
 let sub t1 t2 = of_int_exn (to_int t1 - t2)

@@ -18,7 +18,7 @@ val is_enabled : t -> bool
 
 val disable : t -> unit
 val enable : t -> unit
-val temporarily_disable : t -> f:(unit -> unit) -> unit
+val temporarily_disable : (unit, 'a) Sync_or_async.t -> t -> f:(unit -> 'a) -> 'a
 
 (** [(describe-variable 'abbrev-mode)]
     [(describe-function 'abbrev-mode)] *)
@@ -62,7 +62,7 @@ val define_minor_mode
   -> Source_code_position.t
   -> docstring:string
   -> ?define_keys:(string * Symbol.t) list
-  -> mode_line:string
+  -> ?mode_line:string
   -> global:bool
   -> ?initialize:(unit -> unit)
   -> unit

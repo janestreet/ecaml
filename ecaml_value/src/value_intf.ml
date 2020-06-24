@@ -260,7 +260,6 @@ module type Value = sig
   val vec_get : t -> int -> t
   val vec_set : t -> int -> t -> unit
   val vec_size : t -> int
-  val initialize_module : unit
   val message : string -> unit
   val messagef : ('a, unit, string, unit) format4 -> 'a
   val message_s : Sexp.t -> unit

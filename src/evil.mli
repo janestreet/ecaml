@@ -29,4 +29,9 @@ module State : sig
 
   (** [(describe-variable 'evil-state)] *)
   val get : unit -> t
+
+  (** [(describe-function 'evil-insert)] *)
+  val insert : unit -> unit
 end
+
+val is_in_use : unit -> bool

@@ -3,23 +3,23 @@ open! Import
 
 module Q = struct
   let alt = "alt" |> Symbol.intern
-  and click = "click" |> Symbol.intern
-  and control = "control" |> Symbol.intern
-  and double = "double" |> Symbol.intern
-  and down = "down" |> Symbol.intern
-  and drag = "drag" |> Symbol.intern
-  and hyper = "hyper" |> Symbol.intern
-  and meta = "meta" |> Symbol.intern
-  and shift = "shift" |> Symbol.intern
-  and super = "super" |> Symbol.intern
-  and triple = "triple" |> Symbol.intern
+  let click = "click" |> Symbol.intern
+  let control = "control" |> Symbol.intern
+  let double = "double" |> Symbol.intern
+  let down = "down" |> Symbol.intern
+  let drag = "drag" |> Symbol.intern
+  let hyper = "hyper" |> Symbol.intern
+  let meta = "meta" |> Symbol.intern
+  let shift = "shift" |> Symbol.intern
+  let super = "super" |> Symbol.intern
+  let triple = "triple" |> Symbol.intern
 end
 
 module Current_buffer = Current_buffer0
 module Key_sequence = Key_sequence0
 include Input_event0
 
-let read = Funcall.("read-event" <: nullary @-> return t)
+let read = Funcall.Wrap.("read-event" <: nullary @-> return t)
 
 module Basic = struct
   type t =
@@ -40,7 +40,7 @@ module Basic = struct
   ;;
 end
 
-let event_basic_type = Funcall.("event-basic-type" <: t @-> return value)
+let event_basic_type = Funcall.Wrap.("event-basic-type" <: t @-> return value)
 let basic t = event_basic_type t |> Basic.of_value_exn
 
 module Modifier = struct
@@ -80,7 +80,7 @@ module Modifier = struct
   let of_value_exn value = value |> Symbol.of_value_exn |> of_symbol_exn
 end
 
-let event_modifiers = Funcall.("event-modifiers" <: t @-> return (list value))
+let event_modifiers = Funcall.Wrap.("event-modifiers" <: t @-> return (list value))
 let modifiers t = event_modifiers t |> List.map ~f:Modifier.of_value_exn
 
 let create_exn input =
@@ -96,7 +96,7 @@ let create_exn input =
 ;;
 
 let unread_command_input = Var.Wrap.("unread-command-events" <: list t)
-let append = Funcall.("append" <: value @-> value @-> return value)
+let append = Funcall.Wrap.("append" <: value @-> value @-> return value)
 
 let enqueue_unread_command_input ts =
   let unread_command_events = Var.Wrap.("unread-command-events" <: value) in
@@ -108,7 +108,7 @@ let enqueue_unread_command_input ts =
 ;;
 
 let recent_keys_internal =
-  Funcall.("recent-keys" <: bool @-> return (Vector.t Value.Type.value))
+  Funcall.Wrap.("recent-keys" <: bool @-> return (Vector.t Value.Type.value))
 ;;
 
 let recent_keys () = recent_keys_internal false |> Array.map ~f:of_value_exn

@@ -43,7 +43,7 @@ let%expect_test "[block_on_async] with a quit" =
   in
   let%bind quit =
     Async_ecaml.Private.run_outside_async [%here] (fun () ->
-      Or_error.try_with Funcall.(fname <: nullary @-> return nil))
+      Or_error.try_with Funcall.Wrap.(fname <: nullary @-> return nil))
   in
   print_s [%sexp (quit : _ Or_error.t)];
   [%expect {|
@@ -307,22 +307,13 @@ let%expect_test "raise in [Background.don't_wait_for]" =
 ;;
 
 module Test_enqueue_block_on_async = struct
-  (* We need a custom [Expect_test_config.run] (which implements [let%expect_test])
-     because [Async_ecaml.Expect_test_config.run] uses vanilla [block_on_async], which
-     disallows nested calls to [block_on_async].  And we need to test [become_async],
-     which does a [block_on_async], inside of [let%expect_test]. *)
-  module Expect_test_config = struct
-    include Async_ecaml.Expect_test_config
+  (* We need to allow nested [block_on_async] because [let%expect_test] uses
+     [block_on_async], and inside a [let%expect_test] we want to test
+     [schedule_foreground_block_on_async], which is implemented via [block_on_async], *)
+  module Expect_test_config =
+    Async_ecaml.Expect_test_config_allowing_nested_block_on_async
 
-    let run f =
-      Async_ecaml.Private.block_on_async
-        [%here]
-        ~for_testing_allow_nested_block_on_async:true
-        f
-    ;;
-  end
-
-  let%expect_test "[become_foreground]" =
+  let%expect_test "[schedule_foreground_block_on_async]" =
     let%bind () =
       Deferred.create (fun test_finished ->
         Background.don't_wait_for [%here] (fun () ->

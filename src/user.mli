@@ -36,5 +36,3 @@ val gid : unit -> int
 (** [(describe-function 'group-real-gid)]
     [(Info-goto-node "(elisp) User Identification")] *)
 val real_gid : unit -> int
-
-val initialize : unit -> unit

@@ -11,7 +11,7 @@ include Value.Subtype
 (** Accessors *)
 
 (** [(describe-function 'make-frame)] *)
-val create : unit -> t
+val create : ?name:string -> unit -> t
 
 (** [(describe-function 'frame-width)] *)
 val num_cols : t -> int
@@ -71,3 +71,6 @@ val inherited_parameters : Symbol.t list Var.t
 
 (** [(describe-function 'window-tree)] *)
 val window_tree : t -> Window0.Tree.t
+
+(** [(describe-function 'modify-all-frames-parameters)] *)
+val modify_all_frames_parameters : (Symbol.t * Value.t) list -> unit

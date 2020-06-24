@@ -6,27 +6,27 @@ module Q = struct
   include Q
 
   let bold = "bold" |> Symbol.intern
-  and condensed = "condensed" |> Symbol.intern
-  and expanded = "expanded" |> Symbol.intern
-  and extra_bold = "extra-bold" |> Symbol.intern
-  and extra_condensed = "extra-condensed" |> Symbol.intern
-  and extra_expanded = "extra-expanded" |> Symbol.intern
-  and extra_light = "extra-light" |> Symbol.intern
-  and italic = "italic" |> Symbol.intern
-  and light = "light" |> Symbol.intern
-  and normal = "normal" |> Symbol.intern
-  and oblique = "oblique" |> Symbol.intern
-  and reverse_italic = "reverse-italic" |> Symbol.intern
-  and reverse_oblique = "reverse-oblique" |> Symbol.intern
-  and semi_bold = "semi-bold" |> Symbol.intern
-  and semi_condensed = "semi-condensed" |> Symbol.intern
-  and semi_expanded = "semi-expanded" |> Symbol.intern
-  and semi_light = "semi-light" |> Symbol.intern
-  and ultra_bold = "ultra-bold" |> Symbol.intern
-  and ultra_condensed = "ultra-condensed" |> Symbol.intern
-  and ultra_expanded = "ultra-expanded" |> Symbol.intern
-  and ultra_light = "ultra-light" |> Symbol.intern
-  and unspecified = "unspecified" |> Symbol.intern
+  let condensed = "condensed" |> Symbol.intern
+  let expanded = "expanded" |> Symbol.intern
+  let extra_bold = "extra-bold" |> Symbol.intern
+  let extra_condensed = "extra-condensed" |> Symbol.intern
+  let extra_expanded = "extra-expanded" |> Symbol.intern
+  let extra_light = "extra-light" |> Symbol.intern
+  let italic = "italic" |> Symbol.intern
+  let light = "light" |> Symbol.intern
+  let normal = "normal" |> Symbol.intern
+  let oblique = "oblique" |> Symbol.intern
+  let reverse_italic = "reverse-italic" |> Symbol.intern
+  let reverse_oblique = "reverse-oblique" |> Symbol.intern
+  let semi_bold = "semi-bold" |> Symbol.intern
+  let semi_condensed = "semi-condensed" |> Symbol.intern
+  let semi_expanded = "semi-expanded" |> Symbol.intern
+  let semi_light = "semi-light" |> Symbol.intern
+  let ultra_bold = "ultra-bold" |> Symbol.intern
+  let ultra_condensed = "ultra-condensed" |> Symbol.intern
+  let ultra_expanded = "ultra-expanded" |> Symbol.intern
+  let ultra_light = "ultra-light" |> Symbol.intern
+  let unspecified = "unspecified" |> Symbol.intern
 end
 
 module Value = struct
@@ -511,13 +511,14 @@ module Attribute = struct
   ;;
 
   let face_attribute_relative_p =
-    Funcall.("face-attribute-relative-p" <: Symbol.t @-> value @-> return bool)
+    Funcall.Wrap.("face-attribute-relative-p" <: Symbol.t @-> value @-> return bool)
   ;;
 
   let is_relative t a = face_attribute_relative_p (t |> to_symbol) (a |> to_value t)
 
   let merge_face_attribute =
-    Funcall.("merge-face-attribute" <: Symbol.t @-> value @-> value @-> return value)
+    Funcall.Wrap.(
+      "merge-face-attribute" <: Symbol.t @-> value @-> value @-> return value)
   ;;
 
   let merge t a1 a2 =
@@ -565,13 +566,17 @@ let frame option =
   | None -> Frame.selected ()
 ;;
 
-let face_list = Funcall.("face-list" <: nullary @-> return (list t))
+let face_list = Funcall.Wrap.("face-list" <: nullary @-> return (list t))
 let all_defined () = face_list () |> List.sort ~compare
-let font_family_list = Funcall.("font-family-list" <: Frame.t @-> return (list string))
+
+let font_family_list =
+  Funcall.Wrap.("font-family-list" <: Frame.t @-> return (list string))
+;;
+
 let font_family_list ?on () = font_family_list (frame on)
 
 let face_attribute =
-  Funcall.("face-attribute" <: t @-> Symbol.t @-> Frame.t @-> return value)
+  Funcall.Wrap.("face-attribute" <: t @-> Symbol.t @-> Frame.t @-> return value)
 ;;
 
 let attribute_value ?on t attribute =
@@ -580,7 +585,8 @@ let attribute_value ?on t attribute =
 ;;
 
 let set_face_attribute =
-  Funcall.("set-face-attribute" <: t @-> Frame.t @-> Symbol.t @-> value @-> return nil)
+  Funcall.Wrap.(
+    "set-face-attribute" <: t @-> Frame.t @-> Symbol.t @-> value @-> return nil)
 ;;
 
 let set_attribute ?on t attribute value =
@@ -592,7 +598,7 @@ let set_attribute ?on t attribute value =
 ;;
 
 let face_all_attributes =
-  Funcall.("face-all-attributes" <: t @-> Frame.t @-> return (list value))
+  Funcall.Wrap.("face-all-attributes" <: t @-> Frame.t @-> return (list value))
 ;;
 
 let attributes ?on t =
@@ -604,5 +610,5 @@ let specs_to_value specs =
     list [ cons t (list (List.concat_map specs ~f:Attribute_and_value.to_value_list)) ])
 ;;
 
-let face_spec_set = Funcall.("face-spec-set" <: t @-> value @-> return nil)
+let face_spec_set = Funcall.Wrap.("face-spec-set" <: t @-> value @-> return nil)
 let spec_set face specs = face_spec_set face (specs_to_value specs)

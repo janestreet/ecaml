@@ -1,4 +1,4 @@
-(library (name ecaml) (public_name ecaml)
+(library (name ecaml) (public_name ecaml) (library_flags -linkall)
  (libraries async async_unix core_kernel.composition_infix core_kernel
   ecaml_bench ecaml_value core.error_checking_mutex expect_test_helpers_core
   nested_profile)

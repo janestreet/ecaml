@@ -15,5 +15,5 @@ let gc_elapsed =
 ;;
 
 let gc_elapsed () = Current_buffer.value_exn gc_elapsed
-let garbage_collect = Funcall.("garbage-collect" <: nullary @-> return nil)
+let garbage_collect = Funcall.Wrap.("garbage-collect" <: nullary @-> return nil)
 let post_gc_hook = Hook.create ("post-gc-hook" |> Symbol.intern) ~hook_type:Normal

@@ -14,6 +14,10 @@ open! Import0
 
 val message : ?echo:bool (** default is [true] *) -> string -> unit
 
+(** [clear ()] clears the echo area, like [(message nil)].  See
+    [(describe-function 'message)] *)
+val clear : unit -> unit
+
 val wrap_message
   :  ?echo:bool (** default is [true] *)
   -> string

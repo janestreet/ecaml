@@ -3,8 +3,8 @@ open! Import0
 open! Async_kernel
 module Buffer = Buffer0
 
-let get = Funcall.("current-buffer" <: nullary @-> return Buffer.t)
-let set = Funcall.("set-buffer" <: Buffer.t @-> return nil)
+let get = Funcall.Wrap.("current-buffer" <: nullary @-> return Buffer.t)
+let set = Funcall.Wrap.("set-buffer" <: Buffer.t @-> return nil)
 
 let set_temporarily sync_or_async buffer ~f =
   let old = get () in
@@ -13,10 +13,10 @@ let set_temporarily sync_or_async buffer ~f =
     if Buffer.is_live old then set old)
 ;;
 
-let boundp = Funcall.("boundp" <: Symbol.t @-> return bool)
+let boundp = Funcall.Wrap.("boundp" <: Symbol.t @-> return bool)
 let variable_is_defined = boundp
 let value_is_defined (var : _ Var.t) = boundp var.symbol
-let symbol_value = Funcall.("symbol-value" <: Symbol.t @-> return value)
+let symbol_value = Funcall.Wrap.("symbol-value" <: Symbol.t @-> return value)
 
 let value_internal (var : _ Var.t) =
   symbol_value var.symbol |> Value.Type.of_value_exn var.type_
@@ -43,9 +43,9 @@ let value_opt_exn var =
           ~buffer:(get () : Buffer.t)]
 ;;
 
-let makunbound = Funcall.("makunbound" <: Symbol.t @-> return nil)
+let makunbound = Funcall.Wrap.("makunbound" <: Symbol.t @-> return nil)
 let clear_value (var : _ Var.t) = makunbound var.symbol
-let elisp_set = Funcall.("set" <: Symbol.t @-> value @-> return nil)
+let elisp_set = Funcall.Wrap.("set" <: Symbol.t @-> value @-> return nil)
 
 let set_value (var : _ Var.t) a =
   elisp_set var.symbol (a |> Value.Type.to_value var.type_)

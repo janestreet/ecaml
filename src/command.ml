@@ -49,12 +49,12 @@ module Raw_prefix_argument = struct
 
   let t = type_
   let for_current_command = Var.Wrap.("current-prefix-arg" <: t)
-  let numeric_value = Funcall.("prefix-numeric-value" <: t @-> return int)
+  let numeric_value = Funcall.Wrap.("prefix-numeric-value" <: t @-> return int)
 end
 
 let call_interactively =
   let call_interactively =
-    Funcall.("call-interactively" <: value @-> bool @-> return nil)
+    Funcall.Wrap.("call-interactively" <: value @-> bool @-> return nil)
   in
   fun ?(raw_prefix_argument = Raw_prefix_argument.Absent) ?(record = false) command ->
     Value.Private.run_outside_async [%here] (fun () ->
@@ -77,7 +77,7 @@ let quit_requested () =
 
 let abort_recursive_edit () =
   let abort_recursive_edit =
-    Funcall.("abort-recursive-edit" <: nullary @-> return nil)
+    Funcall.Wrap.("abort-recursive-edit" <: nullary @-> return nil)
   in
   abort_recursive_edit ();
   assert false

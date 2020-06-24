@@ -9,7 +9,8 @@ end
 
 let buffers =
   let buffers =
-    Funcall.("ediff-buffers" <: Buffer.t @-> Buffer.t @-> list Function.t @-> return nil)
+    Funcall.Wrap.(
+      "ediff-buffers" <: Buffer.t @-> Buffer.t @-> list Function.t @-> return nil)
   in
   fun ~a ~b ~startup_hooks ->
     let startup_hooks = List.map startup_hooks ~f:(Defun.lambda_nullary_nil [%here]) in

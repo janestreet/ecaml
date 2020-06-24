@@ -5,4 +5,4 @@ open! Import
 
 (** [(describe-variable 'debug-on-error)]
     [(Info-goto-node "(elisp)Error Debugging")] *)
-val debug_on_error : bool Var.t
+val debug_on_error : bool Customization.t

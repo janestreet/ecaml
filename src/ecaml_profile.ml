@@ -130,7 +130,7 @@ let elisp_function_wrapper_name fn =
   "ecaml-profile-wrapper-for-" ^ Symbol.name fn |> Symbol.intern
 ;;
 
-let initialize () =
+let () =
   let (_ : _ Customization.t) =
     Customization.defcustom_enum
       ("ecaml-profile-start-location" |> Symbol.intern)
@@ -398,7 +398,8 @@ module Benchmarks = struct
                  Ref.set_temporarily
                    Profile.hide_top_level_if_less_than
                    Time_ns.Span.zero
-                   ~f:(fun () -> Funcall.(helper_name <: value @-> return nil) data)))))
+                   ~f:(fun () ->
+                     Funcall.Wrap.(helper_name <: value @-> return nil) data)))))
   ;;
 
   let large_string = lazy (String.make 1024 'a' |> Value.of_utf8_bytes)

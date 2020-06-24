@@ -104,58 +104,40 @@ include Async_ecaml.Export
 include Composition_infix
 
 let concat = concat
-and defalias = Defun.defalias
-and defconst = Defconst.defconst
-and defconst_i = Defconst.defconst_i
-and defcustom = Customization.defcustom
-and defgroup = Customization.Group.defgroup
-and define_derived_mode = Major_mode.define_derived_mode
-and define_minor_mode = Minor_mode.define_minor_mode
-and defun = Defun.defun
-and defun_nullary = Defun.defun_nullary
-and defun_nullary_nil = Defun.defun_nullary_nil
-and defvar = Defvar.defvar
-and defvaralias = Defvar.defvaralias
-and inhibit_messages = Echo_area.inhibit_messages
-and lambda = Defun.lambda
-and lambda_nullary = Defun.lambda_nullary
-and lambda_nullary_nil = Defun.lambda_nullary_nil
-and message = Echo_area.message
-and messagef = Echo_area.messagef
-and message_s = Echo_area.message_s
-and message_text = Echo_area.message_text
-and print_s = print_s
-and raise_string = raise_string
-and sec_ns = sec_ns
-and wrap_message = Echo_area.wrap_message
+let defalias = Defun.defalias
+let defconst = Defconst.defconst
+let defconst_i = Defconst.defconst_i
+let defcustom = Customization.defcustom
+let defgroup = Customization.Group.defgroup
+let define_derived_mode = Major_mode.define_derived_mode
+let define_minor_mode = Minor_mode.define_minor_mode
+let defun = Defun.defun
+let defun_nullary = Defun.defun_nullary
+let defun_nullary_nil = Defun.defun_nullary_nil
+let defvar = Defvar.defvar
+let defvaralias = Defvar.defvaralias
+let inhibit_messages = Echo_area.inhibit_messages
+let lambda = Defun.lambda
+let lambda_nullary = Defun.lambda_nullary
+let lambda_nullary_nil = Defun.lambda_nullary_nil
+let message = Echo_area.message
+let messagef = Echo_area.messagef
+let message_s = Echo_area.message_s
+let message_text = Echo_area.message_text
+let print_s = print_s
+let raise_string = raise_string
+let sec_ns = sec_ns
+let wrap_message = Echo_area.wrap_message
 
 module Returns = Defun.Returns
 
-open struct
-  module Unix = Caml_unix
-end
-
-let provide =
-  Ecaml_callback.(register end_of_module_initialization)
-    ~should_run_holding_async_lock:true
-    ~f:(fun () -> message_s [%message "Loaded Ecaml."]);
-  Async_ecaml.initialize ();
-  Caml_embed.initialize;
-  Clipboard.initialize ();
-  Import.initialize_module;
-  Ecaml_profile.initialize ();
-  Find_function.initialize ();
-  Kill_ring.initialize ();
-  User.initialize ();
-  Value.initialize_module;
-  (Feature.provide [@warning "-3"])
-;;
-
+let provide = (Feature.provide [@warning "-3"])
 let inhibit_read_only = Current_buffer.inhibit_read_only
 
 let () =
   if not am_running_inline_test
-  then (
+  then
+    let module Unix = Core.Unix in
     let should_reopen_stdin = ref true in
     Background.Clock.every [%here] Time.Span.second (fun () ->
       match Unix.fstat Unix.stdin with
@@ -163,8 +145,8 @@ let () =
       | exception _ ->
         if !should_reopen_stdin
         then (
-          let new_fd = Unix.openfile "/dev/null" [ O_RDONLY ] 0o666 in
-          should_reopen_stdin := Core.Unix.File_descr.equal new_fd Unix.stdin;
+          let new_fd = Unix.openfile "/dev/null" ~mode:[ O_RDONLY ] ~perm:0o666 in
+          should_reopen_stdin := Unix.File_descr.equal new_fd Unix.stdin;
           message_s
             ~echo:false
             [%message.omit_nil
@@ -172,7 +154,7 @@ let () =
                 (should_reopen_stdin : bool ref)
                 ~recent_keys:
                   (Input_event.recent_commands_and_keys ()
-                   : Input_event.Command_or_key.t array)])))
+                   : Input_event.Command_or_key.t array)]))
 ;;
 
 let () =
@@ -184,12 +166,14 @@ let () =
 Close file descriptor zero, aka stdin.  For testing a bug in `call-process-region'.
 |}
     ~interactive:No_arg
-    (fun () -> Unix.close Unix.stdin)
+    (fun () -> Core.Unix.(close stdin))
 ;;
 
 let () =
   let ecaml_test_raise_name = "ecaml-test-raise" in
-  let ecaml_test_raise = Funcall.(ecaml_test_raise_name <: nil_or int @-> return nil) in
+  let ecaml_test_raise =
+    Funcall.Wrap.(ecaml_test_raise_name <: nil_or int @-> return nil)
+  in
   defun
     (ecaml_test_raise_name |> Symbol.intern)
     [%here]

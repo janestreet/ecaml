@@ -60,7 +60,7 @@ let%expect_test "[around_funcall ~on_parse_error]" =
       advice_name
       [%here]
       ~for_function
-      Funcall.(arg_type @-> return int)
+      Funcall.Wrap.(arg_type @-> return int)
       ?on_parse_error
       (fun _ _ ->
          print_s [%message "Advice got called."];

@@ -63,6 +63,13 @@ module Property : sig
   val function_documentation : Value.t t
 
   val variable_documentation : Value.t t
+
+  (** If the disabled property is true for a symbol [x], and the user has not disabled the
+      feature, and the user tries to do the command [x], they will get a warning asking if
+      they really want to do the command (e.g. narrow-to-region).
+
+      See [(Info-goto-node "(emacs)Disabling")] *)
+  val function_disabled : Bool.t t
 end
 
 module type Subtype = sig
@@ -82,7 +89,7 @@ module Make_subtype (Arg : sig
   end) : Subtype with type t := Arg.t
 
 module Compare_name : sig
-  type t = symbol [@@deriving sexp_of]
+  type t = symbol [@@deriving compare, sexp_of]
 
   include Comparator.S with type t := t
 end

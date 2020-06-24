@@ -6,8 +6,8 @@ module Q = struct
   include Q
 
   let autoload = "autoload" |> Symbol.intern
-  and provide = "provide" |> Symbol.intern
-  and require = "require" |> Symbol.intern
+  let provide = "provide" |> Symbol.intern
+  let require = "require" |> Symbol.intern
 end
 
 module Current_buffer = Current_buffer0
@@ -15,7 +15,7 @@ module Current_buffer = Current_buffer0
 type t = Value.t [@@deriving sexp_of]
 
 let load_history = Var.Wrap.("load-history" <: value)
-let defining_file = Funcall.("symbol-file" <: Symbol.t @-> return (nil_or string))
+let defining_file = Funcall.Wrap.("symbol-file" <: Symbol.t @-> return (nil_or string))
 
 module Entry = struct
   type t =
@@ -52,19 +52,15 @@ module Type = struct
 
   include T
 
-  let type_ =
-    Value.Type.enum
-      [%sexp "load-history type"]
-      (module T)
-      (function
-        | Face -> Q.defface |> Symbol.to_value
-        | Fun -> Value.nil
-        | Var -> Q.defvar |> Symbol.to_value)
-  ;;
-
-  let t = type_
-  let of_value_exn = Value.Type.of_value_exn type_
-  let to_value = Value.Type.to_value type_
+  include Valueable.Remove_t
+      ((val Valueable.of_type
+              (Value.Type.enum
+                 [%sexp "load-history type"]
+                 (module T)
+                 (function
+                   | Face -> Q.defface |> Symbol.to_value
+                   | Fun -> Value.nil
+                   | Var -> Q.defvar |> Symbol.to_value))))
 end
 
 module Key = struct
@@ -106,7 +102,7 @@ let add_entry here (entry : Entry.t) =
   | _ -> ()
 ;;
 
-let append = Funcall.("append" <: value @-> value @-> return value)
+let append = Funcall.Wrap.("append" <: value @-> value @-> return value)
 
 let update_emacs_with_entries ~chop_prefix ~in_dir =
   let addition =

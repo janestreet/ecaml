@@ -8,32 +8,32 @@ module Q = struct
   let no_message = "no-message" |> Symbol.intern
 end
 
-let exists = Funcall.("file-exists-p" <: Filename.t @-> return bool)
-let is_directory = Funcall.("file-directory-p" <: Filename.t @-> return bool)
-let is_executable = Funcall.("file-executable-p" <: Filename.t @-> return bool)
-let is_readable = Funcall.("file-readable-p" <: Filename.t @-> return bool)
-let is_regular = Funcall.("file-regular-p" <: Filename.t @-> return bool)
-let is_symlink = Funcall.("file-symlink-p" <: Filename.t @-> return bool)
-let is_writable = Funcall.("file-writable-p" <: Filename.t @-> return bool)
+let exists = Funcall.Wrap.("file-exists-p" <: Filename.t @-> return bool)
+let is_directory = Funcall.Wrap.("file-directory-p" <: Filename.t @-> return bool)
+let is_executable = Funcall.Wrap.("file-executable-p" <: Filename.t @-> return bool)
+let is_readable = Funcall.Wrap.("file-readable-p" <: Filename.t @-> return bool)
+let is_regular = Funcall.Wrap.("file-regular-p" <: Filename.t @-> return bool)
+let is_symlink = Funcall.Wrap.("file-symlink-p" <: Filename.t @-> return bool)
+let is_writable = Funcall.Wrap.("file-writable-p" <: Filename.t @-> return bool)
 
 let file_in_directory_p =
-  Funcall.("file-in-directory-p" <: Filename.t @-> Filename.t @-> return bool)
+  Funcall.Wrap.("file-in-directory-p" <: Filename.t @-> Filename.t @-> return bool)
 ;;
 
 let is_below file ~dir = file_in_directory_p file dir
-let truename = Funcall.("file-truename" <: Filename.t @-> return Filename.t)
-let delete = Funcall.("delete-file" <: Filename.t @-> return nil)
-let copy_file = Funcall.("copy-file" <: Filename.t @-> Filename.t @-> return nil)
+let truename = Funcall.Wrap.("file-truename" <: Filename.t @-> return Filename.t)
+let delete = Funcall.Wrap.("delete-file" <: Filename.t @-> return nil)
+let copy_file = Funcall.Wrap.("copy-file" <: Filename.t @-> Filename.t @-> return nil)
 let copy ~src ~dst = copy_file src dst
 
 let rename_file =
-  Funcall.("rename-file" <: Filename.t @-> Filename.t @-> bool @-> return nil)
+  Funcall.Wrap.("rename-file" <: Filename.t @-> Filename.t @-> bool @-> return nil)
 ;;
 
 let rename ~src ~dst ~replace_dst_if_exists = rename_file src dst replace_dst_if_exists
 
 let locate_file =
-  Funcall.(
+  Funcall.Wrap.(
     "locate-file"
     <: string
        @-> list string
@@ -47,7 +47,7 @@ let locate ?suffixes ?predicate ~filename ~path () =
 ;;
 
 let locate_dominating_file =
-  Funcall.(
+  Funcall.Wrap.(
     "locate-dominating-file" <: Filename.t @-> Filename.t @-> return (nil_or Filename.t))
 ;;
 
@@ -61,7 +61,7 @@ let locate_dominating_file_exn ~above ~basename =
 ;;
 
 let write_region =
-  Funcall.(
+  Funcall.Wrap.(
     "write-region" <: string @-> unit @-> Filename.t @-> bool @-> Symbol.t @-> return nil)
 ;;
 
@@ -74,7 +74,7 @@ let ensure_exists filename = write filename "" ~append:true
 (* squelch the [Wrote file] message *)
 
 let make_temp_file =
-  Funcall.("make-temp-file" <: string @-> bool @-> string @-> return Filename.t)
+  Funcall.Wrap.("make-temp-file" <: string @-> bool @-> string @-> return Filename.t)
 ;;
 
 let make_temp_file ~prefix ~suffix = make_temp_file prefix false suffix
@@ -88,4 +88,6 @@ let with_temp_file sync_or_async ~f ~prefix ~suffix =
     ~finally:(fun () -> delete filename)
 ;;
 
-let find_executable = Funcall.("executable-find" <: string @-> return (nil_or string))
+let find_executable =
+  Funcall.Wrap.("executable-find" <: string @-> return (nil_or string))
+;;

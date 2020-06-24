@@ -5,13 +5,13 @@ module Q = struct
   include Q
 
   let abbrev_mode = "abbrev-mode" |> Symbol.intern
-  and buffer_read_only = "buffer-read-only" |> Symbol.intern
-  and define_minor_mode = "define-minor-mode" |> Symbol.intern
-  and goto_address_mode = "goto-address-mode" |> Symbol.intern
-  and read_only_mode = "read-only-mode" |> Symbol.intern
-  and url_handler_mode = "url-handler-mode" |> Symbol.intern
-  and view_mode = "view-mode" |> Symbol.intern
-  and visual_line_mode = "visual-line-mode" |> Symbol.intern
+  let buffer_read_only = "buffer-read-only" |> Symbol.intern
+  let define_minor_mode = "define-minor-mode" |> Symbol.intern
+  let goto_address_mode = "goto-address-mode" |> Symbol.intern
+  let read_only_mode = "read-only-mode" |> Symbol.intern
+  let url_handler_mode = "url-handler-mode" |> Symbol.intern
+  let view_mode = "view-mode" |> Symbol.intern
+  let visual_line_mode = "visual-line-mode" |> Symbol.intern
 end
 
 
@@ -47,11 +47,11 @@ let is_enabled t =
 let disable t = Symbol.funcall1_i t.function_name (0 |> Value.of_int_exn)
 let enable t = Symbol.funcall1_i t.function_name (1 |> Value.of_int_exn)
 
-let temporarily_disable t ~f =
+let temporarily_disable sync_or_async t ~f =
   if is_enabled t
   then (
     disable t;
-    protect ~f ~finally:(fun () -> enable t))
+    Sync_or_async.protect [%here] sync_or_async ~f ~finally:(fun () -> enable t))
   else f ()
 ;;
 
@@ -66,7 +66,7 @@ let define_minor_mode
       here
       ~docstring
       ?(define_keys = [])
-      ~mode_line
+      ?mode_line
       ~global
       ?(initialize = fun () -> ())
       ()
@@ -89,7 +89,10 @@ let define_minor_mode
        ; name |> Form.symbol
        ; docstring |> String.strip |> Form.string
        ; Q.K.lighter |> Form.symbol
-       ; String.concat [ " "; mode_line ] |> Form.string
+       ; Option.value_map
+           mode_line
+           ~f:(fun mode_line -> String.concat [ " "; mode_line ] |> Form.string)
+           ~default:Form.nil
        ; Q.K.keymap |> Form.symbol
        ; Var.symbol_as_value keymap_var |> Form.of_value_exn
        ; Q.K.global |> Form.symbol

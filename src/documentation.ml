@@ -2,7 +2,7 @@ open! Core_kernel
 open! Import
 
 let substitute_command_keys =
-  Funcall.("substitute-command-keys" <: string @-> return string)
+  Funcall.Wrap.("substitute-command-keys" <: string @-> return string)
 ;;
 
 module Special_sequence = struct

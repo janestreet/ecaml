@@ -5,28 +5,52 @@
 
 open! Core_kernel
 open! Import
-include Value.Subtype
+
+(** [type t] is lazy.  Construction functions ([of_rx], [quote], ...)  don't construct the
+    Emacs regexp until it is needed.  Idiomatic use of a [Regexp.t] looks like:
+
+    {[
+      let some_function =
+        let regexp = Regexp.of_rx ... in
+        fun a b c ->
+          ... Regexp.match_ regexp ...
+    ]}
+
+    This idiom only constructs the Emacs regexp when it is needed, and avoids
+    reconstructing it every time it is used. *)
+type t [@@deriving sexp_of]
+
+val t : t Value.Type.t
+val of_value_exn : Value.t -> t
+val to_value : t -> Value.t
 
 (** [Rx.t] is the preferred way to construct regexps, especially when the alternative
-    involves string manipulation in OCaml. *)
+    involves string manipulation in OCaml.  [of_rx] is lazy, and doesn't construct
+    the Emacs regexp until it is needed. *)
 val of_rx : Rx.t -> t
 
 val match_anything : t
 val match_nothing : t
 
-(** [(Info-goto-node "(elisp)Syntax of Regexps")] *)
+(** [(Info-goto-node "(elisp)Syntax of Regexps")]. *)
 val of_pattern : string -> t
 
 val to_pattern : t -> string
+
+(** [any] is lazy, and doesn't construct the Emacs regexp until it is needed. *)
 val any : t list -> t
+
+(** [any_pattern] is lazy, and doesn't construct the Emacs regexp until it is needed. *)
 val any_pattern : string list -> t
 
-(** [quote string] matches [string] and nothing else.
+(** [quote string] matches [string] and nothing else.  [quote] is lazy, and doesn't
+    construct the Emacs regexp until it is needed.
     [(describe-function 'regexp-quote)]
     [(Info-goto-node "(elisp)Regexp Functions")] *)
 val quote : string -> t
 
-(** [any_quote strings] matches every string in [strings], and nothing else.
+(** [any_quote strings] matches every string in [strings], and nothing else.  [any_quote]
+    is lazy, and doesn't construct the Emacs regexp until it is needed.
     [(describe-function 'regexp-opt)]
     [(Info-goto-node "(elisp)Regexp Functions")] *)
 val any_quote : string list -> t

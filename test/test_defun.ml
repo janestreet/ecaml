@@ -211,7 +211,7 @@ let%expect_test "[lambda]" =
   in
   print_s [%sexp (retval : int)];
   [%expect {| 2 |}];
-  let docstring = Funcall.("documentation" <: Function.t @-> return string) fn in
+  let docstring = Funcall.Wrap.("documentation" <: Function.t @-> return string) fn in
   if not (String.is_prefix docstring ~prefix:"Implemented at")
   then print_endline docstring;
   [%expect {| |}];

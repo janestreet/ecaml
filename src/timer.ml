@@ -10,12 +10,12 @@ include Value.Make_subtype (struct
 let timer_list = Var.Wrap.("timer-list" <: list t)
 let timer_list_as_value = Var.Wrap.("timer-list" <: value)
 let all_scheduled () = Current_buffer.value_exn timer_list
-let memq = Funcall.("memq" <: t @-> value @-> return bool)
+let memq = Funcall.Wrap.("memq" <: t @-> value @-> return bool)
 let is_scheduled t = memq t (Current_buffer.value_exn timer_list_as_value)
 let to_seconds span = span |> Time_ns.Span.to_sec
 
 let run_at_time =
-  Funcall.("run-at-time" <: float @-> nil_or float @-> Symbol.t @-> return t)
+  Funcall.Wrap.("run-at-time" <: float @-> nil_or float @-> Symbol.t @-> return t)
 ;;
 
 let run_after ?repeat here span ~f ~name =
@@ -27,17 +27,17 @@ let run_after_i ?repeat here span ~f ~name =
   ignore (run_after here ?repeat span ~f ~name : t)
 ;;
 
-let cancel = Funcall.("cancel-timer" <: t @-> return nil)
+let cancel = Funcall.Wrap.("cancel-timer" <: t @-> return nil)
 
 let sit_for =
-  let sit_for = Funcall.("sit-for" <: float @-> bool @-> return nil) in
+  let sit_for = Funcall.Wrap.("sit-for" <: float @-> bool @-> return nil) in
   fun ?(redisplay = true) span ->
     Value.Private.run_outside_async [%here] (fun () ->
       sit_for (span |> to_seconds) (not redisplay))
 ;;
 
 let sleep_for =
-  let sleep_for = Funcall.("sleep-for" <: float @-> return nil) in
+  let sleep_for = Funcall.Wrap.("sleep-for" <: float @-> return nil) in
   fun span ->
     Value.Private.run_outside_async [%here] (fun () -> sleep_for (span |> to_seconds))
 ;;

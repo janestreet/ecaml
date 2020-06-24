@@ -64,7 +64,7 @@ let type_ = Value.Type.list Entry.t
 let t = type_
 let auto_mode_alist = Var.Wrap.("auto-mode-alist" <: t)
 let auto_mode_alist_value = Var.Wrap.("auto-mode-alist" <: value)
-let append = Funcall.("append" <: t @-> value @-> return value)
+let append = Funcall.Wrap.("append" <: t @-> value @-> return value)
 
 let add entries =
   Current_buffer.set_value

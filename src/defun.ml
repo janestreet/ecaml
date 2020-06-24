@@ -292,7 +292,7 @@ let add_to_load_history symbol here =
 ;;
 
 let defalias =
-  Funcall.("defalias" <: Symbol.t @-> Symbol.t @-> nil_or string @-> return nil)
+  Funcall.Wrap.("defalias" <: Symbol.t @-> Symbol.t @-> nil_or string @-> return nil)
 ;;
 
 let defalias symbol here ?docstring ~alias_of () =
@@ -313,13 +313,23 @@ let defun_raw symbol here ?docstring ?interactive ~args ?optional_args ?rest_arg
      |> Function.to_value)
 ;;
 
+let disable_function name =
+  (* the user may have explicitly put [disabled nil] for the symbol to undisable the
+     function before we define it. So we check for that first *)
+  let open Symbol.Property in
+  match get function_disabled name with
+  | Some _ -> ()
+  | None -> put function_disabled name true
+;;
+
 let defun_internal
       symbol
       here
       ?docstring
       ?(define_keys = [])
-      ?obsoletes
+      ?(obsoletes : Obsoletes.t option)
       ?interactive
+      ?(disabled = false)
       t
       fn
   =
@@ -335,8 +345,9 @@ let defun_internal
     fn;
   List.iter define_keys ~f:(fun (keymap, keys) ->
     Keymap.define_key keymap (Key_sequence.create_exn keys) (Symbol symbol));
-  Option.iter obsoletes ~f:(fun obsolete ->
-    define_obsolete_alias obsolete here ~alias_of:symbol ~since:"who knows when" ())
+  Option.iter obsoletes ~f:(fun (obsolete, Since since) ->
+    define_obsolete_alias obsolete here ~alias_of:symbol ~since ());
+  if disabled then disable_function symbol
 ;;
 
 let defun
@@ -347,6 +358,7 @@ let defun
       ?obsoletes
       ?should_profile
       ?interactive
+      ?disabled
       ?evil_config
       returns
       t
@@ -357,6 +369,7 @@ let defun
     ?define_keys
     ?obsoletes
     ?interactive
+    ?disabled
     symbol
     here
     t
@@ -373,6 +386,7 @@ let defun_nullary
       ?obsoletes
       ?should_profile
       ?interactive
+      ?disabled
       ?evil_config
       returns
       f
@@ -385,6 +399,7 @@ let defun_nullary
     ?obsoletes
     ?should_profile
     ?interactive
+    ?disabled
     ?evil_config
     returns
     (let open Let_syntax in
@@ -400,6 +415,7 @@ let defun_nullary_nil
       ?obsoletes
       ?should_profile
       ?interactive
+      ?disabled
       ?evil_config
       f
   =
@@ -411,6 +427,7 @@ let defun_nullary_nil
     ?obsoletes
     ?should_profile
     ?interactive
+    ?disabled
     ?evil_config
     (Returns Value.Type.unit)
     f

@@ -29,15 +29,22 @@ module Insertion_type = struct
   let t = type_
 end
 
-let buffer = Funcall.("marker-buffer" <: t @-> return (nil_or Buffer.t))
-let insertion_type = Funcall.("marker-insertion-type" <: t @-> return Insertion_type.t)
+let buffer = Funcall.Wrap.("marker-buffer" <: t @-> return (nil_or Buffer.t))
 
-let set_insertion_type =
-  Funcall.("set-marker-insertion-type" <: t @-> Insertion_type.t @-> return nil)
+let insertion_type =
+  Funcall.Wrap.("marker-insertion-type" <: t @-> return Insertion_type.t)
 ;;
 
-let position = Funcall.("marker-position" <: t @-> return (nil_or Position.t))
-let create = Funcall.("make-marker" <: nullary @-> return t)
-let copy = Funcall.("copy-marker" <: t @-> return t)
-let set_marker = Funcall.("set-marker" <: t @-> Position.t @-> Buffer.t @-> return nil)
+let set_insertion_type =
+  Funcall.Wrap.("set-marker-insertion-type" <: t @-> Insertion_type.t @-> return nil)
+;;
+
+let position = Funcall.Wrap.("marker-position" <: t @-> return (nil_or Position.t))
+let create = Funcall.Wrap.("make-marker" <: nullary @-> return t)
+let copy = Funcall.Wrap.("copy-marker" <: t @-> return t)
+
+let set_marker =
+  Funcall.Wrap.("set-marker" <: t @-> Position.t @-> Buffer.t @-> return nil)
+;;
+
 let set t buffer position = set_marker t position buffer

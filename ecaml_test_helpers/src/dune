@@ -1,0 +1,5 @@
+(library (name ecaml_test_helpers) (public_name ecaml.ecaml_test_helpers)
+ (library_flags -linkall)
+ (libraries async async_unix core_kernel.composition_infix core_kernel ecaml
+  nested_profile)
+ (preprocess (pps ppx_jane)))

@@ -2,13 +2,20 @@ open! Core_kernel
 open! Import
 open! Ecaml_filename
 
-let make_directory = Funcall.("make-directory" <: Filename.t @-> bool @-> return nil)
+let make_directory =
+  Funcall.Wrap.("make-directory" <: Filename.t @-> bool @-> return nil)
+;;
+
 let create ?(parents = false) dirname = make_directory dirname parents
-let delete_directory = Funcall.("delete-directory" <: Filename.t @-> bool @-> return nil)
+
+let delete_directory =
+  Funcall.Wrap.("delete-directory" <: Filename.t @-> bool @-> return nil)
+;;
+
 let delete ?(recursive = false) dirname = delete_directory dirname recursive
 
 let directory_files =
-  Funcall.(
+  Funcall.Wrap.(
     "directory-files"
     <: Filename.t @-> bool @-> nil_or Regexp.t @-> bool @-> return (list Filename.t))
 ;;
@@ -31,7 +38,7 @@ let files
 ;;
 
 let directory_files_recursively =
-  Funcall.(
+  Funcall.Wrap.(
     "directory-files-recursively"
     <: Filename.t @-> Regexp.t @-> bool @-> return (list Filename.t))
 ;;
@@ -45,7 +52,7 @@ let files_recursively
 ;;
 
 let make_temp_file =
-  Funcall.("make-temp-file" <: string @-> bool @-> string @-> return Filename.t)
+  Funcall.Wrap.("make-temp-file" <: string @-> bool @-> string @-> return Filename.t)
 ;;
 
 let make_temp_dir ~prefix ~suffix = make_temp_file prefix true suffix

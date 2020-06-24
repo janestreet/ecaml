@@ -5,16 +5,19 @@ module Q = struct
   include Q
 
   let after_load_functions = "after-load-functions" |> Symbol.intern
-  and after_revert = "after-revert-hook" |> Symbol.intern
-  and after_save_hook = "after-save-hook" |> Symbol.intern
-  and before_save_hook = "before-save-hook" |> Symbol.intern
-  and emacs_startup_hook = "emacs-startup-hook" |> Symbol.intern
-  and focus_in_hook = "focus-in-hook" |> Symbol.intern
-  and kill_buffer_hook = "kill-buffer-hook" |> Symbol.intern
-  and post_command_hook = "post-command-hook" |> Symbol.intern
-  and window_configuration_change_hook =
+  let after_revert = "after-revert-hook" |> Symbol.intern
+  let after_save_hook = "after-save-hook" |> Symbol.intern
+  let before_save_hook = "before-save-hook" |> Symbol.intern
+  let emacs_startup_hook = "emacs-startup-hook" |> Symbol.intern
+  let focus_in_hook = "focus-in-hook" |> Symbol.intern
+  let kill_buffer_hook = "kill-buffer-hook" |> Symbol.intern
+  let post_command_hook = "post-command-hook" |> Symbol.intern
+
+  let window_configuration_change_hook =
     "window-configuration-change-hook" |> Symbol.intern
-  and window_scroll_functions = "window-scroll-functions" |> Symbol.intern
+  ;;
+
+  let window_scroll_functions = "window-scroll-functions" |> Symbol.intern
 end
 
 include Hook0
@@ -85,7 +88,7 @@ module Function = struct
 
   let funcall (type a) ({ symbol; hook_type } : a t) (x : a) =
     let elisp_name = symbol |> Symbol.name in
-    let open Funcall in
+    let open Funcall.Wrap in
     match hook_type, x with
     | Normal, () -> (elisp_name <: nullary @-> return nil) ()
     | Window, { window; start } ->
@@ -104,7 +107,7 @@ module Where = struct
 end
 
 let remove_hook =
-  Funcall.("remove-hook" <: Symbol.t @-> Symbol.t @-> bool @-> return nil)
+  Funcall.Wrap.("remove-hook" <: Symbol.t @-> Symbol.t @-> bool @-> return nil)
 ;;
 
 let remove ?(buffer_local = false) t function_ =
@@ -123,7 +126,7 @@ let make_one_shot_function_symbol function_ =
 ;;
 
 let add_hook =
-  Funcall.("add-hook" <: Symbol.t @-> Symbol.t @-> bool @-> bool @-> return nil)
+  Funcall.Wrap.("add-hook" <: Symbol.t @-> Symbol.t @-> bool @-> bool @-> return nil)
 ;;
 
 let add ?(buffer_local = false) ?(one_shot = false) ?(where = Where.Start) t function_ =
@@ -157,7 +160,7 @@ let add ?(buffer_local = false) ?(one_shot = false) ?(where = Where.Start) t fun
 let clear t = Current_buffer.set_value t.var []
 
 let run =
-  let run_hooks = Funcall.("run-hooks" <: Symbol.t @-> return nil) in
+  let run_hooks = Funcall.Wrap.("run-hooks" <: Symbol.t @-> return nil) in
   fun t ->
     let symbol = t |> symbol in
     Value.Private.run_outside_async [%here] (fun () -> run_hooks symbol)

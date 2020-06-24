@@ -7,5 +7,5 @@ include Value.Make_subtype (struct
     let is_in_subtype = Value.is_event
   end)
 
-let description = Funcall.("single-key-description" <: t @-> return string)
+let description = Funcall.Wrap.("single-key-description" <: t @-> return string)
 let sexp_of_t t = [%sexp (description t : string)]

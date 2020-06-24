@@ -25,17 +25,19 @@ module Test = struct
   ;;
 end
 
-let make_hash_table = Funcall.("make-hash-table" <: Symbol.t @-> Symbol.t @-> return t)
+let make_hash_table =
+  Funcall.Wrap.("make-hash-table" <: Symbol.t @-> Symbol.t @-> return t)
+;;
 
 let create ?(test = Test.Eql) () =
   make_hash_table (":test" |> Symbol.intern) (Test.to_symbol test)
 ;;
 
-let keys = Funcall.("hash-table-keys" <: t @-> return (list value))
-let gethash = Funcall.("gethash" <: value @-> t @-> return (nil_or value))
+let keys = Funcall.Wrap.("hash-table-keys" <: t @-> return (list value))
+let gethash = Funcall.Wrap.("gethash" <: value @-> t @-> return (nil_or value))
 let find t key = gethash key t
-let puthash = Funcall.("puthash" <: value @-> value @-> t @-> return nil)
+let puthash = Funcall.Wrap.("puthash" <: value @-> value @-> t @-> return nil)
 let set t ~key ~data = puthash key data t
-let length = Funcall.("hash-table-count" <: t @-> return int)
-let remhash = Funcall.("remhash" <: value @-> t @-> return nil)
+let length = Funcall.Wrap.("hash-table-count" <: t @-> return int)
+let remhash = Funcall.Wrap.("remhash" <: value @-> t @-> return nil)
 let remove t key = remhash key t

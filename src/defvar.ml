@@ -39,7 +39,7 @@ let defvar
 ;;
 
 let defvaralias =
-  Funcall.("defvaralias" <: Symbol.t @-> Symbol.t @-> nil_or string @-> return nil)
+  Funcall.Wrap.("defvaralias" <: Symbol.t @-> Symbol.t @-> nil_or string @-> return nil)
 ;;
 
 let defvaralias symbol here ?docstring ~alias_of () =

@@ -1,5 +1,5 @@
 open! Core_kernel
-open! Import
+open! Import0
 
 include (
   Int :
@@ -10,7 +10,4 @@ include (
     include Hashable.S with type t := t
   end)
 
-let type_ = Value.Type.int
-let t = type_
-let of_value_exn = Value.Type.of_value_exn type_
-let to_value = Value.Type.to_value type_
+include (val Valueable.of_type Value.Type.int)

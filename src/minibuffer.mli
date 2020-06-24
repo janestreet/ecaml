@@ -36,7 +36,7 @@ module History_length : sig
 end
 
 (** [(describe-variable 'history-length)] *)
-val history_length : History_length.t Var.t
+val history_length : History_length.t Customization.t
 
 (** [(describe-function 'read-from-minibuffer)]
     [(Info-goto-node "(elisp)Text from Minibuffer")] *)

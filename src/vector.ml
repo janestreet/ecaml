@@ -13,9 +13,9 @@ include Value.Make_subtype (struct
     let is_in_subtype = Value.is_vector
   end)
 
-let make_vector = Funcall.("make-vector" <: int @-> value @-> return t)
+let make_vector = Funcall.Wrap.("make-vector" <: int @-> value @-> return t)
 let create ~len value = make_vector len value
-let length = Funcall.("length" <: t @-> return int)
+let length = Funcall.Wrap.("length" <: t @-> return int)
 
 let bounds_check t i name =
   let length = length t in
@@ -29,14 +29,14 @@ let bounds_check t i name =
           ~vector:(t : t)]
 ;;
 
-let aref = Funcall.("aref" <: t @-> int @-> return value)
+let aref = Funcall.Wrap.("aref" <: t @-> int @-> return value)
 
 let get t i =
   bounds_check t i "get";
   aref t i
 ;;
 
-let aset = Funcall.("aset" <: t @-> int @-> value @-> return nil)
+let aset = Funcall.Wrap.("aset" <: t @-> int @-> value @-> return nil)
 
 let set t i v =
   bounds_check t i "set";
