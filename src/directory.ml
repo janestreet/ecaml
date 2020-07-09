@@ -66,3 +66,18 @@ let with_temp_dir sync_or_async ~f ~prefix ~suffix =
     ~f:(fun () -> f filename)
     ~finally:(fun () -> delete filename ~recursive:true)
 ;;
+
+let for_temp_files_customization =
+  Customization.Wrap.("temporary-file-directory" <: Filename.t)
+;;
+
+let for_temp_files () = Customization.value for_temp_files_customization
+
+let for_temp_files_of_current_buffer =
+  let function_symbol = Symbol.intern "temporary-file-directory" in
+  let funcall =
+    Funcall.Wrap.("temporary-file-directory" <: nullary @-> return Filename.t)
+  in
+  fun () ->
+    if Symbol.function_is_defined function_symbol then funcall () else for_temp_files ()
+;;

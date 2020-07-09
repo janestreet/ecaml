@@ -88,6 +88,15 @@ let file_coding_system =
 ;;
 
 let transient_mark_mode = Customization.Wrap.("transient-mark-mode" <: bool)
+
+let () =
+  (* Emacs, by default, turns [transient-mark-mode] off in batch mode and on in
+     interactive mode.  Who knows why.  The difference causes pointless rough edges in our
+     integration tests, which run in batch mode and where we expect behavior to match
+     interactive mode.  So, we turn [transient-mark-mode] on in tests. *)
+  if am_running_test then Customization.set_value transient_mark_mode true
+;;
+
 let buffer_undo_list = Buffer_local.Wrap.("buffer-undo-list" <: value)
 let is_undo_enabled () = not (Value.eq (get_buffer_local buffer_undo_list) Value.t)
 let buffer_disable_undo = Funcall.Wrap.("buffer-disable-undo" <: nullary @-> return nil)

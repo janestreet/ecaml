@@ -53,17 +53,5 @@ val make_relative : t -> relative_to:t -> t
     [(Info-goto-node "(elisp)File Name Expansion")] *)
 val expand : t -> in_dir:t -> t
 
-(** [(describe-function 'temporary-file-directory)].  Beware, if the current buffer is a
-    tramp buffer on a remote host, then the temporary file directory will be on the remote
-    host.  This function is only available starting in emacs 26.  In earlier versions,
-    this reads the variable [(describe-variable 'temporary-file-directory)]. *)
-val temporary_directory_for_current_buffer : unit -> t
-
-(** [(describe-variable 'temporary-file-directory)].  The directory to use for writing
-    temporary files. *)
-val temporary_directory_var : t Var.t
-
-val temporary_directory : unit -> t
-
 (** [(describe-function 'read-file-name)] *)
 val read : prompt:string -> t Deferred.t

@@ -27,6 +27,19 @@ let end_ = wrap_var Vars.end_
 let end_regexp = wrap_var Vars.end_regexp
 let multi_line = wrap_var Vars.multi_line
 
+module Terminated_by = struct
+  type t =
+    | End_of_line (* line comments *)
+    | Comment_end (* block comments *)
+  [@@deriving sexp_of]
+
+  let in_current_buffer () =
+    match end_ () with
+    | "" -> End_of_line
+    | _ -> Comment_end
+  ;;
+end
+
 let set_current_buffer_options ~start:s ~end_:e ~is_multi_line:m =
   Current_buffer.set_value Vars.start s;
   Current_buffer.set_value Vars.end_ e;
@@ -49,12 +62,26 @@ let goto_end_exn =
   fun () ->
     normalize_vars ();
     let comment_end =
-      Current_buffer.save_excursion Sync (fun () ->
-        match
-          Point.search_forward_regexp (Current_buffer.value_exn Vars.end_regexp)
-        with
-        | false -> raise_s [%sexp "Could not find end of comment"]
-        | true -> Point.get ())
+      match Terminated_by.in_current_buffer () with
+      | Comment_end ->
+        Current_buffer.save_excursion Sync (fun () ->
+          match
+            Point.search_forward_regexp (Current_buffer.value_exn Vars.end_regexp)
+          with
+          | false -> raise_s [%sexp "Could not find end of comment"]
+          | true -> Point.get ())
+      | End_of_line ->
+        let rec loop ~prev_line_end =
+          Point.forward_line 1;
+          Point.end_of_line ();
+          let eol = Point.get () in
+          Point.beginning_of_line ();
+          match Point.search_forward_regexp ~bound:eol (start_regexp ()) with
+          | false -> prev_line_end
+          | true -> loop ~prev_line_end:eol
+        in
+        Point.end_of_line ();
+        loop ~prev_line_end:(Point.get ())
     in
     Point.goto_char comment_end;
     comment_enter_backward ()

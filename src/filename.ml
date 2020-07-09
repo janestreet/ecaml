@@ -46,18 +46,6 @@ let make_relative t ~relative_to = file_relative_name t relative_to
 let expand_file_name = Funcall.Wrap.("expand-file-name" <: t @-> t @-> return t)
 let expand t ~in_dir = expand_file_name t in_dir
 
-let temporary_directory_var = Var.Wrap.("temporary-file-directory" <: t)
-let temporary_directory () = Current_buffer0.value_exn temporary_directory_var
-
-let temporary_directory_for_current_buffer =
-  let function_symbol = Symbol.intern "temporary-file-directory" in
-  let funcall = Funcall.Wrap.("temporary-file-directory" <: nullary @-> return t) in
-  fun () ->
-    if Symbol.function_is_defined function_symbol
-    then funcall ()
-    else temporary_directory ()
-;;
-
 let read =
   let read_file_name = Funcall.Wrap.("read-file-name" <: string @-> return t) in
   fun ~prompt ->

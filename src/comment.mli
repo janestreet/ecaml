@@ -37,3 +37,12 @@ val beginning : unit -> Position.t option
 
 (** Assuming the point is currently in a comment, move to the end of its content. *)
 val goto_end_exn : unit -> unit
+
+module Terminated_by : sig
+  type t =
+    | End_of_line (** Line comments terminate at end of line *)
+    | Comment_end (** Block comments terminate with a particular [comment-end] syntax. *)
+  [@@deriving sexp_of]
+
+  val in_current_buffer : unit -> t
+end

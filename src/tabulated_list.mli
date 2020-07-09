@@ -42,16 +42,6 @@ module Column : sig
     -> header:string
     -> ('record -> Text.t)
     -> 'record t
-
-  (** [YYYY-MM-DD HH:mm:ss.mmm] *)
-  val time_ns
-    :  ?align_right:bool
-    -> ?pad_right:int
-    -> ?sortable:bool
-    -> header:string
-    -> zone:Time.Zone.t
-    -> ('record -> Time_ns.t)
-    -> 'record t
 end
 
 type ('record, 'id) t

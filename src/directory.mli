@@ -42,3 +42,17 @@ val with_temp_dir
   -> prefix:string
   -> suffix:string
   -> 'a
+
+(** The directory to use for temporary files.
+    [(describe-variable 'temporary-file-directory)].  *)
+val for_temp_files_customization : Filename.t Customization.t
+
+(** [for_temp_files () = Customization.value for_temp_files_customization] *)
+val for_temp_files : unit -> Filename.t
+
+(** You probably want [for_temp_files].  Beware, if the current buffer is a tramp buffer
+    on a remote host, then the temporary file directory will be on the remote host.  This
+    function is only available starting in emacs 26.  In earlier versions, this reads the
+    variable [temporary-file-directory].
+    [(describe-function 'temporary-file-directory)]. *)
+val for_temp_files_of_current_buffer : unit -> Filename.t

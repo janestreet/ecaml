@@ -172,13 +172,6 @@ module Column = struct
        | [] | [ _ ] -> str)
       |> String.strip)
   ;;
-
-  let time_ns ?align_right ?pad_right ?sortable ~header ~zone field_of_record =
-    create ?align_right ?pad_right ?sortable ~header (fun record ->
-      let time = field_of_record record in
-      let date, ofday = Time_ns.to_date_ofday ~zone time in
-      concat ~sep:" " [ Date.to_string date; Time_ns.Ofday.to_millisecond_string ofday ])
-  ;;
 end
 
 type ('record, 'id) t =

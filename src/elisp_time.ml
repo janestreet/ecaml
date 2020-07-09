@@ -19,10 +19,13 @@ include Value.Make_subtype (struct
 let t = type_
 
 let format_time_string =
-  Funcall.Wrap.("format-time-string" <: string @-> t @-> return string)
+  Funcall.Wrap.("format-time-string" <: string @-> t @-> nil_or string @-> return string)
 ;;
 
-let format t ~format_string = format_time_string format_string t
+let format ?zone t ~format_string =
+  format_time_string format_string t (Option.map zone ~f:Time.Zone.name)
+;;
+
 let sexp_of_t t = [%sexp (format t ~format_string:"%F %T.%N%z" : string)]
 let ( < ) = Funcall.Wrap.("time-less-p" <: t @-> t @-> return bool)
 let ( > ) t1 t2 = t2 < t1

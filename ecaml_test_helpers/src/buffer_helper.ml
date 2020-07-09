@@ -25,8 +25,14 @@ let show_buffer ~block_out =
       let start = Position.clamp_exn position ~min ~max in
       let end_ = Position.clamp_exn (Position.add position 1) ~min ~max in
       Point.goto_char start;
+      let contains_newline =
+        Current_buffer.contents ~start ~end_ ()
+        |> Text.to_utf8_bytes
+        |> String.is_substring ~substring:"\n"
+      in
       Current_buffer.delete_region ~start ~end_;
-      Point.insert utf8_full_block_U2588);
+      Point.insert utf8_full_block_U2588;
+      if contains_newline then Point.insert "\n");
     message (Current_buffer.contents () |> Text.to_utf8_bytes))
 ;;
 

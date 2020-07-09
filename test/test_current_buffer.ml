@@ -6,29 +6,9 @@ open! Current_buffer
 let show () = print_s [%sexp (get () : Buffer.t)]
 let show_point () = print_s [%message "" ~point:(Point.get () : Position.t)]
 
-let%expect_test "[set_transient_mark_mode], [transient_mark_mode_is_enabled]" =
+let%expect_test "[transient_mark_mode] is [true] in tests" =
   let show () = print_s [%sexp (Customization.value transient_mark_mode : bool)] in
   show ();
-  [%expect {| false |}];
-  Current_buffer.set_temporarily_to_temp_buffer Sync (fun () ->
-    show ();
-    [%expect {| false |}];
-    Current_buffer.set_temporarily_to_temp_buffer Sync (fun () ->
-      show ();
-      [%expect {| false |}];
-      set_value (transient_mark_mode |> Customization.var) true;
-      show ();
-      [%expect {| true |}]);
-    show ();
-    [%expect {| true |}]);
-  show ();
-  [%expect {| true |}];
-  return ()
-;;
-
-let%expect_test "enable transient-mark-mode for the duration of this file" =
-  set_value (transient_mark_mode |> Customization.var) true;
-  print_s [%sexp (Customization.value transient_mark_mode : bool)];
   [%expect {| true |}];
   return ()
 ;;
