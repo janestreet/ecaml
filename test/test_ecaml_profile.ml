@@ -67,8 +67,7 @@ let%expect_test "tag-frame-function" =
     Sync
     Ecaml_profile.Private.tag_function
     (Some
-       (Defun.lambda_nullary [%here] (Returns Value.Type.string) (fun () ->
-          "hello world")))
+       (Defun.lambda_nullary [%here] (Returns Value.Type.string) (fun () -> "hello world")))
     ~f:(fun () ->
       Current_buffer.set_temporarily_to_temp_buffer Sync (fun () ->
         test_setup ~f:(fun clock ->

@@ -38,9 +38,7 @@ let%expect_test "mutual recursion between Emacs and OCaml" =
 let eval_string s = s |> Form.Blocking.eval_string
 
 let emacs_raise () =
-  Funcall.Wrap.("signal" <: Symbol.t @-> int @-> return nil)
-    ("error" |> Symbol.intern)
-    13
+  Funcall.Wrap.("signal" <: Symbol.t @-> int @-> return nil) ("error" |> Symbol.intern) 13
 ;;
 
 let emacs_try_with =
@@ -49,8 +47,7 @@ let emacs_try_with =
 ;;
 
 let ocaml_raise =
-  lambda_nullary_nil [%here] (fun () -> raise_s [%message "raising"])
-  |> Function.to_value
+  lambda_nullary_nil [%here] (fun () -> raise_s [%message "raising"]) |> Function.to_value
 ;;
 
 let%expect_test "raising from Emacs to OCaml" =

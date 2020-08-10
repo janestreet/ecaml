@@ -83,10 +83,7 @@ end = struct
   [@@deriving sexp_of]
 
   let create () =
-    { mutex = Mutex.create ()
-    ; wake_up = Condition.create ()
-    ; scheduler = Scheduler.t ()
-    }
+    { mutex = Mutex.create (); wake_up = Condition.create (); scheduler = Scheduler.t () }
   ;;
 
   let critical_section t ~f =
@@ -435,8 +432,7 @@ module Block_on_async = struct
         in
         let deferred =
           Async.(
-            Monitor.try_with ~extract_exn:true ~run:`Schedule f
-            >>| Or_error.of_exn_result)
+            Monitor.try_with ~extract_exn:true ~run:`Schedule f >>| Or_error.of_exn_result)
         in
         let result = run_cycles_until_filled deferred in
         match result with
@@ -627,8 +623,7 @@ module Private = struct
     Set_once.set_exn
       Value.Private.Block_on_async.set_once
       [%here]
-      { f = Block_on_async.block_on_async ~for_testing_allow_nested_block_on_async:false
-      };
+      { f = Block_on_async.block_on_async ~for_testing_allow_nested_block_on_async:false };
     Set_once.set_exn
       Value.Private.Enqueue_foreground_block_on_async.set_once
       [%here]

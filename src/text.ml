@@ -66,8 +66,7 @@ module Face_spec = struct
 
     let compare t1 t2 =
       match t1, t2 with
-      | Face face1, Face face2 ->
-        String.compare (Face.to_name face1) (Face.to_name face2)
+      | Face face1, Face face2 -> String.compare (Face.to_name face1) (Face.to_name face2)
       | Attributes a1, Attributes a2 ->
         List.compare Face.Attribute_and_value.compare_attribute_name a1 a2
       | Face _, _ -> -1
@@ -372,10 +371,7 @@ let property_value t ~at property_name =
   else Some (value |> Property_name.of_value_exn property_name)
 ;;
 
-let text_properties_at =
-  Funcall.Wrap.("text-properties-at" <: int @-> t @-> return value)
-;;
-
+let text_properties_at = Funcall.Wrap.("text-properties-at" <: int @-> t @-> return value)
 let properties t ~at = text_properties_at at t |> Property.of_property_list_exn
 
 let get_start start =
@@ -430,8 +426,7 @@ let set_properties ?start ?end_ t properties =
 
 let remove_list_of_text_properties =
   Funcall.Wrap.(
-    "remove-list-of-text-properties"
-    <: int @-> int @-> list Symbol.t @-> t @-> return nil)
+    "remove-list-of-text-properties" <: int @-> int @-> list Symbol.t @-> t @-> return nil)
 ;;
 
 let remove_properties ?start ?end_ t property_names =

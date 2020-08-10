@@ -31,10 +31,7 @@ let is_supported =
   is Funcall.Wrap.("color-supported-p" <: t @-> nil_or Frame.t @-> return bool)
 ;;
 
-let defined_colors =
-  Funcall.Wrap.("defined-colors" <: nil_or Frame.t @-> return (list t))
-;;
-
+let defined_colors = Funcall.Wrap.("defined-colors" <: nil_or Frame.t @-> return (list t))
 let defined ?on () = defined_colors on |> List.sort ~compare
 
 module RGB = struct

@@ -29,11 +29,7 @@ let forward_line_exn =
 ;;
 
 let backward_line n = forward_line (-n)
-
-let count_lines =
-  Funcall.Wrap.("count-lines" <: Position.t @-> Position.t @-> return int)
-;;
-
+let count_lines = Funcall.Wrap.("count-lines" <: Position.t @-> Position.t @-> return int)
 let count_lines ~start ~end_ = count_lines start end_
 
 let goto_line l =

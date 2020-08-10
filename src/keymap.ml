@@ -29,10 +29,7 @@ module Kind = struct
 end
 
 let make_keymap = Funcall.Wrap.("make-keymap" <: nil_or string @-> return t)
-
-let make_sparse_keymap =
-  Funcall.Wrap.("make-sparse-keymap" <: nil_or string @-> return t)
-;;
+let make_sparse_keymap = Funcall.Wrap.("make-sparse-keymap" <: nil_or string @-> return t)
 
 let create ?(kind = Kind.Sparse) ?menu_name () =
   (match kind with
@@ -83,10 +80,7 @@ module Entry = struct
       | exception _ -> Value value)
   ;;
 
-  let type_ =
-    Value.Type.create [%sexp "Keymap.Entry"] [%sexp_of: t] of_value_exn to_value
-  ;;
-
+  let type_ = Value.Type.create [%sexp "Keymap.Entry"] [%sexp_of: t] of_value_exn to_value
   let t = type_
 end
 

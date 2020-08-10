@@ -272,8 +272,7 @@ let%expect_test "[equal]" =
   let ts = [ t; nil; 13 |> of_int_exn; list (List.init 5 ~f:of_int_exn) ] in
   List.iter ts ~f:(fun t1 ->
     List.iter ts ~f:(fun t2 ->
-      print_s
-        [%message "equal" ~_:(t1 : t) ~_:(t2 : t) "-->" ~_:(equal t1 t2 : bool)]));
+      print_s [%message "equal" ~_:(t1 : t) ~_:(t2 : t) "-->" ~_:(equal t1 t2 : bool)]));
   [%expect
     {|
     (equal t t --> true)
@@ -610,10 +609,7 @@ let%expect_test "rendering OCaml exceptions in Emacs and Ocaml" =
                  {v
                    foo: (a b), c, d
                  v} *)
-              printf
-                "%s: %s\n"
-                string
-                (concat ~sep:", " (List.map rest ~f:prin1_to_string)))
+              printf "%s: %s\n" string (concat ~sep:", " (List.map rest ~f:prin1_to_string)))
        | _ -> require [%here] false)
   in
   test [%message "foo"];

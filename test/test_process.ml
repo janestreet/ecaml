@@ -120,9 +120,7 @@ let%expect_test "[extend_sentinel] runs sentinel in the background" =
         print_s [%message "sentinel ran"];
         require [%here] (Background.am_running_in_background ());
         Sync_or_async.return sync_or_async ());
-    while_
-      (fun () -> not !sentinel_ran)
-      ~do_:(fun () -> Timer.sleep_for (0.01 |> sec_ns))
+    while_ (fun () -> not !sentinel_ran) ~do_:(fun () -> Timer.sleep_for (0.01 |> sec_ns))
   in
   let%bind () = test Sync in
   [%expect {| "sentinel ran" |}];

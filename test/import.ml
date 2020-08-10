@@ -39,8 +39,7 @@ let show_last_match ?subexp () =
           (Or_error.try_with (fun () -> Last_match.text_exn ?subexp ())
            : Text.t Or_error.t)
         ~start:
-          (Or_error.try_with (fun () -> Last_match.start_exn ?subexp ())
-           : int Or_error.t)
+          (Or_error.try_with (fun () -> Last_match.start_exn ?subexp ()) : int Or_error.t)
         ~end_:
           (Or_error.try_with (fun () -> Last_match.end_exn ?subexp ()) : int Or_error.t)]
 ;;

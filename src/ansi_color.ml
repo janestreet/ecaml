@@ -186,8 +186,7 @@ end = struct
          ~docstring
          ~group:customization_group
          ~type_:Value.Type.value
-         ~customization_type:
-           (Vector (List.init 8 ~f:(fun _ -> Customization.Type.Color)))
+         ~customization_type:(Vector (List.init 8 ~f:(fun _ -> Customization.Type.Color)))
          ~standard_value
          ()
        : _ Customization.t)
@@ -663,11 +662,7 @@ end = struct
     ;;
 
     let sexp_of_t
-          { attributes_state
-          ; next_state_by_code
-          ; text_properties
-          ; add_text_properties = _
-          }
+          { attributes_state; next_state_by_code; text_properties; add_text_properties = _ }
       =
       [%message.omit_nil
         ""
@@ -817,9 +812,8 @@ module Colorization_backend : sig
   val end_of_input : t -> bool
 
   val create
-    :  mode:[ `Use_temp_file of string
-            | `In_place_colorization of Char_code.t array * int
-            ]
+    :  mode:
+         [ `Use_temp_file of string | `In_place_colorization of Char_code.t array * int ]
     -> t
 
   val finished : t -> [ `Use_temp_file of Temp_file_state.t | `In_place_colorization ]
@@ -933,9 +927,7 @@ end = struct
       t.output_pos <- end_)
   ;;
 
-  let rewind_input t =
-    if t.input_pos > t.region_start then t.input_pos <- t.input_pos - 1
-  ;;
+  let rewind_input t = if t.input_pos > t.region_start then t.input_pos <- t.input_pos - 1
 
   let print_invalid_escape t ~drop_unsupported_escapes ~why ~verbose =
     match drop_unsupported_escapes, why with
@@ -1193,8 +1185,7 @@ let color_region ~start ~end_ ~use_temp_file ~preserve_state ~drop_unsupported_e
       let input = buffer_contents |> Text.to_char_array in
       create
         ~mode:(`In_place_colorization (input, Position.to_int start))
-        ?state_machine:
-          (Option.map colorization_state ~f:Colorization_state.state_machine)
+        ?state_machine:(Option.map colorization_state ~f:Colorization_state.state_machine)
         ~allow_partial_trailing_escape:preserve_state
         ~drop_unsupported_escapes
         ()
@@ -1212,9 +1203,7 @@ let color_region ~start ~end_ ~use_temp_file ~preserve_state ~drop_unsupported_e
     in
     let current_buffer = Current_buffer.get () in
     let update_marker m p = Marker.set m current_buffer (Position.of_int_exn p) in
-    update_marker
-      colorization_state.last_end
-      (Colorization_backend.last_output t.backend);
+    update_marker colorization_state.last_end (Colorization_backend.last_output t.backend);
     update_marker colorization_state.last_colorized last_colorized)
   else ignore (normal t : int);
   let colorizing = "Colorizing ..." in

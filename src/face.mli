@@ -228,10 +228,7 @@ end
 val all_defined : unit -> t list
 
 (** [(describe-function 'face-attribute)] *)
-val font_family_list
-  :  ?on:Frame.t (** default is selected frame *)
-  -> unit
-  -> string list
+val font_family_list : ?on:Frame.t (** default is selected frame *) -> unit -> string list
 
 (** [(describe-function 'face-attribute)] *)
 val attribute_value

@@ -84,10 +84,7 @@ let get_property =
   Funcall.Wrap.("process-get" <: t @-> Symbol.t @-> return (nil_or value))
 ;;
 
-let set_property =
-  Funcall.Wrap.("process-put" <: t @-> Symbol.t @-> value @-> return nil)
-;;
-
+let set_property = Funcall.Wrap.("process-put" <: t @-> Symbol.t @-> value @-> return nil)
 let status = Funcall.Wrap.("process-status" <: t @-> return Status.t)
 
 module Exit_status = struct
@@ -429,8 +426,8 @@ let extend_sentinel
         match returns with
         | Returns _ ->
           run_previous_sentinel ();
-          Background.Private.mark_running_in_background [%here] ~f:(fun () ->
-            (sentinel ~event:(event |> Value.to_utf8_bytes_exn) : a))
+          Background.Private.mark_running_in_background [%here] ~f:(fun () : a ->
+            sentinel ~event:(event |> Value.to_utf8_bytes_exn))
         | Returns_deferred _ ->
           let%bind.Deferred () =
             Value.Private.run_outside_async

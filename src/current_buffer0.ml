@@ -46,14 +46,10 @@ let value_opt_exn var =
 let makunbound = Funcall.Wrap.("makunbound" <: Symbol.t @-> return nil)
 let clear_value (var : _ Var.t) = makunbound var.symbol
 let elisp_set = Funcall.Wrap.("set" <: Symbol.t @-> value @-> return nil)
-
-let set_value (var : _ Var.t) a =
-  elisp_set var.symbol (a |> Value.Type.to_value var.type_)
-;;
+let set_value (var : _ Var.t) a = elisp_set var.symbol (a |> Value.Type.to_value var.type_)
 
 let set_values vars_and_values =
-  List.iter vars_and_values ~f:(fun (Var.And_value.T (var, value)) ->
-    set_value var value)
+  List.iter vars_and_values ~f:(fun (Var.And_value.T (var, value)) -> set_value var value)
 ;;
 
 let set_values_temporarily sync_or_async vars_and_values ~f =
@@ -62,8 +58,7 @@ let set_values_temporarily sync_or_async vars_and_values ~f =
     List.map vars_and_values ~f:(fun (Var.And_value.T (var, _)) ->
       Var.And_value_option.T (var, value var))
   in
-  List.iter vars_and_values ~f:(fun (Var.And_value.T (var, value)) ->
-    set_value var value);
+  List.iter vars_and_values ~f:(fun (Var.And_value.T (var, value)) -> set_value var value);
   Sync_or_async.protect [%here] sync_or_async ~f ~finally:(fun () ->
     let new_buffer = get () in
     let buffer_changed = not (Buffer.equal old_buffer new_buffer) in

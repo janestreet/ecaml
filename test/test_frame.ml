@@ -8,19 +8,19 @@ let shows ts = List.iter ts ~f:show
 
 let%expect_test "[all_live]" =
   shows (all_live ());
-  [%expect {| "#<frame F1 0xc4e880>" |}];
+  [%expect {| "#<frame F1 0xc5dac0>" |}];
   return ()
 ;;
 
 let%expect_test "[all_visible]" =
   shows (all_visible ());
-  [%expect {| "#<frame F1 0xc4e880>" |}];
+  [%expect {| "#<frame F1 0xc5dac0>" |}];
   return ()
 ;;
 
 let%expect_test "[selected]" =
   show (selected ());
-  [%expect {| "#<frame F1 0xc4e880>" |}];
+  [%expect {| "#<frame F1 0xc5dac0>" |}];
   return ()
 ;;
 

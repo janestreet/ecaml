@@ -182,10 +182,7 @@ module Returns = struct
     | Returns_deferred type_ -> [%message "Returns_deferred" (type_ : _ Value.Type.t)]
   ;;
 
-  let returns
-        (type a b)
-        (sync_or_async : (a, b) Sync_or_async.t)
-        (type_ : a Value.Type.t)
+  let returns (type a b) (sync_or_async : (a, b) Sync_or_async.t) (type_ : a Value.Type.t)
     : (a, b) t
     =
     match sync_or_async with

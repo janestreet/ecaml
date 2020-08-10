@@ -1036,8 +1036,7 @@ let%expect_test "multibyte character handling" =
       ();
     print_s
       [%sexp
-        (Current_buffer.contents ~text_properties:true ~end_:(Point.get ()) ()
-         : Text.t)]);
+        (Current_buffer.contents ~text_properties:true ~end_:(Point.get ()) () : Text.t)]);
   [%expect
     {|
     ("\208\150x" 1 2 (face (:foreground red3) font-lock-face (:foreground red3))) |}];

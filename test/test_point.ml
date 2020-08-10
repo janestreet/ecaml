@@ -144,8 +144,7 @@ let%expect_test "[forward_sexp_exn], [backward_sexp_exn] raise" =
     forward_sexp_exn 3;
     [%expect {| (point 6) |}];
     show_raise (fun () -> forward_sexp_exn 1);
-    [%expect
-      {| (raised (scan-error ("Containing expression ends prematurely" 6 7))) |}]);
+    [%expect {| (raised (scan-error ("Containing expression ends prematurely" 6 7))) |}]);
   return ()
 ;;
 

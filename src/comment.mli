@@ -23,11 +23,7 @@ val end_regexp : unit -> Regexp.t
     [(Info-goto-node "(emacs)Options for Comments")] *)
 val multi_line : unit -> bool
 
-val set_current_buffer_options
-  :  start:string
-  -> end_:string
-  -> is_multi_line:bool
-  -> unit
+val set_current_buffer_options : start:string -> end_:string -> is_multi_line:bool -> unit
 
 (** Move the point to the beginning of the current comment, and return the position of the
     comment starter.

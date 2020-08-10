@@ -101,11 +101,7 @@ let buffer_undo_list = Buffer_local.Wrap.("buffer-undo-list" <: value)
 let is_undo_enabled () = not (Value.eq (get_buffer_local buffer_undo_list) Value.t)
 let buffer_disable_undo = Funcall.Wrap.("buffer-disable-undo" <: nullary @-> return nil)
 let buffer_enable_undo = Funcall.Wrap.("buffer-enable-undo" <: nullary @-> return nil)
-
-let set_undo_enabled bool =
-  if bool then buffer_enable_undo () else buffer_disable_undo ()
-;;
-
+let set_undo_enabled bool = if bool then buffer_enable_undo () else buffer_disable_undo ()
 let undo_list () = get_buffer_local buffer_undo_list
 let undo = Funcall.Wrap.("undo" <: int @-> return nil)
 let add_undo_boundary = Funcall.Wrap.("undo-boundary" <: nullary @-> return nil)
@@ -156,11 +152,7 @@ let delete_region =
 ;;
 
 let delete_region ~start ~end_ = delete_region start end_
-
-let kill_region =
-  Funcall.Wrap.("kill-region" <: Position.t @-> Position.t @-> return nil)
-;;
-
+let kill_region = Funcall.Wrap.("kill-region" <: Position.t @-> Position.t @-> return nil)
 let kill_region ~start ~end_ = kill_region start end_
 let widen = Funcall.Wrap.("widen" <: nullary @-> return nil)
 let save_current_buffer f = Save_wrappers.save_current_buffer f
@@ -179,8 +171,7 @@ let rename_exn ?(unique = false) () ~name = rename_buffer name unique
 
 let put_text_property =
   Funcall.Wrap.(
-    "put-text-property"
-    <: Position.t @-> Position.t @-> Symbol.t @-> value @-> return nil)
+    "put-text-property" <: Position.t @-> Position.t @-> Symbol.t @-> value @-> return nil)
 ;;
 
 let set_text_property ?start ?end_ property_name property_value =

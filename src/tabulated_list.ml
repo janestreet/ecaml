@@ -75,8 +75,7 @@ module Column = struct
           ~name:[%sexp "Column.Format"]
           ~of_:(fun (header, (width, (sortable, props))) ->
             let t = format ~header ~sortable ~width () in
-            List.fold props ~init:t ~f:(fun t ->
-              function
+            List.fold props ~init:t ~f:(fun t -> function
               | Align_right align_right -> { t with align_right }
               | Pad_right pad_right -> { t with pad_right }))
           ~to_:(fun { align_right; header; pad_right; sortable; width } ->
@@ -112,14 +111,7 @@ module Column = struct
     }
   [@@deriving fields]
 
-  let text
-        ?align_right
-        ?max_width
-        ?min_width
-        ?pad_right
-        ?sortable
-        ~header
-        field_of_record
+  let text ?align_right ?max_width ?min_width ?pad_right ?sortable ~header field_of_record
     =
     { field_of_record
     ; format =

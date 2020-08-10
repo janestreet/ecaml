@@ -138,7 +138,8 @@ module Last_match = struct
     | None ->
       raise_s
         [%message
-          (concat [ "[Regexp.Last_match."; name; "_exn] got [subexp] that did not match" ])
+          (concat
+             [ "[Regexp.Last_match."; name; "_exn] got [subexp] that did not match" ])
             (subexp : int)]
   ;;
 

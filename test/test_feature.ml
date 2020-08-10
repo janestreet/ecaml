@@ -133,6 +133,7 @@ let%expect_test "[all_provided]" =
  slovak
  subr-x
  syntax
+ system-font-setting
  tabulated-list
  tai-viet
  term/common-win
@@ -142,6 +143,7 @@ let%expect_test "[all_provided]" =
  text-properties
  thai
  thingatpt
+ threads
  tibetan
  timer
  tool-bar

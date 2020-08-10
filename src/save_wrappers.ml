@@ -71,9 +71,7 @@ let save_window_excursion sync_or_async f =
   save_ sync_or_async Q.save_window_excursion [] f
 ;;
 
-let save_selected_window sync_or_async f =
-  save_ sync_or_async Q.save_selected_window [] f
-;;
+let save_selected_window sync_or_async f = save_ sync_or_async Q.save_selected_window [] f
 
 let with_selected_frame sync_or_async frame f =
   save_ sync_or_async Q.with_selected_frame [ frame ] f

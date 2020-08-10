@@ -435,12 +435,8 @@ let%expect_test "[of_rx]" =
       in
       print_s [%message (t : t)];
       List.iter [ "foobarbaz"; "foobaz"; "foo" ] ~f:(fun input ->
-        let matches =
-          does_match ~update_last_match:true t (Text.of_utf8_bytes input)
-        in
-        let submatch_1 =
-          Option.try_with (fun () -> Last_match.text_exn ~subexp:1 ())
-        in
+        let matches = does_match ~update_last_match:true t (Text.of_utf8_bytes input) in
+        let submatch_1 = Option.try_with (fun () -> Last_match.text_exn ~subexp:1 ()) in
         print_s
           [%message (input : string) (matches : bool) (submatch_1 : Text.t option)]))
     [ Rx.Submatch (Exactly "bar")

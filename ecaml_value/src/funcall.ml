@@ -146,9 +146,7 @@ module Wrap = struct
        | false -> Cons (type_, t))
     | Nullary _ -> raise_s [%message "Cannot add arguments to nullary function."]
     | Return return_type ->
-      (match
-         Type_equal.Id.same_witness (Value.Type.id type_) (Value.Type.id nullary)
-       with
+      (match Type_equal.Id.same_witness (Value.Type.id type_) (Value.Type.id nullary) with
        | Some Type_equal.T -> Nullary return_type
        | None -> Cons (type_, t))
   ;;

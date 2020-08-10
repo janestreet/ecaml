@@ -174,8 +174,7 @@ module Height = struct
          | f -> Scale_underlying_face f
          | exception _ ->
            raise_s
-             [%message
-               "[Face.Height.of_value_exn] got unexpected value" (value : Value.t)]))
+             [%message "[Face.Height.of_value_exn] got unexpected value" (value : Value.t)]))
   ;;
 
   let to_value = function
@@ -517,8 +516,7 @@ module Attribute = struct
   let is_relative t a = face_attribute_relative_p (t |> to_symbol) (a |> to_value t)
 
   let merge_face_attribute =
-    Funcall.Wrap.(
-      "merge-face-attribute" <: Symbol.t @-> value @-> value @-> return value)
+    Funcall.Wrap.("merge-face-attribute" <: Symbol.t @-> value @-> value @-> return value)
   ;;
 
   let merge t a1 a2 =
@@ -545,8 +543,7 @@ module Attribute_and_value = struct
     | exception _ ->
       raise_s
         [%message
-          "[Face.Attribute_and_value.of_value_exn] got unexpected value"
-            (value : Value.t)]
+          "[Face.Attribute_and_value.of_value_exn] got unexpected value" (value : Value.t)]
   ;;
 
   let sort_by_attribute_name ts =

@@ -125,7 +125,6 @@ static struct custom_operations emacs_value_ops = {
 
 // caml_nil cannot conflict with any ordinary [Value.t] because it is an immediate value.
 static value caml_nil = Val_unit;
-static const emacs_value emacs_nil = (emacs_value)NULL;
 
 emacs_value ecaml_cache_symbol_and_keep_alive(emacs_env* env, emacs_value *cache, char* symbol) {
   if (*cache == NULL) {
@@ -134,20 +133,18 @@ emacs_value ecaml_cache_symbol_and_keep_alive(emacs_env* env, emacs_value *cache
   return *cache;
 }
 
-/* [ecaml_emacs_t] is used in generated stubs when an input argument is an OCaml [bool] in
-   order to avoid unnecessarily allocation of [emacs_value]'s pointing to [t]. */
-emacs_value ecaml_emacs_t(emacs_env* env) {
+static emacs_value emacs_nil (emacs_env* env) {
   static emacs_value cache = NULL;
-  return ecaml_cache_symbol_and_keep_alive(env, &cache, "t");
+  return ecaml_cache_symbol_and_keep_alive(env, &cache, "nil");
 }
 
-static value ecaml_nil()
+static value ecaml_nil(emacs_env* env)
 {
   /* We allocate [caml_nil] the first time it is used. */
   if (Is_long(caml_nil)) {
     caml_register_generational_global_root(&caml_nil);
     caml_modify_generational_global_root(&caml_nil, caml_alloc_custom(&emacs_value_ops, sizeof(emacs_value), 0, 1));
-    Emacs_val(caml_nil) = emacs_nil;
+    Emacs_val(caml_nil) = emacs_nil(env);
   }
   return caml_nil;
 }
@@ -155,14 +152,14 @@ static value ecaml_nil()
 static bool is_emacs_integer(emacs_env* env, emacs_value val) {
   static emacs_value cache = NULL;
   emacs_value integer_type = ecaml_cache_symbol_and_keep_alive(env, &cache, "integer");
-  return (env->type_of(env, val) == integer_type);
+  return (env->eq(env, env->type_of(env, val), integer_type));
 }
 
 static value ocaml_of_emacs(emacs_env* env, emacs_value val) {
   CAMLparam0();
   CAMLlocal1(v);
-  if (val == emacs_nil) {
-    v = ecaml_nil();
+  if (! (env->is_not_nil(env, val))) {
+    v = ecaml_nil(env);
   } else if (is_emacs_integer(env, val)) {
     /* This is ok because emacs integers range is subset of OCaml integer range and we
        have tests for it. */
@@ -265,22 +262,17 @@ ecaml_non_local_exit_throw(value tag, value throw_value)
    [Out_of_memory] with every allocation, but there is no documented way to either
    allocate OCaml blocks without raising [Out_of_memory] or catch OCaml exceptions from
    C. */
-static void if_exception_signal_emacs_and_use_ecaml_nil(emacs_env* maybe_env, char* symbol_string, value *ret) {
+static void if_exception_signal_emacs_and_use_ecaml_nil(emacs_env* env, char* symbol_string, value *ret) {
   if(Is_exception_result(*ret)) {
-    *ret = Val_unit; /* I don't know if we can change the set of roots (in emacs_nil())
-                        while *ret contains an exception result, so let's make it contain
-                        some random valid value instead to be on the safe side. */
-    *ret = ecaml_nil();
-    if (maybe_env != NULL) {
-      emacs_env *env = maybe_env;
-      /* We ignore the exception here, but there is code in [ecaml_callback.ml] that
+    *ret = ecaml_nil(env);
+    /* We ignore the exception here, but there is code in [ecaml_callback.ml] that
          attempts to report the exception before raising it. */
-      env->non_local_exit_signal(env,
+    env->non_local_exit_signal(env,
                                  env->intern(env, "uncaught-ocaml-exception"),
                                  env->intern(env, symbol_string));
-    }
   }
 }
+
 
 static emacs_value
 Fdispatch_assuming_lock_is_held(emacs_env* env, ptrdiff_t nargs, emacs_value args[],
@@ -301,7 +293,7 @@ Fdispatch_assuming_lock_is_held(emacs_env* env, ptrdiff_t nargs, emacs_value arg
     env->non_local_exit_signal
       (env, env->intern(env, "wrong-number-of-arguments"), signal_data);
 
-    CAMLreturnT(emacs_value, emacs_nil);
+    CAMLreturnT(emacs_value, emacs_nil(env));
   }
 
   callback_id = *((value *)env->get_user_ptr(env, args[0]));
@@ -391,11 +383,6 @@ int emacs_module_init(struct emacs_runtime *ert)
   assert(active_env == NULL);
   active_env = env;
 
-  // We assume that any emacs_value we get that is equal to NULL represents the value
-  // [nil]. Emacs's [emacs-module.c] tells us not to assume this, so we just check it at
-  // startup.
-  assert(env->intern(env, "nil") == NULL);
-
   emacs_value Qargv = env->intern(env, "argv");
   emacs_value list = env->funcall(env, env->intern(env, "symbol-value"), 1, &Qargv);
   emacs_value vect = env->funcall(env, env->intern(env, "vconcat"), 1, &list);
@@ -449,7 +436,7 @@ value ecaml_funcall(emacs_env* env, value fun, emacs_value *args, size_t nargs, 
   if (Bool_val(should_return_result)) {
     ret = ocaml_of_emacs(env, ret_val);
   } else {
-    ret = ecaml_nil();
+    ret = ecaml_nil(env);
   }
   CAMLreturn(ret);
 }
@@ -793,7 +780,7 @@ bool user_ptrp(emacs_env* env, emacs_value val)
   static emacs_value cache = NULL;
   emacs_value function = ecaml_cache_symbol_and_keep_alive (env, &cache, "user-ptrp");
   emacs_value result = env->funcall(env, function, 1, &val);
-  return !(result == emacs_nil);
+  return (env->is_not_nil(env, result));
 }
 
 CAMLprim value ecaml_project(value val)

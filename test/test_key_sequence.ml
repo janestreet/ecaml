@@ -67,9 +67,7 @@ let%expect_test "[execute]" =
     return ())
 ;;
 
-let print_am_executing () =
-  print_s [%sexp (Current_buffer.value_exn am_executing : bool)]
-;;
+let print_am_executing () = print_s [%sexp (Current_buffer.value_exn am_executing : bool)]
 
 let%expect_test "[am_executing] false" =
   print_am_executing ();
@@ -113,8 +111,7 @@ let%expect_test "[read]" =
 let%expect_test "[to_list]" =
   List.iter [ ""; "a"; "RET"; "C-c C-a" ] ~f:(fun s ->
     print_s
-      [%message
-        "" ~_:(s : string) ~_:(s |> create_exn |> to_list : Input_event.t list)]);
+      [%message "" ~_:(s : string) ~_:(s |> create_exn |> to_list : Input_event.t list)]);
   [%expect {|
     ("" ())
     (a (a))

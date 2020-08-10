@@ -52,8 +52,7 @@ let create =
         Value.nil);
   let dispatch =
     make_dispatch_function
-      ([%message
-        "call-OCaml-function" ~implemented_at:([%here] : Source_code_position.t)]
+      ([%message "call-OCaml-function" ~implemented_at:([%here] : Source_code_position.t)]
        |> Sexp.to_string)
   in
   fun here ?docstring ?interactive ~args ?optional_args ?rest_arg callback ->

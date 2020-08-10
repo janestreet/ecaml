@@ -9,7 +9,7 @@ let%expect_test "[iter], [standard]" =
   (* We ignore the last two digits of the length to reduce noise. *)
   print_s [%sexp (List.length !all / 100 * 100 : int)];
   [%expect {|
-    16_000 |}];
+    16_100 |}];
   print_s
     [%sexp
       (!all |> List.sort ~compare:String.compare |> fun l -> List.take l 100

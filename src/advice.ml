@@ -100,8 +100,5 @@ let around_funcall
                 Value.funcallN inner rest))
 ;;
 
-let advice_remove =
-  Funcall.Wrap.("advice-remove" <: Symbol.t @-> Symbol.t @-> return nil)
-;;
-
+let advice_remove = Funcall.Wrap.("advice-remove" <: Symbol.t @-> Symbol.t @-> return nil)
 let remove advice_name ~for_function = advice_remove for_function advice_name

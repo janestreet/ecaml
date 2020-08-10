@@ -113,8 +113,7 @@ let%expect_test "[defun (Returns_deferred Value.Type.(deferred unit))] where bod
   return ()
 ;;
 
-let%expect_test "[defun (Returns_deferred Value.Type.(deferred unit))] where body raises"
-  =
+let%expect_test "[defun (Returns_deferred Value.Type.(deferred unit))] where body raises" =
   let symbol = "defun-return-unit-deferred" |> Symbol.intern in
   Defun.defun
     symbol
@@ -163,8 +162,7 @@ let%expect_test "Nested calls to block_on_async raise, even via elisp" =
     (let open Defun.Let_syntax in
      let%map_open () = return () in
      Deferred.unit);
-  show_raise ~hide_positions:true (fun () ->
-    Value.funcall0_i (symbol |> Symbol.to_value));
+  show_raise ~hide_positions:true (fun () -> Value.funcall0_i (symbol |> Symbol.to_value));
   [%expect
     {|
     (raised ((

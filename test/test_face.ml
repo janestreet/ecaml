@@ -125,8 +125,7 @@ let%expect_test "[merge]" =
 let%expect_test "[attribute]" =
   let t = of_name "default" in
   List.iter Attribute.Packed.all ~f:(fun (Attribute.Packed.T attribute) ->
-    print_s
-      [%sexp (T (attribute, attribute_value t attribute) : Attribute_and_value.t)]);
+    print_s [%sexp (T (attribute, attribute_value t attribute) : Attribute_and_value.t)]);
   [%expect
     {|
     (Background Unspecified)

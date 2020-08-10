@@ -39,8 +39,7 @@ module Raw_prefix_argument = struct
     then Minus
     else
       raise_s
-        [%message
-          "[Raw_prefix_argument.of_value] got unexpected value" (value : Value.t)]
+        [%message "[Raw_prefix_argument.of_value] got unexpected value" (value : Value.t)]
   ;;
 
   let type_ =

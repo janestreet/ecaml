@@ -2,10 +2,7 @@ open! Core_kernel
 open! Import
 open! Ecaml_filename
 
-let make_directory =
-  Funcall.Wrap.("make-directory" <: Filename.t @-> bool @-> return nil)
-;;
-
+let make_directory = Funcall.Wrap.("make-directory" <: Filename.t @-> bool @-> return nil)
 let create ?(parents = false) dirname = make_directory dirname parents
 
 let delete_directory =

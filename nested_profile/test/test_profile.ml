@@ -218,9 +218,7 @@ let%expect_test "hide_if_less_than" =
 ;;
 
 let%expect_test "hide_if_less_than async" =
-  let%bind () =
-    Test_profile_async.test () ~hide_if_less_than:(Time_ns.Span.of_ms 300.)
-  in
+  let%bind () = Test_profile_async.test () ~hide_if_less_than:(Time_ns.Span.of_ms 300.) in
   [%expect
     {|
     (1_000_000us foo "1970-01-01 00:00:04.43Z" (
@@ -244,8 +242,7 @@ let%expect_test "calling [profile] within [output_profile]" =
     (fun string ->
        call_profile ();
        print_endline string)
-    ~f:(fun () ->
-      Ref.set_temporarily hide_if_less_than Time_ns.Span.zero ~f:call_profile);
+    ~f:(fun () -> Ref.set_temporarily hide_if_less_than Time_ns.Span.zero ~f:call_profile);
   [%expect
     {|
     function supplied to [profile] ran
@@ -366,8 +363,7 @@ let%expect_test "[backtrace]" =
                   [%sexp
                     "Backtrace from inner function", (backtrace () : Sexp.t list option)]);
            print_s
-             [%sexp
-               "Backtrace from outer function", (backtrace () : Sexp.t list option)]))
+             [%sexp "Backtrace from outer function", (backtrace () : Sexp.t list option)]))
   in
   test_backtrace ~should_profile:true;
   let%bind () =

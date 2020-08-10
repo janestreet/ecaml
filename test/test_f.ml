@@ -22,8 +22,7 @@ let%expect_test "[nullary]" =
 
 let%expect_test "wrong return type" =
   let locate_file = "locate-file" <: string @-> list string @-> return string in
-  print_s
-    [%sexp (Or_error.try_with (fun () -> locate_file "foo" []) : string Or_error.t)];
+  print_s [%sexp (Or_error.try_with (fun () -> locate_file "foo" []) : string Or_error.t)];
   [%expect
     {|
     (Error (

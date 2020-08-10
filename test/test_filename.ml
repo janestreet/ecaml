@@ -76,8 +76,7 @@ let%expect_test "[of_directory], [to_directory]" =
 
 let%expect_test "[is_absolute]" =
   List.iter [ ""; "/"; "."; "./"; "~"; "a"; "/a/" ] ~f:(fun filename ->
-    print_s
-      [%message "" (filename : string) ~is_absolute:(is_absolute filename : bool)]);
+    print_s [%message "" (filename : string) ~is_absolute:(is_absolute filename : bool)]);
   [%expect
     {|
     ((filename    "")

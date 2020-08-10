@@ -72,17 +72,16 @@ let history_length = Customization.Wrap.("history-length" <: History_length.t)
 
 let y_or_n =
   let y_or_n_p = Funcall.Wrap.("y-or-n-p" <: string @-> return bool) in
-  fun ~prompt ->
-    Async_ecaml.Private.run_outside_async [%here] (fun () -> y_or_n_p prompt)
+  fun ~prompt -> Async_ecaml.Private.run_outside_async [%here] (fun () -> y_or_n_p prompt)
 ;;
 
 include struct
   open struct
-  let y_or_n_p_with_timeout =
-    Funcall.Wrap.(
-      "y-or-n-p-with-timeout" <: string @-> float @-> Symbol.t @-> return value)
-  ;;
-end
+    let y_or_n_p_with_timeout =
+      Funcall.Wrap.(
+        "y-or-n-p-with-timeout" <: string @-> float @-> Symbol.t @-> return value)
+    ;;
+  end
 
   let y_or_n_with_timeout ~prompt ~timeout:(span, a) =
     Async_ecaml.Private.run_outside_async [%here] (fun () ->
