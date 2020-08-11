@@ -636,7 +636,7 @@ module Private = struct
 end
 
 module Expect_test_config = struct
-  include Async.Expect_test_config_with_unit_expect
+  include Async.Expect_test_config
 
   let run f =
     Block_on_async.block_on_async
