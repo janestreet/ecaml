@@ -1,5 +1,4 @@
 #!/bin/bash
-
 # Modify the jbuild and import.ml in this directory to run tests
 # against Ecaml's Async_ecaml implementation.  This is used to
 # manually test Async_ecaml.
@@ -17,7 +16,7 @@ query='
   this)'
 
 jbuild="$(cat jbuild)"
-echo "$jbuild" | sexp query "$query" >jbuild
+echo "$jbuild" | sexp query "$query" > jbuild
 
 replacement='s#include Expect_test_helpers#include (Expect_test_helpers : module type of Expect_test_helpers with module Expect_test_config := Expect_test_helpers.Expect_test_config)\
 \
