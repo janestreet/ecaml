@@ -1,25 +1,5 @@
 open! Core_kernel
 open! Import
-
-module Q = struct
-  include Q
-
-  let after_load_functions = "after-load-functions" |> Symbol.intern
-  let after_revert = "after-revert-hook" |> Symbol.intern
-  let after_save_hook = "after-save-hook" |> Symbol.intern
-  let before_save_hook = "before-save-hook" |> Symbol.intern
-  let emacs_startup_hook = "emacs-startup-hook" |> Symbol.intern
-  let focus_in_hook = "focus-in-hook" |> Symbol.intern
-  let kill_buffer_hook = "kill-buffer-hook" |> Symbol.intern
-  let post_command_hook = "post-command-hook" |> Symbol.intern
-
-  let window_configuration_change_hook =
-    "window-configuration-change-hook" |> Symbol.intern
-  ;;
-
-  let window_scroll_functions = "window-scroll-functions" |> Symbol.intern
-end
-
 include Hook0
 
 module Function = struct
@@ -33,7 +13,7 @@ module Function = struct
         (type a b)
         symbol
         here
-        ?docstring
+        ~docstring
         ?should_profile
         ~(hook_type : a Hook_type.t)
         (returns : (unit, b) Defun.Returns.t)
@@ -49,40 +29,46 @@ module Function = struct
       | Returns (_ : unit Value.Type.t) -> Or_error.try_with f |> handle_result
       | Returns_deferred (_ : unit Value.Type.t) ->
         let open Async in
-        Deferred.Or_error.try_with f ~extract_exn:true >>| handle_result
+        Deferred.Or_error.try_with
+          ~run:
+            `Schedule
+          ~rest:`Log
+          f
+          ~extract_exn:true
+        >>| handle_result
     in
     Defun.defun
       symbol
       here
-      ?docstring
+      ~docstring
       ?should_profile
       returns
       (match hook_type with
-       | Normal ->
+       | Normal_hook ->
          let open Defun.Let_syntax in
          let%map_open () = return () in
          try_with f
-       | Window ->
+       | Window_hook ->
          let open Defun.Let_syntax in
          let%map_open () = return ()
          and window = required "window" Window.t
          and start = required "start" Position.t in
          try_with (fun () -> f { window; start })
-       | File ->
+       | File_hook ->
          let open Defun.Let_syntax in
          let%map_open () = return ()
          and file = required "file" string in
          try_with (fun () -> f { file }))
   ;;
 
-  let create symbol here ?docstring ?should_profile ~hook_type returns f =
-    defun symbol here ?docstring ?should_profile ~hook_type returns f;
+  let create symbol here ~docstring ?should_profile ~hook_type returns f =
+    defun symbol here ~docstring ?should_profile ~hook_type returns f;
     { symbol; hook_type }
   ;;
 
-  let create_with_self symbol here ?docstring ~hook_type returns f =
+  let create_with_self symbol here ~docstring ~hook_type returns f =
     let self = { symbol; hook_type } in
-    defun symbol here ?docstring ~hook_type returns (f self);
+    defun symbol here ~docstring ~hook_type returns (f self);
     self
   ;;
 
@@ -90,10 +76,10 @@ module Function = struct
     let elisp_name = symbol |> Symbol.name in
     let open Funcall.Wrap in
     match hook_type, x with
-    | Normal, () -> (elisp_name <: nullary @-> return nil) ()
-    | Window, { window; start } ->
+    | Normal_hook, () -> (elisp_name <: nullary @-> return nil) ()
+    | Window_hook, { window; start } ->
       (elisp_name <: Window.t @-> Position.t @-> return nil) window start
-    | File, { file } -> (elisp_name <: Value.Type.string @-> return nil) file
+    | File_hook, { file } -> (elisp_name <: Value.Type.string @-> return nil) file
   ;;
 
   let symbol t = t.symbol
@@ -147,6 +133,7 @@ let add ?(buffer_local = false) ?(one_shot = false) ?(where = Where.Start) t fun
       Function.create
         (make_one_shot_function_symbol function_)
         [%here]
+        ~docstring:"One-shot hook function."
         ~hook_type:function_.hook_type
         (Returns Value.Type.unit)
         (fun x ->
@@ -166,22 +153,18 @@ let run =
     Value.Private.run_outside_async [%here] (fun () -> run_hooks symbol)
 ;;
 
-let after_load = create Q.after_load_functions ~hook_type:File
-let after_revert = create Q.after_revert ~hook_type:Normal
-let after_save = create Q.after_save_hook ~hook_type:Normal
-let before_save = create Q.before_save_hook ~hook_type:Normal
-let emacs_startup = create Q.emacs_startup_hook ~hook_type:Normal
-let kill_buffer = create Q.kill_buffer_hook ~hook_type:Normal
-let focus_in = create Q.focus_in_hook ~hook_type:Normal
-
-let window_configuration_change =
-  create Q.window_configuration_change_hook ~hook_type:Normal
-;;
-
-let window_scroll_functions = create Q.window_scroll_functions ~hook_type:Window
-let post_command = create Q.post_command_hook ~hook_type:Normal
+let after_load = Wrap.("after-load-functions" <: File_hook)
+let after_revert = Wrap.("after-revert-hook" <: Normal_hook)
+let after_save = Wrap.("after-save-hook" <: Normal_hook)
+let before_save = Wrap.("before-save-hook" <: Normal_hook)
+let emacs_startup = Wrap.("emacs-startup-hook" <: Normal_hook)
+let kill_buffer = Wrap.("kill-buffer-hook" <: Normal_hook)
+let focus_in = Wrap.("focus-in-hook" <: Normal_hook)
+let window_configuration_change = Wrap.("window-configuration-change-hook" <: Normal_hook)
+let window_scroll_functions = Wrap.("window-scroll-functions" <: Window_hook)
+let post_command = Wrap.("post-command-hook" <: Normal_hook)
 
 let major_mode_hook major_mode =
   let mode_name = major_mode |> Major_mode.symbol |> Symbol.name in
-  create (mode_name ^ "-hook" |> Symbol.intern) ~hook_type:Normal
+  Wrap.(mode_name ^ "-hook" <: Normal_hook)
 ;;

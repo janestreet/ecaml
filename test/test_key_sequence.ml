@@ -76,8 +76,12 @@ let%expect_test "[am_executing] false" =
 ;;
 
 let%expect_test "[am_executing] true" =
-  defun_nullary_nil ("foo" |> Symbol.intern) [%here] ~interactive:No_arg (fun () ->
-    print_am_executing ());
+  defun_nullary_nil
+    ("foo" |> Symbol.intern)
+    [%here]
+    ~docstring:"<docstring>"
+    ~interactive:No_arg
+    (fun () -> print_am_executing ());
   let%bind () = execute (create_exn "M-x foo") in
   [%expect {| true |}];
   return ()

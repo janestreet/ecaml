@@ -27,6 +27,7 @@ val run_after
   -> Time_ns.Span.t
   -> f:(unit -> unit)
   -> name:Symbol.t
+  -> docstring:string
   -> t
 
 (** [run_after_i s f = ignore (run_after s f)] *)
@@ -36,6 +37,7 @@ val run_after_i
   -> Time_ns.Span.t
   -> f:(unit -> unit)
   -> name:Symbol.t
+  -> docstring:string
   -> unit
 
 (** [(describe-function 'cancel-timer)]

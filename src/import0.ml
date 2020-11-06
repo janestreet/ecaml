@@ -42,3 +42,10 @@ type 'a opaque_in_test = 'a
 let sexp_of_opaque_in_test sexp_of_a a =
   if am_running_test then [%sexp "_"] else [%sexp (a : a)]
 ;;
+
+let require_nonempty_docstring here ~docstring =
+  if String.is_empty docstring
+  then
+    raise_s
+      [%message "empty docstrings are not allowed" ~_:(here : Source_code_position.t)]
+;;

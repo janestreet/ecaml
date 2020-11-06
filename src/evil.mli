@@ -24,6 +24,7 @@ end
 module State : sig
   type t =
     | Evilified
+    | Normal
     | Other of Symbol.t
   [@@deriving equal, sexp_of]
 
@@ -35,3 +36,6 @@ module State : sig
 end
 
 val is_in_use : unit -> bool
+
+(** [(describe-function 'evil-define-key* )] *)
+val define_key : State.t list -> Keymap.t -> Key_sequence.t -> Keymap.Entry.t -> unit

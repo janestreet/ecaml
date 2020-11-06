@@ -18,13 +18,13 @@ let run_at_time =
   Funcall.Wrap.("run-at-time" <: float @-> nil_or float @-> Symbol.t @-> return t)
 ;;
 
-let run_after ?repeat here span ~f ~name =
-  Defun.defun_nullary_nil name here f;
+let run_after ?repeat here span ~f ~name ~docstring =
+  Defun.defun_nullary_nil name here ~docstring f;
   run_at_time (span |> to_seconds) (repeat |> Option.map ~f:to_seconds) name
 ;;
 
-let run_after_i ?repeat here span ~f ~name =
-  ignore (run_after here ?repeat span ~f ~name : t)
+let run_after_i ?repeat here span ~f ~name ~docstring =
+  ignore (run_after here ?repeat span ~f ~name ~docstring : t)
 ;;
 
 let cancel = Funcall.Wrap.("cancel-timer" <: t @-> return nil)

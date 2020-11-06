@@ -57,7 +57,7 @@ let%expect_test "[defun ~interactive:(Args _)]" =
   defun
     symbol
     [%here]
-    ~docstring:""
+    ~docstring:"<docstring>"
     ~interactive:(Args (fun () -> return [ 13 |> Value.of_int_exn ]))
     (Returns Value.Type.unit)
     (let%map_open.Defun () = return ()
@@ -75,7 +75,7 @@ let%expect_test "[defun] tuple ordering" =
   defun
     symbol
     here
-    ~docstring:""
+    ~docstring:"<docstring>"
     (Returns return_type)
     (let%map_open.Defun () = return ()
      and difference =
@@ -93,7 +93,9 @@ let%expect_test "[defun] tuple ordering" =
   [%expect {|
 <SYMBOL> is a Lisp function.
 
-(<SYMBOL> MINUEND SUBTRAHEND) |}];
+(<SYMBOL> MINUEND SUBTRAHEND)
+
+<docstring> |}];
   return ()
 ;;
 
@@ -102,7 +104,7 @@ let%expect_test "[defun] wrong number of arguments" =
   defun
     symbol
     here
-    ~docstring:""
+    ~docstring:"<docstring>"
     (Returns return_type)
     (let open Defun.Let_syntax in
      let%map_open () = return ()
@@ -126,7 +128,7 @@ let%expect_test "[defun] omitted optional arguments" =
   defun
     symbol
     here
-    ~docstring:""
+    ~docstring:"<docstring>"
     (Returns return_type)
     (let%map_open.Defun () = return ()
      and optional = optional "optional" int in
@@ -144,7 +146,7 @@ let%expect_test "[defun] type errors in required, optional, and rest arguments" 
     defun
       symbol
       [%here]
-      ~docstring:""
+      ~docstring:"<docstring>"
       (Returns Value.Type.unit)
       (let%map_open.Defun () = return ()
        and _ = make_arg "arg" int in

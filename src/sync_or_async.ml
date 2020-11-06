@@ -8,9 +8,13 @@ type ('a, 'b) t =
 [@@deriving sexp_of]
 
 let async_protect ~f ~finally =
-  Monitor.protect f ~finally:(fun () ->
-    finally ();
-    return ())
+  Monitor.protect
+    ~run:`Schedule
+    ~rest:`Log
+    f
+    ~finally:(fun () ->
+      finally ();
+      return ())
 ;;
 
 let return (type a b) (t : (a, b) t) (a : a) : b =

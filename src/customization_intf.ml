@@ -92,6 +92,7 @@ module type Customization = sig
   val set_value_temporarily : 'a t -> 'a -> f:(unit -> 'b) -> 'b
   val var : 'a t -> 'a Var.t
   val symbol : _ t -> Symbol.t
+  val name : _ t -> string
   val standard_value : 'a t -> 'a
 
   (** [(describe-function 'defcustom)]

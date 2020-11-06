@@ -177,6 +177,12 @@ let () =
   defun
     (ecaml_test_raise_name |> Symbol.intern)
     [%here]
+    ~docstring:
+      {|
+For testing Ecaml.
+
+Test raising from a deep call stack of a function defined by an Ecaml [defun].
+|}
     ~interactive:No_arg
     (Returns Value.Type.unit)
     (let open Defun.Let_syntax in
@@ -192,6 +198,11 @@ let () =
     defun_nullary
       ("ecaml-test-minibuffer-y-or-n-with-timeout" |> Symbol.intern)
       [%here]
+      ~docstring:{|
+For testing Ecaml.
+
+Test [Minibuffer.y_or_n_with_timeout].
+|}
       ~interactive:No_arg
       (Returns_deferred Value.Type.unit)
       (fun () ->
@@ -205,6 +216,11 @@ let () =
     defun_nullary
       ("ecaml-test-minibuffer" |> Symbol.intern)
       [%here]
+      ~docstring:{|
+For testing Ecaml.
+
+Test [Minibuffer.read_from].
+|}
       ~interactive:No_arg
       (Returns_deferred Value.Type.unit)
       (fun () ->
@@ -244,6 +260,12 @@ let () =
   defun_nullary_nil
     ("ecaml-show-recent-commands-and-keys" |> Symbol.intern)
     [%here]
+    ~docstring:
+      {|
+For debugging.
+
+Show the result of `recent-keys' rendered as Ecaml values.
+|}
     ~interactive:No_arg
     (fun () ->
        message_s
@@ -259,8 +281,13 @@ module Ref = struct
   let set_temporarily_async r a ~f =
     let old = !r in
     r := a;
-    Monitor.protect f ~finally:(fun () ->
-      r := old;
-      return ())
+    Monitor.protect
+      ~run:
+        `Schedule
+      ~rest:`Log
+      f
+      ~finally:(fun () ->
+        r := old;
+        return ())
   ;;
 end

@@ -27,16 +27,18 @@ module Edges = struct
     }
   [@@deriving sexp_of]
 
-  include Valueable.Remove_t
-      ((val Valueable.of_type
-              (Value.Type.(
-                 map
-                   (tuple int (tuple int (tuple int (tuple int unit))))
-                   ~name:[%sexp "Window.Tree.Position_and_size.t"])
-                 ~of_:(fun (left, (top, (right, (bottom, ())))) ->
-                   { bottom; left; right; top })
-                 ~to_:(fun { bottom; left; right; top } ->
-                   left, (top, (right, (bottom, ())))))))
+  include Valueable.Make (struct
+      type nonrec t = t
+
+      let type_ =
+        Value.Type.(
+          map
+            (tuple int (tuple int (tuple int (tuple int unit))))
+            ~name:[%sexp "Window.Tree.Position_and_size.t"])
+          ~of_:(fun (left, (top, (right, (bottom, ())))) -> { bottom; left; right; top })
+          ~to_:(fun { bottom; left; right; top } -> left, (top, (right, (bottom, ()))))
+      ;;
+    end)
 end
 
 module Tree = struct
@@ -55,12 +57,16 @@ module Tree = struct
       | Top_to_bottom -> true
     ;;
 
-    include Valueable.Remove_t
-        ((val Valueable.of_type
-                (Value.Type.enum
-                   [%sexp "Window.Tree.Direction.t"]
-                   (module T)
-                   (is_top_to_bottom >> Value.of_bool))))
+    include Valueable.Make (struct
+        type nonrec t = t
+
+        let type_ =
+          Value.Type.enum
+            [%sexp "Window.Tree.Direction.t"]
+            (module T)
+            (is_top_to_bottom >> Value.of_bool)
+        ;;
+      end)
   end
 
   type t =

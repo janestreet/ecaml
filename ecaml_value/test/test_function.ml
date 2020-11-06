@@ -144,13 +144,14 @@ let%expect_test "raising from OCaml to OCaml through many layers of Emacs" =
 let%expect_test "function descriptions" =
   let describe_function symbol =
     Form.Blocking.eval_string
-      (String.concat
-         [ "(with-temp-buffer\n\
-           \  (let ((standard-output (current-buffer)))\n\
-           \    (describe-function-1 '"
-         ; symbol |> Symbol.name
-         ; ")\n    (buffer-string)))"
-         ])
+      (let symbol = symbol |> Symbol.name in
+       [%string
+         {|
+(with-temp-buffer
+  (let ((standard-output (current-buffer)))
+    (describe-function-1 '%{symbol})
+    (buffer-string)))
+|}])
     |> Value.to_utf8_bytes_exn
   in
   let do_nothing _ = Value.nil in

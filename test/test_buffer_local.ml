@@ -158,7 +158,7 @@ let%expect_test "[wrap_existing]" =
     Defvar.defvar
       ("for-wrapping" |> Symbol.intern)
       [%here]
-      ~docstring:""
+      ~docstring:"<docstring>"
       ~type_:Value.Type.string
       ~initial_value:"initial"
       ()

@@ -16,22 +16,23 @@
 open! Core_kernel
 open! Import
 
-(** [around_values ?docstring ?interactive here return_type advice_name f ~for_function ]
-    defines function [advice_name] with body [f] and adds it as advice on [for_function].
+type t [@@deriving sexp_of]
 
-    Compared to [around_funcall], [around_values] provides looser coupling when the advice
-    doesn't need to interact with the arguments or return value of [for_function].
-*)
-val around_values
+val of_function : Symbol.t -> t
+
+(** [defun_around_values advice_name here ~docstring f] creates advice named [advice_name]
+    with body [f]. Compared to [defun_around_funcall], [defun_around_values] provides
+    looser coupling when the advice doesn't need to interact with the arguments or return
+    value of the advised function. *)
+val defun_around_values
   :  Symbol.t
   -> Source_code_position.t
   -> (Value.t, 'a) Sync_or_async.t
-  -> ?docstring:string
-  -> for_function:Symbol.t
+  -> docstring:string
   -> ?interactive:Defun.Interactive.t
   -> ?should_profile:bool
   -> ((Value.t list -> Value.t) -> Value.t list -> 'a)
-  -> unit
+  -> t
 
 module On_parse_error : sig
   type t =
@@ -40,22 +41,21 @@ module On_parse_error : sig
   [@@deriving sexp_of]
 end
 
-(** [around_funcall] provides typeful access to the arguments and return value of
-    [for_function]. *)
-val around_funcall
+(** [defun_around_funcall] provides typeful access to the arguments and return value of
+    the advised function. *)
+val defun_around_funcall
   :  Symbol.t
   -> Source_code_position.t
-  -> ?docstring:string
-  -> for_function:Symbol.t
+  -> docstring:string
   -> ?interactive:Defun.Interactive.t
   -> ?on_parse_error:On_parse_error.t
   -> ?should_profile:bool
   -> 'a Funcall.t
   -> ('a -> 'a)
-  -> unit
+  -> t
 
 (** [(describe-function 'advice-add)] *)
-val add_predefined_function : Symbol.t -> for_function:Symbol.t -> unit
+val add : t -> to_function:Symbol.t -> unit
 
 (** [(describe-function 'advice-remove)] *)
-val remove : Symbol.t -> for_function:Symbol.t -> unit
+val remove : t -> from_function:Symbol.t -> unit

@@ -15,6 +15,8 @@ val get : t -> int -> Input_event.t
     [(Info-goto-node "(elisp)Event Input Misc")] *)
 val to_list : t -> Input_event.t list
 
+val of_list : Input_event.t list -> t
+
 (** [(describe-function 'read-kbd-macro)]
     [(Info-goto-node "(elisp)Key Sequences")]
     [(Info-goto-node "(elisp)Decribing Characters")]
@@ -52,3 +54,5 @@ val sigusr1 : t
 
 (** [(describe-function 'key-description)] *)
 val description : t -> string
+
+val concat : t list -> t

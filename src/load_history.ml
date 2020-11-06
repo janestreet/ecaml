@@ -52,15 +52,19 @@ module Type = struct
 
   include T
 
-  include Valueable.Remove_t
-      ((val Valueable.of_type
-              (Value.Type.enum
-                 [%sexp "load-history type"]
-                 (module T)
-                 (function
-                   | Face -> Q.defface |> Symbol.to_value
-                   | Fun -> Value.nil
-                   | Var -> Q.defvar |> Symbol.to_value))))
+  include Valueable.Make (struct
+      type nonrec t = t
+
+      let type_ =
+        Value.Type.enum
+          [%sexp "load-history type"]
+          (module T)
+          (function
+            | Face -> Q.defface |> Symbol.to_value
+            | Fun -> Value.nil
+            | Var -> Q.defvar |> Symbol.to_value)
+      ;;
+    end)
 end
 
 module Key = struct

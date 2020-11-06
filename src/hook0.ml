@@ -13,9 +13,9 @@ type window =
 
 module Hook_type = struct
   type 'a t =
-    | File : file t
-    | Normal : normal t
-    | Window : window t
+    | File_hook : file t
+    | Normal_hook : normal t
+    | Window_hook : window t
   [@@deriving sexp_of]
 end
 
@@ -37,6 +37,10 @@ let sexp_of_t _ t =
       ~value:(value t : Function.t list option)]
 ;;
 
-let create symbol ~hook_type =
-  { var = { symbol; type_ = Value.Type.(list Function.t) }; hook_type }
-;;
+module Wrap = struct
+  let ( <: ) name hook_type =
+    { var = { symbol = name |> Symbol.intern; type_ = Value.Type.(list Function.t) }
+    ; hook_type
+    }
+  ;;
+end

@@ -19,6 +19,10 @@ let () =
   Defun.defun_nullary_nil
     ("ecaml-test-user-module" |> Symbol.intern)
     [%here]
+    ~docstring:
+      {|
+Test the [Ecaml.User] module by showing the output of some of its functions.
+|}
     ~interactive:No_arg
     (fun () ->
        message_s

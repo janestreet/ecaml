@@ -14,6 +14,18 @@ module M =
          ~initialize:(Returns Value.Type.unit, fun () -> print_s [%message "initialized"])
          ())
 
+let%expect_test "[wrap_existing] failure" =
+  require_does_raise [%here] (fun () -> Major_mode.wrap_existing "org-mode" [%here]);
+  [%expect
+    {|
+    ("Major mode's keymap doesn't exist"
+      (name org-mode)
+      (wrapped_at app/emacs/lib/ecaml/test/test_major_mode.ml:18:76)
+      (exn (
+        "[Current_buffer.value_exn] of undefined variable" (org-mode-map keymap)))) |}];
+  return ()
+;;
+
 let%expect_test "duplicate [define_derived_mode]" =
   show_raise ~hide_positions:true (fun () ->
     define_derived_mode
@@ -36,7 +48,7 @@ let%expect_test "duplicate [define_derived_mode]" =
         (name <opaque>)
         (hook (
           (symbol    test-major-mode-hook)
-          (hook_type Normal)
+          (hook_type Normal_hook)
           (value (()))))
         (syntax_table_var (test-major-mode-syntax-table syntax-table)))))) |}];
   return ()
@@ -47,7 +59,7 @@ let%expect_test "duplicate name is NOT caught" =
     define_derived_mode
       ("other-mode" |> Symbol.intern)
       [%here]
-      ~docstring:""
+      ~docstring:"<docstring>"
       ~mode_line:""
       ());
   [%expect {| "did not raise" |}];
@@ -68,7 +80,7 @@ let%expect_test "[define_derived_mode]" =
        (name <opaque>)
        (hook (
          (symbol    fundamental-mode-hook)
-         (hook_type Normal)
+         (hook_type Normal_hook)
          (value ())))
        (syntax_table_var (fundamental-mode-syntax-table syntax-table))) |}];
     let%bind () = Current_buffer.change_major_mode M.major_mode in
@@ -82,7 +94,7 @@ let%expect_test "[define_derived_mode]" =
        (name <opaque>)
        (hook (
          (symbol    test-major-mode-hook)
-         (hook_type Normal)
+         (hook_type Normal_hook)
          (value (()))))
        (syntax_table_var (test-major-mode-syntax-table syntax-table))) |}];
     return ())
@@ -93,7 +105,7 @@ let%expect_test "[hook]" =
     (val define_derived_mode
            ("for-testing-mode-hook" |> Symbol.intern)
            [%here]
-           ~docstring:""
+           ~docstring:"<docstring>"
            ~mode_line:""
            ())
   in
@@ -103,7 +115,8 @@ let%expect_test "[hook]" =
     (Hook.Function.create
        ("my-hook" |> Symbol.intern)
        [%here]
-       ~hook_type:Normal
+       ~docstring:"<docstring>"
+       ~hook_type:Normal_hook
        (Returns Value.Type.unit)
        (fun () -> print_s [%message "hook ran"]));
   let%bind () =
@@ -115,7 +128,7 @@ let%expect_test "[hook]" =
 ;;
 
 let%expect_test "[keymap]" =
-  print_s [%sexp (keymap M.major_mode : Keymap.t)];
+  print_s [%sexp (M.keymap : Keymap.t)];
   [%expect {| (keymap) |}];
   return ()
 ;;
@@ -191,7 +204,7 @@ let%expect_test "[is_derived]" =
     (val define_derived_mode
            ("texting-mode" |> Symbol.intern)
            [%here]
-           ~docstring:""
+           ~docstring:"<docstring>"
            ~mode_line:"texting"
            ~parent:Text.major_mode
            ())

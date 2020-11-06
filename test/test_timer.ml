@@ -5,9 +5,14 @@ open! Timer
 
 let test f =
   let continue = ref true in
-  run_after_i [%here] (sec_ns 0.) ~name:(Symbol.gensym ()) ~f:(fun () ->
-    print_s [%message "ran"];
-    continue := false);
+  run_after_i
+    [%here]
+    (sec_ns 0.)
+    ~name:(Symbol.gensym ())
+    ~docstring:"<docstring>"
+    ~f:(fun () ->
+      print_s [%message "ran"];
+      continue := false);
   while_ (fun () -> !continue) ~do_:(fun () -> f (sec_ns 0.001))
 ;;
 
@@ -31,6 +36,7 @@ let%expect_test "[run_after ~repeat]" =
     (sec_ns 0.)
     ~repeat:(sec_ns 0.001)
     ~name:(Symbol.gensym ())
+    ~docstring:"<docstring>"
     ~f:(fun () ->
       if !r = 3
       then continue := false
@@ -46,7 +52,14 @@ let%expect_test "[run_after ~repeat]" =
 ;;
 
 let%expect_test "[cancel], [is_scheduled]" =
-  let t = run_after [%here] (sec_ns 60.) ~name:(Symbol.gensym ()) ~f:ignore in
+  let t =
+    run_after
+      [%here]
+      (sec_ns 60.)
+      ~name:(Symbol.gensym ())
+      ~docstring:"<docstring>"
+      ~f:ignore
+  in
   print_s [%sexp (is_scheduled t : bool)];
   [%expect {| true |}];
   cancel t;

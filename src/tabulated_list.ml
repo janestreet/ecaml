@@ -283,6 +283,4 @@ let current_buffer_has_entries () =
           Buffer_local.Wrap.("tabulated-list-entries" <: value)))
 ;;
 
-let revert_hook =
-  Hook.create ("tabulated-list-revert-hook" |> Symbol.intern) ~hook_type:Normal
-;;
+let revert_hook = Hook.Wrap.("tabulated-list-revert-hook" <: Normal_hook)

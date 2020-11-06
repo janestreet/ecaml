@@ -12,7 +12,11 @@ include (
     include Stringable.S with type t := t
   end)
 
-include (val Valueable.of_type Value.Type.string)
+include Valueable.Make (struct
+    type nonrec t = t
+
+    let type_ = Value.Type.string
+  end)
 
 module Property = struct
   type 'a t =
@@ -39,12 +43,16 @@ end
 module Record = struct
   type t = Value.t Map.M(Symbol.Compare_name).t [@@deriving sexp_of]
 
-  include Valueable.Remove_t
-      ((val Valueable.of_type
-              (Value.Type.(map (list (tuple Symbol.type_ value)))
-                 ~name:[%message "bookmark-record"]
-                 ~of_:(Map.of_alist_exn (module Symbol.Compare_name))
-                 ~to_:Map.to_alist)))
+  include Valueable.Make (struct
+      type nonrec t = t
+
+      let type_ =
+        Value.Type.(map (list (tuple Symbol.type_ value)))
+          ~name:[%message "bookmark-record"]
+          ~of_:(Map.of_alist_exn (module Symbol.Compare_name))
+          ~to_:Map.to_alist
+      ;;
+    end)
 
   let get t { Property.symbol; type_ } =
     Map.find t symbol |> Option.map ~f:(Value.Type.of_value_exn type_)
@@ -92,14 +100,18 @@ module Make_record_function = struct
       ; suggested_bookmark_name : string option
       }
 
-    include Valueable.Remove_t
-        ((val Valueable.of_type
-                (Value.Type.(map (tuple (nil_or string) Record.t))
-                   ~name:[%sexp "bookmark-make-record-function-return-type"]
-                   ~of_:(fun (suggested_bookmark_name, record) ->
-                     { record; suggested_bookmark_name })
-                   ~to_:(fun { record; suggested_bookmark_name } ->
-                     suggested_bookmark_name, record))))
+    include Valueable.Make (struct
+        type nonrec t = t
+
+        let type_ =
+          Value.Type.(map (tuple (nil_or string) Record.t))
+            ~name:[%sexp "bookmark-make-record-function-return-type"]
+            ~of_:(fun (suggested_bookmark_name, record) ->
+              { record; suggested_bookmark_name })
+            ~to_:(fun { record; suggested_bookmark_name } ->
+              suggested_bookmark_name, record)
+        ;;
+      end)
   end
 
   type t = unit -> Return_type.t

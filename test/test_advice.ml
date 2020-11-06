@@ -3,12 +3,13 @@ open! Async_kernel
 open! Import
 open! Advice
 
-let for_function = "test-function" |> Symbol.intern
+let test_function = "test-function" |> Symbol.intern
 
 let initialize () =
   defun
-    for_function
+    test_function
     [%here]
+    ~docstring:"<docstring>"
     (Returns Value.Type.int)
     (let open Defun.Let_syntax in
      let%map_open args = rest "rest" value in
@@ -17,7 +18,7 @@ let initialize () =
 ;;
 
 let call_test_function () =
-  let result = Symbol.funcall1 for_function (Value.of_int_exn 1) in
+  let result = Symbol.funcall1 test_function (Value.of_int_exn 1) in
   print_s [%message "call" (result : Value.t)]
 ;;
 
@@ -25,11 +26,19 @@ let advice_name = "test-advice" |> Symbol.intern
 
 let%expect_test "" =
   initialize ();
-  Advice.around_values advice_name [%here] ~for_function Sync (fun inner rest ->
-    print_s [%message "advice" (rest : Value.t list)];
-    let inner_result = inner ((0 |> Value.of_int_exn) :: rest) in
-    print_s [%message "advice" (inner_result : Value.t)];
-    Value.Type.(int |> to_value) (1 + (inner_result |> Value.to_int_exn)));
+  let t =
+    Advice.defun_around_values
+      advice_name
+      [%here]
+      ~docstring:"<docstring>"
+      Sync
+      (fun inner rest ->
+         print_s [%message "advice" (rest : Value.t list)];
+         let inner_result = inner ((0 |> Value.of_int_exn) :: rest) in
+         print_s [%message "advice" (inner_result : Value.t)];
+         Value.Type.(int |> to_value) (1 + (inner_result |> Value.to_int_exn)))
+  in
+  Advice.add t ~to_function:test_function;
   call_test_function ();
   [%expect
     {|
@@ -37,12 +46,12 @@ let%expect_test "" =
     (test-function (args (0 1)))
     (advice (inner_result 13))
     (call (result 14)) |}];
-  Advice.remove advice_name ~for_function;
+  Advice.remove t ~from_function:test_function;
   call_test_function ();
   [%expect {|
     (test-function (args (1)))
     (call (result 13)) |}];
-  Advice.add_predefined_function advice_name ~for_function;
+  Advice.add (Advice.of_function advice_name) ~to_function:test_function;
   call_test_function ();
   [%expect
     {|
@@ -56,17 +65,20 @@ let%expect_test "" =
 let%expect_test "[around_funcall ~on_parse_error]" =
   initialize ();
   let test ?on_parse_error arg_type =
-    Advice.around_funcall
-      advice_name
-      [%here]
-      ~for_function
-      Funcall.Wrap.(arg_type @-> return int)
-      ?on_parse_error
-      (fun _ _ ->
-         print_s [%message "Advice got called."];
-         -1);
+    let t =
+      Advice.defun_around_funcall
+        advice_name
+        [%here]
+        ~docstring:"<docstring>"
+        Funcall.Wrap.(arg_type @-> return int)
+        ?on_parse_error
+        (fun _ _ ->
+           print_s [%message "Advice got called."];
+           -1)
+    in
+    Advice.add t ~to_function:test_function;
     call_test_function ();
-    Advice.remove advice_name ~for_function
+    Advice.remove t ~from_function:test_function
   in
   test Value.Type.int;
   [%expect {|
@@ -97,12 +109,20 @@ let%expect_test "[around_funcall ~on_parse_error]" =
 
 let%expect_test "Async advice" =
   initialize ();
-  Advice.around_values advice_name [%here] ~for_function Async (fun inner rest ->
-    let%map () = Clock.after (sec 0.001) in
-    print_s [%message "advice" (rest : Value.t list)];
-    let inner_result = inner ((0 |> Value.of_int_exn) :: rest) in
-    print_s [%message "advice" (inner_result : Value.t)];
-    Value.Type.(int |> to_value) (1 + (inner_result |> Value.to_int_exn)));
+  let t =
+    Advice.defun_around_values
+      advice_name
+      [%here]
+      ~docstring:"<docstring>"
+      Async
+      (fun inner rest ->
+         let%map () = Clock.after (sec 0.001) in
+         print_s [%message "advice" (rest : Value.t list)];
+         let inner_result = inner ((0 |> Value.of_int_exn) :: rest) in
+         print_s [%message "advice" (inner_result : Value.t)];
+         Value.Type.(int |> to_value) (1 + (inner_result |> Value.to_int_exn)))
+  in
+  Advice.add t ~to_function:test_function;
   let call_test_function () =
     Async_ecaml.Private.run_outside_async [%here] call_test_function
   in
@@ -113,12 +133,12 @@ let%expect_test "Async advice" =
     (test-function (args (0 1)))
     (advice (inner_result 13))
     (call (result 14)) |}];
-  Advice.remove advice_name ~for_function;
+  Advice.remove t ~from_function:test_function;
   let%bind () = call_test_function () in
   [%expect {|
     (test-function (args (1)))
     (call (result 13)) |}];
-  Advice.add_predefined_function advice_name ~for_function;
+  Advice.add (Advice.of_function advice_name) ~to_function:test_function;
   let%bind () = call_test_function () in
   [%expect
     {|

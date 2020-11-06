@@ -763,7 +763,14 @@ let%expect_test "[minor_mode_keymaps]" =
 
 let%expect_test "[delete_duplicate_lines]" =
   set_temporarily_to_temp_buffer Sync (fun () ->
-    Point.insert "a\na\nb\nb\nc\na\n";
+    Point.insert ({|
+a
+a
+b
+b
+c
+a
+|} |> String.strip);
     delete_duplicate_lines ();
     print_string (contents () |> Text.to_utf8_bytes);
     [%expect {|
@@ -775,7 +782,14 @@ let%expect_test "[delete_duplicate_lines]" =
 
 let%expect_test "[delete_lines_matching]" =
   set_temporarily_to_temp_buffer Sync (fun () ->
-    Point.insert "a\na\nb\nb\nc\na\n";
+    Point.insert ({|
+a
+a
+b
+b
+c
+a
+|} |> String.strip);
     delete_lines_matching ("b" |> Regexp.quote);
     print_string (contents () |> Text.to_utf8_bytes);
     [%expect {|
@@ -788,7 +802,12 @@ let%expect_test "[delete_lines_matching]" =
 
 let%expect_test "[sort_lines]" =
   set_temporarily_to_temp_buffer Sync (fun () ->
-    Point.insert "a\nd\nb\nc\n";
+    Point.insert ({|
+a
+d
+b
+c
+|} |> String.strip);
     sort_lines ();
     print_string (contents () |> Text.to_utf8_bytes);
     [%expect {|
@@ -811,7 +830,12 @@ let%expect_test "[delete_region]" =
 let%expect_test "[indent_region]" =
   set_temporarily_to_temp_buffer Sync (fun () ->
     Funcall.Wrap.("c-mode" <: nullary @-> return nil) ();
-    Point.insert "void f () {\n      foo;\n      bar;\n      }";
+    Point.insert ({|
+void f () {
+      foo;
+      bar;
+      }
+|} |> String.strip);
     indent_region ();
     print_string (contents () |> Text.to_utf8_bytes);
     [%expect {|
@@ -1046,7 +1070,8 @@ let%expect_test "[kill] with deferred kill hook" =
     (Ecaml.Hook.Function.create
        ("test-deferred-kill-hook" |> Symbol.intern)
        [%here]
-       ~hook_type:Normal
+       ~docstring:"<docstring>"
+       ~hook_type:Normal_hook
        (Returns_deferred Value.Type.unit)
        (fun () ->
           let%bind () = Clock.after (sec 0.001) in
@@ -1298,5 +1323,17 @@ def
       def
       bac
       def |}]);
+  return ()
+;;
+
+let%expect_test "[key_binding]" =
+  let test sequence =
+    let binding = key_binding (Key_sequence.create_exn sequence) in
+    print_s [%sexp (binding : Keymap.Entry.t)]
+  in
+  test "C-x C-s";
+  [%expect {| (Command save-buffer) |}];
+  test "C-c";
+  [%expect {| (Keymap mode-specific-command-prefix) |}];
   return ()
 ;;

@@ -55,10 +55,7 @@ let add wrapped_at name symbol =
     ; symbol
     ; keymap_var = Var.Wrap.(concat [ symbol |> Symbol.name; "-map" ] <: Keymap.t)
     ; name
-    ; hook =
-        Hook.create
-          (Symbol.intern (concat [ symbol |> Symbol.name; "-hook" ]))
-          ~hook_type:Normal
+    ; hook = Hook.Wrap.(concat [ symbol |> Symbol.name; "-hook" ] <: Normal_hook)
     ; syntax_table_var =
         Var.Wrap.(concat [ symbol |> Symbol.name; "-syntax-table" ] <: Syntax_table.t)
     }
@@ -69,7 +66,14 @@ let add wrapped_at name symbol =
 
 module type S = S with type t := t and type name := Name.t
 
-let wrap_existing name wrapped_at =
+module type S_with_lazy_keymap =
+  S_with_lazy_keymap with type t := t and type name := Name.t
+
+let keymap t = Current_buffer.value_exn t.keymap_var
+let keymap_var t = t.keymap_var
+let syntax_table t = Current_buffer.value_exn t.syntax_table_var
+
+let wrap_existing_with_lazy_keymap name wrapped_at : (module S_with_lazy_keymap) =
   (module struct
     type Name.t += Major_mode
 
@@ -85,12 +89,32 @@ let wrap_existing name wrapped_at =
               ~previous_def:(t : t)]
     ;;
 
+    let keymap =
+      lazy
+        (try keymap major_mode with
+         | exn ->
+           raise_s
+             [%message
+               "Major mode's keymap doesn't exist"
+                 (name : string)
+                 (wrapped_at : Source_code_position.t)
+                 (exn : exn)])
+    ;;
+
     let enabled_in_current_buffer () =
       Buffer_local.get major_mode_var (Current_buffer0.get ())
       |> Symbol.name
       |> String.( = ) name
     ;;
-  end : S)
+  end)
+;;
+
+let wrap_existing name wrapped_at : (module S) =
+  (module struct
+    include (val wrap_existing_with_lazy_keymap name wrapped_at)
+
+    let keymap = force keymap
+  end)
 ;;
 
 let find_or_wrap_existing here symbol =
@@ -99,19 +123,15 @@ let find_or_wrap_existing here symbol =
   | None -> add here Name.Undistinguished symbol
 ;;
 
-let keymap t = Current_buffer.value_exn t.keymap_var
-let keymap_var t = t.keymap_var
-let syntax_table t = Current_buffer.value_exn t.syntax_table_var
-
-module Fundamental = (val wrap_existing "fundamental-mode" [%here])
+module Fundamental = (val wrap_existing_with_lazy_keymap "fundamental-mode" [%here])
 module Prog = (val wrap_existing "prog-mode" [%here])
 module Special = (val wrap_existing "special-mode" [%here])
 module Text = (val wrap_existing "text-mode" [%here])
-module Dired = (val wrap_existing "dired-mode" [%here])
-module Tuareg = (val wrap_existing "tuareg-mode" [%here])
-module Makefile = (val wrap_existing "makefile-mode" [%here])
+module Dired = (val wrap_existing_with_lazy_keymap "dired-mode" [%here])
+module Tuareg = (val wrap_existing_with_lazy_keymap "tuareg-mode" [%here])
+module Makefile = (val wrap_existing_with_lazy_keymap "makefile-mode" [%here])
 module Lisp = (val wrap_existing "lisp-mode" [%here])
-module Scheme = (val wrap_existing "scheme-mode" [%here])
+module Scheme = (val wrap_existing_with_lazy_keymap "scheme-mode" [%here])
 module Emacs_lisp = (val wrap_existing "emacs-lisp-mode" [%here])
 
 let all_derived_modes = ref []
@@ -131,6 +151,8 @@ let define_derived_mode
       ?(initialize : ((unit, a) Defun.Returns.t * (unit -> a)) option)
       ()
   =
+  let docstring = docstring |> String.strip in
+  require_nonempty_docstring here ~docstring;
   let initialize_fn =
     match initialize with
     | None -> Defun.lambda_nullary_nil here ident
@@ -144,7 +166,7 @@ let define_derived_mode
           | None -> Form.nil
           | Some t -> Field.get Fields.symbol t |> Form.symbol)
        ; mode_line |> Form.string
-       ; docstring |> String.strip |> Form.string
+       ; docstring |> Form.string
        ; Form.list
            [ Q.funcall |> Form.symbol; Form.quote (initialize_fn |> Function.to_value) ]
        ]);
@@ -155,9 +177,8 @@ let define_derived_mode
       (Var (concat [ symbol |> Symbol.name; "-"; suffix ] |> Symbol.intern)));
   let m = wrap_existing (symbol |> Symbol.name) here in
   let module M = (val m) in
-  let the_keymap = keymap M.major_mode in
   List.iter define_keys ~f:(fun (keys, symbol) ->
-    Keymap.define_key the_keymap (Key_sequence.create_exn keys) (Symbol symbol));
+    Keymap.define_key M.keymap (Key_sequence.create_exn keys) (Symbol symbol));
   all_derived_modes := M.major_mode :: !all_derived_modes;
   m
 ;;

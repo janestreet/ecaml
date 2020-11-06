@@ -21,7 +21,7 @@ let test ?show_form type_ customization_type standard_value =
     (defcustom
        variable
        [%here]
-       ~docstring:""
+       ~docstring:"<docstring>"
        ~group
        ~type_
        ~customization_type
@@ -43,7 +43,7 @@ let%expect_test "[Boolean] with default [nil]" =
   [%expect
     {|
     (defcustom test-customization-symbol-1 (quote nil)
-      "\
+      "<docstring>\
      \n\
      \nCustomization group: test-customization-group\
      \nStandard value: nil\
@@ -52,7 +52,7 @@ let%expect_test "[Boolean] with default [nil]" =
 
     Hide Test Customization Symbol 1: [Toggle]  off (nil)
        [ State ]: STANDARD.
-        Hide
+       <docstring> Hide
 
        Customization group: test-customization-group
        Standard value: nil
@@ -67,7 +67,7 @@ let%expect_test "[Boolean] with default [t]" =
     {|
     Hide Test Customization Symbol 2: [Toggle]  on (non-nil)
        [ State ]: STANDARD.
-        Hide
+       <docstring> Hide
 
        Customization group: test-customization-group
        Standard value: t
@@ -83,7 +83,7 @@ let%expect_test "[Const]" =
     {|
     Hide Test Customization Symbol 3: [Value Menu] 13
        [ State ]: STANDARD.
-        Hide
+       <docstring> Hide
 
        Customization group: test-customization-group
        Standard value: 13
@@ -115,7 +115,7 @@ let%expect_test "[enum]" =
     {|
     Hide Test Customization Symbol 4: [Value Menu] A
        [ State ]: STANDARD.
-        Hide
+       <docstring> Hide
 
        Customization group: test-customization-group
        Standard value: A
@@ -129,7 +129,7 @@ let%expect_test "[defcustom] invalid-value error message" =
     defcustom
       ("zzz" |> Symbol.intern)
       [%here]
-      ~docstring:""
+      ~docstring:"<docstring>"
       ~group:("test-customization-group" |> Group.of_string)
       ~type_:Value.Type.int
       ~customization_type:Integer
@@ -156,7 +156,7 @@ let%expect_test "[defcustom ~on_set]" =
     defcustom
       ("foo" |> Symbol.intern)
       [%here]
-      ~docstring:""
+      ~docstring:"<docstring>"
       ~group
       ~type_:Value.Type.int
       ~customization_type:Integer

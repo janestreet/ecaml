@@ -17,6 +17,7 @@ let () =
   defun_nullary_nil
     ("jane-fe-test-raise-if-in-minibuffer" |> Symbol.intern)
     [%here]
+    ~docstring:"For testing."
     ~interactive:No_arg
     ~define_keys:[ Keymap.global (), raise_if_in_minibuffer_key ]
     (fun () ->
@@ -55,6 +56,7 @@ let () =
   defun_nullary_nil
     ("jane-fe-test-show-prompt" |> Symbol.intern)
     [%here]
+    ~docstring:"For testing."
     ~interactive:No_arg
     ~define_keys:[ Keymap.global (), show_prompt_key ]
     (fun () ->
@@ -68,7 +70,11 @@ let () =
 
 let press_and_show_prompt key_sequence =
   match%map
-    try_with (fun () -> execute_keys [ key_sequence; show_prompt_key; "C-g" ])
+    try_with
+      ~run:
+        `Schedule
+      ~rest:`Log
+      (fun () -> execute_keys [ key_sequence; show_prompt_key; "C-g" ])
   with
   | Error _ -> ()
   | Ok () -> require [%here] false

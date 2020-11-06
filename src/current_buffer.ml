@@ -426,3 +426,5 @@ let replace_string ?start ?end_ ~from ~to_ () =
       Regexp.Last_match.replace to_
     done)
 ;;
+
+let key_binding = Funcall.Wrap.("key-binding" <: Key_sequence.t @-> return Keymap.Entry.t)

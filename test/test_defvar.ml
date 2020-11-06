@@ -30,7 +30,7 @@ let%expect_test "[defvar] with invalid value" =
     defvar
       ("var-with-invalid-valuer" |> Symbol.intern)
       [%here]
-      ~docstring:""
+      ~docstring:"<docstring>"
       ~type_:Value.Type.int
       ~initial_value:13
       ()

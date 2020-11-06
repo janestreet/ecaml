@@ -101,6 +101,7 @@ let%expect_test "[recent_keys]" =
   defun_nullary_nil
     f
     [%here]
+    ~docstring:"<docstring>"
     ~interactive:No_arg
     ~define_keys:[ Keymap.global (), "c" ]
     (fun () -> message_s [%message "ran"]);

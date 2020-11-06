@@ -15,7 +15,11 @@ include (
     include Hashable.S with type t := t
   end)
 
-include (val Valueable.of_type (Value.Type.(map_id string) [%message "filename"]))
+include Valueable.Make (struct
+    type nonrec t = t
+
+    let type_ = Value.Type.(map_id string) [%message "filename"]
+  end)
 
 let is_absolute = Funcall.Wrap.("file-name-absolute-p" <: t @-> return bool)
 let extension = Funcall.Wrap.("file-name-extension" <: t @-> return (nil_or string))

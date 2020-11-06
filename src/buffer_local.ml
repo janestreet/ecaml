@@ -41,8 +41,16 @@ module Wrap = struct
   include (Value.Type : Value.Type.S)
 end
 
-let defvar symbol here ?(docstring = "") ~type_ ~default_value () =
-  let var = Defvar.defvar symbol here ~docstring ~type_ ~initial_value:default_value () in
+let defvar symbol here ?docstring ~type_ ~default_value () =
+  let var =
+    Defvar.defvar
+      symbol
+      here
+      ~docstring:(Option.value docstring ~default:"An Ecaml buffer-local.")
+      ~type_
+      ~initial_value:default_value
+      ()
+  in
   Var.make_buffer_local_always var;
   var
 ;;

@@ -5,6 +5,7 @@ module Current_buffer = Current_buffer0
 module Q = struct
   let evil = "evil" |> Symbol.intern
   let evilified = "evilified" |> Symbol.intern
+  let normal = "normal" |> Symbol.intern
 end
 
 let is_in_use () =
@@ -33,6 +34,7 @@ end
 module State = struct
   type t =
     | Evilified
+    | Normal
     | Other of Symbol.t
   [@@deriving equal, sexp_of]
 
@@ -40,9 +42,15 @@ module State = struct
     Value.Type.map
       Symbol.t
       ~name:[%sexp "evil-state"]
-      ~of_:(fun sym -> if Symbol.equal Q.evilified sym then Evilified else Other sym)
+      ~of_:(fun sym ->
+        if Symbol.equal Q.evilified sym
+        then Evilified
+        else if Symbol.equal Q.normal sym
+        then Normal
+        else Other sym)
       ~to_:(function
         | Evilified -> Q.evilified
+        | Normal -> Q.normal
         | Other sym -> sym)
   ;;
 
@@ -59,3 +67,9 @@ end
 module Escape = struct
   let inhibit_functions = Var.Wrap.("evil-escape-inhibit-functions" <: list Function.t)
 end
+
+let define_key =
+  Funcall.Wrap.(
+    "evil-define-key*"
+    <: list State.t @-> Keymap.t @-> Key_sequence.t @-> Keymap.Entry.t @-> return nil)
+;;

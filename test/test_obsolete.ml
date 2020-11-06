@@ -7,7 +7,7 @@ let report symbol () = print_s [%message "Called" (symbol : Symbol.t)]
 
 let alias_of =
   let symbol = "current-function" |> Symbol.intern in
-  defun_nullary_nil symbol [%here] (report symbol);
+  defun_nullary_nil symbol [%here] ~docstring:"<docstring>" (report symbol);
   symbol
 ;;
 
@@ -30,7 +30,9 @@ let%expect_test "obsolete functions already defined" =
     (foobar-2)
 
     This function is obsolete since now;
-    use `current-function' instead. |}];
+    use `current-function' instead.
+
+    <docstring> |}];
   Symbol.funcall0_i obsolete;
   [%expect {| (Called (symbol current-function)) |}];
   return ()
@@ -47,7 +49,9 @@ let%expect_test "documentation for obsolete functions" =
     (foobar-2)
 
     This function is obsolete since version X.Y;
-    use `current-function' instead. |}];
+    use `current-function' instead.
+
+    <docstring> |}];
   Defun.define_obsolete_alias
     obsolete
     [%here]
@@ -98,7 +102,9 @@ let%expect_test "obsolete functions not yet defined" =
     (foobar)
 
     This function is obsolete since now;
-    use `current-function' instead. |}];
+    use `current-function' instead.
+
+    <docstring> |}];
   (* Later definitions override our obsolete. *)
   defun_nullary_nil obsolete [%here] ~docstring:"_" ~interactive:No_arg (report obsolete);
   print_endline (Help.describe_function_text obsolete);

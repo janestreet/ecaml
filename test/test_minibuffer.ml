@@ -71,7 +71,7 @@ let%expect_test "[exit_hook]" =
   [%expect
     {|
     ((symbol    minibuffer-exit-hook)
-     (hook_type Normal)
+     (hook_type Normal_hook)
      (value (()))) |}];
   return ()
 ;;
@@ -81,7 +81,7 @@ let%expect_test "[setup_hook]" =
   [%expect
     {|
     ((symbol    minibuffer-setup-hook)
-     (hook_type Normal)
+     (hook_type Normal_hook)
      (value ((
        rfn-eshadow-setup-minibuffer
        minibuffer-history-isearch-setup
@@ -97,7 +97,8 @@ let%expect_test "[setup_hook] [exit_hook] don't run in batch mode" =
     (Hook.Function.create
        ("test-setup" |> Symbol.intern)
        [%here]
-       ~hook_type:Normal
+       ~docstring:"<docstring>"
+       ~hook_type:Normal_hook
        (Returns Value.Type.unit)
        (fun () -> print_s [%message "running setup hook"]));
   Hook.add
@@ -105,7 +106,8 @@ let%expect_test "[setup_hook] [exit_hook] don't run in batch mode" =
     (Hook.Function.create
        ("test-exit" |> Symbol.intern)
        [%here]
-       ~hook_type:Normal
+       ~docstring:"<docstring>"
+       ~hook_type:Normal_hook
        (Returns Value.Type.unit)
        (fun () -> print_s [%message "running exit hook"]));
   let%bind () =

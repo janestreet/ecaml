@@ -46,15 +46,19 @@ module Group = struct
   let all_defgroups = ref []
 
   let defgroup group_name here ~docstring ~parents =
+    let docstring = docstring |> String.strip in
+    require_nonempty_docstring here ~docstring;
     let group_name = group_name |> Symbol.intern in
     let form_of_parent parent =
       Form.[ Q.K.group |> symbol; parent |> Symbol.to_value |> quote ]
     in
     let docstring =
-      sprintf
-        "%s\n\nDefined at %s"
-        (docstring |> String.strip)
-        (here |> Source_code_position.to_string)
+      let here = here |> Source_code_position.to_string in
+      [%string {|
+%{docstring}
+
+Defined at %{here}
+|}] |> String.strip
     in
     Form.(
       Blocking.eval_i
@@ -175,6 +179,7 @@ type 'a t = 'a Var.t [@@deriving sexp_of]
 
 let var t = t
 let symbol = Var.symbol
+let name t = Symbol.name (symbol t)
 let value = Current_buffer0.value_exn
 let custom_set_variables = Funcall.Wrap.("custom-set-variables" <: value @-> return nil)
 
@@ -207,9 +212,11 @@ let defcustom
   =
   let standard_value = standard_value |> Value.Type.to_value type_ in
   (try
+     let docstring = docstring |> String.strip in
+     require_nonempty_docstring here ~docstring;
      let docstring =
        concat
-         [ docstring |> String.strip
+         [ docstring
          ; "\n\n"
          ; concat [ "Customization group: "; group |> Group.to_string; "\n" ]
          ; concat [ "Standard value: "; standard_value |> Value.prin1_to_string; "\n" ]
@@ -284,6 +291,8 @@ let defcustom_enum
       ?on_set
       ()
   =
+  let docstring = docstring |> String.strip in
+  require_nonempty_docstring here ~docstring;
   let type_ =
     Value.Type.enum
       [%sexp (Symbol.name symbol : string)]
@@ -293,7 +302,7 @@ let defcustom_enum
   let docstring =
     concat
       ~sep:"\n"
-      ((docstring |> String.strip)
+      (docstring
        :: ""
        :: List.map T.all ~f:(fun t ->
          let docstring =

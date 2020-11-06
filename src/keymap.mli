@@ -65,11 +65,11 @@ end
 
 (** [(describe-function 'lookup-key)]
     [(Info-goto-node "(elisp)Functions for Key Lookup")] *)
-val lookup_key_exn
+val lookup_key
   :  ?accept_defaults:bool (** default is [false] *)
   -> t
   -> Key_sequence.t
-  -> Entry.t
+  -> Entry.t Or_error.t
 
 (** [(describe-function 'define-key)]
     [(Info-goto-node "(elisp)Functions for Key Lookup")] *)

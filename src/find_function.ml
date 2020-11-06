@@ -15,37 +15,48 @@ let find_ocaml ~library ~symbol ~type_ =
 
 let advise_for_ocaml () =
   Feature.require ("find-func" |> Symbol.intern);
-  let for_function = "find-function-search-for-symbol" |> Symbol.intern in
-  Advice.around_values
-    ("find-function-search-ocaml" |> Symbol.intern)
-    [%here]
-    ~for_function
-    Async
-    (fun inner values ->
-       let buffer_and_position =
-         match values with
-         | [ symbol; type_; library ] ->
-           let do_it () =
-             let library = Value.to_utf8_bytes_exn library in
-             if not (String.is_suffix library ~suffix:".ml")
-             then return None
-             else (
-               (* [find-function-search-for-symbol] is used by both [find-function] and
-                  [find-variable], so [symbol] can be a function or a variable. *)
-               let symbol = Symbol.of_value_exn symbol in
-               let type_ = Load_history.Type.of_value_exn type_ in
-               let%map result = find_ocaml ~library ~symbol ~type_ in
-               let type_ = Value.Type.(tuple Buffer.t (nil_or Position.t)) in
-               Some (Value.Type.to_value type_ result))
-           in
-           (match%map Monitor.try_with do_it with
-            | Ok result -> result
-            | Error _ -> None)
-         | _ -> return None
-       in
-       match%map buffer_and_position with
-       | None -> inner values
-       | Some x -> x)
+  Advice.add
+    ~to_function:("find-function-search-for-symbol" |> Symbol.intern)
+    (Advice.defun_around_values
+       ("find-function-search-ocaml" |> Symbol.intern)
+       [%here]
+       ~docstring:
+         {|
+Advice that makes `find-function' able to jump to the source code position of functions
+defined in Ecaml.
+|}
+       Async
+       (fun inner values ->
+          let buffer_and_position =
+            match values with
+            | [ symbol; type_; library ] ->
+              let do_it () =
+                let library = Value.to_utf8_bytes_exn library in
+                if not (String.is_suffix library ~suffix:".ml")
+                then return None
+                else (
+                  (* [find-function-search-for-symbol] is used by both [find-function] and
+                     [find-variable], so [symbol] can be a function or a variable. *)
+                  let symbol = Symbol.of_value_exn symbol in
+                  let type_ = Load_history.Type.of_value_exn type_ in
+                  let%map result = find_ocaml ~library ~symbol ~type_ in
+                  let type_ = Value.Type.(tuple Buffer.t (nil_or Position.t)) in
+                  Some (Value.Type.to_value type_ result))
+              in
+              (match%map
+                 Monitor.try_with
+                   ~run:
+                     `Schedule
+                   ~rest:`Log
+                   do_it
+               with
+               | Ok result -> result
+               | Error _ -> None)
+            | _ -> return None
+          in
+          match%map buffer_and_position with
+          | None -> inner values
+          | Some x -> x))
 ;;
 
 let () = advise_for_ocaml ()

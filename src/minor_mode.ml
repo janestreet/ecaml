@@ -71,17 +71,15 @@ let define_minor_mode
       ?(initialize = fun () -> ())
       ()
   =
+  let docstring = docstring |> String.strip in
+  require_nonempty_docstring here ~docstring;
   let keymap_var = Var.Wrap.(concat [ name |> Symbol.name; "-map" ] <: Keymap.t) in
   Current_buffer.set_value keymap_var (Keymap.create ());
   let keymap = Current_buffer.value_exn keymap_var in
   List.iter define_keys ~f:(fun (keys, symbol) ->
     Keymap.define_key keymap (Key_sequence.create_exn keys) (Symbol symbol));
   let docstring =
-    concat
-      [ String.strip docstring
-      ; "\n\n"
-      ; Documentation.Special_sequence.keymap keymap_var.symbol
-      ]
+    concat [ docstring; "\n\n"; Documentation.Special_sequence.keymap keymap_var.symbol ]
   in
   Form.Blocking.eval_i
     (Form.list

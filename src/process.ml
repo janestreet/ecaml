@@ -40,22 +40,26 @@ module Status = struct
 
   include T
 
-  include Valueable.Remove_t
-      ((val Valueable.of_type
-              (Value.Type.enum
-                 [%sexp "process-status"]
-                 (module T)
-                 (Symbol.to_value
-                  << function
-                    | Closed -> Q.closed
-                    | Connect -> Q.connect
-                    | Exit -> Q.exit_
-                    | Failed -> Q.failed
-                    | Listen -> Q.listen
-                    | Open -> Q.open_
-                    | Run -> Q.run
-                    | Signal -> Q.signal
-                    | Stop -> Q.stop))))
+  include Valueable.Make (struct
+      type nonrec t = t
+
+      let type_ =
+        Value.Type.enum
+          [%sexp "process-status"]
+          (module T)
+          (Symbol.to_value
+           << function
+             | Closed -> Q.closed
+             | Connect -> Q.connect
+             | Exit -> Q.exit_
+             | Failed -> Q.failed
+             | Listen -> Q.listen
+             | Open -> Q.open_
+             | Run -> Q.run
+             | Signal -> Q.signal
+             | Stop -> Q.stop)
+      ;;
+    end)
 end
 
 let is_alive = Funcall.Wrap.("process-live-p" <: t @-> return bool)

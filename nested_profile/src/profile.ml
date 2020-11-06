@@ -473,10 +473,15 @@ let profile
         record_profile ?hide_if_less_than frame;
         incr_pending_children ~by:(-1))
     | Async ->
-      Monitor.protect f ~finally:(fun () ->
-        record_profile ?hide_if_less_than frame;
-        incr_pending_children ~by:(-1);
-        return ()))
+      Monitor.protect
+        ~run:
+          `Schedule
+        ~rest:`Log
+        f
+        ~finally:(fun () ->
+          record_profile ?hide_if_less_than frame;
+          incr_pending_children ~by:(-1);
+          return ()))
 ;;
 
 let backtrace () =

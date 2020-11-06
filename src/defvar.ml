@@ -23,13 +23,15 @@ let defvar
       ?(include_in_all_defvar_symbols = true)
       ()
   =
+  let docstring = docstring |> String.strip in
+  require_nonempty_docstring here ~docstring;
   ignore
     (Form.Blocking.eval
        ([ Q.defvar |> Symbol.to_value
         ; symbol |> Symbol.to_value
         ; Value.list
             [ Symbol.to_value Q.quote; initial_value |> Value.Type.to_value type_ ]
-        ; docstring |> String.strip |> Value.of_utf8_bytes
+        ; docstring |> Value.of_utf8_bytes
         ]
         |> Value.list
         |> Form.of_value_exn)

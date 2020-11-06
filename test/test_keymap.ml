@@ -5,7 +5,7 @@ open! Keymap
 
 let show t = print_s [%sexp (t : t)]
 let define_key t key entry = define_key t (Key_sequence.create_exn key) entry
-let lookup_key_exn t key = lookup_key_exn t (Key_sequence.create_exn key)
+let lookup_key_exn t key = lookup_key t (Key_sequence.create_exn key) |> ok_exn
 
 let show_keys t keys =
   List.iter keys ~f:(fun key ->
@@ -66,7 +66,9 @@ let%expect_test "[lookup_key_exn] too long" =
   [%expect
     {|
     (raised (
-      "[Keymap.lookup_key_exn] got too long key sequence" (key_sequence "a b"))) |}];
+      "[Keymap.lookup_key] got too long key sequence"
+      (key_sequence "a b")
+      (valid_prefix a))) |}];
   return ()
 ;;
 

@@ -6,7 +6,7 @@
 
 open! Core_kernel
 open! Import
-include Major_mode.S
+include Major_mode.S_with_lazy_keymap
 
 (** [(describe-function 'grep))]
     [(Info-goto-node "(emacs)Grep Searching")] *)

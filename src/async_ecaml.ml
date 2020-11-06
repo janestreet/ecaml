@@ -432,7 +432,13 @@ module Block_on_async = struct
         in
         let deferred =
           Async.(
-            Monitor.try_with ~extract_exn:true ~run:`Schedule f >>| Or_error.of_exn_result)
+            Monitor.try_with
+              ~rest:
+                `Log
+              ~extract_exn:true
+              ~run:`Schedule
+              f
+            >>| Or_error.of_exn_result)
         in
         let result = run_cycles_until_filled deferred in
         match result with
@@ -501,6 +507,13 @@ let start_scheduler () =
     Defun.defun
       Q.ecaml_async_take_lock_do_cycle
       [%here]
+      ~docstring:
+        {|
+For testing Async Ecaml.
+
+This runs the same OCaml code that Aysnc Ecaml uses for running an Async cycle.  It blocks
+until it can acquire the Async lock and then run a cycle.
+|}
       ~interactive:No_arg
       (Returns Value.Type.unit)
       (let open Defun.Let_syntax in
@@ -520,6 +533,12 @@ let start_scheduler () =
             max_inter_cycle_timeout
             ~repeat:max_inter_cycle_timeout
             ~name:("async-ecaml-keepalive-timer" |> Symbol.intern)
+            ~docstring:
+              {|
+Internal to Async Ecaml.
+
+Periodically request an Async cycle.
+|}
             ~f:(fun () ->
               try
                 if Time_ns.Span.( >= )
@@ -679,11 +698,24 @@ let () =
   Defun.defun_nullary_nil
     ("ecaml-async-shutdown" |> Symbol.intern)
     [%here]
+    ~docstring:
+      {|
+Internal to Async Ecaml.
+
+This shuts down the Async scheduler.  It can not be restarted, so you will have to restart
+Emacs afterwards.
+|}
     ~interactive:No_arg
     shutdown;
   Defun.defun_nullary_nil
     ("ecaml-async-generate-cycle-report" |> Symbol.intern)
     [%here]
+    ~docstring:
+      {|
+For testing Async Ecaml.
+
+This runs Async cycles for 10s and then shows how long the cycles took.
+|}
     ~interactive:No_arg
     (fun () -> Async.don't_wait_for (Cycle_report.generate_report ()));
   let defun_benchmark ~name ~f =
@@ -699,14 +731,34 @@ let () =
   in
   defun_benchmark
     ~name:"ecaml-async-benchmark-small-pings"
+    ~docstring:
+      {|
+For testing Async Ecaml.
+
+Run a benchmark that creates an Async TCP server and client and has the client ping the
+server 100 times.
+|}
     ~f:Ecaml_bench.Bench_async_ecaml.benchmark_small_pings;
   defun_benchmark
     ~name:"ecaml-async-benchmark-throughput"
+    ~docstring:
+      {|
+For testing Async Ecaml.
+
+Run a benchmark that creates an Async TCP server and client and has the server send 100M
+to the client.
+|}
     ~f:Ecaml_bench.Bench_async_ecaml.benchmark_throughput;
   Defun.defun_nullary
     ("ecaml-async-test-block-forever" |> Symbol.intern)
     [%here]
     ~interactive:No_arg
+    ~docstring:
+      {|
+For testing Async Ecaml.
+
+Block on [Deferred.never ()] until you press [C-g].
+|}
     (Returns_deferred Value.Type.unit)
     (fun () ->
        message_s [%message "blocking forever -- press C-g to interrupt"];
@@ -714,6 +766,12 @@ let () =
   Defun.defun_nullary_nil
     ("ecaml-async-test-execution-context-handling" |> Symbol.intern)
     [%here]
+    ~docstring:
+      {|
+For testing Async Ecaml.
+
+Check aspects of Async Ecaml's handling of execution contexts.
+|}
     ~interactive:No_arg
     (fun () ->
        let open Async in
@@ -736,23 +794,39 @@ let () =
            (sec_ns 0.1)
            ~f:check_execution_context
            ~name:("check-execution-context-timer" |> Symbol.intern)
+           ~docstring:
+             {|
+Internal to Async Ecaml.
+
+Periodically check that the execution context in which Async jobs run is
+[Execution_context.main].
+|}
        in
        don't_wait_for
          (let%map _ignored =
-            Monitor.try_with (fun () ->
-              let%bind () = Clock.after (sec 0.1) in
-              let%bind () = Clock.after (sec 2.) in
-              Timer.cancel timer;
-              messagef
-                "Execution-context test %s"
-                (if !test_passed then "passed" else "failed");
-              return ())
+            Monitor.try_with
+              ~run:
+                `Schedule
+              ~rest:`Log
+              (fun () ->
+                 let%bind () = Clock.after (sec 0.1) in
+                 let%bind () = Clock.after (sec 2.) in
+                 Timer.cancel timer;
+                 messagef
+                   "Execution-context test %s"
+                   (if !test_passed then "passed" else "failed");
+                 return ())
           in
           ()));
   Defun.defun_nullary_nil
     ("ecaml-async-test-in-thread-run" |> Symbol.intern)
     [%here]
-    ~docstring:"Call [In_thread.run] a number of times and report on its performance."
+    ~docstring:
+      {|
+For testing Async Ecaml.
+
+Call [In_thread.run] a number of times and report on its performance.
+|}
     ~interactive:No_arg
     (fun () ->
        let open Async in
@@ -814,6 +888,13 @@ not preserve the current Async execution context.
   Defun.defun_nullary_nil
     ("ecaml-async-test-enqueue-block-on-async" |> Symbol.intern)
     [%here]
+    ~docstring:
+      {|
+For testing Async Ecaml.
+
+Test [Background.schedule_foreground_block_on_async].  This should block for a couple
+seconds, and then open a buffer with a hello-world message.
+|}
     ~interactive:No_arg
     (fun () ->
        let open Async in

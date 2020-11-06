@@ -36,6 +36,7 @@ let%expect_test "[block_on_async] with a quit" =
     defun_nullary
       (fname |> Symbol.intern)
       [%here]
+      ~docstring:"<docstring>"
       (Returns_deferred Value.Type.unit)
       (fun () ->
          Clock.run_after (sec 0.01) Ecaml.Command.request_quit ();
@@ -99,6 +100,7 @@ let%expect_test "[defun (Returns_deferred Value.Type.(deferred unit))] where bod
   Defun.defun
     symbol
     [%here]
+    ~docstring:"<docstring>"
     (Returns_deferred Value.Type.unit)
     (let open Defun.Let_syntax in
      let%map_open () = return () in
@@ -118,6 +120,7 @@ let%expect_test "[defun (Returns_deferred Value.Type.(deferred unit))] where bod
   Defun.defun
     symbol
     [%here]
+    ~docstring:"<docstring>"
     (Returns_deferred Value.Type.unit)
     (let open Defun.Let_syntax in
      let%map_open () = return () in
@@ -137,6 +140,7 @@ let%expect_test "defun returning non-unit deferred" =
   Defun.defun
     symbol
     [%here]
+    ~docstring:"<docstring>"
     (Returns_deferred Value.Type.int)
     (let open Defun.Let_syntax in
      let%map_open () = return () in
@@ -158,6 +162,7 @@ let%expect_test "Nested calls to block_on_async raise, even via elisp" =
   Defun.defun
     symbol
     [%here]
+    ~docstring:"<docstring>"
     (Returns_deferred Value.Type.unit)
     (let open Defun.Let_syntax in
      let%map_open () = return () in
@@ -184,9 +189,13 @@ let%expect_test "Nested calls to block_on_async raise, even via elisp" =
 let%expect_test "raising to a try-with that has already returned" =
   let raise_error = Ivar.create () in
   match%bind
-    try_with (fun () ->
-      upon (Ivar.read raise_error) (fun () -> raise_s [%message "raising"]);
-      return ())
+    try_with
+      ~run:
+        `Schedule
+      ~rest:`Log
+      (fun () ->
+         upon (Ivar.read raise_error) (fun () -> raise_s [%message "raising"]);
+         return ())
   with
   | Error _ -> assert false
   | Ok () ->
@@ -222,9 +231,11 @@ let%expect_test "assert_foreground" =
 
 let%expect_test "raise in run_outside_async" =
   let%bind result =
-    Monitor.try_with_or_error (fun () ->
-      Async_ecaml.Private.run_outside_async [%here] (fun () ->
-        raise_s [%sexp "Hello world"]))
+    Monitor.try_with_or_error
+      ~rest:`Log
+      (fun () ->
+         Async_ecaml.Private.run_outside_async [%here] (fun () ->
+           raise_s [%sexp "Hello world"]))
   in
   print_s [%sexp (result : unit Or_error.t)];
   [%expect

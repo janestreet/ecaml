@@ -138,9 +138,17 @@ let save_some =
 let with_temp_buffer f =
   let temp_buffer = create ~name:" *temp*" in
   Monitor.protect
+    ~run:`Schedule
+    ~rest:`Log
     (fun () -> f temp_buffer)
     ~finally:(fun () ->
-      match%map Monitor.try_with (fun () -> kill temp_buffer) with
+      match%map
+        Monitor.try_with
+          ~run:
+            `Schedule
+          ~rest:`Log
+          (fun () -> kill temp_buffer)
+      with
       | _ -> ())
 ;;
 

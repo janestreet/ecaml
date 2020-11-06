@@ -1,19 +1,21 @@
 open! Core_kernel
 open! Import
 
-let advice_add =
-  Funcall.Wrap.("advice-add" <: Symbol.t @-> Symbol.t @-> Symbol.t @-> return nil)
+type t = Symbol.t [@@deriving sexp_of]
+
+let add =
+  let advice_add =
+    Funcall.Wrap.("advice-add" <: Symbol.t @-> Symbol.t @-> Symbol.t @-> return nil)
+  in
+  fun t ~to_function -> advice_add to_function Q.K.around t
 ;;
 
-let add_predefined_function advice_name ~for_function =
-  advice_add for_function Q.K.around advice_name
-;;
+let of_function symbol = symbol
 
-let add_internal
+let defun_internal
       advice_name
       here
-      ~for_function
-      ?docstring
+      ~docstring
       ?interactive
       ?should_profile
       sync_or_async
@@ -22,7 +24,7 @@ let add_internal
   Defun.defun
     advice_name
     here
-    ?docstring
+    ~docstring
     ?interactive
     ?should_profile
     (Defun.Returns.returns sync_or_async Value.Type.value)
@@ -31,24 +33,22 @@ let add_internal
      and inner = required "inner" value
      and rest = rest "rest" value in
      f inner rest);
-  add_predefined_function advice_name ~for_function
+  advice_name
 ;;
 
-let around_values
+let defun_around_values
       advice_name
       here
       sync_or_async
-      ?docstring
-      ~for_function
+      ~docstring
       ?interactive
       ?should_profile
       f
   =
-  add_internal
+  defun_internal
     advice_name
     here
-    ?docstring
-    ~for_function
+    ~docstring
     ?interactive
     ?should_profile
     sync_or_async
@@ -62,22 +62,20 @@ module On_parse_error = struct
   [@@deriving sexp_of]
 end
 
-let around_funcall
+let defun_around_funcall
       advice_name
       here
-      ?docstring
-      ~for_function
+      ~docstring
       ?interactive
       ?(on_parse_error = On_parse_error.Allow_raise)
       ?should_profile
       funcall
       f
   =
-  add_internal
+  defun_internal
     advice_name
     here
-    ~for_function
-    ?docstring
+    ~docstring
     ?interactive
     ?should_profile
     Sync
@@ -100,5 +98,9 @@ let around_funcall
                 Value.funcallN inner rest))
 ;;
 
-let advice_remove = Funcall.Wrap.("advice-remove" <: Symbol.t @-> Symbol.t @-> return nil)
-let remove advice_name ~for_function = advice_remove for_function advice_name
+let remove =
+  let advice_remove =
+    Funcall.Wrap.("advice-remove" <: Symbol.t @-> Symbol.t @-> return nil)
+  in
+  fun t ~from_function -> advice_remove from_function t
+;;

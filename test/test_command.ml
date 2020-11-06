@@ -10,6 +10,7 @@ let%expect_test "[Raw_prefix_argument]" =
   defun
     f
     [%here]
+    ~docstring:"<docstring>"
     ~interactive:Raw_prefix
     (Returns Value.Type.unit)
     (let open Defun.Let_syntax in
@@ -62,9 +63,9 @@ let%expect_test "[Raw_prefix_argument]" =
 
 let%expect_test "[call_interactively ~record:true]" =
   let f1 = "test-f1" |> Symbol.intern in
-  defun_nullary_nil f1 [%here] ~interactive:No_arg Fn.ignore;
+  defun_nullary_nil f1 [%here] ~docstring:"<docstring>" ~interactive:No_arg Fn.ignore;
   let f2 = "test-f2" |> Symbol.intern in
-  defun_nullary_nil f2 [%here] ~interactive:No_arg Fn.ignore;
+  defun_nullary_nil f2 [%here] ~docstring:"<docstring>" ~interactive:No_arg Fn.ignore;
   let most_recent_command () =
     print_s [%sexp (List.hd_exn (Command.history ()) : Form.t)]
   in
@@ -85,6 +86,7 @@ let%expect_test "[call_interactively] with an Async command" =
   defun_nullary
     f
     [%here]
+    ~docstring:"<docstring>"
     ~interactive:No_arg
     (Returns_deferred Value.Type.unit)
     (fun () ->

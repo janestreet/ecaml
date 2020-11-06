@@ -23,13 +23,16 @@ type window = Hook0.window =
 
 module Hook_type : sig
   type 'a t = 'a Hook0.Hook_type.t =
-    | File : file t
-    | Normal : normal t
-    | Window : window t
+    | File_hook : file t
+    | Normal_hook : normal t
+    | Window_hook : window t
   [@@deriving sexp_of]
 end
 
-val create : Symbol.t -> hook_type:'a Hook_type.t -> 'a t
+module Wrap : sig
+  val ( <: ) : string -> 'a Hook_type.t -> 'a t
+end
+
 val var : _ t -> Function.t list Var.t
 
 module Where : sig
@@ -47,7 +50,7 @@ module Function : sig
   val create
     :  Symbol.t
     -> Source_code_position.t
-    -> ?docstring:string
+    -> docstring:string
     -> ?should_profile:bool
     -> hook_type:'a Hook_type.t
     -> (unit, 'r) Defun.Returns.t
@@ -62,7 +65,7 @@ module Function : sig
   val create_with_self
     :  Symbol.t
     -> Source_code_position.t
-    -> ?docstring:string
+    -> docstring:string
     -> hook_type:'a Hook_type.t
     -> (unit, 'r) Defun.Returns.t
     -> ('a t -> 'a -> 'r)

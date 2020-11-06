@@ -14,13 +14,15 @@ module Private = struct
 end
 
 let defconst_i symbol here ~docstring ~(type_ : _ Value.Type.t) ~value =
+  let docstring = docstring |> String.strip in
+  require_nonempty_docstring here ~docstring;
   all_defconst_symbols := symbol :: !all_defconst_symbols;
   Load_history.add_entry here (Var symbol);
   Form.list
     [ Form.symbol Q.defconst
     ; Form.symbol symbol
     ; Form.quote (Value.Type.to_value type_ value)
-    ; Form.string (docstring |> String.strip)
+    ; Form.string docstring
     ]
   |> Form.Blocking.eval_i
 ;;

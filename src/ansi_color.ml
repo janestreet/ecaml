@@ -1031,7 +1031,12 @@ let show_invalid_escapes =
   Customization.defcustom
     ("ansi-color-show-invalid-escapes" |> Symbol.intern)
     [%here]
-    ~docstring:""
+    ~docstring:
+      {|
+Whether ansi-color functions render invalid ANSI escape sequences with text like:
+
+  <invalid ANSI escape sequence %S>
+|}
     ~group:customization_group
     ~type_:Value.Type.bool
     ~customization_type:Boolean

@@ -550,6 +550,7 @@ let%expect_test "[catch]ing a [throw] that travels through Ecaml" =
   defun
     ("some-ecaml-function" |> Symbol.intern)
     [%here]
+    ~docstring:"<docstring>"
     (Returns Value.Type.unit)
     (let open Defun.Let_syntax in
      let%map_open f = required "f" value in

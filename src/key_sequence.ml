@@ -17,6 +17,12 @@ let read_key_sequence_vector =
 let read () ~prompt = read_key_sequence_vector prompt
 let enqueue_unread_command_input t = Input_event.enqueue_unread_command_input (to_list t)
 
-let sigusr1 =
-  Value.vector [| Symbol.intern "sigusr1" |> Symbol.to_value |] |> of_value_exn
+let of_list =
+  Array.of_list >> Array.map ~f:Input_event.to_value >> Value.vector >> of_value_exn
 ;;
+
+let sigusr1 =
+  of_list [ Symbol.intern "sigusr1" |> Symbol.to_value |> Input_event.of_value_exn ]
+;;
+
+let concat = List.concat_map ~f:to_list >> of_list

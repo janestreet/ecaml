@@ -31,7 +31,13 @@ let message_text ?echo text =
 let wrap_message ?echo message ~f =
   let message = concat [ message; " ... " ] in
   message_s ?echo [%sexp (message : string)];
-  match%map Monitor.try_with f with
+  match%map
+    Monitor.try_with
+      ~run:
+        `Schedule
+      ~rest:`Log
+      f
+  with
   | Ok x ->
     message_s ?echo [%sexp (concat [ message; "done" ] : string)];
     x

@@ -1,12 +1,6 @@
 open! Core
 open! Import
 
-module Q = struct
-  include Q
-
-  let ediff_cleanup_hook = "ediff-cleanup-hook" |> Symbol.intern
-end
-
 let buffers =
   let buffers =
     Funcall.Wrap.(
@@ -17,4 +11,4 @@ let buffers =
     Async_ecaml.Private.run_outside_async [%here] (fun () -> buffers a b startup_hooks)
 ;;
 
-let cleanup_hook = Hook.create Q.ediff_cleanup_hook ~hook_type:Normal
+let cleanup_hook = Hook.Wrap.("ediff-cleanup-hook" <: Normal_hook)

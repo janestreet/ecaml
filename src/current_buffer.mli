@@ -377,3 +377,6 @@ val append_to : string -> unit
 val inhibit_read_only : (_, 'a) Sync_or_async.t -> (unit -> 'a) -> 'a
 val line_and_column_of_position : Position.t -> Line_and_column.t
 val position_of_line_and_column : Line_and_column.t -> Position.t
+
+(** [(describe-function 'key-binding)] *)
+val key_binding : Key_sequence.t -> Keymap.Entry.t

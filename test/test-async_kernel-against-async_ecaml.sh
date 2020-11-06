@@ -24,4 +24,4 @@ module Expect_test_config = Ecaml.Async_ecaml.Expect_test_config#'
 
 sed -i "$replacement" import.ml
 
-echo "build the target (alias \${ROOT}/lib/async_kernel/test/runtest) to test async_kernel against async_ecaml."
+echo "build the target (alias %{root}/lib/async_kernel/test/runtest) to test async_kernel against async_ecaml."

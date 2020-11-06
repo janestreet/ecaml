@@ -302,11 +302,13 @@ let define_obsolete_alias obsolete here ?docstring ~alias_of ~since () =
   Obsolete.make_function_obsolete obsolete ~current:(Some alias_of) ~since
 ;;
 
-let defun_raw symbol here ?docstring ?interactive ~args ?optional_args ?rest_arg f =
+let defun_raw symbol here ~docstring ?interactive ~args ?optional_args ?rest_arg f =
+  let docstring = String.strip docstring in
+  require_nonempty_docstring here ~docstring;
   add_to_load_history symbol here;
   Symbol.set_function
     symbol
-    (Function.create here ?docstring ?interactive ~args ?optional_args ?rest_arg f
+    (Function.create here ~docstring ?interactive ~args ?optional_args ?rest_arg f
      |> Function.to_value)
 ;;
 
@@ -322,7 +324,7 @@ let disable_function name =
 let defun_internal
       symbol
       here
-      ?docstring
+      ~docstring
       ?(define_keys = [])
       ?(obsoletes : Obsoletes.t option)
       ?interactive
@@ -334,7 +336,7 @@ let defun_internal
   defun_raw
     symbol
     here
-    ?docstring
+    ~docstring
     ?interactive:(Option.map interactive ~f:Interactive.to_value)
     ~args:args.required
     ~optional_args:args.optional
@@ -350,7 +352,7 @@ let defun_internal
 let defun
       symbol
       here
-      ?docstring
+      ~docstring
       ?define_keys
       ?obsoletes
       ?should_profile
@@ -362,7 +364,7 @@ let defun
   =
   let function_ = [%sexp (symbol : Symbol.t)] in
   defun_internal
-    ?docstring
+    ~docstring
     ?define_keys
     ?obsoletes
     ?interactive
@@ -378,7 +380,7 @@ let defun
 let defun_nullary
       symbol
       here
-      ?docstring
+      ~docstring
       ?define_keys
       ?obsoletes
       ?should_profile
@@ -391,7 +393,7 @@ let defun_nullary
   defun
     symbol
     here
-    ?docstring
+    ~docstring
     ?define_keys
     ?obsoletes
     ?should_profile
@@ -407,7 +409,7 @@ let defun_nullary
 let defun_nullary_nil
       symbol
       here
-      ?docstring
+      ~docstring
       ?define_keys
       ?obsoletes
       ?should_profile
@@ -419,7 +421,7 @@ let defun_nullary_nil
   defun_nullary
     symbol
     here
-    ?docstring
+    ~docstring
     ?define_keys
     ?obsoletes
     ?should_profile

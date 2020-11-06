@@ -88,15 +88,17 @@ let lookup_key =
   Funcall.Wrap.("lookup-key" <: t @-> Key_sequence.t @-> bool @-> return value)
 ;;
 
-let lookup_key_exn ?(accept_defaults = false) t key_sequence =
+let lookup_key ?(accept_defaults = false) t key_sequence =
   let result = lookup_key t key_sequence accept_defaults in
-  if Value.is_integer result
-  then
-    raise_s
-      [%message
-        "[Keymap.lookup_key_exn] got too long key sequence"
-          (key_sequence : Key_sequence.t)];
-  result |> Entry.of_value_exn
+  match Value.is_integer result with
+  | true ->
+    let n = Value.to_int_exn result in
+    let valid_prefix =
+      List.take (Key_sequence.to_list key_sequence) n |> Key_sequence.of_list
+    in
+    let s = "[Keymap.lookup_key] got too long key sequence" in
+    error_s [%message s (key_sequence : Key_sequence.t) (valid_prefix : Key_sequence.t)]
+  | false -> Ok (result |> Entry.of_value_exn)
 ;;
 
 let define_key =

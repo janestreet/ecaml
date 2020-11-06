@@ -3,6 +3,8 @@ open! Import0
 include Face0
 
 let defface name here ~docstring ~customization_group specs =
+  let docstring = docstring |> String.strip in
+  require_nonempty_docstring here ~docstring;
   Form.(
     Blocking.eval_i
       (list

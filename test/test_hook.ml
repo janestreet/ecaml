@@ -3,7 +3,7 @@ open! Async_kernel
 open! Import
 open! Hook
 
-let t = create ("some-hook" |> Symbol.intern) ~hook_type:Normal
+let t = Wrap.("some-hook" <: Normal_hook)
 let () = clear t
 let show t = print_s [%sexp (t : _ t)]
 
@@ -11,7 +11,8 @@ let create_function s =
   Function.create
     (s |> Symbol.intern)
     [%here]
-    ~hook_type:Normal
+    ~docstring:"<docstring>"
+    ~hook_type:Normal_hook
     (Returns Value.Type.unit)
     (fun () -> print_s [%message s])
 ;;
@@ -22,29 +23,31 @@ let f3 = create_function "f3"
 
 let%expect_test "[add]" =
   show t;
-  [%expect {|
+  [%expect
+    {|
     ((symbol    some-hook)
-     (hook_type Normal)
+     (hook_type Normal_hook)
      (value (()))) |}];
   add t f1;
   show t;
-  [%expect {|
+  [%expect
+    {|
     ((symbol    some-hook)
-     (hook_type Normal)
+     (hook_type Normal_hook)
      (value ((f1)))) |}];
   add t f2;
   show t;
   [%expect
     {|
     ((symbol    some-hook)
-     (hook_type Normal)
+     (hook_type Normal_hook)
      (value ((f2 f1)))) |}];
   add t f3 ~where:End;
   show t;
   [%expect
     {|
     ((symbol    some-hook)
-     (hook_type Normal)
+     (hook_type Normal_hook)
      (value ((f2 f1 f3)))) |}];
   clear t;
   return ()
@@ -54,9 +57,10 @@ let%expect_test "[add] when present" =
   add t f1;
   add t f1;
   show t;
-  [%expect {|
+  [%expect
+    {|
     ((symbol    some-hook)
-     (hook_type Normal)
+     (hook_type Normal_hook)
      (value ((f1)))) |}];
   clear t;
   return ()
@@ -69,19 +73,21 @@ let%expect_test "[remove]" =
   [%expect
     {|
     ((symbol    some-hook)
-     (hook_type Normal)
+     (hook_type Normal_hook)
      (value ((f1 f2)))) |}];
   remove t f2;
   show t;
-  [%expect {|
+  [%expect
+    {|
     ((symbol    some-hook)
-     (hook_type Normal)
+     (hook_type Normal_hook)
      (value ((f1)))) |}];
   remove t f1;
   show t;
-  [%expect {|
+  [%expect
+    {|
     ((symbol    some-hook)
-     (hook_type Normal)
+     (hook_type Normal_hook)
      (value (()))) |}];
   clear t;
   return ()
@@ -90,21 +96,24 @@ let%expect_test "[remove]" =
 let%expect_test "[remove] when absent" =
   remove t f1;
   show t;
-  [%expect {|
+  [%expect
+    {|
     ((symbol    some-hook)
-     (hook_type Normal)
+     (hook_type Normal_hook)
      (value (()))) |}];
   add t f2;
   show t;
-  [%expect {|
+  [%expect
+    {|
     ((symbol    some-hook)
-     (hook_type Normal)
+     (hook_type Normal_hook)
      (value ((f2)))) |}];
   remove t f1;
   show t;
-  [%expect {|
+  [%expect
+    {|
     ((symbol    some-hook)
-     (hook_type Normal)
+     (hook_type Normal_hook)
      (value ((f2)))) |}];
   clear t;
   return ()
@@ -127,7 +136,8 @@ let create_after_load_fun s =
   Function.create
     (s |> Symbol.intern)
     [%here]
-    ~hook_type:File
+    ~docstring:"<docstring>"
+    ~hook_type:File_hook
     (Returns Value.Type.unit)
     (fun _ -> print_endline s)
 ;;
@@ -160,7 +170,8 @@ let%expect_test "Blocking async hook" =
       Function.create
         ("f1" |> Symbol.intern)
         [%here]
-        ~hook_type:File
+        ~docstring:"<docstring>"
+        ~hook_type:File_hook
         (Returns_deferred Value.Type.unit)
         (fun _ ->
            let%map () = Clock.after pause in
@@ -187,7 +198,8 @@ let%expect_test "[after_save], [kill_buffer]" =
     (Function.create
        ("test-after-save-hook" |> Symbol.intern)
        [%here]
-       ~hook_type:Normal
+       ~docstring:"<docstring>"
+       ~hook_type:Normal_hook
        (Returns Value.Type.unit)
        (fun () -> print_s [%message "after-save hook ran"]));
   print_s [%sexp (Current_buffer.is_buffer_local (var after_save) : bool)];
@@ -199,7 +211,8 @@ let%expect_test "[after_save], [kill_buffer]" =
     (Function.create
        ("test-kill-buffer-hook" |> Symbol.intern)
        [%here]
-       ~hook_type:Normal
+       ~docstring:"<docstring>"
+       ~hook_type:Normal_hook
        (Returns Value.Type.unit)
        (fun () -> print_s [%message "kill-buffer hook ran"]));
   Point.insert "foo";
@@ -212,13 +225,14 @@ let%expect_test "[after_save], [kill_buffer]" =
 ;;
 
 let%expect_test "hook raise" =
-  let hook_type = Hook_type.Normal in
-  let t = create ("for-raising" |> Symbol.intern) ~hook_type in
+  let hook_type = Hook_type.Normal_hook in
+  let t = Wrap.("for-raising" <: hook_type) in
   add
     t
     (Function.create
        ("hook-raise1" |> Symbol.intern)
        [%here]
+       ~docstring:"<docstring>"
        ~hook_type
        (Returns Value.Type.unit)
        (fun () -> raise_s [%message "raise1"]));
@@ -228,6 +242,7 @@ let%expect_test "hook raise" =
     (Function.create
        ("hook-raise2" |> Symbol.intern)
        [%here]
+       ~docstring:"<docstring>"
        ~hook_type
        (Returns_deferred Value.Type.unit)
        (fun () -> raise_s [%message "raise2"]));

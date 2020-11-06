@@ -6,8 +6,6 @@ module Q = struct
   include Q
 
   let default_value = "default-value" |> Symbol.intern
-  let minibuffer_exit_hook = "minibuffer-exit-hook" |> Symbol.intern
-  let minibuffer_setup_hook = "minibuffer-setup-hook" |> Symbol.intern
 end
 
 module Y_or_n_with_timeout = struct
@@ -128,8 +126,8 @@ let read_from =
         default_value)
 ;;
 
-let exit_hook = Hook.create Q.minibuffer_exit_hook ~hook_type:Normal
-let setup_hook = Hook.create Q.minibuffer_setup_hook ~hook_type:Normal
+let exit_hook = Hook.Wrap.("minibuffer-exit-hook" <: Normal_hook)
+let setup_hook = Hook.Wrap.("minibuffer-setup-hook" <: Normal_hook)
 
 let active_window =
   Funcall.Wrap.("active-minibuffer-window" <: nullary @-> return (nil_or Window.t))

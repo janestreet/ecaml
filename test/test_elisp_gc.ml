@@ -27,7 +27,8 @@ let%expect_test "[post_gc_hook]" =
     (Hook.Function.create
        ("test-hook" |> Symbol.intern)
        [%here]
-       ~hook_type:Normal
+       ~docstring:"<docstring>"
+       ~hook_type:Normal_hook
        (Returns Value.Type.unit)
        (fun () -> print_s [%message "ran"]));
   garbage_collect ();

@@ -10,4 +10,8 @@ include (
     include Hashable.S with type t := t
   end)
 
-include (val Valueable.of_type Value.Type.int)
+include Valueable.Make (struct
+    type nonrec t = t
+
+    let type_ = Value.Type.int
+  end)

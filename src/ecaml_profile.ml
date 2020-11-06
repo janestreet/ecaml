@@ -54,7 +54,7 @@ The major mode for the *profile* buffer, which holds a log of Ecaml profile outp
                  , fun () -> Minor_mode.enable Minor_mode.read_only )
                ())
 
-let () = Keymap.suppress_keymap (Major_mode.keymap major_mode) ~suppress_digits:true
+let () = Keymap.suppress_keymap keymap ~suppress_digits:true
 
 module Start_location = struct
   include Profile.Start_location
@@ -217,10 +217,16 @@ let () =
     (Hook.Function.create
        ("ecaml-profile-record-gc" |> Symbol.intern)
        [%here]
+       ~docstring:
+         {|
+Internal to the Ecaml profiler.
+
+Called by `post-gc-hook' to add Elisp GC information to the Ecaml profiler.
+|}
        (* We don't profile this hook so that the gc frame is attributed to the enclosing
           frame that actually experienced the gc. *)
        ~should_profile:false
-       ~hook_type:Normal
+       ~hook_type:Normal_hook
        (Returns Value.Type.unit)
        (let last_gc_elapsed = ref (Elisp_gc.gc_elapsed ()) in
         fun () ->
@@ -303,17 +309,24 @@ let () =
     (Returns Value.Type.unit)
     (let%map_open.Defun () = return ()
      and fn = required "function" Symbol.t in
-     Advice.around_values
-       (elisp_function_wrapper_name fn)
-       [%here]
-       ~for_function:fn
-       ~should_profile:false
-       Sync
-       (fun f args ->
-          profile
-            Sync
-            (lazy [%sexp ((fn |> Symbol.to_value) :: args : Value.t list)])
-            (fun () -> f args));
+     Advice.add
+       ~to_function:fn
+       (Advice.defun_around_values
+          (elisp_function_wrapper_name fn)
+          [%here]
+          ~docstring:
+            {|
+Internal to the Ecaml profiler.
+
+Tell the Ecaml profiler about calls to an Elisp function.
+|}
+          ~should_profile:false
+          Sync
+          (fun f args ->
+             profile
+               Sync
+               (lazy [%sexp ((fn |> Symbol.to_value) :: args : Value.t list)])
+               (fun () -> f args)));
      Hash_set.add profiled_elisp_functions (Symbol.name fn);
      message (concat [ "You just added Ecaml profiling of ["; fn |> Symbol.name; "]" ]));
   Defun.defun
@@ -340,12 +353,18 @@ let () =
     (Returns Value.Type.unit)
     (let%map_open.Defun () = return ()
      and fn = required "function" Symbol.t in
-     Advice.remove (elisp_function_wrapper_name fn) ~for_function:fn;
+     Advice.remove (Advice.of_function (elisp_function_wrapper_name fn)) ~from_function:fn;
      Hash_set.remove profiled_elisp_functions (Symbol.name fn);
      message (concat [ "You just removed Ecaml profiling of ["; fn |> Symbol.name; "]" ]));
   Defun.defun_nullary
     ("ecaml-profile-test-parallel-profile" |> Symbol.intern)
     [%here]
+    ~docstring:
+      {|
+For testing the Ecaml profiler.
+
+Test how the Ecaml profiler handles two Async jobs running in parallel.
+|}
     (Returns_deferred Value.Type.unit)
     (fun () ->
        profile
@@ -373,6 +392,12 @@ module Benchmarks = struct
     Defun.defun
       (helper_name |> Symbol.intern)
       [%here]
+      ~docstring:
+        {|
+For testing the Ecaml profiler.
+
+Benchmark the Ecaml profiler's rendering of a large value.
+|}
       (Returns Value.Type.unit)
       (let%map_open.Defun () = return ()
        and _ignored = required "large-data-structure" value in
@@ -383,6 +408,13 @@ module Benchmarks = struct
     Defun.defun_nullary_nil
       ("ecaml-profile-benchmark-rendering-" ^ name |> Symbol.intern)
       [%here]
+      ~docstring:
+        [%string
+          {|
+For testing the Ecaml profiler.
+
+Benchmark the Ecaml profiler's rendering of a large %{name}.
+|}]
       ~interactive:No_arg
       (fun () ->
          (* We [Profile.disown] because we want to render the profile below under the
