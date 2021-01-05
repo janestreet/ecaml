@@ -12,7 +12,10 @@ let buffer_exn t =
   | None -> raise_s [%message "Window.buffer_exn" ~_:(t : t)]
 ;;
 
-let get_buffer_window = Funcall.Wrap.("get-buffer-window" <: Buffer.t @-> return t)
+let get_buffer_window =
+  Funcall.Wrap.("get-buffer-window" <: Buffer.t @-> return (nil_or t))
+;;
+
 let height_exn = Funcall.Wrap.("window-height" <: t @-> return int)
 let is_live = Funcall.Wrap.("window-live-p" <: t @-> return bool)
 let point_exn = Funcall.Wrap.("window-point" <: t @-> return Position.t)

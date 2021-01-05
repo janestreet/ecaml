@@ -30,7 +30,7 @@ val body_height_exn : t -> int
 val buffer_exn : t -> Buffer.t
 
 (** [(describe-function 'get-buffer-window)] *)
-val get_buffer_window : Buffer.t -> t
+val get_buffer_window : Buffer.t -> t option
 
 (** [(describe-function 'window-height)     ] *)
 val height_exn : t -> int
