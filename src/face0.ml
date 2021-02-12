@@ -87,11 +87,12 @@ module Color_or_unspecified = struct
   ;;
 
   let of_value_exn value =
-    if Value.eq value Value.unspecified
-    (* Sometimes Emacs returns an unspecified color as the string "unspecified-fg" or
-       "unspecified-bg" rather than the symbol [unspecified]. *)
-    || (Value.is_string value
-        && String.is_prefix ~prefix:"unspecified" (Value.to_utf8_bytes_exn value))
+    if
+      Value.eq value Value.unspecified
+      (* Sometimes Emacs returns an unspecified color as the string "unspecified-fg" or
+         "unspecified-bg" rather than the symbol [unspecified]. *)
+      || (Value.is_string value
+          && String.is_prefix ~prefix:"unspecified" (Value.to_utf8_bytes_exn value))
     then Unspecified
     else Color (value |> Color.of_value_exn)
   ;;

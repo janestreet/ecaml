@@ -19,9 +19,10 @@ let show t =
 ;;
 
 let%expect_test "[exists], [is_*]" =
-  show "/zzz";
-  [%expect
-    {|
+  with_temp_dir (fun dir ->
+    show "/zzz";
+    [%expect
+      {|
     ((exists false)
      (is_directory  (Ok false))
      (is_executable (Ok false))
@@ -29,9 +30,10 @@ let%expect_test "[exists], [is_*]" =
      (is_regular    (Ok false))
      (is_symlink    (Ok false))
      (is_writable   (Ok false))) |}];
-  show "test_file.ml";
-  [%expect
-    {|
+    Out_channel.write_all ~data:"" (Core_kernel.Filename.concat dir "empty-file");
+    show (Core_kernel.Filename.concat dir "empty-file");
+    [%expect
+      {|
     ((exists true)
      (is_directory  (Ok false))
      (is_executable (Ok false))
@@ -39,7 +41,7 @@ let%expect_test "[exists], [is_*]" =
      (is_regular    (Ok true))
      (is_symlink    (Ok false))
      (is_writable   (Ok true))) |}];
-  return ()
+    return ())
 ;;
 
 let%expect_test "[is_below]" =

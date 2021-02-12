@@ -109,6 +109,9 @@ module type Major_mode = sig
   (** [(describe-function 'emacs-lisp-mode)] *)
   module Emacs_lisp : S
 
+  (** [(describe-function 'asm-mode)] *)
+  module Asm : S_with_lazy_keymap
+
   (** [(describe-function 'define-derived-mode)]
       [(Info-goto-node "(elisp)Derived Modes")]
 

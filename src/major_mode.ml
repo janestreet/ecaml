@@ -133,6 +133,7 @@ module Makefile = (val wrap_existing_with_lazy_keymap "makefile-mode" [%here])
 module Lisp = (val wrap_existing "lisp-mode" [%here])
 module Scheme = (val wrap_existing_with_lazy_keymap "scheme-mode" [%here])
 module Emacs_lisp = (val wrap_existing "emacs-lisp-mode" [%here])
+module Asm = (val wrap_existing_with_lazy_keymap "asm-mode" [%here])
 
 let all_derived_modes = ref []
 

@@ -34,25 +34,25 @@ Use this as `print-level' for converting Elisp values to sexps in profile record
     ()
 ;;
 
-include (val Major_mode.define_derived_mode
-               ("ecaml-profile-mode" |> Symbol.intern)
-               [%here]
-               ~docstring:
-                 {|
+include
+  (val Major_mode.define_derived_mode
+         ("ecaml-profile-mode" |> Symbol.intern)
+         [%here]
+         ~docstring:
+           {|
 The major mode for the *profile* buffer, which holds a log of Ecaml profile output.
 |}
-               ~define_keys:
-                 [ "SPC", "scroll-up" |> Symbol.intern
-                 ; "DEL", "scroll-down" |> Symbol.intern
-                 ; "<", "beginning-of-buffer" |> Symbol.intern
-                 ; ">", "end-of-buffer" |> Symbol.intern
-                 ; "q", "quit-window" |> Symbol.intern
-                 ]
-               ~mode_line:"ecaml-profile"
-               ~initialize:
-                 ( Returns Value.Type.unit
-                 , fun () -> Minor_mode.enable Minor_mode.read_only )
-               ())
+         ~define_keys:
+           [ "SPC", "scroll-up" |> Symbol.intern
+           ; "DEL", "scroll-down" |> Symbol.intern
+           ; "<", "beginning-of-buffer" |> Symbol.intern
+           ; ">", "end-of-buffer" |> Symbol.intern
+           ; "q", "quit-window" |> Symbol.intern
+           ]
+         ~mode_line:"ecaml-profile"
+         ~initialize:
+           (Returns Value.Type.unit, fun () -> Minor_mode.enable Minor_mode.read_only)
+         ())
 
 let () = Keymap.suppress_keymap keymap ~suppress_digits:true
 

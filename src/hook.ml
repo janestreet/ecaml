@@ -58,7 +58,23 @@ module Function = struct
          let open Defun.Let_syntax in
          let%map_open () = return ()
          and file = required "file" string in
-         try_with (fun () -> f { file }))
+         try_with (fun () -> f { file })
+       | Before_change_hook ->
+         let open Defun.Let_syntax in
+         let%map_open () = return ()
+         and beginning_of_changed_region =
+           required "beginning-of-changed-region" Position.t
+         and end_of_changed_region = required "end-of-changed-region" Position.t in
+         try_with (fun () -> f { beginning_of_changed_region; end_of_changed_region })
+       | After_change_hook ->
+         let open Defun.Let_syntax in
+         let%map_open () = return ()
+         and beginning_of_changed_region =
+           required "beginning-of-changed-region" Position.t
+         and end_of_changed_region = required "end-of-changed-region" Position.t
+         and length_before_change = required "length-before-change" int in
+         try_with (fun () ->
+           f { beginning_of_changed_region; end_of_changed_region; length_before_change }))
   ;;
 
   let create symbol here ~docstring ?should_profile ~hook_type returns f =
@@ -79,7 +95,17 @@ module Function = struct
     | Normal_hook, () -> (elisp_name <: nullary @-> return nil) ()
     | Window_hook, { window; start } ->
       (elisp_name <: Window.t @-> Position.t @-> return nil) window start
-    | File_hook, { file } -> (elisp_name <: Value.Type.string @-> return nil) file
+    | File_hook, { file } -> (elisp_name <: string @-> return nil) file
+    | Before_change_hook, { beginning_of_changed_region; end_of_changed_region } ->
+      (elisp_name <: Position.t @-> Position.t @-> return nil)
+        beginning_of_changed_region
+        end_of_changed_region
+    | ( After_change_hook
+      , { beginning_of_changed_region; end_of_changed_region; length_before_change } ) ->
+      (elisp_name <: Position.t @-> Position.t @-> int @-> return nil)
+        beginning_of_changed_region
+        end_of_changed_region
+        length_before_change
   ;;
 
   let symbol t = t.symbol
@@ -153,9 +179,11 @@ let run =
     Value.Private.run_outside_async [%here] (fun () -> run_hooks symbol)
 ;;
 
+let after_change_functions = Wrap.("after-change-functions" <: After_change_hook)
 let after_load = Wrap.("after-load-functions" <: File_hook)
 let after_revert = Wrap.("after-revert-hook" <: Normal_hook)
 let after_save = Wrap.("after-save-hook" <: Normal_hook)
+let before_change_functions = Wrap.("before-change-functions" <: Before_change_hook)
 let before_save = Wrap.("before-save-hook" <: Normal_hook)
 let emacs_startup = Wrap.("emacs-startup-hook" <: Normal_hook)
 let kill_buffer = Wrap.("kill-buffer-hook" <: Normal_hook)

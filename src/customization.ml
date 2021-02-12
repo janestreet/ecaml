@@ -303,8 +303,10 @@ let defcustom_enum
     concat
       ~sep:"\n"
       (docstring
-       :: ""
-       :: List.map T.all ~f:(fun t ->
+       ::
+       ""
+       ::
+       List.map T.all ~f:(fun t ->
          let docstring =
            match T.docstring t with
            | "" -> []

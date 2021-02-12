@@ -12,6 +12,20 @@ open! Async_kernel
 open! Import
 
 type 'a t = 'a Hook0.t [@@deriving sexp_of]
+
+type after_change = Hook0.after_change =
+  { beginning_of_changed_region : Position.t
+  ; end_of_changed_region : Position.t
+  ; length_before_change : int
+  }
+[@@deriving sexp_of]
+
+type before_change = Hook0.before_change =
+  { beginning_of_changed_region : Position.t
+  ; end_of_changed_region : Position.t
+  }
+[@@deriving sexp_of]
+
 type file = Hook0.file = { file : string } [@@deriving sexp_of]
 type normal = unit [@@deriving sexp_of]
 
@@ -23,6 +37,8 @@ type window = Hook0.window =
 
 module Hook_type : sig
   type 'a t = 'a Hook0.Hook_type.t =
+    | After_change_hook : after_change t
+    | Before_change_hook : before_change t
     | File_hook : file t
     | Normal_hook : normal t
     | Window_hook : window t
@@ -94,6 +110,10 @@ val clear : _ t -> unit
     [(Info-goto-node "(elisp)Running Hooks")] *)
 val run : normal t -> unit Deferred.t
 
+(** [(describe-variable 'after-change-functions)]
+    [(Info-goto-node "(elisp)Change Hooks")] *)
+val after_change_functions : after_change t
+
 (** [(describe-variable 'after-load-functions)]
     [(Info-goto-node "(elisp)Hooks for Loading")] *)
 val after_load : file t
@@ -105,6 +125,10 @@ val after_revert : normal t
 (** [(describe-variable 'after-save-hook)]
     [(Info-goto-node "(elisp)Saving Buffers")] *)
 val after_save : normal t
+
+(** [(describe-variable 'before-change-functions)]
+    [(Info-goto-node "(elisp)Change Hooks")] *)
+val before_change_functions : before_change t
 
 (** [(describe-variable 'before-save-hook)]
     [(Info-goto-node "(elisp)Saving Buffers")] *)

@@ -2,6 +2,19 @@ open! Core_kernel
 open! Import
 module Current_buffer = Current_buffer0
 
+type after_change =
+  { beginning_of_changed_region : Position.t
+  ; end_of_changed_region : Position.t
+  ; length_before_change : int
+  }
+[@@deriving sexp_of]
+
+type before_change =
+  { beginning_of_changed_region : Position.t
+  ; end_of_changed_region : Position.t
+  }
+[@@deriving sexp_of]
+
 type file = { file : string } [@@deriving sexp_of]
 type normal = unit [@@deriving sexp_of]
 
@@ -13,6 +26,8 @@ type window =
 
 module Hook_type = struct
   type 'a t =
+    | After_change_hook : after_change t
+    | Before_change_hook : before_change t
     | File_hook : file t
     | Normal_hook : normal t
     | Window_hook : window t
