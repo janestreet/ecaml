@@ -118,10 +118,6 @@ module type Type = sig
   val path_list : string list t
 end
 
-module type Enum = sig
-  type t [@@deriving enumerate, sexp_of]
-end
-
 module type Value = sig
   type t = Value0.t [@@deriving sexp_of]
 
@@ -279,14 +275,17 @@ module type Value = sig
     val of_value_exn : 'a t -> value -> 'a
     val name : _ t -> Sexp.t
     val map : 'a t -> name:Sexp.t -> of_:('a -> 'b) -> to_:('b -> 'a) -> 'b t
+    val to_sexp : 'a t -> 'a -> Sexp.t
 
     (** [map_id type_ name] is short for [map type_ ~name ~of_:Fn.id ~to_:Fn.id].
         It is not interchangeable with [type_] itself. *)
     val map_id : 'a t -> Sexp.t -> 'a t
 
-    module type Enum = Enum
+    val enum : Sexp.t -> (module Enum.S with type t = 'a) -> ('a -> value) -> 'a t
 
-    val enum : Sexp.t -> (module Enum with type t = 'a) -> ('a -> value) -> 'a t
+    (** [enum_symbol name (module M)] represents [m : M.t] as symbols named after
+        [Enum.to_string_hum (module M) m]. *)
+    val enum_symbol : Sexp.t -> (module Enum.S with type t = 'a) -> 'a t
   end
   with type value := t
 

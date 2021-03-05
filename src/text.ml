@@ -160,6 +160,10 @@ module Face_spec = struct
             (value : Value.t)
             (exn : exn)]
   ;;
+
+  let type_ =
+    Value.Type.create [%sexp "text-face-spec"] [%sexp_of: t] of_value_exn to_value
+  ;;
 end
 
 module Display_spec = struct
@@ -185,49 +189,26 @@ module Display_spec = struct
       ; text = txt |> of_value_exn
       }
   ;;
+
+  let type_ =
+    Value.Type.create [%sexp "text-display-spec"] [%sexp_of: t] of_value_exn to_value
+  ;;
 end
 
 module Property_name = struct
-  module type S = sig
-    module Property_value : sig
-      type t [@@deriving sexp_of]
+  type 'a t =
+    { name : Symbol.t
+    ; type_ : 'a Value.Type.t
+    }
+  [@@deriving fields]
 
-      val of_value_exn : Value.t -> t
-      val to_value : t -> Value.t
-    end
-
-    val name : Symbol.t
-  end
-
-  type 'a t = (module S with type Property_value.t = 'a)
   type 'a property_name = 'a t
-
-  let name (type a) (t : a t) =
-    let module T = (val t) in
-    T.name
-  ;;
 
   let name_as_value t = t |> name |> Symbol.to_value
   let sexp_of_t _ t = [%sexp (name t : Symbol.t)]
-
-  let of_value_exn (type a) (t : a t) =
-    let module T = (val t) in
-    T.Property_value.of_value_exn
-  ;;
-
-  let to_value (type a) (t : a t) =
-    let module T = (val t) in
-    T.Property_value.to_value
-  ;;
-
-  module Unknown = struct
-    module Property_value = struct
-      include Value
-
-      let of_value_exn = Fn.id
-      let to_value = Fn.id
-    end
-  end
+  let of_value_exn t = Value.Type.of_value_exn (type_ t)
+  let to_value t = Value.Type.to_value (type_ t)
+  let value_to_sexp t = Value.Type.to_sexp (type_ t)
 
   module Packed = struct
     type t = T : _ property_name -> t
@@ -248,75 +229,34 @@ module Property_name = struct
            List.find !all_except_unknown ~f:(fun t -> Symbol.equal symbol (name t))
          with
          | Some t -> t
-         | None ->
-           T
-             (module struct
-               include Unknown
-
-               let name = symbol
-             end))
+         | None -> T { name = symbol; type_ = Value.Type.value })
     ;;
   end
 
-  let create_and_register (type a) (t : (module S with type Property_value.t = a)) =
+  let create_and_register name type_ =
+    let t = { name; type_ } in
     Packed.all_except_unknown := T t :: !Packed.all_except_unknown;
     t
   ;;
 
-  module Face_name = struct
-    module Property_value = Face_spec
+  module Create = struct
+    let ( <: ) name type_ = create_and_register (Symbol.intern name) type_
   end
 
-  module Display_name = struct
-    module Property_value = Display_spec
-  end
-
-  let face : _ t =
-    create_and_register
-      (module struct
-        include Face_name
-
-        let name = Q.face
-      end)
-  ;;
-
-  let mouse_face : _ t =
-    create_and_register
-      (module struct
-        include Face_name
-
-        let name = Q.mouse_face
-      end)
-  ;;
-
-  let font_lock_face : _ t =
-    create_and_register
-      (module struct
-        include Face_name
-
-        let name = Q.font_lock_face
-      end)
-  ;;
-
-  let display : _ t =
-    create_and_register
-      (module struct
-        include Display_name
-
-        let name = Q.display
-      end)
-  ;;
+  let face : _ t = create_and_register Q.face Face_spec.type_
+  let mouse_face : _ t = create_and_register Q.mouse_face Face_spec.type_
+  let font_lock_face : _ t = create_and_register Q.font_lock_face Face_spec.type_
+  let display : _ t = create_and_register Q.display Display_spec.type_
 end
 
 module Property = struct
   type t = T : 'a Property_name.t * 'a -> t
 
   let sexp_of_t (T (property_name, property_value)) =
-    let module Property_name = (val property_name) in
     [%message
       ""
-        ~_:(Property_name.name : Symbol.t)
-        ~_:(property_value : Property_name.Property_value.t)]
+        ~_:(Property_name.name property_name : Symbol.t)
+        ~_:(Property_name.value_to_sexp property_name property_value : Sexp.t)]
   ;;
 
   let rec of_property_list_exn value =
@@ -340,8 +280,9 @@ module Property = struct
 
   let to_property_list ts =
     List.fold (List.rev ts) ~init:[] ~f:(fun ac (T (name, value)) ->
-      let module Name = (val name) in
-      (Name.name |> Symbol.to_value) :: (value |> Name.Property_value.to_value) :: ac)
+      let type_ = Property_name.type_ name in
+      (Property_name.name name |> Symbol.to_value)
+      :: (value |> Value.Type.to_value type_) :: ac)
   ;;
 end
 

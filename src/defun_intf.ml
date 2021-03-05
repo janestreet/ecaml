@@ -141,4 +141,16 @@ module type Defun = sig
     -> ?interactive:Interactive.t
     -> (unit -> unit)
     -> Function.t
+
+  (** [apply t args ~function_ ~defined_at] applies [args] to [t], using [function_] and
+      [defined_at] to construct a nice error message if [args] are not what [t] expects.
+
+      It helps define functions which must inspect some of their arguments to determine
+      the number and type of the remaining arguments. *)
+  val apply
+    :  'a t
+    -> Value.t array
+    -> function_:Sexp.t
+    -> defined_at:Lexing.position
+    -> 'a
 end

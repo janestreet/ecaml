@@ -13,6 +13,8 @@ type t =
   }
 [@@deriving fields, sexp_of]
 
+val create : ?variable_name:Symbol.t -> Symbol.t -> t
+
 (** Returns true if [t] is defined and enabled, and false otherwise. *)
 val is_enabled : t -> bool
 

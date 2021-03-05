@@ -368,14 +368,7 @@ let%expect_test "[properties]" =
 ;;
 
 let%expect_test "registering a new text property" =
-  let property_name =
-    Property_name.create_and_register
-      (module struct
-        let name = "foo" |> Symbol.intern
-
-        module Property_value = Symbol
-      end)
-  in
+  let property_name = Property_name.Create.("foo" <: Symbol.t) in
   let t = of_utf8_bytes "a" in
   set_property t property_name ("bar" |> Symbol.intern);
   print_s [%sexp (t : t)];

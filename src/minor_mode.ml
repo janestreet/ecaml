@@ -21,6 +21,10 @@ type t =
   }
 [@@deriving fields, sexp_of]
 
+let create ?variable_name function_name =
+  { function_name; variable_name = Option.value variable_name ~default:function_name }
+;;
+
 let compare_name = Comparable.lift Symbol.compare_name ~f:function_name
 let abbrev = { function_name = Q.abbrev_mode; variable_name = Q.abbrev_mode }
 

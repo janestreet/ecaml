@@ -27,6 +27,9 @@ val is_live : t -> bool
 val body_height_exn : t -> int
 
 (** [(describe-function 'window-buffer)     ] *)
+val buffer : t -> Buffer.t option
+
+(** [(describe-function 'window-buffer)     ] *)
 val buffer_exn : t -> Buffer.t
 
 (** [(describe-function 'get-buffer-window)] *)

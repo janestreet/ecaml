@@ -92,21 +92,16 @@ module Property_name : sig
   val to_value : 'a t -> 'a -> Value.t
   val of_value_exn : 'a t -> Value.t -> 'a
 
-  module type S = sig
-    module Property_value : sig
-      type t [@@deriving sexp_of]
+  (** [(<:)] creates a new property name and makes it available for automatic typeful
+      conversion of elisp property lists.  Idiomatic usage looks like this: {[
 
-      val of_value_exn : Value.t -> t
-      val to_value : t -> Value.t
-    end
+        Text.Property_name.Create.(name <: type_)
 
-    val name : Symbol.t
+      ]} We keep [Create] clear of other values to avoid polluting the namespace inside
+      that local open. *)
+  module Create : sig
+    val ( <: ) : string -> 'a Value.Type.t -> 'a t
   end
-
-  (** [create_and_register (module M)] creates a new property name, and registers it with
-      state in [Property_name] to enable conversion from an Elisp property list containing
-      [M.name] and the associated [Value.t] to a [Property.t]. *)
-  val create_and_register : (module S with type Property_value.t = 'a) -> 'a t
 
   module Packed : sig
     type t = T : _ property_name -> t [@@deriving sexp_of]

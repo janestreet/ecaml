@@ -16,6 +16,11 @@ let is_regular = Funcall.Wrap.("file-regular-p" <: Filename.t @-> return bool)
 let is_symlink = Funcall.Wrap.("file-symlink-p" <: Filename.t @-> return bool)
 let is_writable = Funcall.Wrap.("file-writable-p" <: Filename.t @-> return bool)
 
+let is_newer =
+  let f = Funcall.Wrap.("file-newer-than-file-p" <: string @-> string @-> return bool) in
+  fun file ~than -> f file than
+;;
+
 let file_in_directory_p =
   Funcall.Wrap.("file-in-directory-p" <: Filename.t @-> Filename.t @-> return bool)
 ;;

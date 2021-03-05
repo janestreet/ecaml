@@ -27,6 +27,9 @@ val is_symlink : string -> bool
 (** [(describe-function 'file-writable-p)] *)
 val is_writable : string -> bool
 
+(** [(describe-function 'file-newer-than-file-p)] *)
+val is_newer : Filename.t -> than:Filename.t -> bool
+
 (** [(describe-function 'file-in-directory-p)]
     [(Info-goto-node "(elisp)Truenames")] *)
 val is_below : string -> dir:string -> bool

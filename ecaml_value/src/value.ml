@@ -706,9 +706,7 @@ module Type = struct
 
   let with_of_value_exn t of_value_exn = { t with of_value_exn }
 
-  module type Enum = Enum
-
-  let enum (type a) name (module M : Enum with type t = a) to_value =
+  let enum (type a) name (module M : Enum.S with type t = a) to_value =
     let valid_values = List.map M.all ~f:(fun m -> to_value m, m) in
     let of_value_exn value =
       match List.Assoc.find valid_values value ~equal with
@@ -718,6 +716,7 @@ module Type = struct
     create name [%sexp_of: M.t] of_value_exn to_value
   ;;
 
+  let enum_symbol name m = enum name m (fun a -> Enum.to_string_hum m a |> intern)
   let bool = create [%message "bool"] [%sexp_of: bool] to_bool of_bool
   let float = create [%message "float"] [%sexp_of: float] to_float_exn of_float
   let ignored = create [%message "ignored"] [%sexp_of: unit] ignore (const nil)

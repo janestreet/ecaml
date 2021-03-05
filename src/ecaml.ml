@@ -80,6 +80,7 @@ module Regexp = Regexp
 module Rx = Rx
 module Selected_window = Selected_window
 module Symbol = Symbol
+module Symbol_prefix = Symbol_prefix
 module Sync_or_async = Sync_or_async
 module Syntax_table = Syntax_table
 module System = System
