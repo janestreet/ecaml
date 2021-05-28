@@ -13,8 +13,8 @@ open! Core_kernel
 open! Import
 module Ivar = Async.Ivar
 module Mutex = Error_checking_mutex
-module Time = Core.Time
-module Unix = Core.Unix
+module Time = Time_unix
+module Unix = Core_unix
 module Scheduler = Async_unix.Async_unix_private.Raw_scheduler
 
 let message_s = message_s
@@ -301,7 +301,7 @@ module Block_on_async = struct
       type t =
         { here : Source_code_position.t
         ; context : Sexp.t Lazy.t
-        ; created_at : Core.Time_ns.t opaque_in_test
+        ; created_at : Time_ns_unix.t opaque_in_test
         }
       [@@deriving sexp_of]
     end

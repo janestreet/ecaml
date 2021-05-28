@@ -188,7 +188,7 @@ let () =
    := fun (lazy sexp) -> Echo_area.inhibit_messages Sync (fun () -> message_s sexp));
   (Profile.sexp_of_time_ns
    := fun time_ns ->
-     match [%sexp (time_ns : Core.Time_ns.t)] with
+     match [%sexp (time_ns : Time_ns_unix.t)] with
      | List [ date; ofday ] -> List [ ofday; date ]
      | sexp -> sexp);
   (Profile.output_profile

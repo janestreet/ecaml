@@ -33,6 +33,7 @@ module Save_buffers = struct
   let t = type_
 end
 
+let last_buffer = Var.Wrap.("grep-last-buffer" <: nil_or Buffer.t)
 let save_buffers = Customization.Wrap.("grep-save-buffers" <: Save_buffers.t)
 let use_null_device = Customization.Wrap.("grep-use-null-device" <: bool)
 let grep = Funcall.Wrap.("grep" <: string @-> return nil)

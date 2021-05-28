@@ -28,6 +28,7 @@ type before_change = Hook0.before_change =
 
 type file = Hook0.file = { file : string } [@@deriving sexp_of]
 type normal = unit [@@deriving sexp_of]
+type frame = Hook0.frame = { frame : Frame.t } [@@deriving sexp_of]
 
 type window = Hook0.window =
   { window : Window.t
@@ -41,6 +42,7 @@ module Hook_type : sig
     | Before_change_hook : before_change t
     | File_hook : file t
     | Normal_hook : normal t
+    | Frame_hook : frame t
     | Window_hook : window t
   [@@deriving sexp_of]
 end
@@ -104,6 +106,7 @@ val add
     [(Info-goto-node "(elisp)Setting Hooks")] *)
 val remove : ?buffer_local:bool -> 'a t -> 'a Function.t -> unit
 
+val remove_symbol : ?buffer_local:bool -> 'a t -> Symbol.t -> unit
 val clear : _ t -> unit
 
 (** [(describe-function 'run-hooks)]

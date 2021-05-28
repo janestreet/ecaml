@@ -292,7 +292,7 @@ let%expect_test "[Call.Input.File]" =
     (result (Exit_status 0))
     output:
     foobar |}];
-  Sys.remove file;
+  Core.Sys.remove file;
   return ()
 ;;
 
@@ -334,7 +334,7 @@ let%expect_test "[Call.Output.File]" =
   [%expect {|
     foo
     bar |}];
-  Sys.remove file;
+  Core.Sys.remove file;
   return ()
 ;;
 
@@ -379,7 +379,7 @@ let%expect_test "[Call.Output.Split]" =
     output: |}];
   show_file_contents file;
   [%expect {| foo |}];
-  Sys.remove file;
+  Core.Sys.remove file;
   let file1 = Caml.Filename.temp_file "" "" in
   let file2 = Caml.Filename.temp_file "" "" in
   test_call_result_exn
@@ -394,8 +394,8 @@ let%expect_test "[Call.Output.Split]" =
   [%expect {| bar |}];
   show_file_contents file2;
   [%expect {| foo |}];
-  Sys.remove file1;
-  Sys.remove file2;
+  Core.Sys.remove file1;
+  Core.Sys.remove file2;
   return ()
 ;;
 

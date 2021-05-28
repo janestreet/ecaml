@@ -1,2 +1,3 @@
-(executables (names bench_async_ecaml) (libraries async core ecaml_bench)
+(executables (names bench_async_ecaml)
+ (libraries async core.command_unix core ecaml_bench)
  (preprocess (pps ppx_jane)))

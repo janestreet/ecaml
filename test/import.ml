@@ -1,5 +1,6 @@
 open! Core_kernel
 open! Async_kernel
+module Time_ns = Time_ns_unix
 include Expect_test_helpers_core
 include Expect_test_helpers_async
 include Ecaml
@@ -10,7 +11,7 @@ let concat = String.concat
    jenga to view the test as failing.  [ignore_stderr] redirects stderr to [/dev/null],
    and returns a function to restore stderr. *)
 let ignore_stderr () =
-  let module Unix = Core.Unix in
+  let module Unix = Core_unix in
   let saved_stderr = Unix.dup Unix.stderr in
   Unix.dup2 ~src:(Unix.openfile "/dev/null" ~mode:[ O_WRONLY ]) ~dst:Unix.stderr ();
   stage (fun () ->
@@ -97,7 +98,7 @@ let with_input_macro string f =
 
 let with_input (type a) string (f : unit -> a Deferred.t) : a Deferred.t =
   let module Out_channel = Core.Out_channel in
-  let module Unix = Core.Unix in
+  let module Unix = Core_unix in
   let r, w = Unix.pipe () in
   let () = Unix.set_nonblock w in
   let out = Unix.out_channel_of_descr w in

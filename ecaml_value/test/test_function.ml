@@ -3,6 +3,8 @@ open! Async_kernel
 open! Import
 open! Function
 
+let () = Backtrace.elide := true
+
 let%expect_test "mutual recursion between Emacs and OCaml" =
   let r = ref None in
   let loop i =

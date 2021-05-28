@@ -20,5 +20,8 @@ module Save_buffers : sig
   [@@deriving sexp_of]
 end
 
+(** [(describe-variable 'grep-last-buffer)] *)
+val last_buffer : Buffer.t option Var.t
+
 (** [(describe-variable 'grep-save-buffers)] *)
 val save_buffers : Save_buffers.t Customization.t

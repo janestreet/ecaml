@@ -17,6 +17,7 @@ type before_change =
 
 type file = { file : string } [@@deriving sexp_of]
 type normal = unit [@@deriving sexp_of]
+type frame = { frame : Frame.t } [@@deriving sexp_of]
 
 type window =
   { window : Window.t
@@ -30,6 +31,7 @@ module Hook_type = struct
     | Before_change_hook : before_change t
     | File_hook : file t
     | Normal_hook : normal t
+    | Frame_hook : frame t
     | Window_hook : window t
   [@@deriving sexp_of]
 end

@@ -4,6 +4,7 @@ open! Import
 open! Value
 open! For_testing
 
+let () = Backtrace.elide := true
 let show t = print_s [%sexp (t : t)]
 let test_predicate f t = print_s [%sexp (f t : bool)]
 

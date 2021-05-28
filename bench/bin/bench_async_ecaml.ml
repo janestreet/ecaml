@@ -2,7 +2,7 @@ open! Core
 open! Async
 
 let () =
-  Command.run
+  Command_unix.run
     (Command.async
        ~summary:"Run ecaml_async benchmarks with the normal async_unix scheduler"
        (let%map_open.Command () = return () in

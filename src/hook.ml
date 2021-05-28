@@ -48,6 +48,11 @@ module Function = struct
          let open Defun.Let_syntax in
          let%map_open () = return () in
          try_with f
+       | Frame_hook ->
+         let open Defun.Let_syntax in
+         let%map_open () = return ()
+         and frame = required "frame" Frame.t in
+         try_with (fun () -> f { frame })
        | Window_hook ->
          let open Defun.Let_syntax in
          let%map_open () = return ()
@@ -93,6 +98,7 @@ module Function = struct
     let open Funcall.Wrap in
     match hook_type, x with
     | Normal_hook, () -> (elisp_name <: nullary @-> return nil) ()
+    | Frame_hook, { frame } -> (elisp_name <: Frame.t @-> return nil) frame
     | Window_hook, { window; start } ->
       (elisp_name <: Window.t @-> Position.t @-> return nil) window start
     | File_hook, { file } -> (elisp_name <: string @-> return nil) file
@@ -124,6 +130,10 @@ let remove_hook =
 
 let remove ?(buffer_local = false) t function_ =
   remove_hook (t |> symbol) (Function.symbol function_) buffer_local
+;;
+
+let remove_symbol ?(buffer_local = false) t symbol_ =
+  remove_hook (t |> symbol) symbol_ buffer_local
 ;;
 
 module Id = Unique_id.Int ()
