@@ -1,5 +1,5 @@
-(* We export all the Ecaml modules before doing [open!]s, because we want to
-   export Ecaml modules that shadow [Core_kernel] ones. *)
+(* We export all the Ecaml modules before doing [open!]s, because we want to export Ecaml
+   modules that shadow [Core] ones. *)
 
 module Abbrev = Abbrev
 module Advice = Advice
@@ -97,7 +97,7 @@ module Variable_watcher = Variable_watcher
 module Vector = Vector
 module Window = Window
 module Working_directory = Working_directory
-open! Core_kernel
+open! Core
 open! Async_kernel
 open! Import
 module Q = Q

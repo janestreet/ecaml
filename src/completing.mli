@@ -1,6 +1,6 @@
 (** Prompts for input, with completion from a static collection of suggestions. *)
 
-open! Core_kernel
+open! Core
 open! Import
 open! Async
 

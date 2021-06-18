@@ -1,4 +1,4 @@
-open! Core_kernel
+open! Core
 open! Import
 
 let standard_output = Var.Wrap.("standard-output" <: value)

@@ -1,4 +1,4 @@
-open! Core_kernel
+open! Core
 open! Import
 
 let buffer_name_function =

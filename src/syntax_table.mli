@@ -5,7 +5,7 @@
 
     [(Info-goto-node "(elisp)Syntax Tables")] *)
 
-open! Core_kernel
+open! Core
 open! Import
 include Value.Subtype
 include Equal.S with type t := t

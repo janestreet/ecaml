@@ -12,7 +12,7 @@
 
     [(Info-goto-node "(elisp)Point")]. *)
 
-open! Core_kernel
+open! Core
 open! Import
 
 (** [(describe-function 'point)]. *)

@@ -18,7 +18,7 @@
     The state machine is constructed from scratch dynamically on demand as states and
     transitions are encountered. *)
 
-open! Core_kernel
+open! Core
 open! Import
 
 module Q = struct
@@ -1233,7 +1233,7 @@ let color_region ~start ~end_ ~use_temp_file ~preserve_state ~drop_unsupported_e
            ~start:(start + region.pos)
            ~end_:(start + region.pos + region.len));
        Current_buffer.set_multibyte is_multibyte);
-     Core.Sys.remove temp_file_state.temp_file);
+     Sys_unix.remove temp_file_state.temp_file);
   if show_messages && t.saw_escape && System.is_interactive ()
   then (
     let took = Time_ns.diff (Time_ns.now ()) before in

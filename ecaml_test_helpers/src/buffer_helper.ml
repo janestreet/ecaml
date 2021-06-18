@@ -1,4 +1,4 @@
-open! Core_kernel
+open! Core
 open! Import
 
 let with_buffer sync_or_async contents ~f =

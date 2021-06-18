@@ -13,7 +13,7 @@
 
     [(Info-goto-node "(elisp)Advising Functions")] *)
 
-open! Core_kernel
+open! Core
 open! Import
 
 type t [@@deriving sexp_of]

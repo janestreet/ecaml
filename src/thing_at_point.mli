@@ -1,6 +1,6 @@
 (** Support for detecting something at point---a filename, URL, what-have-you. *)
 
-open! Core_kernel
+open! Core
 open! Import
 
 type t =

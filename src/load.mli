@@ -4,7 +4,7 @@
 
     [(Info-goto-node "(elisp)Loading")] *)
 
-open! Core_kernel
+open! Core
 open! Async_kernel
 open! Import
 

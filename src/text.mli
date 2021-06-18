@@ -3,7 +3,7 @@
 
     [(Info-goto-node "(elisp)Text")] *)
 
-open! Core_kernel
+open! Core
 open! Import
 include Value.Subtype
 

@@ -1,6 +1,6 @@
 (** [(Info-goto-node "(elisp)Input Events")] *)
 
-open! Core_kernel
+open! Core
 open! Import
 include Input_event0_intf.Input_event0_public with type t = Input_event0.t
 

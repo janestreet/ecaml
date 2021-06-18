@@ -1,4 +1,4 @@
-open! Core_kernel
+open! Core
 open! Import
 
 let get_text_of_help ~invoke_help =

@@ -3,7 +3,7 @@
 
     [(Info-goto-node "(elisp)Regular Expressions")] *)
 
-open! Core_kernel
+open! Core
 open! Import
 
 (** [type t] is lazy.  Construction functions ([of_rx], [quote], ...)  don't construct the

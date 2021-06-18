@@ -2,7 +2,7 @@
 
     [(Info-goto-node "(elisp)Color Names")]. *)
 
-open! Core_kernel
+open! Core
 open! Import0
 module Frame = Frame0
 include Value.Subtype

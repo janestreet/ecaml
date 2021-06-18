@@ -3,7 +3,7 @@
     and then to pass the Elisp value rather than repeatedly converting the same OCaml
     value to an Elisp value.  As an example, see [Completing.Collection]. *)
 
-open! Core_kernel
+open! Core
 open! Import
 
 module type S = sig

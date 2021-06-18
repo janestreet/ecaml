@@ -20,7 +20,7 @@
         1.074s -- bar
     v} *)
 
-open! Core_kernel
+open! Core
 open! Async_kernel
 
 (** A [Sync_or_async.t] specifies whether the computation being profiled is

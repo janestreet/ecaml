@@ -4,7 +4,7 @@
     [(Info-goto-node "(elisp)Character Type")]
     [(Info-goto-node "(elisp)Character Codes")] *)
 
-open! Core_kernel
+open! Core
 open! Import
 include Value.Subtype
 include Equal.S with type t := t

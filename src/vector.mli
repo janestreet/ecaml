@@ -2,7 +2,7 @@
 
     [(Info-goto-node "(elisp)Vectors")] *)
 
-open! Core_kernel
+open! Core
 open! Import
 include Value.Subtype
 

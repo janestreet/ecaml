@@ -1,4 +1,4 @@
-open! Core_kernel
+open! Core
 open! Import
 include Ocaml_or_elisp_value_intf
 

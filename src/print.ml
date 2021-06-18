@@ -1,4 +1,4 @@
-open! Core_kernel
+open! Core
 open! Import
 
 let length = Var.Wrap.("print-length" <: nil_or int)

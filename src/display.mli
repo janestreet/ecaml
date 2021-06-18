@@ -1,6 +1,6 @@
 (** [(Info-goto-node "(elisp)Display")] *)
 
-open! Core_kernel
+open! Core
 open! Import
 
 (** [(describe-function 'redisplay)]

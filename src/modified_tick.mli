@@ -7,7 +7,7 @@
 
     [(Info-goto-node "(elisp)Buffer Modification")] *)
 
-open! Core_kernel
+open! Core
 open! Import0
 
 type t [@@deriving sexp_of]

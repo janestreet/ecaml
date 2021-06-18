@@ -1,6 +1,6 @@
 (** This module is used to enforce the expected types of registered callbacks. *)
 
-open! Core_kernel
+open! Core
 open! Import
 
 type 'a t

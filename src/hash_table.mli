@@ -1,6 +1,6 @@
 (** [(Info-goto-node "(elisp)Hash Tables")] *)
 
-open! Core_kernel
+open! Core
 open! Import
 include Value.Subtype
 

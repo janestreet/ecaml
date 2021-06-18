@@ -7,7 +7,7 @@
 
     [(Info-goto-node "(elisp)Hooks")] *)
 
-open! Core_kernel
+open! Core
 open! Async_kernel
 open! Import
 

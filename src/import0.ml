@@ -1,4 +1,4 @@
-open! Core_kernel
+open! Core
 module Caml_embed = Ecaml_value.Caml_embed
 module Ecaml_callback = Ecaml_value.Ecaml_callback
 module Form = Ecaml_value.Form
@@ -21,7 +21,7 @@ let () =
 let concat = String.concat
 let debug = false
 let print_s = Expect_test_helpers_core.print_s
-let eprint_s = Core_kernel.Debug.eprint_s
+let eprint_s = Core.Debug.eprint_s
 let raise_string s = raise_s [%sexp (String.strip (concat s) : string)]
 let sec_ns = Time_ns.Span.of_sec
 

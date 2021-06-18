@@ -1,4 +1,4 @@
-open! Core_kernel
+open! Core
 open! Import
 
 module type Input_event0_public = sig

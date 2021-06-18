@@ -1,6 +1,6 @@
 (** [(Info-goto-node "(elisp)Debugger")] *)
 
-open! Core_kernel
+open! Core
 open! Import
 
 (** [(describe-variable 'debug-on-error)]

@@ -3,7 +3,7 @@
 
     [(Info-goto-node "(elisp)Major Modes")] *)
 
-open! Core_kernel
+open! Core
 open! Async_kernel
 open! Import
 module Hook = Hook0

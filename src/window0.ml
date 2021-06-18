@@ -1,7 +1,7 @@
 (* [window0.ml] is split out from [window.ml] so we can refer to [Window0] in
    [Buffer]. *)
 
-open! Core_kernel
+open! Core
 open! Import0
 
 module T = struct

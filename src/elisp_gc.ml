@@ -1,4 +1,4 @@
-open! Core_kernel
+open! Core
 open! Import
 
 let gcs_done = Var.Wrap.("gcs-done" <: int)

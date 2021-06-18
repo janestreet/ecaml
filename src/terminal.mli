@@ -2,7 +2,7 @@
 
     [(Info-goto-node "(elisp)Multiple Terminals")] *)
 
-open! Core_kernel
+open! Core
 open! Import0
 include Value.Subtype
 

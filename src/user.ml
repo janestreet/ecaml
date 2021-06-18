@@ -1,4 +1,4 @@
-open! Core_kernel
+open! Core
 open! Import
 
 let login_name = Funcall.Wrap.("user-login-name" <: nullary @-> return string)

@@ -1,6 +1,6 @@
 (** Manages the prefixes used in lieu of namespacing among Elisp symbols. *)
 
-open! Core_kernel
+open! Core
 open! Import0
 
 module type S = sig

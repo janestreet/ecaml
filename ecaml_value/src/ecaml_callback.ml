@@ -1,4 +1,4 @@
-open! Core_kernel
+open! Core
 open! Import
 module Scheduler = Async_unix.Async_unix_private.Raw_scheduler
 

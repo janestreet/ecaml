@@ -8,7 +8,7 @@
 
     [(Info-goto-node "(elisp)The Echo Area")]. *)
 
-open! Core_kernel
+open! Core
 open! Async_kernel
 open! Import0
 

@@ -4,7 +4,7 @@
 
     [(Info-goto-node "(elisp)Markers")] *)
 
-open! Core_kernel
+open! Core
 open! Import
 include Value.Subtype
 

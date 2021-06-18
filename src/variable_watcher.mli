@@ -6,7 +6,7 @@
     [(Info-goto-node "(elisp)Watching Variables")]
 *)
 
-open! Core_kernel
+open! Core
 open! Import
 
 module Operation : sig

@@ -1,5 +1,5 @@
 (** [(Info-goto-node "(elisp)Display Property")] *)
-open! Core_kernel
+open! Core
 
 open! Import
 

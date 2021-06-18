@@ -2,7 +2,7 @@
 
     Try [Defun] first. *)
 
-open! Core_kernel
+open! Core
 open! Import
 
 module Fn : sig

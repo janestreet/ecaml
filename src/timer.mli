@@ -9,7 +9,7 @@
 
     [(Info-goto-node "(elisp)Timers")] *)
 
-open! Core_kernel
+open! Core
 open! Async_kernel
 open! Import
 include Value.Subtype

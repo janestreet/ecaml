@@ -2,7 +2,7 @@
 
     [(Info-goto-node "(elisp)Symbols")] *)
 
-open! Core_kernel
+open! Core
 open! Import0
 
 include module type of struct

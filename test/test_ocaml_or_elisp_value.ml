@@ -1,4 +1,4 @@
-open! Core_kernel
+open! Core
 open! Async_kernel
 open! Import
 module M = (val Ocaml_or_elisp_value.make Value.Type.int)

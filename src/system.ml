@@ -1,4 +1,4 @@
-open! Core_kernel
+open! Core
 open! Import
 
 let getenv = Funcall.Wrap.("getenv" <: string @-> return (nil_or string))

@@ -1,6 +1,6 @@
 (** This module exists to break the dependency between [Value] and [Callback]. *)
 
-open! Core_kernel
+open! Core
 open! Import
 
 type t [@@deriving sexp_of]

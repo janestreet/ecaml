@@ -1,4 +1,4 @@
-open! Core_kernel
+open! Core
 open! Async
 module Buffer_helper : module type of Buffer_helper
 

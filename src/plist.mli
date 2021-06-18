@@ -3,7 +3,7 @@
 
     - [(Info-goto-node "(elisp)Property Lists")] *)
 
-open! Core_kernel
+open! Core
 open! Import
 
 type t [@@deriving sexp_of]

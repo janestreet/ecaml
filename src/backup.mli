@@ -1,6 +1,6 @@
 (** [(Info-goto-node "(elisp)Backup Files")] *)
 
-open! Core_kernel
+open! Core
 open! Import
 
 (** [(describe-variable 'make-backup-files)] *)

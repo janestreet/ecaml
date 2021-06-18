@@ -1,7 +1,7 @@
 (** [(describe-variable 'auto-mode-alist)]
     [(Info-goto-node "(elisp)Auto Major Mode")] *)
 
-open! Core_kernel
+open! Core
 open! Import
 
 module Entry : sig

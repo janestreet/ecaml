@@ -3,7 +3,7 @@
 
     - [(Info-goto-node "(elisp)Buffers")] *)
 
-open! Core_kernel
+open! Core
 open! Import0
 open! Ecaml_filename
 open! Async_kernel

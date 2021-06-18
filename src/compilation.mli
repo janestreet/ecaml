@@ -1,6 +1,6 @@
 (** [(Info-goto-node "(elisp)Compilation")] *)
 
-open! Core_kernel
+open! Core
 open! Import
 
 (** [(describe-variable 'compilation-buffer-name-function)] *)

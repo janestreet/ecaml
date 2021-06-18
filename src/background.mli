@@ -3,7 +3,7 @@
     with blocking jobs, or with the user. For example, background jobs may not change the
     current buffer. *)
 
-open! Core_kernel
+open! Core
 open! Async
 open! Import0
 

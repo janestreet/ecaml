@@ -6,7 +6,7 @@
 
     [(Info-goto-node "(elisp)Minibuffers")] *)
 
-open! Core_kernel
+open! Core
 open! Import
 open! Async
 

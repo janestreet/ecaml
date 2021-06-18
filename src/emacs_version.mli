@@ -3,7 +3,7 @@
 
     [(Info-goto-node "(elisp) Version Info")] *)
 
-open! Core_kernel
+open! Core
 open! Import
 
 (** [(describe-function 'emacs-version)] *)

@@ -2,7 +2,7 @@
 
     - [(Info-goto-node "(emacs)Abbrevs")] *)
 
-open! Core_kernel
+open! Core
 open! Async_kernel
 open! Import
 

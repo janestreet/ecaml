@@ -1,6 +1,6 @@
 (** Functions for interacting with evil-mode *)
 
-open! Core_kernel
+open! Core
 open! Import
 
 module Config : sig

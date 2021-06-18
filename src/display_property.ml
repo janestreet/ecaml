@@ -1,4 +1,4 @@
-open! Core_kernel
+open! Core
 open! Import0
 
 module Q = struct

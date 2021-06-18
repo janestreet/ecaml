@@ -1,4 +1,4 @@
-open! Core_kernel
+open! Core
 open! Import
 module Current_buffer = Current_buffer0
 include Key_sequence0

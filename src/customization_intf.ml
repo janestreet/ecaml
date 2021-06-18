@@ -1,6 +1,6 @@
 (** [(Info-goto-node "(elisp)Customization")] *)
 
-open! Core_kernel
+open! Core
 open! Import
 
 module type Enum_arg = sig

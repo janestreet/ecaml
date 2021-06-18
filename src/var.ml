@@ -1,4 +1,4 @@
-open! Core_kernel
+open! Core
 open! Import0
 include Var_intf
 module Buffer = Buffer0

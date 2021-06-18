@@ -2,7 +2,7 @@
 
     It does for Elisp what [Command] does for the command line. *)
 
-open! Core_kernel
+open! Core
 open! Async_kernel
 open! Import
 

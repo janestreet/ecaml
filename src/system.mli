@@ -5,7 +5,7 @@
      as [Ecaml.Process.create], and [Ecaml.System.setenv ~var:"PATH"] does not affect the
      behavior of [Async.Process.create] (or [Ecaml.Process.create]!). *)
 
-open! Core_kernel
+open! Core
 open! Import
 
 (** [(describe-function 'getenv)]

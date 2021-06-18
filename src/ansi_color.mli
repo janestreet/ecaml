@@ -2,7 +2,7 @@
     "ansi-color")].  [Ansi_color] is significantly faster than [ansi-color], especially on
     larger inputs. *)
 
-open! Core_kernel
+open! Core
 open! Import
 
 (** [color_region_in_current_buffer] modifies the given region in the current buffer,

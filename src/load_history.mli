@@ -5,7 +5,7 @@
 
     [(Info-goto-node "(elisp)Where Defined")] *)
 
-open! Core_kernel
+open! Core
 open! Import0
 module Face = Face0
 

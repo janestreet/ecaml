@@ -1,4 +1,4 @@
-open! Core_kernel
+open! Core
 open! Import0
 module Current_buffer = Current_buffer0
 

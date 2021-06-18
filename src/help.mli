@@ -2,7 +2,7 @@
 
     [(Info-goto-node "(emacs)Help")] *)
 
-open! Core_kernel
+open! Core
 open! Import
 
 (** [(describe-function 'describe-function)]. *)

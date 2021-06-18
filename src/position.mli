@@ -10,7 +10,7 @@
 
     [(Info-goto-node "(elisp)Positions")]. *)
 
-open! Core_kernel
+open! Core
 open! Import
 include Value.Subtype
 include Comparable.S_plain with type t := t

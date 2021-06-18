@@ -8,7 +8,7 @@
 
     [(Info-goto-node "(elisp)Current Buffer")]. *)
 
-open! Core_kernel
+open! Core
 open! Async_kernel
 open! Import
 open! Ecaml_filename

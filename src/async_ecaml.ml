@@ -9,10 +9,11 @@
    Async data structures from Ecaml. *)
 
 module Ecaml_filename = Filename
-open! Core_kernel
+open! Core
 open! Import
 module Ivar = Async.Ivar
 module Mutex = Error_checking_mutex
+module Thread = Caml_threads.Thread
 module Time = Time_unix
 module Unix = Core_unix
 module Scheduler = Async_unix.Async_unix_private.Raw_scheduler

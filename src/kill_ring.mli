@@ -1,6 +1,6 @@
 (** [(Info-goto-node "(elisp)The Kill Ring")] *)
 
-open! Core_kernel
+open! Core
 open! Async_kernel
 open! Import
 

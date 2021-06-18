@@ -4,7 +4,7 @@
 
     N.B. These bindings are incomplete only due to laziness (in the technical sense). *)
 
-open! Core_kernel
+open! Core
 open! Import
 
 module Char_class = struct

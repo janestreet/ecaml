@@ -1,4 +1,4 @@
-open! Core_kernel
+open! Core
 open! Async_kernel
 open! Import
 open! File
@@ -30,8 +30,8 @@ let%expect_test "[exists], [is_*]" =
      (is_regular    (Ok false))
      (is_symlink    (Ok false))
      (is_writable   (Ok false))) |}];
-    Out_channel.write_all ~data:"" (Core_kernel.Filename.concat dir "empty-file");
-    show (Core_kernel.Filename.concat dir "empty-file");
+    Out_channel.write_all ~data:"" (Core.Filename.concat dir "empty-file");
+    show (Core.Filename.concat dir "empty-file");
     [%expect
       {|
     ((exists true)

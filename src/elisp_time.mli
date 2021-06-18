@@ -3,7 +3,7 @@
 
     [(Info-goto-node "(elisp)Time of Day")] *)
 
-open! Core_kernel
+open! Core
 open! Import
 
 type t = private Value.t [@@deriving compare]

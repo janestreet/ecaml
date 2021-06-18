@@ -1,7 +1,7 @@
 (** An Emacs "form", which is a Lisp object that is intended to be evaluated.
     [(Info-goto-node "(elisp)Forms")]. *)
 
-open! Core_kernel
+open! Core
 open! Async_kernel
 open! Import
 include Value.Subtype

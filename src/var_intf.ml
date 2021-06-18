@@ -1,7 +1,7 @@
 (** An ['a Var.t] is a symbol that holds values of type ['a], embedded in Elisp's
     [Value.t] via an ['a Type.t]. *)
 
-open! Core_kernel
+open! Core
 open! Import0
 
 module type Wrap = sig

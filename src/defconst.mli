@@ -2,7 +2,7 @@
 
     [(Info-goto-node "(elisp)Defining Variables")] *)
 
-open! Core_kernel
+open! Core
 open! Import
 
 (** [(describe-function 'defconst)] *)

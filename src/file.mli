@@ -1,6 +1,6 @@
 (** [File] is for functions that operate on files on the filesystem. *)
 
-open! Core_kernel
+open! Core
 open! Import
 open! Ecaml_filename
 

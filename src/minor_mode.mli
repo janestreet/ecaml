@@ -4,7 +4,7 @@
 
     [(Info-goto-node "(elisp)Minor Modes")] *)
 
-open! Core_kernel
+open! Core
 open! Import
 
 type t =

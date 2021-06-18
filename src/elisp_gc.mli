@@ -1,6 +1,6 @@
 (** [(Info-goto-node "(elisp)Garbage Collection")] *)
 
-open! Core_kernel
+open! Core
 open! Import
 
 (** [(describe-function 'garbage-collect)] *)

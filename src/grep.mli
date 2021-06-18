@@ -4,7 +4,7 @@
 
     [(Info-goto-node "(emacs)Grep Searching")] *)
 
-open! Core_kernel
+open! Core
 open! Import
 include Major_mode.S_with_lazy_keymap
 

@@ -3,7 +3,7 @@
 
     [(Info-goto-node "(elisp)Selecting Windows")]. *)
 
-open! Core_kernel
+open! Core
 open! Async_kernel
 open! Import
 

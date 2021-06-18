@@ -1,4 +1,4 @@
-open! Core_kernel
+open! Core
 open! Import
 
 let redisplay = Funcall.Wrap.("redisplay" <: bool @-> return nil)

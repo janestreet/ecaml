@@ -2,7 +2,7 @@
 
     Note that we attempt to improve upon the elisp interface of tabulated-list-mode. *)
 
-open! Core_kernel
+open! Core
 open! Import
 module Tabulated_list_mode : Major_mode.S
 

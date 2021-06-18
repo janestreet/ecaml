@@ -1,6 +1,6 @@
 (** A typeful interface for calling Elisp, as [external] does for C.  *)
 
-open! Core_kernel
+open! Core
 open! Import
 
 type 'a t

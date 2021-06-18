@@ -2,7 +2,7 @@
 
     [(Info-goto-node "(elisp)Overlays")] *)
 
-open! Core_kernel
+open! Core
 open! Import
 
 type t [@@deriving sexp_of]

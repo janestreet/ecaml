@@ -1,4 +1,4 @@
-open! Core_kernel
+open! Core
 open! Async
 open! Ecaml
 open! Expect_test_helpers_core

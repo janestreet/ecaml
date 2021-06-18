@@ -6,7 +6,7 @@
 
     [(Info-goto-node "(elisp)Keymaps")] *)
 
-open! Core_kernel
+open! Core
 open! Import
 include Value.Subtype
 

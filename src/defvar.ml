@@ -1,4 +1,4 @@
-open! Core_kernel
+open! Core
 open! Import
 
 let all_defvar_symbols = ref []

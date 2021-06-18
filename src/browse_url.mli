@@ -1,6 +1,6 @@
 (** Pass a URL to a WWW browser.  Ecaml bindings for [browse-url.el] *)
 
-open! Core_kernel
+open! Core
 open! Import
 
 module Url : sig

@@ -1,4 +1,4 @@
-open! Core_kernel
+open! Core
 open! Import
 
 include Value.Make_subtype (struct

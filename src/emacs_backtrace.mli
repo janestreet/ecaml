@@ -1,6 +1,6 @@
 (** View the current emacs stack. *)
 
-open! Core_kernel
+open! Core
 open! Import
 
 (** [(describe-function 'backtrace)] *)

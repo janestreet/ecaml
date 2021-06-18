@@ -2,7 +2,7 @@
 
     The naming convention is to use the emacs name but replace '-' with '_'. *)
 
-open! Core_kernel
+open! Core
 open! Import0
 
 let defface = "defface" |> Symbol.intern
