@@ -8,23 +8,42 @@ open! Async_kernel
 open! Import
 module Hook = Hook0
 
-module type S_with_lazy_keymap = sig
-  type t
-  type name = ..
-  type name += Major_mode
-
-  val major_mode : t
-  val keymap : Keymap.t Lazy.t
-  val enabled_in_current_buffer : unit -> bool
+module Auto_mode = struct
+  type t =
+    | If_filename_matches of Regexp.t
+    | If_filename_matches_then_delete_suffix_and_recur of Regexp.t
 end
 
-module type S = sig
-  include S_with_lazy_keymap
+module Name = struct
+  (** Names let us pattern-match on major modes. *)
+  type t = ..
 
-  val keymap : Keymap.t
+  (** Dummy value for modes we don't care about matching. *)
+  type t += Undistinguished
+end
+
+module Intf (T : T) = struct
+  open T
+
+  module type S_with_lazy_keymap = sig
+    type Name.t += Major_mode
+
+    val major_mode : t
+    val keymap : Keymap.t Lazy.t
+    val enabled_in_current_buffer : unit -> bool
+  end
+
+  module type S = sig
+    include S_with_lazy_keymap
+
+    val keymap : Keymap.t
+  end
 end
 
 module type Major_mode = sig
+  module Auto_mode = Auto_mode
+  module Name = Name
+
   type t [@@deriving sexp_of]
 
   include Equal.S with type t := t
@@ -33,27 +52,18 @@ module type Major_mode = sig
     type nonrec t = t [@@deriving compare, equal, hash, sexp_of]
   end
 
+  include module type of Intf (struct
+      type nonrec t = t
+    end)
+
   (** Accessors *)
+
   val symbol : t -> Symbol.t
-
-  module Name : sig
-    (** Names let us pattern-match on major modes. *)
-    type t = ..
-
-    (** Dummy value for modes we don't care about matching. *)
-    type t += Undistinguished
-  end
-
   val name : t -> Name.t
-  val hook : t -> Hook.normal Hook.t
+  val hook : t -> Hook.normal Hook.t Or_error.t
   val keymap : t -> Keymap.t
   val keymap_var : t -> Keymap.t Var.t
   val syntax_table : t -> Syntax_table.t
-
-  module type S = S with type t := t and type name := Name.t
-
-  module type S_with_lazy_keymap =
-    S_with_lazy_keymap with type t := t and type name := Name.t
 
   (** [wrap_existing mode_name] wraps the existing Emacs major mode named [mode_name], and
       stores it in the table of all major modes indexed by symbol.  [wrap_existing] raises
@@ -118,7 +128,8 @@ module type Major_mode = sig
       Additionally, each [key_sequence, symbol] in [define_keys] is added to the new major
       mode's keymap. *)
   val define_derived_mode
-    :  Symbol.t
+    :  ?auto_mode:Auto_mode.t
+    -> Symbol.t
     -> Source_code_position.t
     -> docstring:string
     -> ?define_keys:(string * Symbol.t) list
@@ -137,4 +148,3 @@ module type Major_mode = sig
     val all_derived_modes : unit -> t list
   end
 end
-

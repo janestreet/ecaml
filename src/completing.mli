@@ -35,6 +35,8 @@ module Collection : Ocaml_or_elisp_value.S with type ocaml = string list
 val read
   :  prompt:string (** typically ends with ": " *)
   -> collection:Collection.t
+  -> ?annotation_function:(string -> string)
+  -> ?display_sort_function:(string list -> string list)
   -> ?require_match:Require_match.t (** default is [Require_match.default] *)
   -> ?initial_input:Initial_input.t (** default is Empty *)
   -> ?default:string
@@ -45,6 +47,8 @@ val read
 val read_map_key
   :  prompt:string (** typically ends with ": " *)
   -> collection:'a String.Map.t
+  -> ?annotation_function:(string -> string)
+  -> ?display_sort_function:(string list -> string list)
   -> ?initial_input:Initial_input.t (** default is Empty *)
   -> ?default:string
   -> history:Minibuffer.History.t

@@ -4,7 +4,7 @@
     [(Info-goto-node "(elisp)Creating Symbols")] *)
 
 open! Core
-open! Import
+open! Import0
 
 type t [@@deriving sexp_of]
 

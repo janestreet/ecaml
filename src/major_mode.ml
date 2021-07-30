@@ -1,18 +1,13 @@
 open! Core
 open! Import
 open! Async_kernel
-open Major_mode_intf
+include Major_mode_intf
 module Hook = Hook0
 
 module Q = struct
   include Q
 
   let define_derived_mode = "define-derived-mode" |> Symbol.intern
-end
-
-module Name = struct
-  type t = ..
-  type t += Undistinguished
 end
 
 module Current_buffer = Current_buffer0
@@ -22,7 +17,7 @@ type t =
   ; symbol : Symbol.t
   ; keymap_var : Keymap.t Var.t
   ; name : (Name.t[@sexp.opaque])
-  ; hook : Hook.normal Hook.t
+  ; hook : Hook.normal Hook.t Or_error.t
   ; syntax_table_var : Syntax_table.t Var.t
   }
 [@@deriving fields, sexp_of]
@@ -30,6 +25,10 @@ type t =
 let equal t1 t2 = Symbol.equal t1.symbol t2.symbol
 let compare_name t1 t2 = Symbol.compare_name t1.symbol t2.symbol
 let t_by_symbol : t String.Table.t = Hashtbl.create (module String)
+
+include Intf (struct
+    type nonrec t = t
+  end)
 
 module Compare_by_name = struct
   type nonrec t = t [@@deriving sexp_of]
@@ -50,24 +49,23 @@ let change_to t ~in_:buffer =
 ;;
 
 let add wrapped_at name symbol =
-  let t =
-    { wrapped_at
-    ; symbol
-    ; keymap_var = Var.Wrap.(concat [ symbol |> Symbol.name; "-map" ] <: Keymap.t)
-    ; name
-    ; hook = Hook.Wrap.(concat [ symbol |> Symbol.name; "-hook" ] <: Normal_hook)
-    ; syntax_table_var =
-        Var.Wrap.(concat [ symbol |> Symbol.name; "-syntax-table" ] <: Syntax_table.t)
-    }
+  let hook =
+    let fundamental_mode = Symbol.intern "fundamental-mode" in
+    match [%compare.equal: Symbol.Compare_name.t] symbol fundamental_mode with
+    | false -> Ok Hook.Wrap.(concat [ symbol |> Symbol.name; "-hook" ] <: Normal_hook)
+    | true ->
+      error_s
+        [%message
+          {|fundamental-mode has no mode hook. [(Info-goto-node "(elisp) Major Modes")]|}]
   in
+  let keymap_var = Var.Wrap.(concat [ symbol |> Symbol.name; "-map" ] <: Keymap.t) in
+  let syntax_table_var =
+    Var.Wrap.(concat [ symbol |> Symbol.name; "-syntax-table" ] <: Syntax_table.t)
+  in
+  let t = { wrapped_at; symbol; keymap_var; name; hook; syntax_table_var } in
   Hashtbl.add_exn t_by_symbol ~key:(symbol |> Symbol.name) ~data:t;
   t
 ;;
-
-module type S = S with type t := t and type name := Name.t
-
-module type S_with_lazy_keymap =
-  S_with_lazy_keymap with type t := t and type name := Name.t
 
 let keymap t = Current_buffer.value_exn t.keymap_var
 let keymap_var t = t.keymap_var
@@ -141,8 +139,19 @@ module For_testing = struct
   let all_derived_modes () = !all_derived_modes |> List.sort ~compare:compare_name
 end
 
+let add_auto_mode auto_mode ~symbol =
+  let filename_match, delete_suffix_and_recur =
+    match (auto_mode : Auto_mode.t) with
+    | If_filename_matches regexp -> regexp, false
+    | If_filename_matches_then_delete_suffix_and_recur regexp -> regexp, true
+  in
+  Auto_mode_alist.add
+    [ { delete_suffix_and_recur; filename_match; function_ = Some symbol } ]
+;;
+
 let define_derived_mode
       (type a)
+      ?auto_mode
       symbol
       here
       ~docstring
@@ -181,13 +190,16 @@ let define_derived_mode
   List.iter define_keys ~f:(fun (keys, symbol) ->
     Keymap.define_key M.keymap (Key_sequence.create_exn keys) (Symbol symbol));
   all_derived_modes := M.major_mode :: !all_derived_modes;
+  Option.iter auto_mode ~f:(add_auto_mode ~symbol);
   m
 ;;
 
 let derived_mode_p = Funcall.Wrap.("derived-mode-p" <: Symbol.t @-> return bool)
 
 let is_derived t ~from =
-  Current_buffer0.(
-    set_value_temporarily Sync (major_mode_var |> Buffer_local.var) (symbol t))
+  Current_buffer0.set_value_temporarily
+    Sync
+    (major_mode_var |> Buffer_local.var)
+    (symbol t)
     ~f:(fun () -> derived_mode_p (symbol from))
 ;;

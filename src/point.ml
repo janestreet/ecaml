@@ -17,7 +17,17 @@ let max = Funcall.Wrap.("point-max" <: nullary @-> return Position.t)
 let goto_max () = goto_char (max ())
 let goto_min () = goto_char (min ())
 let beginning_of_line = Funcall.Wrap.("beginning-of-line" <: nullary @-> return nil)
+
+let beginning_of_line_position =
+  Funcall.Wrap.("line-beginning-position" <: nullary @-> return Position.t)
+;;
+
 let end_of_line = Funcall.Wrap.("end-of-line" <: nullary @-> return nil)
+
+let end_of_line_position =
+  Funcall.Wrap.("line-end-position" <: nullary @-> return Position.t)
+;;
+
 let forward_line = Funcall.Wrap.("forward-line" <: int @-> return nil)
 
 let forward_line_exn =

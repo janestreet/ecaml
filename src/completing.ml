@@ -1,6 +1,7 @@
 open! Core
 open! Async_kernel
 open! Import
+include (val Symbol_prefix.extend symbol_prefix "completing")
 
 module Q = struct
   include Q
@@ -90,6 +91,135 @@ end
 
 module Collection = (val Ocaml_or_elisp_value.make Value.Type.(list string_cached))
 
+module Programmed_completion = struct
+  include (val Symbol_prefix.extend symbol_prefix "programmed-completion")
+
+  module Operation = struct
+    include (val Symbol_prefix.extend symbol_prefix "operation")
+
+    type t =
+      | Metadata
+      | Other of Value.t
+    [@@deriving sexp_of]
+
+    include Valueable.Make (struct
+        type nonrec t = t
+
+        let type_ =
+          let metadata_value = Symbol.intern "metadata" |> Symbol.to_value in
+          Value.Type.create
+            [%message elisp_name]
+            [%sexp_of: t]
+            (fun value ->
+               match Value.equal value metadata_value with
+               | true -> Metadata
+               | false -> Other value)
+            (function
+              | Metadata -> metadata_value
+              | Other value -> value)
+        ;;
+      end)
+  end
+
+  module Metadata = struct
+    type t =
+      { annotation_function : (string -> string) option
+      ; display_sort_function : (string list -> string list) option
+      }
+    [@@deriving fields]
+
+    let create = Fields.create
+
+    let exists =
+      let f _field _t option = Option.is_some option in
+      Fields.Direct.exists ~annotation_function:f ~display_sort_function:f
+    ;;
+
+    let to_value =
+      let metadatum_type = Value.Type.(tuple Symbol.t Function.t) in
+      let f ~arg ~returns field _t f =
+        let%map.Option f = f in
+        let name = Enum.Single.to_string_hum (module String) (Field.name field) in
+        let function_ =
+          Defun.lambda
+            [%here]
+            (Returns returns)
+            (let%map_open.Defun arg = arg in
+             f arg)
+        in
+        Value.Type.to_value metadatum_type (Symbol.intern name, function_)
+      in
+      Fields.Direct.to_list
+        ~annotation_function:
+          (f ~arg:Defun.(required "CANDIDATE" string) ~returns:Value.Type.string)
+        ~display_sort_function:
+          (f
+             ~arg:Defun.(required "CANDIDATES" (list string))
+             ~returns:Value.Type.(list string))
+      >> List.filter_opt
+      >> List.cons (Operation.to_value Metadata)
+      >> Value.list
+    ;;
+  end
+
+  type t =
+    | Abstract_collection of Collection.abstract
+    | Symbol of Symbol.t
+    | T of
+        { collection : string list
+        ; metadata : Metadata.t
+        }
+
+  let completion_table_dynamic =
+    Funcall.Wrap.("completion-table-dynamic" <: Function.t @-> return Function.t)
+  ;;
+
+  let to_value = function
+    | Abstract_collection collection -> Collection.to_value (Elisp collection)
+    | Symbol symbol -> Symbol.function_exn symbol
+    | T { collection; metadata } ->
+      (* Using the full "Programmed Completion" interface is necessary to provide
+         annotation/sorting functions, but Emacs provides [completion_table_dynamic] to
+         create a basic implementation of the interface, which we can delegate to for
+         everything except adding our metadata. *)
+      let dynamic =
+        completion_table_dynamic
+          (Defun.lambda
+             [%here]
+             (Returns Value.Type.(list string))
+             (let%map_open.Defun () = required "PREFIX" ignored in
+              collection))
+      in
+      Defun.lambda
+        [%here]
+        (Returns Value.Type.value)
+        (let%map_open.Defun () = return ()
+         and prefix = required "PREFIX" value
+         and predicate = required "PREDICATE" value
+         and operation = required "OPERATION" Operation.t in
+         match operation with
+         | Metadata -> Metadata.to_value metadata
+         | Other operation ->
+           Value.funcall3 (Function.to_value dynamic) prefix predicate operation)
+      |> Function.to_value
+  ;;
+
+  let create (collection : Collection.t) ~annotation_function ~display_sort_function =
+    let metadata = Metadata.create ~annotation_function ~display_sort_function in
+    match collection with
+    | This collection -> T { collection; metadata }
+    | Elisp abstract ->
+      (match Metadata.exists metadata with
+       | false -> Abstract_collection abstract
+       | true ->
+         (* Not sure how to make [display_sort_function] work with the abstract
+            collection. Let's not work on this until someone needs it. *)
+         let s = "Programmed completion not supported with [Elisp _]." in
+         raise_s
+           [%message s (annotation_function : _ option) (display_sort_function : _ option)])
+  ;;
+end
+
 let completing_read =
   let completing_read =
     Funcall.Wrap.(
@@ -104,7 +234,7 @@ let completing_read =
          @-> return string)
   in
   fun ~prompt
-    ~collection
+    ~programmed_completion
     ?(predicate = Value.nil)
     ?(require_match = Require_match.default)
     ?(initial_input = Initial_input.Empty)
@@ -119,7 +249,7 @@ let completing_read =
       in
       completing_read
         prompt
-        collection
+        (Programmed_completion.to_value programmed_completion)
         predicate
         require_match
         initial_input
@@ -127,10 +257,24 @@ let completing_read =
         default)
 ;;
 
-let read ~prompt ~collection ?require_match ?initial_input ?default ~history () =
+let read
+      ~prompt
+      ~collection
+      ?annotation_function
+      ?display_sort_function
+      ?require_match
+      ?initial_input
+      ?default
+      ~history
+      ()
+  =
   completing_read
     ~prompt
-    ~collection:(collection |> Collection.to_value)
+    ~programmed_completion:
+      (Programmed_completion.create
+         collection
+         ~annotation_function
+         ~display_sort_function)
     ?require_match
     ?initial_input
     ?default
@@ -138,13 +282,24 @@ let read ~prompt ~collection ?require_match ?initial_input ?default ~history () 
     ()
 ;;
 
-let read_map_key ~prompt ~collection ?initial_input ?default ~history () =
+let read_map_key
+      ~prompt
+      ~collection
+      ?annotation_function
+      ?display_sort_function
+      ?initial_input
+      ?default
+      ~history
+      ()
+  =
   let%bind choice =
     read
       ~prompt
       ~collection:
         (This (Map.keys collection))
       ~require_match:True
+      ?annotation_function
+      ?display_sort_function
       ?initial_input
       ?default
       ~history
@@ -201,7 +356,7 @@ let read_multiple =
 let symbol_collection =
   lazy
     (Feature.require ("help-fns" |> Symbol.intern);
-     "help--symbol-completion-table" |> Symbol.intern |> Symbol.function_exn)
+     "help--symbol-completion-table" |> Symbol.intern)
 ;;
 
 let read_function_name =
@@ -223,7 +378,7 @@ let read_function_name =
     let%bind name =
       completing_read
         ~prompt
-        ~collection
+        ~programmed_completion:(Symbol collection)
         ~predicate
         ~require_match:True
         ?default:(Point.function_called_at () |> Option.map ~f:Symbol.name)
@@ -252,7 +407,7 @@ let read_variable_name =
     let%bind name =
       completing_read
         ~prompt
-        ~collection
+        ~programmed_completion:(Symbol collection)
         ~predicate
         ~require_match:True
         ?default:(Point.variable_at () |> Option.map ~f:Symbol.name)

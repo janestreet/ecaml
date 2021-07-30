@@ -86,3 +86,9 @@ val exit : unit -> never_returns
 
 (** [(describe-function 'minibuffer-depth)] *)
 val depth : unit -> int
+
+(** [(describe-function 'minibuffer-contents)]
+
+    Note: if the current buffer is not a minibuffer, [contents] returns its contents too.
+*)
+val contents : unit -> string

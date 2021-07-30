@@ -74,6 +74,11 @@ let write ?(append = false) filename data =
   write_region data () filename append Q.no_message
 ;;
 
+let write_s ?append filename sexp =
+  let s = Sexp.to_string_hum sexp in
+  write ?append filename [%string "%{s}\n"]
+;;
+
 let ensure_exists filename = write filename "" ~append:true
 
 (* squelch the [Wrote file] message *)

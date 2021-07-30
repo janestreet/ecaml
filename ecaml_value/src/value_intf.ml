@@ -286,6 +286,8 @@ module type Value = sig
     (** [enum_symbol name (module M)] represents [m : M.t] as symbols named after
         [Enum.to_string_hum (module M) m]. *)
     val enum_symbol : Sexp.t -> (module Enum.S with type t = 'a) -> 'a t
+
+    val stringable : Sexp.t -> (module Stringable.S with type t = 'a) -> 'a t
   end
   with type value := t
 

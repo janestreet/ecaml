@@ -67,7 +67,7 @@ let auto_mode_alist_value = Var.Wrap.("auto-mode-alist" <: value)
 let append = Funcall.Wrap.("append" <: t @-> value @-> return value)
 
 let add entries =
-  Current_buffer.set_value
+  Current_buffer0.set_value
     auto_mode_alist_value
-    (append entries (Current_buffer.value_exn auto_mode_alist_value))
+    (append entries (Current_buffer0.value_exn auto_mode_alist_value))
 ;;

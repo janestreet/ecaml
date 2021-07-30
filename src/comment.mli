@@ -31,6 +31,18 @@ val set_current_buffer_options : start:string -> end_:string -> is_multi_line:bo
     [(describe-function 'comment-beginning)] *)
 val beginning : unit -> Position.t option
 
+(** Return [Some (beginning, end_)] if the point is in a comment, or [None] otherwise.
+
+    The region delimited by the returned positions contains the entire comment, including
+    the comment start and end markers (e.g., [/*] and [*/] in C-like languages). *)
+val bounds_of_comment_at_point : unit -> (Position.t * Position.t) option
+
+(** Note: the [goto_*] functions below differ from their [newcomment.el] brethren in that
+    they work correctly when point is inside the comment delimiter text. *)
+
+(** Assuming the point is currently in a comment, move to the beginning of its content. *)
+val goto_beginning_exn : unit -> unit
+
 (** Assuming the point is currently in a comment, move to the end of its content. *)
 val goto_end_exn : unit -> unit
 

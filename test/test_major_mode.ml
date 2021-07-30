@@ -47,9 +47,10 @@ let%expect_test "duplicate [define_derived_mode]" =
         (keymap_var (test-major-mode-map keymap))
         (name <opaque>)
         (hook (
-          (symbol    test-major-mode-hook)
-          (hook_type Normal_hook)
-          (value (()))))
+          Ok (
+            (symbol    test-major-mode-hook)
+            (hook_type Normal_hook)
+            (value (())))))
         (syntax_table_var (test-major-mode-syntax-table syntax-table)))))) |}];
   return ()
 ;;
@@ -79,9 +80,8 @@ let%expect_test "[define_derived_mode]" =
        (keymap_var (fundamental-mode-map keymap))
        (name <opaque>)
        (hook (
-         (symbol    fundamental-mode-hook)
-         (hook_type Normal_hook)
-         (value ())))
+         Error
+         "fundamental-mode has no mode hook. [(Info-goto-node \"(elisp) Major Modes\")]"))
        (syntax_table_var (fundamental-mode-syntax-table syntax-table))) |}];
     let%bind () = Current_buffer.change_major_mode M.major_mode in
     [%expect {| initialized |}];
@@ -93,9 +93,10 @@ let%expect_test "[define_derived_mode]" =
        (keymap_var (test-major-mode-map keymap))
        (name <opaque>)
        (hook (
-         (symbol    test-major-mode-hook)
-         (hook_type Normal_hook)
-         (value (()))))
+         Ok (
+           (symbol    test-major-mode-hook)
+           (hook_type Normal_hook)
+           (value (())))))
        (syntax_table_var (test-major-mode-syntax-table syntax-table))) |}];
     return ())
 ;;
@@ -111,7 +112,7 @@ let%expect_test "[hook]" =
   in
   let t = M.major_mode in
   Hook.add
-    (hook t)
+    (hook t |> ok_exn)
     (Hook.Function.create
        ("my-hook" |> Symbol.intern)
        [%here]

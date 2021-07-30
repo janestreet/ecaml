@@ -143,3 +143,4 @@ let exit =
 ;;
 
 let depth = Funcall.Wrap.("minibuffer-depth" <: nullary @-> return int)
+let contents = Funcall.Wrap.("minibuffer-contents" <: nullary @-> return string)

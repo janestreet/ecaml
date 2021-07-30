@@ -40,8 +40,14 @@ val goto_min : unit -> unit
 (** [(describe-function 'beginning-of-line)]. *)
 val beginning_of_line : unit -> unit
 
+(** [(describe-function 'line-beginning-position)] *)
+val beginning_of_line_position : unit -> Position.t
+
 (** [(describe-function 'end-of-line)]. *)
 val end_of_line : unit -> unit
+
+(** [(describe-function 'line-end-position)] *)
+val end_of_line_position : unit -> Position.t
 
 (** [(describe-function 'count-lines)]. *)
 val count_lines : start:Position.t -> end_:Position.t -> int

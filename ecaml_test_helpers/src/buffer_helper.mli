@@ -11,6 +11,8 @@ val with_buffer_and_point
   -> f:(unit -> 'a)
   -> 'a
 
+val show_buffer : block_out:Position.t list -> unit
+
 (** Print buffer contents with the point shown as a solid block.  *)
 val show_point : unit -> unit
 

@@ -387,6 +387,33 @@ let set_process_sentinel =
   Funcall.Wrap.("set-process-sentinel" <: t @-> Function.t @-> return nil)
 ;;
 
+let wrap_sentinel
+      (type a)
+      here
+      t
+      (returns : (unit, a) Defun.Returns.t)
+      ~(sentinel : event:string -> a)
+      ~event
+  =
+  let log_exn exn =
+    message_s
+      [%message
+        "process sentinel raised"
+          ~sentinel_created_at:(here : Source_code_position.t)
+          ~process:(t : t)
+          (exn : exn)]
+  in
+  match returns with
+  | Returns _ ->
+    (try sentinel ~event with
+     | exn -> log_exn exn
+              : a)
+  | Returns_deferred _ ->
+    (match%map Monitor.try_with ~extract_exn:true (fun () -> sentinel ~event) with
+     | Ok () -> ()
+     | Error exn -> log_exn exn)
+;;
+
 let set_sentinel
       (type a)
       here
@@ -394,6 +421,7 @@ let set_sentinel
       (returns : (unit, a) Defun.Returns.t)
       ~(sentinel : event:string -> a)
   =
+  let sentinel = wrap_sentinel here t returns ~sentinel in
   set_process_sentinel
     t
     (Defun.lambda
@@ -412,6 +440,7 @@ let extend_sentinel
       (returns : (unit, a) Defun.Returns.t)
       ~(sentinel : event:string -> a)
   =
+  let sentinel = wrap_sentinel here t returns ~sentinel in
   let previous_sentinel = process_sentinel t in
   set_process_sentinel
     t

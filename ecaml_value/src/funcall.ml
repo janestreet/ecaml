@@ -2,7 +2,7 @@ open! Core
 open! Import
 
 type _ t =
-  | Cons : 'a Value.Type.t * 'b t -> ('a -> 'b) t
+  | ( :: ) : 'a Value.Type.t * 'b t -> ('a -> 'b) t
   | Nullary : 'b Value.Type.t -> (unit -> 'b) t
   | Return : 'a Value.Type.t -> 'a t
 
@@ -24,7 +24,7 @@ let arity t =
       match t with
       | Return _ -> i
       | Nullary _ -> i
-      | Cons (_, t) -> arity t (i + 1)
+      | _ :: t -> arity t (i + 1)
   in
   arity t 0
 ;;
@@ -34,7 +34,7 @@ let wrap : type a. a t -> Value.t -> a =
   let rec curry : type a. a t -> Value.t -> Value.t array -> int -> a =
     fun t symbol args i ->
       match t with
-      | Cons (type_, t) ->
+      | type_ :: t ->
         fun arg ->
           args.(i) <- Value.Type.to_value type_ arg;
           curry t symbol args (i + 1)
@@ -56,16 +56,16 @@ let wrap_unrolled : type a. a t -> Value.t -> a =
   match t with
   | Return type_ -> Value.funcall0 symbol |> ret type_
   | Nullary return_type -> fun _ -> Value.funcall0 symbol |> ret return_type
-  | Cons (type1, Return type_) ->
+  | type1 :: Return type_ ->
     fun a1 -> Value.funcall1 symbol (a1 |> Value.Type.to_value type1) |> ret type_
-  | Cons (type1, Cons (type2, Return type_)) ->
+  | type1 :: type2 :: Return type_ ->
     fun a1 a2 ->
       Value.funcall2
         symbol
         (a1 |> Value.Type.to_value type1)
         (a2 |> Value.Type.to_value type2)
       |> ret type_
-  | Cons (type1, Cons (type2, Cons (type3, Return type_))) ->
+  | type1 :: type2 :: type3 :: Return type_ ->
     fun a1 a2 a3 ->
       Value.funcall3
         symbol
@@ -73,7 +73,7 @@ let wrap_unrolled : type a. a t -> Value.t -> a =
         (a2 |> Value.Type.to_value type2)
         (a3 |> Value.Type.to_value type3)
       |> ret type_
-  | Cons (type1, Cons (type2, Cons (type3, Cons (type4, Return type_)))) ->
+  | type1 :: type2 :: type3 :: type4 :: Return type_ ->
     fun a1 a2 a3 a4 ->
       Value.funcall4
         symbol
@@ -82,7 +82,7 @@ let wrap_unrolled : type a. a t -> Value.t -> a =
         (a3 |> Value.Type.to_value type3)
         (a4 |> Value.Type.to_value type4)
       |> ret type_
-  | Cons (type1, Cons (type2, Cons (type3, Cons (type4, Cons (type5, Return type_))))) ->
+  | type1 :: type2 :: type3 :: type4 :: type5 :: Return type_ ->
     fun a1 a2 a3 a4 a5 ->
       Value.funcall5
         symbol
@@ -102,7 +102,7 @@ let apply t f args ~on_parse_error =
   let rec apply : type a. a t -> a -> Value.t list -> Value.t =
     fun t f args ->
       match t with
-      | Cons (type_, t) ->
+      | type_ :: t ->
         (match args with
          | arg :: args ->
            (match Value.Type.of_value_exn type_ arg with
@@ -140,15 +140,15 @@ module Wrap = struct
 
   let ( @-> ) (type a b) (type_ : a Value.Type.t) (t : b t) =
     match t with
-    | Cons _ ->
+    | _ :: _ ->
       (match Type_equal.Id.same (Value.Type.id type_) (Value.Type.id nullary) with
        | true -> raise_s [%message "Function already has arguments, cannot be nullary."]
-       | false -> Cons (type_, t))
+       | false -> type_ :: t)
     | Nullary _ -> raise_s [%message "Cannot add arguments to nullary function."]
     | Return return_type ->
       (match Type_equal.Id.same_witness (Value.Type.id type_) (Value.Type.id nullary) with
        | Some Type_equal.T -> Nullary return_type
-       | None -> Cons (type_, t))
+       | None -> type_ :: t)
   ;;
 
   let ( <: ) elisp_function =

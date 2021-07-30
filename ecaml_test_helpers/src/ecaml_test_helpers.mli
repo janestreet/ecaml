@@ -9,8 +9,16 @@ val press
   -> string
   -> unit Deferred.t
 
-(** Run the given key sequence, and then show the prompt from the minibuffer. *)
-val press_and_show_prompt : string -> unit Deferred.t
+(** Run the given key sequence, and then show the following:
+
+    - minibuffer prompt
+    - minibuffer contents, unless [show_contents = false]
+    - *Completions* buffer, if any
+*)
+val press_and_show_minibuffer
+  :  ?show_contents:bool (** default: [true] *)
+  -> string
+  -> unit Deferred.t
 
 (** Display the current buffer. *)
 val show : ?show_point:bool (** default: [true] *) -> unit -> unit

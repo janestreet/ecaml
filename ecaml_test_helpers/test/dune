@@ -1,0 +1,4 @@
+(library (name emacs_test_helpers_test)
+ (libraries async_kernel core_kernel.core_kernel ecaml ecaml_test_helpers
+  expect_test_helpers_async expect_test_helpers_core)
+ (preprocess (pps ppx_jane)))

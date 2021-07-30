@@ -80,6 +80,13 @@ let%expect_test "[exit_status]" =
   return ()
 ;;
 
+let wait_until f =
+  let timeout_at = Time.(add (now ()) (Span.of_sec 1.)) in
+  while_
+    (fun () -> (not (f ())) && Time.(now () < timeout_at))
+    ~do_:(fun () -> Timer.sleep_for (0.01 |> sec_ns))
+;;
+
 let%expect_test "[extend_sentinel]" =
   let test prog =
     let t = create prog [] ~name:"t" () in
@@ -89,10 +96,7 @@ let%expect_test "[extend_sentinel]" =
     extend_sentinel [%here] t (Returns Value.Type.unit) ~sentinel:(fun ~event:_ ->
       print_s [%sexp "I'm another sentinel!"];
       sentinels_ran := true);
-    let timeout_at = Time.(add (now ()) (Span.of_sec 1.)) in
-    while_
-      (fun () -> (not !sentinels_ran) && Time.(now () < timeout_at))
-      ~do_:(fun () -> Timer.sleep_for (0.01 |> sec_ns))
+    wait_until (fun () -> !sentinels_ran)
   in
   let%bind () = test "true" in
   [%expect {|
@@ -104,6 +108,39 @@ let%expect_test "[extend_sentinel]" =
     exited abnormally with code 1
 
     "I'm another sentinel!" |}];
+  return ()
+;;
+
+let%expect_test "[extend_sentinel] where the sentinel raises" =
+  let t = create "true" [] ~name:"t" () in
+  let sentinels_ran = ref false in
+  extend_sentinel [%here] t (Returns Value.Type.unit) ~sentinel:(fun ~event:_ ->
+    sentinels_ran := true;
+    raise_s [%message "some error message"]);
+  let%bind () = wait_until (fun () -> !sentinels_ran) in
+  print_string [%expect.output] ~hide_positions:true;
+  [%expect
+    {|
+    ("process sentinel raised"
+     (sentinel_created_at app/emacs/lib/ecaml/test/test_process.ml:LINE:COL)
+     (process "#<process t>") (exn "some error message")) |}];
+  return ()
+;;
+
+let%expect_test "[extend_sentinel] where the sentinel raises asynchronously" =
+  let t = create "true" [] ~name:"t" () in
+  let sentinels_ran = ref false in
+  extend_sentinel [%here] t (Returns_deferred Value.Type.unit) ~sentinel:(fun ~event:_ ->
+    let%bind () = Clock.after (sec 0.001) in
+    sentinels_ran := true;
+    raise_s [%message "some error message"]);
+  let%bind () = wait_until (fun () -> !sentinels_ran) in
+  print_string [%expect.output] ~hide_positions:true;
+  [%expect
+    {|
+    ("process sentinel raised"
+     (sentinel_created_at app/emacs/lib/ecaml/test/test_process.ml:LINE:COL)
+     (process "#<process t>") (exn "some error message")) |}];
   return ()
 ;;
 

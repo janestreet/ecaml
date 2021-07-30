@@ -192,6 +192,22 @@ Test raising from a deep call stack of a function defined by an Ecaml [defun].
      if n <= 0
      then raise_s [%message "foo" "bar" "baz"]
      else ecaml_test_raise (Some (n - 1)));
+  defun_nullary_nil
+    ("ecaml-test-sentinel-raise" |> Symbol.intern)
+    [%here]
+    ~docstring:
+      {|
+For testing Ecaml.
+
+Test [Process.set_sentinel] on a sentinel that raises.
+|}
+    ~interactive:No_arg
+    (fun () ->
+       Process.set_sentinel
+         [%here]
+         (Process.create "true" [] ~name:"true" ())
+         (Returns Value.Type.unit)
+         ~sentinel:(fun ~event:_ -> failwith "some error message"));
   (* Replace [false] with [true] to define a function for testing
      [Minibuffer.read_from]. *)
   if false

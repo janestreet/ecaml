@@ -822,6 +822,10 @@ module Type = struct
         | Some v -> cons (to_value t v) nil)
   ;;
 
+  let stringable (type a) name (module M : Stringable.S with type t = a) =
+    map string ~name ~of_:M.of_string ~to_:M.to_string
+  ;;
+
   (* embed ocaml values as strings which are sexp representations *)
   let sexpable (type a) (module A : Sexpable with type t = a) ~name =
     create
