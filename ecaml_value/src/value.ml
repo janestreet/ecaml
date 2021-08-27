@@ -135,8 +135,8 @@ end
 module Block_on_async = struct
   type t =
     { f :
-        'a. Source_code_position.t -> ?context:Sexp.t Lazy.t -> (unit -> 'a Deferred.t)
-        -> 'a
+        'a.
+          Source_code_position.t -> ?context:Sexp.t Lazy.t -> (unit -> 'a Deferred.t) -> 'a
     }
 
   let set_once : t Set_once.t = Set_once.create ()
@@ -158,7 +158,10 @@ end
 module Run_outside_async = struct
   type t =
     { f :
-        'a. Source_code_position.t -> ?allowed_in_background:bool -> (unit -> 'a)
+        'a.
+          Source_code_position.t
+        -> ?allowed_in_background:bool
+        -> (unit -> 'a)
         -> 'a Deferred.t
     }
 

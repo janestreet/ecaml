@@ -347,8 +347,11 @@ module type Value = sig
     module Block_on_async : sig
       type t =
         { f :
-            'a. Source_code_position.t -> ?context:Sexp.t Lazy.t
-            -> (unit -> 'a Deferred.t) -> 'a
+            'a.
+              Source_code_position.t
+            -> ?context:Sexp.t Lazy.t
+            -> (unit -> 'a Deferred.t)
+            -> 'a
         }
 
       val set_once : t Set_once.t
@@ -370,7 +373,10 @@ module type Value = sig
     module Run_outside_async : sig
       type t =
         { f :
-            'a. Source_code_position.t -> ?allowed_in_background:bool -> (unit -> 'a)
+            'a.
+              Source_code_position.t
+            -> ?allowed_in_background:bool
+            -> (unit -> 'a)
             -> 'a Deferred.t
         }
 

@@ -105,11 +105,9 @@ module Record = struct
     [%sexp
       (took t |> Time_ns.Span.to_string_hum : string)
     , (if had_parallel_children then Some `parallel else None
-                                                         : ([ `parallel ] option
-                                                            [@sexp.option]))
+                                                         : ([ `parallel ] option[@sexp.option]))
     , (if pending_children <> 0 then Some (`pending_children pending_children) else None
-                                                                                    : ([ `pending_children of int ] option
-                                                                                       [@sexp.option]))
+                                                                                    : ([ `pending_children of int ] option[@sexp.option]))
     , (Message.force message : Sexp.t)
     , (children : (t list[@sexp.omit_nil]))]
   ;;
@@ -195,9 +193,8 @@ module Record = struct
         (* We hide the gap frame if it took less than [!hide_if_less_than], like all other
            frames.  We also hide the gap frame if it took less than 1us, since a gap frame
            that says 0us would be noise. *)
-        if
-          Time_ns.Span.( < ) gap_took !hide_if_less_than
-          || Time_ns.Span.( < ) gap_took Time_ns.Span.microsecond
+        if Time_ns.Span.( < ) gap_took !hide_if_less_than
+        || Time_ns.Span.( < ) gap_took Time_ns.Span.microsecond
         then ts
         else
           { start

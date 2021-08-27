@@ -315,9 +315,8 @@ module Block_on_async = struct
 
   let rec if_safe_run_pending () =
     assert (not t.am_running_async_cycle);
-    if
-      (not (am_blocking_on_async ()))
-      && not (Queue.is_empty t.pending_foreground_block_on_asyncs)
+    if (not (am_blocking_on_async ()))
+    && not (Queue.is_empty t.pending_foreground_block_on_asyncs)
     then (
       let pending_foreground_block_on_asyncs = t.pending_foreground_block_on_asyncs in
       t.pending_foreground_block_on_asyncs <- Queue.create ();
@@ -335,9 +334,8 @@ module Block_on_async = struct
   (* When the scheduler requests an Async cycle, [in_emacs_have_lock_do_cycle] runs the
      cycle inside the emacs thread and notifies the scheduler when it is finished. *)
   and in_emacs_have_lock_do_cycle () =
-    if
-      (not (Value.Expert.have_active_env ()))
-      || not (Scheduler.am_holding_lock t.scheduler)
+    if (not (Value.Expert.have_active_env ()))
+    || not (Scheduler.am_holding_lock t.scheduler)
     then raise_s [%sexp "[in_emacs_have_lock_do_cycle] should only be called by emacs"];
     (* If we are already running an Async cycle, then we can't start a new one, so we do
        nothing.  We can reach here with [t.am_running_async_cycle = true] if Ecaml calls a
@@ -544,10 +542,9 @@ Periodically request an Async cycle.
 |}
             ~f:(fun () ->
               try
-                if
-                  Time_ns.Span.( >= )
-                    (Time_ns.diff (Time_ns.now ()) t.last_cycle_finished_at)
-                    max_inter_cycle_timeout
+                if Time_ns.Span.( >= )
+                     (Time_ns.diff (Time_ns.now ()) t.last_cycle_finished_at)
+                     max_inter_cycle_timeout
                 then (
                   Cycle_requester.byte_was_probably_lost t.cycle_requester;
                   Block_on_async.in_emacs_have_lock_do_cycle ())

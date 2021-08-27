@@ -82,7 +82,8 @@ module Face_spec = struct
              ~init:[]
              ~f:(fun ac (Face.Attribute_and_value.T (attribute, value)) ->
                (attribute |> Face.Attribute.to_symbol |> Symbol.to_value)
-               :: (value |> Face.Attribute.to_value attribute) :: ac))
+               :: (value |> Face.Attribute.to_value attribute)
+               :: ac))
       | Face face -> face |> Face.to_value
     ;;
 
@@ -282,7 +283,8 @@ module Property = struct
     List.fold (List.rev ts) ~init:[] ~f:(fun ac (T (name, value)) ->
       let type_ = Property_name.type_ name in
       (Property_name.name name |> Symbol.to_value)
-      :: (value |> Value.Type.to_value type_) :: ac)
+      :: (value |> Value.Type.to_value type_)
+      :: ac)
   ;;
 end
 
