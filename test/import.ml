@@ -117,13 +117,9 @@ let with_input (type a) string (f : unit -> a Deferred.t) : a Deferred.t =
          "[with_input] doesn't support strings this long" ~_:(String.length string : int)]);
   Unix.dup2 ~src:r ~dst:Unix.stdin ();
   Unix.close r;
-  Monitor.protect
-    ~run:`Schedule
-    ~rest:`Log
-    f
-    ~finally:(fun () ->
-      Unix.dup2 ~src:stdin_to_restore ~dst:Unix.stdin ();
-      return ())
+  Monitor.protect f ~finally:(fun () ->
+    Unix.dup2 ~src:stdin_to_restore ~dst:Unix.stdin ();
+    return ())
 ;;
 
 let%expect_test "[with_input] with too long string" =

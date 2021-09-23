@@ -33,6 +33,30 @@ val gensym : ?prefix:string -> unit -> t
 (** [(describe-function 'fset)]. *)
 val set_function : t -> Value.t -> unit
 
+(** [Automatic_migration] supports migrating from one symbol-naming convention to another.
+    Use [Automatic_migration.add] to add a function that maps names from the old
+    convention to the new.  Once you've done that, the following functions will
+    automatically migrate their symbol argument, and and an obsolete alias pointing from
+    the old name to the new.
+
+    - defcustom
+    - defun
+    - define_minor_mode
+    - defvar
+*)
+module Automatic_migration : sig
+  module New : sig
+    type nonrec t =
+      { new_ : t
+      ; since : string
+      }
+    [@@deriving sexp_of]
+  end
+
+  val add : (old:t -> New.t option) -> unit
+  val migrate : old:t -> New.t option
+end
+
 module Property : sig
   type 'a t [@@deriving sexp_of]
 
@@ -70,6 +94,16 @@ module Property : sig
 
       See [(Info-goto-node "(emacs)Disabling")] *)
   val function_disabled : Bool.t t
+
+  (** If a command has multiple bindings, [(describe-function 'substitute-command-keys)]
+      normally uses the first one it finds.  You can specify one particular key binding by
+      a value for this property to the command, like this.
+
+      This property also affects the binding shown in menu items.  The property is ignored
+      if it specifies a key binding that the command does not actually have.
+
+      See [(Info-goto-node "(elisp) Keys in Documentation")] *)
+  val advertised_binding : Key_sequence0.t t
 end
 
 module type Subtype = sig

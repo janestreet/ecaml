@@ -43,13 +43,7 @@ defined in Ecaml.
                   let type_ = Value.Type.(tuple Buffer.t (nil_or Position.t)) in
                   Some (Value.Type.to_value type_ result))
               in
-              (match%map
-                 Monitor.try_with
-                   ~run:
-                     `Schedule
-                   ~rest:`Log
-                   do_it
-               with
+              (match%map Monitor.try_with do_it with
                | Ok result -> result
                | Error _ -> None)
             | _ -> return None

@@ -433,12 +433,7 @@ module Block_on_async = struct
         in
         let deferred =
           Async.(
-            Monitor.try_with
-              ~rest:
-                `Log
-              ~extract_exn:true
-              ~run:`Schedule
-              f
+            Monitor.try_with ~rest:`Log ~extract_exn:true ~run:`Schedule f
             >>| Or_error.of_exn_result)
         in
         let result = run_cycles_until_filled deferred in
@@ -805,18 +800,14 @@ Periodically check that the execution context in which Async jobs run is
        in
        don't_wait_for
          (let%map _ignored =
-            Monitor.try_with
-              ~run:
-                `Schedule
-              ~rest:`Log
-              (fun () ->
-                 let%bind () = Clock.after (sec 0.1) in
-                 let%bind () = Clock.after (sec 2.) in
-                 Timer.cancel timer;
-                 messagef
-                   "Execution-context test %s"
-                   (if !test_passed then "passed" else "failed");
-                 return ())
+            Monitor.try_with (fun () ->
+              let%bind () = Clock.after (sec 0.1) in
+              let%bind () = Clock.after (sec 2.) in
+              Timer.cancel timer;
+              messagef
+                "Execution-context test %s"
+                (if !test_passed then "passed" else "failed");
+              return ())
           in
           ()));
   Defun.defun_nullary_nil

@@ -298,13 +298,8 @@ module Ref = struct
   let set_temporarily_async r a ~f =
     let old = !r in
     r := a;
-    Monitor.protect
-      ~run:
-        `Schedule
-      ~rest:`Log
-      f
-      ~finally:(fun () ->
-        r := old;
-        return ())
+    Monitor.protect f ~finally:(fun () ->
+      r := old;
+      return ())
   ;;
 end

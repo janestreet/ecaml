@@ -191,13 +191,9 @@ let%expect_test "Nested calls to block_on_async raise, even via elisp" =
 let%expect_test "raising to a try-with that has already returned" =
   let raise_error = Ivar.create () in
   match%bind
-    try_with
-      ~run:
-        `Schedule
-      ~rest:`Log
-      (fun () ->
-         upon (Ivar.read raise_error) (fun () -> raise_s [%message "raising"]);
-         return ())
+    try_with ~rest:`Log (fun () ->
+      upon (Ivar.read raise_error) (fun () -> raise_s [%message "raising"]);
+      return ())
   with
   | Error _ -> assert false
   | Ok () ->
@@ -233,11 +229,9 @@ let%expect_test "assert_foreground" =
 
 let%expect_test "raise in run_outside_async" =
   let%bind result =
-    Monitor.try_with_or_error
-      ~rest:`Log
-      (fun () ->
-         Async_ecaml.Private.run_outside_async [%here] (fun () ->
-           raise_s [%sexp "Hello world"]))
+    Monitor.try_with_or_error (fun () ->
+      Async_ecaml.Private.run_outside_async [%here] (fun () ->
+        raise_s [%sexp "Hello world"]))
   in
   print_s [%sexp (result : unit Or_error.t)];
   [%expect

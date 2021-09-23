@@ -198,6 +198,25 @@ let standard_value = Var.default_value_exn
 
 module Wrap = Var.Wrap
 
+let add_to_load_history symbol here =
+  all_defcustom_symbols := symbol :: !all_defcustom_symbols;
+  Load_history.add_entry here (Var symbol)
+;;
+
+let defvaralias =
+  Funcall.Wrap.("defvaralias" <: Symbol.t @-> Symbol.t @-> nil_or string @-> return nil)
+;;
+
+let defvaralias symbol here ?docstring ~alias_of () =
+  defvaralias symbol alias_of docstring;
+  add_to_load_history symbol here
+;;
+
+let define_obsolete_alias obsolete here ?docstring ~alias_of ~since () =
+  defvaralias obsolete here ?docstring ~alias_of ();
+  Obsolete.make_variable_obsolete obsolete ~current:(Some alias_of) ~since
+;;
+
 let defcustom
       ?(show_form = false)
       symbol
@@ -210,6 +229,13 @@ let defcustom
       ?on_set
       ()
   =
+  let symbol =
+    match Symbol.Automatic_migration.migrate ~old:symbol with
+    | None -> symbol
+    | Some { new_; since } ->
+      define_obsolete_alias symbol here ~alias_of:new_ ~since ();
+      new_
+  in
   let standard_value = standard_value |> Value.Type.to_value type_ in
   (try
      let docstring = docstring |> String.strip in
@@ -231,8 +257,7 @@ let defcustom
              ]
          ]
      in
-     all_defcustom_symbols := symbol :: !all_defcustom_symbols;
-     Load_history.add_entry here (Var symbol);
+     add_to_load_history symbol here;
      let form =
        List.concat
          [ [ Q.defcustom |> Symbol.to_value ]

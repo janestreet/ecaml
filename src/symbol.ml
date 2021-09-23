@@ -31,6 +31,22 @@ let gensym ?prefix () =
 
 let set_function = Funcall.Wrap.("fset" <: t @-> value @-> return nil)
 
+module Automatic_migration = struct
+  module New = struct
+    type nonrec t =
+      { new_ : t
+      ; since : string
+      }
+    [@@deriving sexp_of]
+  end
+
+  type one = old:t -> New.t option
+
+  let all = ref []
+  let add (one : one) = all := !all @ [ one ]
+  let migrate ~old = List.find_map !all ~f:(fun f -> f ~old)
+end
+
 type symbol = t [@@deriving sexp_of]
 
 module Property = struct
@@ -62,6 +78,7 @@ module Property = struct
   ;;
 
   let function_disabled = create ("disabled" |> intern) Value.Type.bool
+  let advertised_binding = create (":advertised-binding" |> intern) Key_sequence0.type_
 end
 
 module type Subtype = sig

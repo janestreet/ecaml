@@ -29,13 +29,7 @@ module Function = struct
       | Returns (_ : unit Value.Type.t) -> Or_error.try_with f |> handle_result
       | Returns_deferred (_ : unit Value.Type.t) ->
         let open Async in
-        Deferred.Or_error.try_with
-          ~run:
-            `Schedule
-          ~rest:`Log
-          f
-          ~extract_exn:true
-        >>| handle_result
+        Deferred.Or_error.try_with f ~extract_exn:true >>| handle_result
     in
     Defun.defun
       symbol

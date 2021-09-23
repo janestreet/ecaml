@@ -338,6 +338,14 @@ let defun_internal
       t
       fn
   =
+  let symbol, obsoletes =
+    if is_some obsoletes
+    then symbol, obsoletes
+    else (
+      match Symbol.Automatic_migration.migrate ~old:symbol with
+      | None -> symbol, obsoletes
+      | Some { new_; since } -> new_, Some (symbol, Since since))
+  in
   let args = get_args t in
   defun_raw
     symbol

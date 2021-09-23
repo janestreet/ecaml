@@ -266,6 +266,7 @@ module type Value = sig
     type value
     type 'a t [@@deriving sexp_of]
 
+    module type Enum = Enum.S [@@deprecated "[since 2021-07] Use [Enum.S]."]
     module type S = Type with type value := value with type 'a t := 'a t
 
     include S

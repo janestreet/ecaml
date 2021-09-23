@@ -9,9 +9,23 @@ module Private = struct
   ;;
 end
 
-let add symbol here =
+let add_to_load_history symbol here =
   all_defvar_symbols := symbol :: !all_defvar_symbols;
   Load_history.add_entry here (Var symbol)
+;;
+
+let defvaralias =
+  Funcall.Wrap.("defvaralias" <: Symbol.t @-> Symbol.t @-> nil_or string @-> return nil)
+;;
+
+let defvaralias symbol here ?docstring ~alias_of () =
+  defvaralias symbol alias_of docstring;
+  add_to_load_history symbol here
+;;
+
+let define_obsolete_alias obsolete here ?docstring ~alias_of ~since () =
+  defvaralias obsolete here ?docstring ~alias_of ();
+  Obsolete.make_variable_obsolete obsolete ~current:(Some alias_of) ~since
 ;;
 
 let defvar
@@ -23,6 +37,13 @@ let defvar
       ?(include_in_all_defvar_symbols = true)
       ()
   =
+  let symbol =
+    match Symbol.Automatic_migration.migrate ~old:symbol with
+    | None -> symbol
+    | Some { new_; since } ->
+      define_obsolete_alias symbol here ~alias_of:new_ ~since ();
+      new_
+  in
   let docstring = docstring |> String.strip in
   require_nonempty_docstring here ~docstring;
   ignore
@@ -36,20 +57,6 @@ let defvar
         |> Value.list
         |> Form.of_value_exn)
      : Value.t);
-  if include_in_all_defvar_symbols then add symbol here;
+  if include_in_all_defvar_symbols then add_to_load_history symbol here;
   Var.create symbol type_
-;;
-
-let defvaralias =
-  Funcall.Wrap.("defvaralias" <: Symbol.t @-> Symbol.t @-> nil_or string @-> return nil)
-;;
-
-let defvaralias symbol here ?docstring ~alias_of () =
-  defvaralias symbol alias_of docstring;
-  add symbol here
-;;
-
-let define_obsolete_alias obsolete here ?docstring ~alias_of ~since () =
-  defvaralias obsolete here ?docstring ~alias_of ();
-  Obsolete.make_variable_obsolete obsolete ~current:(Some alias_of) ~since
 ;;

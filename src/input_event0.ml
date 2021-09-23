@@ -1,5 +1,5 @@
 open! Core
-open! Import
+open! Import0
 
 include Value.Make_subtype (struct
     let name = "input-event"

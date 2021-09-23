@@ -101,12 +101,8 @@ let () =
 
 let press_and_show_minibuffer ?(show_contents = true) key_sequence =
   match%map
-    try_with
-      ~run:
-        `Schedule
-      ~rest:`Log
-      (fun () ->
-         execute_keys [ key_sequence; show_minibuffer_key_sequence ~show_contents; "C-g" ])
+    try_with (fun () ->
+      execute_keys [ key_sequence; show_minibuffer_key_sequence ~show_contents; "C-g" ])
   with
   | Error _ -> ()
   | Ok () -> require [%here] false

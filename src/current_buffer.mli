@@ -70,6 +70,7 @@ val undo : int -> unit
     [(Info-goto-node "(elisp)Mode Help")] *)
 val describe_mode : unit -> unit
 
+
 (** [set_temporarily_to_temp_buffer f] creates a temporary buffer and runs [f] with the
     current buffer set to the temporary buffer.  [(describe-function 'with-temp-buffer)]. *)
 val set_temporarily_to_temp_buffer : (_, 'a) Sync_or_async.t -> (unit -> 'a) -> 'a

@@ -6,7 +6,7 @@
 open! Core
 open! Async_kernel
 open! Import
-include Value.Subtype
+include Value.Subtype with type t = Key_sequence0.t
 
 val length : t -> int
 val get : t -> int -> Input_event.t

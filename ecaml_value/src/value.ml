@@ -685,6 +685,7 @@ module Type = struct
 
   type 'a t = ('a, sync) t_ [@@deriving sexp_of]
 
+  module type Enum = Enum.S
   module type S = Type with type value := value with type 'a t := 'a t
 
   let name t = Sexp.of_string (Type_equal.Id.name t.id)
