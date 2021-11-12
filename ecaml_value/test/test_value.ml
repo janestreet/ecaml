@@ -349,7 +349,7 @@ let%expect_test "[to_utf8_bytes_exn] raise" =
   return ()
 ;;
 
-module Make_subtype = struct
+module _ = struct
   module Non_nil = Make_subtype (struct
       let name = "non-nil"
       let here = [%here]
@@ -666,7 +666,7 @@ let%expect_test "rendering OCaml exceptions in Emacs and Ocaml" =
   return ()
 ;;
 
-module Type = struct
+module _ = struct
   open Type
 
   let%expect_test "[sexp_of_t]" =

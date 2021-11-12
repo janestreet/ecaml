@@ -311,7 +311,7 @@ let%expect_test "raise in [Background.don't_wait_for]" =
   return ()
 ;;
 
-module Test_enqueue_block_on_async = struct
+module _ = struct
   (* We need to allow nested [block_on_async] because [let%expect_test] uses
      [block_on_async], and inside a [let%expect_test] we want to test
      [schedule_foreground_block_on_async], which is implemented via [block_on_async], *)

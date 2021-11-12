@@ -385,7 +385,7 @@ Test how the Ecaml profiler handles two Async jobs running in parallel.
             return ()))
 ;;
 
-module Benchmarks = struct
+module _ = struct
   let helper_name = "ecaml-profile-benchmark-rendering-helper"
 
   let () =
