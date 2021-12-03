@@ -1,2 +1,2 @@
 (library (name nested_profile) (public_name ecaml.nested_profile)
- (libraries async_kernel core_kernel.core) (preprocess (pps ppx_jane)))
+ (libraries async_kernel core) (preprocess (pps ppx_jane)))

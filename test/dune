@@ -1,5 +1,4 @@
 (library (name ecaml_test)
- (libraries async core_kernel.core ecaml ecaml_test_helpers
-  expect_test_helpers_async expect_test_helpers_core sexp_pretty
-  core.sys_unix)
+ (libraries async core ecaml ecaml_test_helpers expect_test_helpers_async
+  expect_test_helpers_core sexp_pretty core_unix.sys_unix)
  (preprocess (pps ppx_jane)))
