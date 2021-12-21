@@ -1,7 +1,6 @@
 open! Core
 open! Import
 
-
 (** [with_buffer_and_point contents { col; row } ~f] runs [f] in a temp buffer with
     [contents] and point at [row] and [col]. *)
 val with_buffer_and_point

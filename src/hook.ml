@@ -195,6 +195,7 @@ let focus_in = Wrap.("focus-in-hook" <: Normal_hook)
 let window_configuration_change = Wrap.("window-configuration-change-hook" <: Normal_hook)
 let window_scroll_functions = Wrap.("window-scroll-functions" <: Window_hook)
 let post_command = Wrap.("post-command-hook" <: Normal_hook)
+let server_after_make_frame = Wrap.("server-after-make-frame-hook" <: Normal_hook)
 
 let major_mode_hook major_mode =
   let mode_name = major_mode |> Major_mode.symbol |> Symbol.name in

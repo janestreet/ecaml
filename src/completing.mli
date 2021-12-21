@@ -78,3 +78,13 @@ val read_multiple
   -> history:Minibuffer.History.t
   -> unit
   -> string list Deferred.t
+
+val read_multiple_map_keys
+  :  prompt:string (** typically ends with ": " *)
+  -> collection:'a String.Map.t
+  -> ?separator_regexp:string (** default is "[ \t]*,[ \t]*" *)
+  -> ?initial_input:Initial_input.t (** default is Empty *)
+  -> ?default:string
+  -> history:Minibuffer.History.t
+  -> unit
+  -> 'a list Deferred.t

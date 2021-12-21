@@ -1,6 +1,6 @@
 (** [(Info-goto-node "(elisp)Display Property")] *)
-open! Core
 
+open! Core
 open! Import
 
 module Margin : sig

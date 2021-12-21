@@ -1,0 +1,8 @@
+1636474097455591583 start_test
+1636474097783120653 cat >can_load_re2.py <<EOF
+1636474097785152980 hg --config extensions.can_load_re2=can_load_re2.py --version | grep ok
+1636474098647876873 cat $hgrc > $IRON_HGRCPATH
+1636474098706771564 hg pull foo -e 'echo >&2 running ssh'
+1636474099087440051 hg debuginstall | grep 'Python version'
+1636474099275037198 hg debuginstall | grep 'Python version'
+1636474099350334262 END

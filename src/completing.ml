@@ -353,6 +353,29 @@ let read_multiple =
             default))
 ;;
 
+let read_multiple_map_keys
+      ~prompt
+      ~collection
+      ?separator_regexp
+      ?initial_input
+      ?default
+      ~history
+      ()
+  =
+  let%bind choices =
+    read_multiple
+      ~prompt
+      ~collection:(This (Map.keys collection))
+      ~require_match:True
+      ?separator_regexp
+      ?initial_input
+      ?default
+      ~history
+      ()
+  in
+  return (List.map choices ~f:(Map.find_exn collection))
+;;
+
 let symbol_collection =
   lazy
     (Feature.require ("help-fns" |> Symbol.intern);

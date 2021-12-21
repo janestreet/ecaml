@@ -16,6 +16,7 @@ let approximate_line_length_limit = ref 1_000
 let should_profile = ref false
 let hide_if_less_than = ref (Time_ns.Span.of_int_us 100)
 let hide_top_level_if_less_than = ref (Time_ns.Span.of_int_ms 10)
+let never_show_rendering_took = ref false
 let output_profile = ref print_string
 let sexp_of_time_ns = ref [%sexp_of: Time_ns.Alternate_sexp.t]
 let tag_frames_with = ref None
@@ -299,7 +300,8 @@ module Record = struct
     let rendering_finished = now () in
     let rendering_took = Time_ns.diff rendering_finished rendering_started in
     let rendering_took =
-      if Time_ns.Span.( < ) rendering_took !hide_top_level_if_less_than
+      if !never_show_rendering_took
+      || Time_ns.Span.( < ) rendering_took !hide_top_level_if_less_than
       then None
       else
         Some

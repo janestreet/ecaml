@@ -54,6 +54,7 @@ val approximate_line_length_limit : int ref
 val should_profile : bool ref
 val hide_if_less_than : Time_ns.Span.t ref
 val hide_top_level_if_less_than : Time_ns.Span.t ref
+val never_show_rendering_took : bool ref
 val sexp_of_time_ns : (Time_ns.t -> Sexp.t) ref
 val tag_frames_with : (unit -> Sexp.t option) option ref
 

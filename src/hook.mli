@@ -156,6 +156,9 @@ val kill_buffer : normal t
     [(Info-goto-node "(elisp)Command Overview")] *)
 val post_command : normal t
 
+(** [(describe-variable 'server-after-make-frame-hook)] *)
+val server_after_make_frame : normal t
+
 (** [(describe-variable 'window-configuration-change-hook)]
     [(Info-goto-node "(elisp)Window Hooks")] *)
 val window_configuration_change : normal t

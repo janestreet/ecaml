@@ -355,8 +355,7 @@ let call_expect_no_output_exn
         "[Process.call_expect_no_output_exn] produced unexpected output"
           (prog : string)
           (args : string list)
-          (result : string)
-          ~output:(Current_buffer.contents () |> Lines_or_sexp.of_text : Lines_or_sexp.t)]
+          (result : string)]
 ;;
 
 let bash = "/bin/bash"
