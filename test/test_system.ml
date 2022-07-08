@@ -13,12 +13,15 @@ let%expect_test "[setenv], [getenv], [setenv_temporarily]" =
   setenv "b";
   getenv ();
   [%expect {| (b) |}];
-  setenv_temporarily Sync [ { var; value = "c" } ] ~f:(fun () ->
-    getenv ();
-    [%expect {| (c) |}];
-    setenv "d";
-    getenv ();
-    [%expect {| (d) |}]);
+  setenv_temporarily
+    Sync
+    [ { var; value = "c" } ]
+    ~f:(fun () ->
+      getenv ();
+      [%expect {| (c) |}];
+      setenv "d";
+      getenv ();
+      [%expect {| (d) |}]);
   getenv ();
   [%expect {| (b) |}];
   return ()

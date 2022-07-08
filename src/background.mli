@@ -28,7 +28,7 @@ module Clock : sig
     -> ?continue_on_error:bool
     -> ?finished:unit Ivar.t
     -> Source_code_position.t
-    -> Time.Span.t
+    -> Time_float.Span.t
     -> (unit -> unit Deferred.t)
     -> unit
 
@@ -39,7 +39,7 @@ module Clock : sig
     -> ?stop:unit Deferred.t
     -> ?continue_on_error:bool
     -> Source_code_position.t
-    -> Time.Span.t
+    -> Time_float.Span.t
     -> (unit -> unit)
     -> unit
 end

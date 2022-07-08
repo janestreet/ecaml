@@ -57,6 +57,16 @@ module Automatic_migration : sig
   val migrate : old:t -> New.t option
 end
 
+(** Whether a command is disabled, and an optional message if so. *)
+module Disabled : sig
+  type t =
+    | Not_disabled
+    | Disabled of { message : string option }
+  [@@deriving sexp_of]
+
+  val type_ : t Value.Type.t
+end
+
 module Property : sig
   type 'a t [@@deriving sexp_of]
 
@@ -92,8 +102,11 @@ module Property : sig
       feature, and the user tries to do the command [x], they will get a warning asking if
       they really want to do the command (e.g. narrow-to-region).
 
+      A disabled command may optionally have a string message, which is displayed when the
+      user attempts to run the command.
+
       See [(Info-goto-node "(emacs)Disabling")] *)
-  val function_disabled : Bool.t t
+  val function_disabled : Disabled.t t
 
   (** If a command has multiple bindings, [(describe-function 'substitute-command-keys)]
       normally uses the first one it finds.  You can specify one particular key binding by

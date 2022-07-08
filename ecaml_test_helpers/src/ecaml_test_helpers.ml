@@ -112,3 +112,11 @@ let eval string =
   let%map value = Form.eval_string string in
   print_s [%sexp (value : Value.t)]
 ;;
+
+let print_files_that_loaded_cl () =
+  eval {|
+(progn
+  (require 'loadhist)
+  (file-dependents (feature-file 'cl)))
+|}
+;;

@@ -474,8 +474,7 @@ let profile
         incr_pending_children ~by:(-1))
     | Async ->
       Monitor.protect
-        ~run:
-          `Schedule
+        ~run:`Schedule
         ~rest:`Log
         f
         ~finally:(fun () ->

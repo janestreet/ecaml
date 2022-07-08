@@ -295,8 +295,7 @@ let read_map_key
   let%bind choice =
     read
       ~prompt
-      ~collection:
-        (This (Map.keys collection))
+      ~collection:(This (Map.keys collection))
       ~require_match:True
       ?annotation_function
       ?display_sort_function

@@ -23,7 +23,7 @@ let format_time_string =
 ;;
 
 let format ?zone t ~format_string =
-  format_time_string format_string t (Option.map zone ~f:Time.Zone.name)
+  format_time_string format_string t (Option.map zone ~f:Time_float.Zone.name)
 ;;
 
 let sexp_of_t t = [%sexp (format t ~format_string:"%F %T.%N%z" : string)]

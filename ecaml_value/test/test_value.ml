@@ -224,8 +224,9 @@ let%expect_test "[of_bool]" =
 ;;
 
 let%expect_test "[to_bool]" =
-  List.iter [ t; nil; 13 |> of_int_exn ] ~f:(fun value ->
-    print_s [%message (value : t) ~bool:(value |> to_bool : bool)]);
+  List.iter
+    [ t; nil; 13 |> of_int_exn ]
+    ~f:(fun value -> print_s [%message (value : t) ~bool:(value |> to_bool : bool)]);
   [%expect
     {|
     ((value t)

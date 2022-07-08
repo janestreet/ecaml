@@ -46,14 +46,16 @@ let%expect_test "[quote], [match_], [does_match]" =
 ;;
 
 let%expect_test "[any_pattern]" =
-  List.iter [ []; [ "a" ]; [ "b" ]; [ "a"; "b" ]; [ "b"; "a" ] ] ~f:(fun patterns ->
-    let regexp = any_pattern patterns in
-    print_s
-      [%message
-        ""
-          (patterns : string list)
-          (regexp : Regexp.t)
-          ~does_match:(does_match regexp ("a" |> Text.of_utf8_bytes) : bool)]);
+  List.iter
+    [ []; [ "a" ]; [ "b" ]; [ "a"; "b" ]; [ "b"; "a" ] ]
+    ~f:(fun patterns ->
+      let regexp = any_pattern patterns in
+      print_s
+        [%message
+          ""
+            (patterns : string list)
+            (regexp : Regexp.t)
+            ~does_match:(does_match regexp ("a" |> Text.of_utf8_bytes) : bool)]);
   [%expect
     {|
     ((patterns ())
@@ -75,14 +77,16 @@ let%expect_test "[any_pattern]" =
 ;;
 
 let%expect_test "[any_quote]" =
-  List.iter [ []; [ "a" ]; [ "b" ]; [ "a"; "b" ] ] ~f:(fun strings ->
-    let regexp = any_quote strings in
-    print_s
-      [%message
-        ""
-          (strings : string list)
-          (regexp : Regexp.t)
-          ~does_match:(does_match regexp ("a" |> Text.of_utf8_bytes) : bool)]);
+  List.iter
+    [ []; [ "a" ]; [ "b" ]; [ "a"; "b" ] ]
+    ~f:(fun strings ->
+      let regexp = any_quote strings in
+      print_s
+        [%message
+          ""
+            (strings : string list)
+            (regexp : Regexp.t)
+            ~does_match:(does_match regexp ("a" |> Text.of_utf8_bytes) : bool)]);
   [%expect
     {|
     ((strings ())

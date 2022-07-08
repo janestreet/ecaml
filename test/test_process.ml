@@ -81,9 +81,9 @@ let%expect_test "[exit_status]" =
 ;;
 
 let wait_until f =
-  let timeout_at = Time.(add (now ()) (Span.of_sec 1.)) in
+  let timeout_at = Time_float.(add (now ()) (Span.of_sec 1.)) in
   while_
-    (fun () -> (not (f ())) && Time.(now () < timeout_at))
+    (fun () -> (not (f ())) && Time_float.(now () < timeout_at))
     ~do_:(fun () -> Timer.sleep_for (0.01 |> sec_ns))
 ;;
 
@@ -181,9 +181,9 @@ let%expect_test "Async [extend_sentinel]" =
         let%map () = Clock.after (sec 0.01) in
         print_s [%sexp "I'm another sentinel!"];
         sentinels_ran := true);
-    let timeout_at = Time.(add (now ()) (Span.of_sec 1.)) in
+    let timeout_at = Time_float.(add (now ()) (Span.of_sec 1.)) in
     let rec loop () =
-      if (not !sentinels_ran) && Time.(now () < timeout_at)
+      if (not !sentinels_ran) && Time_float.(now () < timeout_at)
       then (
         let%bind () = Timer.sleep_for (0.01 |> sec_ns) in
         loop ())

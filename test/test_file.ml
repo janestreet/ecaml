@@ -53,15 +53,20 @@ let%expect_test "[is_below]" =
     | Some () ->
       if result
       then print_s [%sexp (result : bool)]
-      else
+      else (
         print_s
           [%sexp
             (result : bool)
           , ~~(Ecaml.File.truename file : string)
           , ~~(Ecaml.File.truename dir : string)
-          , ~~(Ecaml.File.exists dir : bool)]
+          , ~~(Ecaml.File.exists dir : bool)
+          , ~~(Ecaml.File.is_directory dir : bool)];
+        let tree_output =
+          Process.call_exn "tree" [ "-p"; Filename.directory dir |> Option.value_exn ]
+        in
+        print_endline tree_output)
   in
-  is_below "foo" ~dir;
+  is_below ~debug:() "foo" ~dir;
   [%expect {| true |}];
   is_below "/" ~dir;
   [%expect {| false |}];

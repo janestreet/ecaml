@@ -877,7 +877,7 @@ let%expect_test "[set_values_temporarily async]" =
       Sync
       [ T (v1, 15); T (v2, 16) ]
       ~f:(fun () ->
-        let%bind () = Clock.after (Time.Span.of_ms 1.) in
+        let%bind () = Clock.after (Time_float.Span.of_ms 1.) in
         show ();
         [%expect {| (13 14) |}];
         return ())
@@ -888,7 +888,7 @@ let%expect_test "[set_values_temporarily async]" =
       Async
       [ T (v1, 15); T (v2, 16) ]
       ~f:(fun () ->
-        let%bind () = Clock.after (Time.Span.of_ms 1.) in
+        let%bind () = Clock.after (Time_float.Span.of_ms 1.) in
         show ();
         [%expect {| (15 16) |}];
         return ())
@@ -909,7 +909,7 @@ let%expect_test "[set_value_temporarily async]" =
      wrong result *)
   let%bind () =
     set_value_temporarily Sync var 14 ~f:(fun () ->
-      let%bind () = Clock.after (Time.Span.of_ms 1.) in
+      let%bind () = Clock.after (Time_float.Span.of_ms 1.) in
       show ();
       [%expect {| 13 |}];
       return ())
@@ -917,7 +917,7 @@ let%expect_test "[set_value_temporarily async]" =
   (* Correctly using [set_value_temporarily _ _ Async], we get a correct result. *)
   let%bind () =
     set_value_temporarily Async var 14 ~f:(fun () ->
-      let%bind () = Clock.after (Time.Span.of_ms 1.) in
+      let%bind () = Clock.after (Time_float.Span.of_ms 1.) in
       show ();
       [%expect {| 14 |}];
       return ())

@@ -140,7 +140,7 @@ let () =
   then
     let module Unix = Core_unix in
     let should_reopen_stdin = ref true in
-    Background.Clock.every [%here] Time.Span.second (fun () ->
+    Background.Clock.every [%here] Time_float.Span.second (fun () ->
       match Unix.fstat Unix.stdin with
       | _ -> ()
       | exception _ ->

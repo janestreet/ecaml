@@ -318,13 +318,13 @@ let defun_raw symbol here ~docstring ?interactive ~args ?optional_args ?rest_arg
      |> Function.to_value)
 ;;
 
-let disable_function name =
+let maybe_disable_function name disabled =
   (* the user may have explicitly put [disabled nil] for the symbol to undisable the
      function before we define it. So we check for that first *)
   let open Symbol.Property in
   match get function_disabled name with
   | Some _ -> ()
-  | None -> put function_disabled name true
+  | None -> put function_disabled name disabled
 ;;
 
 let defun_internal
@@ -334,7 +334,7 @@ let defun_internal
       ?(define_keys = [])
       ?(obsoletes : Obsoletes.t option)
       ?interactive
-      ?(disabled = false)
+      ?(disabled = Symbol.Disabled.Not_disabled)
       t
       fn
   =
@@ -360,7 +360,7 @@ let defun_internal
     Keymap.define_key keymap (Key_sequence.create_exn keys) (Symbol symbol));
   Option.iter obsoletes ~f:(fun (obsolete, Since since) ->
     define_obsolete_alias obsolete here ~alias_of:symbol ~since ());
-  if disabled then disable_function symbol
+  maybe_disable_function symbol disabled
 ;;
 
 let defun

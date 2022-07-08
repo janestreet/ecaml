@@ -12,12 +12,15 @@ let mapatoms = Funcall.Wrap.("mapatoms" <: Function.t @-> t @-> return nil)
 
 let iter t ~f =
   let f =
-    Function.create [%here] ~args:[ Symbol.intern "symbol" ] (fun args ->
-      match args with
-      | [| symbol |] ->
-        f (Symbol.of_value_exn symbol);
-        Value.nil
-      | _ -> raise_s [%message "Expected 1 arg." (args : Value.t array)])
+    Function.create
+      [%here]
+      ~args:[ Symbol.intern "symbol" ]
+      (fun args ->
+         match args with
+         | [| symbol |] ->
+           f (Symbol.of_value_exn symbol);
+           Value.nil
+         | _ -> raise_s [%message "Expected 1 arg." (args : Value.t array)])
   in
   mapatoms f t
 ;;

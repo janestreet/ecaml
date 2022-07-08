@@ -1,16 +1,10 @@
 open! Core
 open! Async
 open! Import
-
-module Expect_test_config :
-  Expect_test_config_types.S
-  with type 'a IO_flush.t = 'a
-   and type 'a IO_run.t = 'a Deferred.t
+module Expect_test_config : Expect_test_config_types.S with type 'a IO.t = 'a Deferred.t
 
 module Expect_test_config_allowing_nested_block_on_async :
-  Expect_test_config_types.S
-  with type 'a IO_flush.t = 'a
-   and type 'a IO_run.t = 'a Deferred.t
+  Expect_test_config_types.S with type 'a IO.t = 'a Deferred.t
 
 module Export : sig
   module Clock : sig
@@ -21,7 +15,7 @@ module Export : sig
       -> ?stop:unit Deferred.t
       -> ?continue_on_error:bool
       -> ?finished:unit Ivar.t
-      -> Time.Span.t
+      -> Time_float.Span.t
       -> (unit -> unit Deferred.t)
       -> unit
     [@@deprecated "[since 2019-05] Use [Background.Clock.every']"]
@@ -30,7 +24,7 @@ module Export : sig
       :  ?start:unit Deferred.t
       -> ?stop:unit Deferred.t
       -> ?continue_on_error:bool
-      -> Time.Span.t
+      -> Time_float.Span.t
       -> (unit -> unit)
       -> unit
     [@@deprecated "[since 2019-05] Use [Background.Clock.every]"]

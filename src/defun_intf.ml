@@ -90,7 +90,7 @@ module type Defun = sig
     -> ?obsoletes:Obsoletes.t
     -> ?should_profile:bool
     -> ?interactive:Interactive.t
-    -> ?disabled:bool (** See {!Symbol.Property.function_disabled}  *)
+    -> ?disabled:Symbol.Disabled.t (** See {!Symbol.Property.function_disabled}  *)
     -> ?evil_config:Evil.Config.t
     -> 'a
 

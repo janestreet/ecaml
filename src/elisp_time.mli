@@ -13,7 +13,7 @@ include Value.Subtype with type t := t
 (** [(describe-function 'format-time-string)]
     [(Info-goto-node "(elisp)Time Parsing")] *)
 val format
-  :  ?zone:Time.Zone.t (** default is Emacs local time *)
+  :  ?zone:Time_float.Zone.t (** default is Emacs local time *)
   -> t
   -> format_string:string
   -> string

@@ -14,7 +14,7 @@ open! Import
 module Ivar = Async.Ivar
 module Mutex = Error_checking_mutex
 module Thread = Caml_threads.Thread
-module Time = Time_unix
+module Time = Time_float_unix
 module Unix = Core_unix
 module Scheduler = Async_unix.Async_unix_private.Raw_scheduler
 

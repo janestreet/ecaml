@@ -375,12 +375,12 @@ Test how the Ecaml profiler handles two Async jobs running in parallel.
               profile
                 Async
                 (lazy [%sexp "branch1"])
-                (fun () -> Async.Clock.after (Time.Span.of_sec 1.))
+                (fun () -> Async.Clock.after (Time_float.Span.of_sec 1.))
             and () =
               profile
                 Async
                 (lazy [%sexp "branch2"])
-                (fun () -> Async.Clock.after (Time.Span.of_sec 0.8))
+                (fun () -> Async.Clock.after (Time_float.Span.of_sec 0.8))
             in
             return ()))
 ;;

@@ -124,13 +124,15 @@ let%expect_test "[make_relative]" =
 ;;
 
 let%expect_test "[expand]" =
-  List.iter [ "/", "a"; "/a", "../b"; "/a/b", "c/../d" ] ~f:(fun (in_dir, filename) ->
-    print_s
-      [%message
-        ""
-          (in_dir : string)
-          (filename : string)
-          ~expanded:(expand filename ~in_dir : string)]);
+  List.iter
+    [ "/", "a"; "/a", "../b"; "/a/b", "c/../d" ]
+    ~f:(fun (in_dir, filename) ->
+      print_s
+        [%message
+          ""
+            (in_dir : string)
+            (filename : string)
+            ~expanded:(expand filename ~in_dir : string)]);
   [%expect
     {|
     ((in_dir   /)

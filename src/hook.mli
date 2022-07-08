@@ -88,6 +88,8 @@ module Function : sig
     -> (unit, 'r) Defun.Returns.t
     -> ('a t -> 'a -> 'r)
     -> 'a t
+
+  val symbol : _ t -> Symbol.t
 end
 
 (** [(describe-function 'add-hook)]

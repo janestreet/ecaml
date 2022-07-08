@@ -5,7 +5,7 @@ open! Import
 let () = Backtrace.elide := true
 
 let%expect_test "test basic async" =
-  let%bind () = Clock.after (Time.Span.of_sec 0.1) in
+  let%bind () = Clock.after (Time_float.Span.of_sec 0.1) in
   printf "Hello world\n";
   [%expect {| Hello world |}];
   return ()
