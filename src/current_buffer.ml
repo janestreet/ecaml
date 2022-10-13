@@ -39,12 +39,12 @@ let set_auto_mode =
 let bury = Funcall.Wrap.("bury-buffer" <: nullary @-> return nil)
 let directory = Buffer_local.Wrap.("default-directory" <: nil_or string)
 let describe_mode = Funcall.Wrap.("describe-mode" <: nullary @-> return nil)
-let is_modified = Funcall.Wrap.("buffer-modified-p" <: nullary @-> return bool)
 let set_modified = Funcall.Wrap.("set-buffer-modified-p" <: bool @-> return nil)
 let fill_column = Buffer_local.Wrap.("fill-column" <: int)
 let paragraph_start = Var.Wrap.("paragraph-start" <: Regexp.t)
 let paragraph_separate = Var.Wrap.("paragraph-separate" <: Regexp.t)
 let read_only = Buffer_local.Wrap.("buffer-read-only" <: bool)
+let is_modified () = Buffer.is_modified (get ())
 let file_name () = Buffer.file_name (get ())
 
 let file_name_exn () =

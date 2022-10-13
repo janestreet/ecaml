@@ -32,7 +32,7 @@ val split_vertically_exn : unit -> unit
 val find_file : string -> unit Deferred.t
 
 (** [(describe-function 'find-file-other-window)] *)
-val find_file_other_window : string -> unit
+val find_file_other_window : string -> unit Deferred.t
 
 (** [(describe-function 'view-file)] *)
 val view_file : string -> unit Deferred.t

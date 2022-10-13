@@ -7,10 +7,25 @@
 open! Core
 open! Import
 
+module Named_char_class = struct
+  type t =
+    | Alphabetic
+    | Alphanumeric
+    | Digit
+    | Hex_digit
+    | Lower
+    | Space
+    | Upper
+    | Word
+  [@@deriving sexp_of]
+end
+
 module Char_class = struct
   type t =
     | Chars_in of string
     (** [Chars_in s] matches characters in [s] (e.g., "[:digit:]" matches ':')  *)
+    | Named of Named_char_class.t
+    (** [Named name] matches characters from a named character class, e.g., [alpha]. *)
     | Range of char * char
     (** [Range (c1, c2)] matches characters between [c1] and [c2] inclusive. *)
   [@@deriving sexp_of]
@@ -77,3 +92,4 @@ module type Rx = sig
 
   val pattern : t -> string
 end
+

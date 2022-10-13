@@ -25,3 +25,4 @@ let sigusr1 =
 ;;
 
 let concat = List.concat_map ~f:to_list >> of_list
+let invoking_this_command = Funcall.Wrap.("this-command-keys" <: nullary @-> return t)

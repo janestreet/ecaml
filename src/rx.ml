@@ -5,22 +5,46 @@ open Rx_intf
 module Q = struct
   include Q
 
+  let alnum = "alnum" |> Symbol.intern
+  let alpha = "alpha" |> Symbol.intern
   let any = "any" |> Symbol.intern
   let anything = "anything" |> Symbol.intern
+  let digit = "digit" |> Symbol.intern
   let line_end = "line-end" |> Symbol.intern
   let line_start = "line-start" |> Symbol.intern
+  let lower = "lower" |> Symbol.intern
   let not_ = "not" |> Symbol.intern
   let one_or_more = "one-or-more" |> Symbol.intern
   let or_ = "or" |> Symbol.intern
   let point = "point" |> Symbol.intern
   let seq = "seq" |> Symbol.intern
+  let space = "space" |> Symbol.intern
   let submatch = "submatch" |> Symbol.intern
   let submatch_n = "submatch-n" |> Symbol.intern
   let sym_eq = "=" |> Symbol.intern
   let sym_ge = ">=" |> Symbol.intern
   let sym_star_star = "**" |> Symbol.intern
+  let upper = "upper" |> Symbol.intern
+  let word = "word" |> Symbol.intern
+  let xdigit = "xdigit" |> Symbol.intern
   let zero_or_more = "zero-or-more" |> Symbol.intern
   let zero_or_one = "zero-or-one" |> Symbol.intern
+end
+
+module Named_char_class = struct
+  include Named_char_class
+
+  let to_form t =
+    match (t : t) with
+    | Alphabetic -> Form.symbol Q.alpha
+    | Alphanumeric -> Form.symbol Q.alnum
+    | Digit -> Form.symbol Q.digit
+    | Hex_digit -> Form.symbol Q.xdigit
+    | Lower -> Form.symbol Q.lower
+    | Space -> Form.symbol Q.space
+    | Upper -> Form.symbol Q.upper
+    | Word -> Form.symbol Q.word
+  ;;
 end
 
 module Char_class = struct
@@ -29,6 +53,7 @@ module Char_class = struct
   let to_form t =
     match (t : t) with
     | Chars_in string -> Form.string string
+    | Named named -> Named_char_class.to_form named
     | Range (c1, c2) -> Form.string (sprintf "%c-%c" c1 c2)
   ;;
 
@@ -39,7 +64,7 @@ module Char_class = struct
     let chars, other_ts =
       List.partition_map ts ~f:(function
         | Chars_in s -> First s
-        | Range _ as t -> Second t)
+        | (Named _ | Range _) as t -> Second t)
     in
     let chars =
       List.fold chars ~init:Char.Set.empty ~f:(fun init s ->
@@ -50,7 +75,7 @@ module Char_class = struct
         match Set.is_empty chars with
         | true -> []
         | false ->
-          let chars = chars |> Char.Set.to_list |> String.of_char_list in
+          let chars = chars |> Set.to_list |> String.of_char_list in
           [ Chars_in chars ]
       in
       List.concat

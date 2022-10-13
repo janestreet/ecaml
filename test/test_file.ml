@@ -57,6 +57,7 @@ let%expect_test "[is_below]" =
         print_s
           [%sexp
             (result : bool)
+          , ~~(dir : string)
           , ~~(Ecaml.File.truename file : string)
           , ~~(Ecaml.File.truename dir : string)
           , ~~(Ecaml.File.exists dir : bool)

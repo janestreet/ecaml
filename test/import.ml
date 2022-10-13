@@ -96,6 +96,8 @@ let with_input_macro string f =
   Key_sequence.execute keyseq
 ;;
 
+external clearerr_on_stdin : unit -> unit = "ecaml_test_clearerr_stdin" [@@noalloc]
+
 let with_input (type a) string (f : unit -> a Deferred.t) : a Deferred.t =
   let module Out_channel = Core.Out_channel in
   let module Unix = Core_unix in
@@ -119,6 +121,14 @@ let with_input (type a) string (f : unit -> a Deferred.t) : a Deferred.t =
   Unix.close r;
   Monitor.protect f ~finally:(fun () ->
     Unix.dup2 ~src:stdin_to_restore ~dst:Unix.stdin ();
+    (* Emacs reads the minibuffer noninteractively by calling [getchar()], which sets an
+       EOF flag on the stdin stream (i.e., the [FILE *], not the raw fd) when it reaches
+       the end of input.  After calling [dup2], there is more input available on the
+       stream, but we need to explicitly clear the EOF flag by calling [clearerr()].
+
+       See more at https://sourceware.org/bugzilla/show_bug.cgi?id=23636.  Glibc 2.28
+       introduced the sticky EOF pointer to fix a POSIX noncompliance. *)
+    clearerr_on_stdin ();
     return ())
 ;;
 

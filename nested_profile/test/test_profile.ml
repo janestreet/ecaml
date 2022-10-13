@@ -7,7 +7,7 @@ open! Expect_test_helpers_core
 open! Expect_test_helpers_async
 
 let () = Backtrace.elide := true
-let _ = Profile.should_profile := true
+let () = Profile.should_profile := true
 let sec = Time_ns.Span.of_sec
 
 module Sync_or_async = Profile.Sync_or_async

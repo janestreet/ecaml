@@ -39,10 +39,6 @@ let split_vertically_exn =
   Funcall.Wrap.("split-window-vertically" <: nullary @-> return nil)
 ;;
 
-let find_file_other_window =
-  Funcall.Wrap.("find-file-other-window" <: string @-> return nil)
-;;
-
 let quit =
   let quit = Funcall.Wrap.("quit-window" <: nullary @-> return nil) in
   fun () -> Value.Private.run_outside_async [%here] quit
@@ -61,6 +57,14 @@ let set_temporarily sync_or_async window ~f =
 let find_file =
   let find_file = Funcall.Wrap.("find-file" <: string @-> return nil) in
   fun path -> Value.Private.run_outside_async [%here] (fun () -> find_file path)
+;;
+
+let find_file_other_window =
+  let find_file_other_window =
+    Funcall.Wrap.("find-file-other-window" <: string @-> return nil)
+  in
+  fun path ->
+    Value.Private.run_outside_async [%here] (fun () -> find_file_other_window path)
 ;;
 
 let view_file =

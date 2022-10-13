@@ -12,4 +12,7 @@ val is_empty : unit -> bool
 (** [(describe-function 'kill-new)] *)
 val kill_new : Text.t -> unit
 
+(** [(describe-function 'current-kill)] *)
+val current_kill_exn : unit -> Text.t
+
 (** See [Current_buffer.yank] for yanking from the kill ring. *)

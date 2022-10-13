@@ -27,6 +27,10 @@ val nondirectory : t -> t
 
 (** [(describe-function 'file-name-extension)]
     [(Info-goto-node "(elisp)File Name Components")] *)
+val extension : t -> string option
+
+(** [(describe-function 'file-name-extension)]
+    [(Info-goto-node "(elisp)File Name Components")] *)
 val extension_exn : t -> string
 
 (** [(describe-function 'file-name-sans-extension)]

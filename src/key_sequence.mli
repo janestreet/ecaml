@@ -56,3 +56,6 @@ val sigusr1 : t
 val description : t -> string
 
 val concat : t list -> t
+
+(** [(describe-function 'this-command-keys)] *)
+val invoking_this_command : unit -> t

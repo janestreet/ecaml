@@ -339,11 +339,10 @@ module Frame = struct
     }
   ;;
 
-  let record
-        { message; start; children; parent = _; pending_children; max_pending_children }
-        ~stop
-    : Record.t
-    =
+  let record t ~stop : Record.t =
+    let { message; start; children; parent = _; pending_children; max_pending_children } =
+      t
+    in
     { start
     ; stop
     ; message

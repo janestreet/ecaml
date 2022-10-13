@@ -122,3 +122,6 @@ val modified_tick : t -> Modified_tick.t
 
 (** [(describe-function 'buffer-chars-modified-tick)] *)
 val chars_modified_tick : t -> Modified_tick.t
+
+(** [(describe-function 'buffer-modified-p)] *)
+val is_modified : t -> bool

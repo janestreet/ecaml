@@ -164,3 +164,5 @@ let modified_tick = Funcall.Wrap.("buffer-modified-tick" <: t @-> return Modifie
 let chars_modified_tick =
   Funcall.Wrap.("buffer-chars-modified-tick" <: t @-> return Modified_tick.t)
 ;;
+
+let is_modified = Funcall.Wrap.("buffer-modified-p" <: t @-> return bool)
