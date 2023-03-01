@@ -230,6 +230,8 @@ let%expect_test "[defalias]" =
 
     (f &rest NUMBERS-OR-MARKERS)
 
+      Probably introduced at or before Emacs version 1.6.
+
     Return sum of any number of arguments, which are numbers or markers. |}];
   return ()
 ;;

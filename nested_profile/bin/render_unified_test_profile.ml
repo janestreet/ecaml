@@ -75,6 +75,8 @@ and output a Nested_profile representation.
           Out_channel.with_file output_file ~f:(fun ch ->
             Out_channel.output_string ch str));
        Reader.file_lines file >>| process_lines ~test_name)
+    ~behave_nicely_in_pipeline:false
 ;;
+
 
 let () = Command_unix.run command

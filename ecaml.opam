@@ -21,6 +21,7 @@ depends: [
   "ppx_jane"
   "dune"                     {>= "2.0.0"}
 ]
+available: arch != "arm32" & arch != "x86_32"
 synopsis: "Library for writing Emacs plugin in OCaml"
 description: "
 Ecaml is a library for writing Emacs plugins in OCaml. It uses Emacs

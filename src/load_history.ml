@@ -118,7 +118,7 @@ let update_emacs_with_entries ~chop_prefix ~in_dir =
     |> Hashtbl.to_alist
     |> List.map ~f:(fun (file, entries) ->
       Value.cons
-        (Caml.Filename.concat in_dir file |> Value.of_utf8_bytes)
+        (Stdlib.Filename.concat in_dir file |> Value.of_utf8_bytes)
         (Value.list (entries |> List.map ~f:Entry.to_value)))
     |> Value.list
   in

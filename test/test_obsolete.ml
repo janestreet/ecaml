@@ -29,8 +29,8 @@ let%expect_test "obsolete functions already defined" =
 
     (foobar-2)
 
-    This function is obsolete since now;
-    use `current-function' instead.
+      This function is obsolete since now;
+      use `current-function' instead.
 
     <docstring> |}];
   Symbol.funcall0_i obsolete;
@@ -48,8 +48,8 @@ let%expect_test "documentation for obsolete functions" =
 
     (foobar-2)
 
-    This function is obsolete since version X.Y;
-    use `current-function' instead.
+      This function is obsolete since version X.Y;
+      use `current-function' instead.
 
     <docstring> |}];
   Defun.define_obsolete_alias
@@ -66,8 +66,8 @@ let%expect_test "documentation for obsolete functions" =
 
     (foobar-2)
 
-    This function is obsolete since version X.Y;
-    use `current-function' instead.
+      This function is obsolete since version X.Y;
+      use `current-function' instead.
 
     arbitrary docstring |}];
   Defun.define_obsolete_alias
@@ -84,8 +84,8 @@ let%expect_test "documentation for obsolete functions" =
 
     (foobar-2)
 
-    This function is obsolete since now;
-    use `current-function' instead.
+      This function is obsolete since now;
+      use `current-function' instead.
 
     arbitrary docstring |}];
   return ()
@@ -101,8 +101,8 @@ let%expect_test "obsolete functions not yet defined" =
 
     (foobar)
 
-    This function is obsolete since now;
-    use `current-function' instead.
+      This function is obsolete since now;
+      use `current-function' instead.
 
     <docstring> |}];
   (* Later definitions override our obsolete. *)
@@ -114,8 +114,8 @@ let%expect_test "obsolete functions not yet defined" =
 
     (foobar)
 
-    This function is obsolete since now;
-    use `current-function' instead.
+      This function is obsolete since now;
+      use `current-function' instead.
 
     _ |}];
   Symbol.funcall0_i obsolete;

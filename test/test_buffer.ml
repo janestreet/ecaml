@@ -135,10 +135,10 @@ let%expect_test "[displayed_in]" =
     [%expect {| () |}];
     Selected_window.Blocking.switch_to_buffer t;
     show_displayed_in ();
-    [%expect {| ("#<window 1 on *temp-buffer*>") |}];
+    [%expect {| ("#<window 1 on  *temp*>") |}];
     Selected_window.split_vertically_exn ();
     show_displayed_in ();
-    [%expect {| ("#<window 1 on *temp-buffer*>" "#<window 4 on *temp-buffer*>") |}]);
+    [%expect {| ("#<window 1 on  *temp*>" "#<window 4 on  *temp*>") |}]);
   return ()
 ;;
 
@@ -149,9 +149,9 @@ let%expect_test "[display]" =
     show_displayed_in ();
     [%expect {| () |}];
     print_s [%sexp (display t : Window.t option)];
-    [%expect {| ("#<window 4 on *temp-buffer*>") |}];
+    [%expect {| ("#<window 4 on  *temp*>") |}];
     show_displayed_in ();
-    [%expect {| ("#<window 4 on *temp-buffer*>") |}]);
+    [%expect {| ("#<window 4 on  *temp*>") |}]);
   return ()
 ;;
 

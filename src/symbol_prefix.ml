@@ -19,7 +19,8 @@ let create elisp_name =
           if Value.is_command (symbol |> Symbol.to_value)
           && String.is_prefix ~prefix:symbol_prefix name
           then result := symbol :: !result);
-        List.sort !result ~compare:(Comparable.lift [%compare: string] ~f:Symbol.name))
+        List.sort !result ~compare:(fun a b ->
+          Comparable.lift [%compare: string] ~f:Symbol.name a b))
     ;;
 
     let prefixed_symbol_name suffix =

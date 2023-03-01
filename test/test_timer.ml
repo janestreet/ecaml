@@ -18,7 +18,8 @@ let test f =
 
 let%expect_test "[run_after], [sit_for]" =
   let%bind () = test sit_for in
-  [%expect {| ran |}];
+  [%expect {|
+    ran |}];
   return ()
 ;;
 

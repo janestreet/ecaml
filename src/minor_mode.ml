@@ -25,7 +25,7 @@ let create ?variable_name function_name =
   { function_name; variable_name = Option.value variable_name ~default:function_name }
 ;;
 
-let compare_name = Comparable.lift Symbol.compare_name ~f:function_name
+let compare_name a b = Comparable.lift Symbol.compare_name ~f:function_name a b
 let abbrev = { function_name = Q.abbrev_mode; variable_name = Q.abbrev_mode }
 
 let goto_address =
@@ -72,7 +72,7 @@ let define_minor_mode
       ?(define_keys = [])
       ?mode_line
       ~global
-      ?(initialize = fun () -> ())
+      ?(initialize = (ignore : t -> unit))
       ()
   =
   let docstring = docstring |> String.strip in
@@ -85,6 +85,7 @@ let define_minor_mode
   let docstring =
     concat [ docstring; "\n\n"; Documentation.Special_sequence.keymap keymap_var.symbol ]
   in
+  let t = { function_name = name; variable_name = name } in
   Form.Blocking.eval_i
     (Form.list
        [ Q.define_minor_mode |> Form.symbol
@@ -93,7 +94,8 @@ let define_minor_mode
        ; Q.K.lighter |> Form.symbol
        ; Option.value_map
            mode_line
-           ~f:(fun mode_line -> String.concat [ " "; mode_line ] |> Form.string)
+           ~f:(fun mode_line ->
+             String.concat [ " "; mode_line ] |> Form.string)
            ~default:Form.nil
        ; Q.K.keymap |> Form.symbol
        ; Var.symbol_as_value keymap_var |> Form.of_value_exn
@@ -101,10 +103,11 @@ let define_minor_mode
        ; Value.of_bool global |> Form.of_value_exn
        ; Form.list
            [ Q.funcall |> Form.symbol
-           ; Form.quote (Defun.lambda_nullary_nil here initialize |> Function.to_value)
+           ; Form.quote
+               (Defun.lambda_nullary_nil here (fun () -> initialize t)
+                |> Function.to_value)
            ]
        ]);
-  let t = { function_name = name; variable_name = name } in
   all_minor_modes := t :: !all_minor_modes;
   t
 ;;

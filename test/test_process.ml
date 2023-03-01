@@ -226,7 +226,7 @@ let%expect_test "[buffer]" =
     let t = sleep () ~buffer:(Current_buffer.get ()) in
     print_s [%sexp (buffer t : Buffer.t option)];
     kill t);
-  [%expect {| ("#<buffer *temp-buffer*>") |}];
+  [%expect {| ("#<buffer  *temp*>") |}];
   return ()
 ;;
 
@@ -314,7 +314,7 @@ let%expect_test "[Call.Input.Dev_null]" =
 ;;
 
 let%expect_test "[Call.Input.File]" =
-  let file = Caml.Filename.temp_file "" "" in
+  let file = Stdlib.Filename.temp_file "" "" in
   let%bind () = Selected_window.find_file file in
   Point.insert "foobar";
   let%bind () = Current_buffer.save () in
@@ -342,7 +342,7 @@ let%expect_test "[Call.Output.Dev_null]" =
 ;;
 
 let%expect_test "[Call.Output.File]" =
-  let file = Caml.Filename.temp_file "" "" in
+  let file = Stdlib.Filename.temp_file "" "" in
   test_call_result_exn () ~prog:"echo" ~args:[ "foo" ] ~output:(Overwrite_file file);
   [%expect {|
     (result (Exit_status 0))
@@ -405,7 +405,7 @@ let%expect_test "[Call.Output.Split]" =
   [%expect {|
     (result (Exit_status 0))
     output: |}];
-  let file = Caml.Filename.temp_file "" "" in
+  let file = Stdlib.Filename.temp_file "" "" in
   test_call_result_exn
     ()
     ~prog:"bash"
@@ -417,8 +417,8 @@ let%expect_test "[Call.Output.Split]" =
   show_file_contents file;
   [%expect {| foo |}];
   Sys_unix.remove file;
-  let file1 = Caml.Filename.temp_file "" "" in
-  let file2 = Caml.Filename.temp_file "" "" in
+  let file1 = Stdlib.Filename.temp_file "" "" in
+  let file2 = Stdlib.Filename.temp_file "" "" in
   test_call_result_exn
     ()
     ~prog:"bash"
@@ -433,6 +433,28 @@ let%expect_test "[Call.Output.Split]" =
   [%expect {| foo |}];
   Sys_unix.remove file1;
   Sys_unix.remove file2;
+  return ()
+;;
+
+let%expect_test "[call_exn] dropping stderr" =
+  show_raise (fun () ->
+    call_exn
+      ~stderr:`Drop_if_ok
+      "bash"
+      [ "-c"; "echo out-put; echo >&2 err-or; exit 1" ]);
+  [%expect
+    {|
+    (raised (
+      "[Process.call_exn] failed"
+      (prog bash)
+      (args (-c "echo out-put; echo >&2 err-or; exit 1"))
+      (result (Exit_status 1))
+      (output out-put)
+      (stderr err-or))) |}];
+  print_endline
+    (call_exn ~stderr:`Drop_if_ok "bash" [ "-c"; "echo output; echo >&2 error" ]);
+  [%expect {|
+    output |}];
   return ()
 ;;
 

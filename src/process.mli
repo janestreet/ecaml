@@ -191,6 +191,7 @@ val call_exn
   -> ?working_directory:Working_directory.t (** default is [Root] *)
   -> ?strip_whitespace:bool (** default is [true] *)
   -> ?verbose_exn:bool (** default is [true] *)
+  -> ?stderr:[ `Drop_if_ok | `Mix | `Split of Call.Output.Stderr.t ]
   -> string
   -> string list
   -> string

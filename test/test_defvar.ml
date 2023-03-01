@@ -51,8 +51,11 @@ let%expect_test "[defvar] with invalid value" =
 let%expect_test "[defvaralias]" =
   let x = "x" |> Symbol.intern in
   print_endline (Help.describe_variable_text x);
-  [%expect {|
+  [%expect
+    {|
     x's value is 13
+
+      Probably introduced at or before Emacs version 1.4.
 
     Documentation:
     some text |}];
@@ -64,6 +67,7 @@ let%expect_test "[defvaralias]" =
     y1's value is 13
 
       This variable is an alias for `x'.
+      Probably introduced at or before Emacs version 22.1.
 
     Documentation:
     some text |}];
@@ -98,6 +102,7 @@ let%expect_test "[define_obsolete_alias]" =
       This variable is an alias for `y'.
       This variable is obsolete since then;
       use `y' instead.
+      Probably introduced at or before Emacs version 1.4.
 
     Documentation:
     some docs |}];

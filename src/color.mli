@@ -49,4 +49,6 @@ end
 val rgb_exn : ?on:Frame.t (** default is selected frame *) -> t -> RGB.t
 
 val of_rgb : RGB.t -> t
+
+(** [r], [g], and [b] should be in the range [0, 255]. *)
 val of_rgb8 : r:int -> g:int -> b:int -> t

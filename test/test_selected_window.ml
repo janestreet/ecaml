@@ -16,7 +16,7 @@ let%expect_test "[switch_to_buffer]" =
   Current_buffer.set_temporarily_to_temp_buffer Sync (fun () ->
     Blocking.switch_to_buffer (Current_buffer.get ());
     show ());
-  [%expect {| "#<window 1 on *temp-buffer*>" |}];
+  [%expect {| "#<window 1 on  *temp*>" |}];
   return ()
 ;;
 

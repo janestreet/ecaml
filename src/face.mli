@@ -34,6 +34,11 @@ module Box : sig
 end
 
 (** [(Info-goto-node "(elisp)Face Attributes")] *)
+module Extend : sig
+  type t [@@deriving sexp_of]
+end
+
+(** [(Info-goto-node "(elisp)Face Attributes")] *)
 module Font : sig
   type t [@@deriving sexp_of]
 end
@@ -175,6 +180,7 @@ module Attribute : sig
   type _ t =
     | Background : Background.t t
     | Box : Box.t t
+    | Extend : Extend.t t
     | Font : Font.t t
     | Font_family : Font_family.t t
     | Font_foundry : Font_foundry.t t

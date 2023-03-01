@@ -33,6 +33,10 @@ val get_property : t -> 'a Text.Property_name.t -> 'a
 (** [(describe-function 'overlay-put)] *)
 val put_property : t -> 'a Text.Property_name.t -> 'a -> unit
 
+(** Delete the property from the overlay.  This actually sets the property to nil, because
+    Emacs doesn't expose a way to actually remove the property from the list. *)
+val delete_property : t -> Symbol.t -> unit
+
 (** [(describe-function 'overlays-at)] *)
 val at : Position.t -> t list
 

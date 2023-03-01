@@ -31,14 +31,7 @@ let quote =
 
 let any_quote =
   let regexp_opt = Funcall.Wrap.("regexp-opt" <: list string @-> return Strict.t) in
-  fun strings ->
-    match strings with
-    | [] ->
-      (* Elisp's [regexp-opt] returns the wrong regexp for an empty list.  It returns a
-         regexp that matches anything, when it should return a regexp that matches
-         nothing. *)
-      match_nothing
-    | _ -> lazy (regexp_opt strings)
+  fun strings -> lazy (regexp_opt strings)
 ;;
 
 let any_pattern patterns = of_pattern (concat ~sep:{|\||} patterns)

@@ -9,7 +9,7 @@ let%expect_test "[iter], [standard]" =
   (* We ignore the last two digits of the length to reduce noise. *)
   print_s [%sexp (List.length !all / 100 * 100 : int)];
   [%expect {|
-    16_100 |}];
+    16_600 |}];
   print_s
     [%sexp
       (!all |> List.sort ~compare:String.compare |> fun l -> List.take l 100
@@ -27,7 +27,6 @@ let%expect_test "[iter], [standard]" =
      **
      +
      ,
-     ,.
      ,@
      -
      --dolist-tail--
@@ -58,6 +57,7 @@ let%expect_test "[iter], [standard]" =
      :Tag
      :abbrev-table
      :abbrev-table-modiff
+     :active
      :adstyle
      :advertised-binding
      :after
@@ -71,9 +71,11 @@ let%expect_test "[iter], [standard]" =
      :annotation-function
      :antialias
      :append
+     :application
      :argument-precedence-order
      :around
      :array
+     :array-type
      :ascent
      :ascii-compatible-p
      :autohint
@@ -84,6 +86,7 @@ let%expect_test "[iter], [standard]" =
      :before
      :before-until
      :before-while
+     :beginning
      :bindtodevice
      :bold
      :bom
@@ -112,9 +115,6 @@ let%expect_test "[iter], [standard]" =
      :coding-type
      :color
      :color-adjustment
-     :color-symbols
-     :combining-capability
-     :command
-     :company-doc-buffer) |}];
+     :color-symbols) |}];
   return ()
 ;;

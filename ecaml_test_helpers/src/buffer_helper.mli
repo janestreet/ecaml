@@ -36,6 +36,13 @@ val with_buffer_and_active_region
     solid blocks. *)
 val show_active_region : unit -> unit
 
+(** Print buffer contents with the [before-string] and [after-string] properties from any
+    overlays rendered as though they were present in the buffer.  Also, mark any text
+    specified as [invisible] through overlays (but not through text properties).  This
+    does not reflect the actual contents of the buffer, but rather how the contents would
+    appear to the user. *)
+val show_with_overlay_text : unit -> unit
+
 module Sample_input : sig
   (** Both have "next step" columns, but with different bounds. *)
   val table1 : string

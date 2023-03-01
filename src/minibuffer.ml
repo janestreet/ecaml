@@ -126,6 +126,29 @@ let read_from =
         default_value)
 ;;
 
+let read_file_name =
+  let read_file_name_from_minbuffer =
+    Funcall.Wrap.(
+      "read-file-name"
+      <: string
+         @-> nil_or string
+         @-> nil_or string
+         @-> nil_or string
+         @-> nil_or string
+         @-> nil_or Function.t
+         @-> return string)
+  in
+  fun ~prompt ?directory ?default_filename ?mustmatch ?initial ?predicate () ->
+    Async_ecaml.Private.run_outside_async [%here] (fun () ->
+      read_file_name_from_minbuffer
+        prompt
+        directory
+        default_filename
+        mustmatch
+        initial
+        predicate)
+;;
+
 let exit_hook = Hook.Wrap.("minibuffer-exit-hook" <: Normal_hook)
 let setup_hook = Hook.Wrap.("minibuffer-setup-hook" <: Normal_hook)
 

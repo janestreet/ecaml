@@ -57,7 +57,7 @@ let%expect_test "[set_temporarily] when [~f] raises" =
 
 let%expect_test "[set_temporarily_to_temp_buffer]" =
   set_temporarily_to_temp_buffer Sync (fun () -> show ());
-  [%expect {| "#<buffer *temp-buffer*>" |}];
+  [%expect {| "#<buffer  *temp*>" |}];
   show ();
   [%expect {| "#<buffer *scratch*>" |}];
   return ()
@@ -202,7 +202,7 @@ let%expect_test "[file_name]" =
 
 let%expect_test "[file_name_exn] raise" =
   set_temporarily_to_temp_buffer Sync (fun () -> show_raise (fun () -> file_name_exn ()));
-  [%expect {| (raised ("buffer does not have a file name" "#<buffer *temp-buffer*>")) |}];
+  [%expect {| (raised ("buffer does not have a file name" "#<buffer  *temp*>")) |}];
   return ()
 ;;
 
@@ -499,19 +499,20 @@ let%expect_test "[is_undo_enabled] [set_undo_enabled]" =
   set_temporarily_to_temp_buffer Sync (fun () ->
     let show () = print_s [%message "" ~is_undo_enabled:(is_undo_enabled () : bool)] in
     show ();
-    [%expect {| (is_undo_enabled true) |}];
-    set_undo_enabled false;
-    show ();
     [%expect {| (is_undo_enabled false) |}];
     set_undo_enabled true;
     show ();
-    [%expect {| (is_undo_enabled true) |}]);
+    [%expect {| (is_undo_enabled true) |}];
+    set_undo_enabled false;
+    show ();
+    [%expect {| (is_undo_enabled false) |}]);
   return ()
 ;;
 
 let%expect_test "[undo], [add_undo_boundary]" =
   let restore_stderr = unstage (ignore_stderr ()) in
-  set_temporarily_to_temp_buffer Sync (fun () ->
+  (* Pick a name without a leading space so that undo information is recorded. *)
+  set_temporarily_to_temp_buffer ~name:"*temp*" Sync (fun () ->
     let show () =
       print_s
         [%message
@@ -600,7 +601,7 @@ let%expect_test "[mark], [set_mark]" =
     Point.insert "foo";
     set_mark (2 |> Position.of_int_exn);
     show ();
-    [%expect {| "#<marker at 2 in *temp-buffer*>" |}]);
+    [%expect {| "#<marker at 2 in  *temp*>" |}]);
   return ()
 ;;
 
@@ -628,12 +629,12 @@ let%expect_test "[set_marker_position]" =
       print_s [%sexp (marker : Marker.t)]
     in
     set 1;
-    [%expect {| "#<marker at 1 in *temp-buffer*>" |}];
+    [%expect {| "#<marker at 1 in  *temp*>" |}];
     set 2;
-    [%expect {| "#<marker at 1 in *temp-buffer*>" |}];
+    [%expect {| "#<marker at 1 in  *temp*>" |}];
     Point.insert "foo";
     set 2;
-    [%expect {| "#<marker at 2 in *temp-buffer*>" |}]);
+    [%expect {| "#<marker at 2 in  *temp*>" |}]);
   return ()
 ;;
 
@@ -951,7 +952,7 @@ let%expect_test "[set_temporarily_to_temp_buffer async]" =
       let%map () = Clock.after (sec 0.001) in
       show ())
   in
-  [%expect {| "#<buffer *temp-buffer*>" |}];
+  [%expect {| "#<buffer  *temp*>" |}];
   show ();
   [%expect {| "#<buffer *scratch*>" |}];
   return ()
@@ -974,7 +975,7 @@ let%expect_test "[set_temporarily_to_temp_buffer Async] from background job" =
         "Assertion failed -- running in background job"
         ((background_job_started_at
           app/emacs/lib/ecaml/test/test_current_buffer.ml:LINE:COL)
-         (assertion_failed_at app/emacs/lib/ecaml/src/current_buffer.ml:LINE:COL)))) |}];
+         (assertion_failed_at app/emacs/lib/ecaml/src/buffer.ml:LINE:COL)))) |}];
   return ()
 ;;
 
@@ -1083,7 +1084,7 @@ let%expect_test "[kill] with deferred kill hook" =
 ;;
 
 let%expect_test "[save]" =
-  let file = Caml.Filename.temp_file "" "" in
+  let file = Stdlib.Filename.temp_file "" "" in
   let%bind () = Selected_window.find_file file in
   Point.insert "foobar";
   let%bind () = save () in
@@ -1162,9 +1163,11 @@ let%expect_test "[describe_mode]" =
 
     Auto-Composition minor mode (no indicator):
     Toggle Auto Composition mode.
-    With a prefix argument ARG, enable Auto Composition mode if ARG
-    is positive, and disable it otherwise.  If called from Lisp,
-    enable the mode if ARG is omitted or nil.
+
+    If called interactively, enable Auto-Composition mode if ARG is
+    positive, and disable it if ARG is zero or negative.  If called from
+    Lisp, also enable the mode if ARG is omitted or nil, and toggle it if
+    ARG is `toggle'; disable the mode otherwise.
 
     When Auto Composition mode is enabled, text characters are
     automatically composed by functions registered in
@@ -1176,9 +1179,11 @@ let%expect_test "[describe_mode]" =
 
     Auto-Compression minor mode (no indicator):
     Toggle Auto Compression mode.
-    With a prefix argument ARG, enable Auto Compression mode if ARG
-    is positive, and disable it otherwise.  If called from Lisp,
-    enable the mode if ARG is omitted or nil.
+
+    If called interactively, enable Auto-Compression mode if ARG is
+    positive, and disable it if ARG is zero or negative.  If called from
+    Lisp, also enable the mode if ARG is omitted or nil, and toggle it if
+    ARG is `toggle'; disable the mode otherwise.
 
     Auto Compression mode is a global minor mode.  When enabled,
     compressed files are automatically uncompressed for reading, and
@@ -1187,18 +1192,20 @@ let%expect_test "[describe_mode]" =
 
     Auto-Encryption minor mode (no indicator):
     Toggle automatic file encryption/decryption (Auto Encryption mode).
-    With a prefix argument ARG, enable Auto Encryption mode if ARG is
-    positive, and disable it otherwise.  If called from Lisp, enable
-    the mode if ARG is omitted or nil.
 
-    (fn &optional ARG)
+    If called interactively, enable Auto-Encryption mode if ARG is
+    positive, and disable it if ARG is zero or negative.  If called from
+    Lisp, also enable the mode if ARG is omitted or nil, and toggle it if
+    ARG is `toggle'; disable the mode otherwise.
 
 
     Electric-Indent minor mode (no indicator):
     Toggle on-the-fly reindentation (Electric Indent mode).
-    With a prefix argument ARG, enable Electric Indent mode if ARG is
-    positive, and disable it otherwise.  If called from Lisp, enable
-    the mode if ARG is omitted or nil.
+
+    If called interactively, enable Electric-Indent mode if ARG is
+    positive, and disable it if ARG is zero or negative.  If called from
+    Lisp, also enable the mode if ARG is omitted or nil, and toggle it if
+    ARG is `toggle'; disable the mode otherwise.
 
     When enabled, this reindents whenever the hook `electric-indent-functions'
     returns non-nil, or if you insert a character from `electric-indent-chars'.
@@ -1209,9 +1216,11 @@ let%expect_test "[describe_mode]" =
 
     File-Name-Shadow minor mode (no indicator):
     Toggle file-name shadowing in minibuffers (File-Name Shadow mode).
-    With a prefix argument ARG, enable File-Name Shadow mode if ARG
-    is positive, and disable it otherwise.  If called from Lisp,
-    enable the mode if ARG is omitted or nil.
+
+    If called interactively, enable File-Name-Shadow mode if ARG is
+    positive, and disable it if ARG is zero or negative.  If called from
+    Lisp, also enable the mode if ARG is omitted or nil, and toggle it if
+    ARG is `toggle'; disable the mode otherwise.
 
     File-Name Shadow mode is a global minor mode.  When enabled, any
     part of a filename being read in the minibuffer that would be
@@ -1231,34 +1240,36 @@ let%expect_test "[describe_mode]" =
     `turn-on-eldoc-mode' would do it.
     See `eldoc-mode' for more information on Eldoc mode.
 
-    (fn &optional ARG)
-
 
     Line-Number minor mode (no indicator):
     Toggle line number display in the mode line (Line Number mode).
-    With a prefix argument ARG, enable Line Number mode if ARG is
-    positive, and disable it otherwise.  If called from Lisp, enable
-    the mode if ARG is omitted or nil.
+
+    If called interactively, enable Line-Number mode if ARG is positive,
+    and disable it if ARG is zero or negative.  If called from Lisp, also
+    enable the mode if ARG is omitted or nil, and toggle it if ARG is
+    `toggle'; disable the mode otherwise.
 
     Line numbers do not appear for very large buffers and buffers
     with very long lines; see variables `line-number-display-limit'
     and `line-number-display-limit-width'.
 
-    (fn &optional ARG)
-
 
     Mouse-Wheel minor mode (no indicator):
     Toggle mouse wheel support (Mouse Wheel mode).
-    With a prefix argument ARG, enable Mouse Wheel mode if ARG is
-    positive, and disable it otherwise.  If called from Lisp, enable
-    the mode if ARG is omitted or nil.
+
+    If called interactively, enable Mouse-Wheel mode if ARG is positive,
+    and disable it if ARG is zero or negative.  If called from Lisp, also
+    enable the mode if ARG is omitted or nil, and toggle it if ARG is
+    `toggle'; disable the mode otherwise.
 
 
     Tooltip minor mode (no indicator):
     Toggle Tooltip mode.
-    With a prefix argument ARG, enable Tooltip mode if ARG is positive,
-    and disable it otherwise.  If called from Lisp, enable the mode
-    if ARG is omitted or nil.
+
+    If called interactively, enable Tooltip mode if ARG is positive, and
+    disable it if ARG is zero or negative.  If called from Lisp, also
+    enable the mode if ARG is omitted or nil, and toggle it if ARG is
+    `toggle'; disable the mode otherwise.
 
     When this global minor mode is enabled, Emacs displays help
     text (e.g. for buttons and menu items that you put the mouse on)
@@ -1270,9 +1281,11 @@ let%expect_test "[describe_mode]" =
 
     Transient-Mark minor mode (no indicator):
     Toggle Transient Mark mode.
-    With a prefix argument ARG, enable Transient Mark mode if ARG is
-    positive, and disable it otherwise.  If called from Lisp, enable
-    Transient Mark mode if ARG is omitted or nil.
+
+    If called interactively, enable Transient-Mark mode if ARG is
+    positive, and disable it if ARG is zero or negative.  If called from
+    Lisp, also enable the mode if ARG is omitted or nil, and toggle it if
+    ARG is `toggle'; disable the mode otherwise.
 
     Transient Mark mode is a global minor mode.  When enabled, the
     region is highlighted with the `region' face whenever the mark
@@ -1289,11 +1302,9 @@ let%expect_test "[describe_mode]" =
     of their usual default part of the buffer's text.  Examples of
     such commands include M-;, M-x flush-lines, M-x keep-lines,
     M-%, C-M-%, M-x ispell, and C-x u.
-    To see the documentation of commands which are sensitive to the
+    To see the documentation of commands that are sensitive to the
     Transient Mark mode, invoke C-h d and type "transient"
-    or "mark.*active" at the prompt.
-
-    (fn &optional ARG) |}];
+    or "mark.*active" at the prompt. |}];
   return ()
 ;;
 

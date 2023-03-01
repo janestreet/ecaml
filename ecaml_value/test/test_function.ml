@@ -109,11 +109,11 @@ let%expect_test "raising from OCaml to OCaml through many layers of Emacs" =
       match f () with
       | () -> []
       | exception _ ->
-        let backtrace = Caml.Printexc.get_raw_backtrace () in
-        (match Caml.Printexc.backtrace_slots backtrace with
+        let backtrace = Stdlib.Printexc.get_raw_backtrace () in
+        (match Stdlib.Printexc.backtrace_slots backtrace with
          | None -> []
          | Some slots ->
-           Array.filter_map slots ~f:Caml.Printexc.Slot.location
+           Array.filter_map slots ~f:Stdlib.Printexc.Slot.location
            |> Array.map ~f:(fun slot -> slot.filename)
            |> Array.to_list))
   in

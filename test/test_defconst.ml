@@ -15,6 +15,7 @@ let%expect_test "defconst" =
     foo's value is "foo-value"
 
       This variable may be risky if used as a file-local variable.
+      Probably introduced at or before Emacs version 1.2.
 
     Documentation:
     _ |}];

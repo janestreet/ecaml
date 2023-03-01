@@ -108,7 +108,11 @@ val save_some
   -> unit
   -> unit Deferred.t
 
-val with_temp_buffer : (t -> 'a Deferred.t) -> 'a Deferred.t
+val with_temp_buffer
+  :  ?name:string (** passed to [generate-new-buffer] *)
+  -> (_, 'a) Sync_or_async.t
+  -> (t -> 'a)
+  -> 'a
 
 (** [(describe-function 'revert-buffer)]
     [(Info-goto-node "(elisp)Reverting")] *)

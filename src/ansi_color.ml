@@ -656,7 +656,8 @@ end = struct
 
     let sexp_of_next_state_by_code h =
       List.map
-        (Hashtbl.to_alist h |> List.sort ~compare:(Comparable.lift Int.compare ~f:fst))
+        (Hashtbl.to_alist h
+         |> List.sort ~compare:(fun a b -> Comparable.lift Int.compare ~f:fst a b))
         ~f:(fun (i, next) -> i, next.attributes_state)
       |> [%sexp_of: (int * Attributes_state.t) list]
     ;;
@@ -693,10 +694,12 @@ end = struct
   let sexp_of_t { all_states; colors = _; current_state; empty_state } =
     let all_states =
       Hashtbl.data all_states
-      |> List.sort
-           ~compare:
-             (Comparable.lift State.Attributes_state.compare ~f:(fun x ->
-                x.State.attributes_state))
+      |> List.sort ~compare:(fun a b ->
+        Comparable.lift
+          State.Attributes_state.compare
+          ~f:(fun x -> x.State.attributes_state)
+          a
+          b)
     in
     [%message.omit_nil
       "" (current_state : State.t) (empty_state : State.t) (all_states : State.t list)]
@@ -727,7 +730,7 @@ end = struct
          case *)
       match Hashtbl.find_exn current_state.next_state_by_code raw_code with
       | state -> state
-      | exception (Not_found_s _ | Caml.Not_found) ->
+      | exception (Not_found_s _ | Stdlib.Not_found) ->
         let incomplete_param, current_attributes =
           match current_state.attributes_state with
           | Complete attributes -> Code.Incomplete_param.empty, attributes
@@ -770,7 +773,7 @@ module Temp_file_state = struct
     }
 
   let create input =
-    let temp_file = Caml.Filename.temp_file "ecaml-ansi-color" "" in
+    let temp_file = Stdlib.Filename.temp_file "ecaml-ansi-color" "" in
     { out_channel = Out_channel.create temp_file; temp_file; regions = []; input }
   ;;
 end

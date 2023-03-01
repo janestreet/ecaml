@@ -4,11 +4,14 @@ open! Import
 module Q = struct
   include Q
 
+  let after_string = "after-string" |> Symbol.intern
   let background_color = "background-color" |> Symbol.intern
+  let before_string = "before-string" |> Symbol.intern
   let concat = "concat" |> Symbol.intern
   let display = "display" |> Symbol.intern
   let font_lock_face = "font-lock-face" |> Symbol.intern
   let foreground_color = "foreground-color" |> Symbol.intern
+  let invisible = "invisible" |> Symbol.intern
   let mouse_face = "mouse-face" |> Symbol.intern
   let propertize = "propertize" |> Symbol.intern
   let string = "string" |> Symbol.intern
@@ -29,7 +32,7 @@ module Compare_as_string = struct
   module T0 = struct
     type nonrec t = t
 
-    let compare = Comparable.lift [%compare: string] ~f:to_utf8_bytes
+    let compare a b = Comparable.lift [%compare: string] ~f:to_utf8_bytes a b
     let of_string = of_utf8_bytes
     let to_string = to_utf8_bytes
   end
@@ -196,6 +199,10 @@ module Display_spec = struct
   ;;
 end
 
+open struct
+  let text_type = type_
+end
+
 module Property_name = struct
   type 'a t =
     { name : Symbol.t
@@ -248,6 +255,9 @@ module Property_name = struct
   let mouse_face : _ t = create_and_register Q.mouse_face Face_spec.type_
   let font_lock_face : _ t = create_and_register Q.font_lock_face Face_spec.type_
   let display : _ t = create_and_register Q.display Display_spec.type_
+  let after_string : _ t = create_and_register Q.after_string text_type
+  let before_string : _ t = create_and_register Q.before_string text_type
+  let invisible : _ t = create_and_register Q.invisible Value.Type.value
 end
 
 module Property = struct

@@ -7,6 +7,8 @@ open! Core
 open! Import
 include Value.Subtype
 
+type text := t
+
 module Compare_as_string : sig
   include Comparable.S with type t = t
   include Sexpable.S with type t := t
@@ -87,6 +89,9 @@ module Property_name : sig
   val mouse_face : Face_spec.t t
   val font_lock_face : Face_spec.t t
   val display : Display_spec.t t
+  val after_string : text t
+  val before_string : text t
+  val invisible : Value.t t
   val name : _ t -> Symbol.t
   val name_as_value : _ t -> Value.t
   val to_value : 'a t -> 'a -> Value.t

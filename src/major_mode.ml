@@ -37,7 +37,7 @@ module Compare_by_name = struct
   let hash = to_string >> String.hash
   let hash_fold_t state t = String.hash_fold_t state (to_string t)
   let equal t1 t2 = String.equal (to_string t1) (to_string t2)
-  let compare = Comparable.lift String.compare ~f:to_string
+  let compare a b = Comparable.lift String.compare ~f:to_string a b
 end
 
 let major_mode_var = Buffer_local.Wrap.("major-mode" <: Symbol.t)
@@ -132,6 +132,7 @@ module Lisp = (val wrap_existing "lisp-mode" [%here])
 module Scheme = (val wrap_existing_with_lazy_keymap "scheme-mode" [%here])
 module Emacs_lisp = (val wrap_existing "emacs-lisp-mode" [%here])
 module Asm = (val wrap_existing_with_lazy_keymap "asm-mode" [%here])
+module Python = (val wrap_existing_with_lazy_keymap "python-mode" [%here])
 
 let all_derived_modes = ref []
 

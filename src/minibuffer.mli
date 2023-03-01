@@ -49,6 +49,18 @@ val read_from
   -> unit
   -> string Deferred.t
 
+(** [(describe-function 'read-file-name)]
+    [(Info-goto-node "(elisp) Reading File Names")] *)
+val read_file_name
+  :  prompt:string
+  -> ?directory:string
+  -> ?default_filename:string
+  -> ?mustmatch:string
+  -> ?initial:string
+  -> ?predicate:Function.t
+  -> unit
+  -> string Deferred.t
+
 (** [(describe-function 'y-or-n-p)]
     [(Info-goto-node "(elisp)Yes-or-No Queries")] *)
 val y_or_n : prompt:string -> bool Deferred.t

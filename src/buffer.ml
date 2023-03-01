@@ -20,7 +20,7 @@ module Compare_by_name = struct
   module T = struct
     type t = buffer [@@deriving sexp_of]
 
-    let compare = Comparable.lift [%compare: string option] ~f:name
+    let compare a b = Comparable.lift [%compare: string option] ~f:name a b
   end
 
   include T
@@ -135,13 +135,13 @@ let save_some =
       | exn -> raise_s [%message "[Buffer.save_some]" (exn : exn)])
 ;;
 
-let with_temp_buffer f =
-  let temp_buffer = create ~name:" *temp*" in
-  Monitor.protect
-    (fun () -> f temp_buffer)
-    ~finally:(fun () ->
-      match%map Monitor.try_with (fun () -> kill temp_buffer) with
-      | _ -> ())
+let with_temp_buffer ?(name = " *temp*") sync_or_async f =
+  let temp_buffer = create ~name in
+  Sync_or_async.protect
+    [%here]
+    sync_or_async
+    ~f:(fun () -> f temp_buffer)
+    ~finally:(fun () -> Blocking.kill temp_buffer)
 ;;
 
 let revert =

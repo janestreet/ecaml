@@ -129,6 +129,12 @@ module Box = struct
   include Unimplemented
 end
 
+module Extend = struct
+  let symbol = Q.K.extend
+
+  include Unimplemented
+end
+
 module Font = struct
   let symbol = Q.K.font
 
@@ -409,6 +415,7 @@ module Attribute = struct
   type _ t =
     | Background : Background.t t
     | Box : Box.t t
+    | Extend : Extend.t t
     | Font : Font.t t
     | Font_family : Font_family.t t
     | Font_foundry : Font_foundry.t t
@@ -430,6 +437,7 @@ module Attribute = struct
   let value_module : type a. a t -> (module Attribute_value with type t = a) = function
     | Background -> (module Background)
     | Box -> (module Box)
+    | Extend -> (module Extend)
     | Font -> (module Font)
     | Font_family -> (module Font_family)
     | Font_foundry -> (module Font_foundry)
@@ -475,6 +483,7 @@ module Attribute = struct
       let all =
         [ T Background
         ; T Box
+        ; T Extend
         ; T Font
         ; T Font_family
         ; T Font_foundry

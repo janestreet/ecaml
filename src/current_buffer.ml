@@ -17,13 +17,9 @@ let get_buffer_local_exn = Buffer_local.Private.get_in_current_buffer_exn
 let set_buffer_local = Buffer_local.Private.set_in_current_buffer
 let set_buffer_local_temporarily = Buffer_local.Private.set_temporarily_in_current_buffer
 
-let set_temporarily_to_temp_buffer sync_or_async f =
-  let t = Buffer.create ~name:"*temp-buffer*" in
-  Sync_or_async.protect
-    [%here]
-    sync_or_async
-    ~f:(fun () -> set_temporarily sync_or_async t ~f)
-    ~finally:(fun () -> Buffer.Blocking.kill t)
+let set_temporarily_to_temp_buffer ?name sync_or_async f =
+  Buffer.with_temp_buffer ?name sync_or_async (fun t ->
+    set_temporarily sync_or_async t ~f)
 ;;
 
 let major_mode () =
@@ -376,7 +372,23 @@ let replace_buffer_contents =
   then
     Or_error.error_s
       [%message "function not defined" ~symbol:(Q.replace_buffer_contents : Symbol.t)]
-  else Ok Funcall.Wrap.("replace-buffer-contents" <: Buffer.t @-> return nil)
+  else
+    Ok
+      (let replace_buffer_contents =
+         Funcall.Wrap.(
+           "replace-buffer-contents"
+           <: Buffer.t @-> nil_or float @-> nil_or int @-> return bool)
+       in
+       fun ?max_duration ?max_costs buffer ->
+         (* [replace-buffer-contents] returns true if the replacement was performed
+            non-destructively, or false if that timed out and the delete-and-insert
+            algorithm was used. *)
+         ignore
+           (replace_buffer_contents
+              buffer
+              (Option.map max_duration ~f:Time_ns.Span.to_sec)
+              max_costs
+            : bool))
 ;;
 
 let size = Funcall.Wrap.("buffer-size" <: nullary @-> return int)

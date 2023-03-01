@@ -53,8 +53,8 @@ let%expect_test "[set]" =
     show t;
     [%expect
       {|
-      ((marker "#<marker at 2 in *temp-buffer*>")
-       (buffer ("#<buffer *temp-buffer*>"))
+      ((marker "#<marker at 2 in  *temp*>")
+       (buffer ("#<buffer  *temp*>"))
        (insertion_type Before_inserted_text)
        (position (2))) |}];
     Point.goto_char (Point.min ());
@@ -62,8 +62,8 @@ let%expect_test "[set]" =
     show t;
     [%expect
       {|
-      ((marker "#<marker at 5 in *temp-buffer*>")
-       (buffer ("#<buffer *temp-buffer*>"))
+      ((marker "#<marker at 5 in  *temp*>")
+       (buffer ("#<buffer  *temp*>"))
        (insertion_type Before_inserted_text)
        (position (5))) |}]);
   return ()
@@ -85,8 +85,8 @@ let%expect_test "[copy]" =
     show t1;
     [%expect
       {|
-      ((marker "#<marker at 2 in *temp-buffer*>")
-       (buffer ("#<buffer *temp-buffer*>"))
+      ((marker "#<marker at 2 in  *temp*>")
+       (buffer ("#<buffer  *temp*>"))
        (insertion_type Before_inserted_text)
        (position (2))) |}];
     show t2;

@@ -40,6 +40,8 @@ let put_property t property_name property_value =
     (property_value |> Text.Property_name.to_value property_name)
 ;;
 
+let delete_property t property_name = overlay_put t property_name Value.nil
+
 let remove_overlays =
   Funcall.Wrap.(
     "remove-overlays"

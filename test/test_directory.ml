@@ -60,13 +60,9 @@ let%expect_test "[files_recursively]" =
   create "a/b/c" ~parents:true;
   List.iter ~f:touch [ "a/z1"; "a/b/z2"; "a/b/c/z3" ];
   print_s
-    ~templatize_current_directory:true
     [%sexp (files_recursively "a" ~matching:("" |> Regexp.of_pattern) : Filename.t list)];
-  [%expect
-    {|
-    (<current-directory>/a/b/c/z3
-     <current-directory>/a/b/z2
-     <current-directory>/a/z1) |}];
+  [%expect {|
+    (a/b/c/z3 a/b/z2 a/z1) |}];
   delete "a" ~recursive:true;
   return ()
 ;;

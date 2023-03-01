@@ -66,7 +66,7 @@ module Elide_in_test = struct
   type 'a t = 'a
 
   let sexp_of_t sexp_of_a a =
-    if am_running_inline_test then [%message "<elided-in-test>"] else sexp_of_a a
+    if Ppx_inline_test_lib.am_running then [%message "<elided-in-test>"] else sexp_of_a a
   ;;
 end
 

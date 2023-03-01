@@ -90,7 +90,7 @@ let%expect_test "[any_quote]" =
   [%expect
     {|
     ((strings ())
-     (regexp     z^)
+     (regexp     "\\(?:\\`a\\`\\)")
      (does_match false))
     ((strings (a))
      (regexp     a)
@@ -243,7 +243,7 @@ let%expect_test "[of_rx]" =
   test [ "a"; "z"; "-"; "b" ] (Any_in [ Chars_in "a-z" ]);
   [%expect
     {|
-    (t "\\(?:[-az]\\)")
+    (t [az-])
     ((input   a)
      (matches true))
     ((input   z)
@@ -257,7 +257,7 @@ let%expect_test "[of_rx]" =
     (Any_in [ Chars_in "."; Range ('a', 'z'); Range ('A', 'Z') ]);
   [%expect
     {|
-    (t "\\(?:[.A-Za-z]\\)")
+    (t [.A-Za-z])
     ((input   a)
      (matches true))
     ((input   b)
@@ -277,7 +277,7 @@ let%expect_test "[of_rx]" =
   test [ "a"; "b"; "z"; "."; "-" ] (Any_in [ Chars_in "-"; Range ('a', 'z') ]);
   [%expect
     {|
-    (t "\\(?:[-a-z]\\)")
+    (t [a-z-])
     ((input   a)
      (matches true))
     ((input   b)
@@ -319,7 +319,7 @@ let%expect_test "[of_rx]" =
   test [ "a"; "b" ] (None_in [ Chars_in "a" ]);
   [%expect
     {|
-    (t "\\(?:[^a]\\)")
+    (t [^a])
     ((input   a)
      (matches false))
     ((input   b)
@@ -327,7 +327,7 @@ let%expect_test "[of_rx]" =
   test [ "a"; "b"; "c" ] (Or [ Exactly "a"; Exactly "b" ]);
   [%expect
     {|
-    (t "\\(?:[ab]\\)")
+    (t [ab])
     ((input   a)
      (matches true))
     ((input   b)
@@ -337,7 +337,7 @@ let%expect_test "[of_rx]" =
   test [ "ab"; "pq"; "ap" ] (Or [ Exactly "ab"; Exactly "pq" ]);
   [%expect
     {|
-    (t "\\(?:\\(?:ab\\|pq\\)\\)")
+    (t "\\(?:ab\\|pq\\)")
     ((input   ab)
      (matches true))
     ((input   pq)
@@ -502,7 +502,8 @@ let%expect_test "[of_rx]" =
                 ; Submatch (Exactly "qux")
                 ]))
       in
-      print_s [%message (t : t)];
+      (try print_s [%message (t : t)] with
+       | exn -> print_s [%message "sexp_of_t failed" (exn : exn)]);
       match does_match ~update_last_match:true t (Text.of_utf8_bytes "foobarbazqux") with
       | exception exn -> print_s [%sexp (exn : exn)]
       | matches ->
@@ -511,22 +512,63 @@ let%expect_test "[of_rx]" =
     [ 0; 1; 2; 3; 4 ];
   [%expect
     {|
-    (t "\\(?:\\(foo\\(bar\\)\\(?0:baz\\)\\(qux\\)\\)\\)")
+    ("sexp_of_t failed" (
+      exn ("rx `group-n' requires a positive number as first argument")))
+    ("rx `group-n' requires a positive number as first argument")
+    (t "\\(foo\\(bar\\)\\(?1:baz\\)\\(qux\\)\\)")
     (invalid-regexp ("Invalid regular expression"))
-    (t "\\(?:\\(foo\\(bar\\)\\(?1:baz\\)\\(qux\\)\\)\\)")
-    (invalid-regexp ("Invalid regular expression"))
-    (t "\\(?:\\(foo\\(bar\\)\\(?2:baz\\)\\(qux\\)\\)\\)")
+    (t "\\(foo\\(bar\\)\\(?2:baz\\)\\(qux\\)\\)")
     ((matches true)
      (index   2)
      (submatch (baz)))
-    (t "\\(?:\\(foo\\(bar\\)\\(?3:baz\\)\\(qux\\)\\)\\)")
+    (t "\\(foo\\(bar\\)\\(?3:baz\\)\\(qux\\)\\)")
     ((matches true)
      (index   3)
      (submatch (baz)))
-    (t "\\(?:\\(foo\\(bar\\)\\(?4:baz\\)\\(qux\\)\\)\\)")
+    (t "\\(foo\\(bar\\)\\(?4:baz\\)\\(qux\\)\\)")
     ((matches true)
      (index   4)
      (submatch (baz))) |}];
   [%expect {| |}];
+  return ()
+;;
+
+let%expect_test "named char classes" =
+  let test_tf class_ ~member ~not_member =
+    let regexp = Regexp.of_rx (Any_in [ Named class_ ]) in
+    print_endline (Regexp.to_pattern regexp);
+    require [%here] (Regexp.does_match regexp (Text.of_utf8_bytes (String.make 1 member)));
+    require
+      [%here]
+      (not (Regexp.does_match regexp (Text.of_utf8_bytes (String.make 1 not_member))))
+  in
+  Current_buffer.set_buffer_local_temporarily
+    Sync
+    Point.case_fold_search
+    false
+    ~f:(fun () ->
+      List.iter [%all: Rx.Named_char_class.t] ~f:(fun named_char_class ->
+        let member, not_member =
+          match named_char_class with
+          | Alphabetic -> 'a', '_'
+          | Alphanumeric -> '0', '^'
+          | Digit -> '5', 'a'
+          | Hex_digit -> 'f', 'g'
+          | Lower -> 'a', 'Z'
+          | Space -> '\t', '_'
+          | Upper -> 'A', 'b'
+          | Word -> 'z', '/'
+        in
+        test_tf named_char_class ~member ~not_member));
+  [%expect
+    {|
+    [[:alpha:]]
+    [[:alnum:]]
+    [[:digit:]]
+    [[:xdigit:]]
+    [[:lower:]]
+    [[:space:]]
+    [[:upper:]]
+    [[:word:]] |}];
   return ()
 ;;

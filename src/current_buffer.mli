@@ -73,7 +73,11 @@ val describe_mode : unit -> unit
 
 (** [set_temporarily_to_temp_buffer f] creates a temporary buffer and runs [f] with the
     current buffer set to the temporary buffer.  [(describe-function 'with-temp-buffer)]. *)
-val set_temporarily_to_temp_buffer : (_, 'a) Sync_or_async.t -> (unit -> 'a) -> 'a
+val set_temporarily_to_temp_buffer
+  :  ?name:string (** passed to [generate-new-buffer] *)
+  -> (_, 'a) Sync_or_async.t
+  -> (unit -> 'a)
+  -> 'a
 
 (** [(describe-function 'bury-buffer)]
     [(Info-goto-node "(elisp)Buffer List")] *)
@@ -343,7 +347,8 @@ val set_revert_buffer_function
 (** [(describe-function 'replace-buffer-contents)]
     This function was introduced in Emacs 26 and the value is an error if an earlier
     version of emacs is used. *)
-val replace_buffer_contents : (Buffer.t -> unit) Or_error.t
+val replace_buffer_contents
+  : (?max_duration:Time_ns.Span.t -> ?max_costs:int -> Buffer.t -> unit) Or_error.t
 
 (** [replace_string ~from ~to_] replaces all occurrences of [from] with [to_].  It is like
     [(describe-function 'replace-string)], but doesn't actually call that,

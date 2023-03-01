@@ -22,6 +22,7 @@ module Q = struct
   let group = "group" |> Symbol.intern
   let hook = "hook" |> Symbol.intern
   let integer = "integer" |> Symbol.intern
+  let key_sequence = "key-sequence" |> Symbol.intern
   let plist = "plist" |> Symbol.intern
   let radio = "radio" |> Symbol.intern
   let repeat = "repeat" |> Symbol.intern
@@ -100,6 +101,7 @@ module Type = struct
     | Group of t
     | Hook
     | Integer
+    | Key_sequence
     | List of t list
     | Number
     | Option of string * t
@@ -140,6 +142,7 @@ module Type = struct
     | Group t -> composite Q.group [ t ]
     | Hook -> s Q.hook
     | Integer -> s Q.integer
+    | Key_sequence -> s Q.key_sequence
     | List ts -> composite Q.list ts
     | Number -> s Q.number
     | Option (none, t) ->

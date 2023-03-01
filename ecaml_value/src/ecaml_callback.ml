@@ -75,7 +75,7 @@ let register
            report_exn_when_calling_callback exn;
            raise exn)
   in
-  Caml.Callback.register t.name callback
+  Stdlib.Callback.register t.name callback
 ;;
 
 let dispatch_function = { arity = Arity2; name = "dispatch_function" }

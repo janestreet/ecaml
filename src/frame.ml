@@ -79,7 +79,7 @@ let window_list =
        @-> return (list Window0.t))
 ;;
 
-let window_list ?include_minibuffer () = window_list None include_minibuffer None
+let window_list ?include_minibuffer ?frame () = window_list frame include_minibuffer None
 let set_selected = Funcall.Wrap.("select-frame" <: t @-> return nil)
 
 let set_selected_temporarily sync_or_async t ~f =

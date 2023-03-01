@@ -122,6 +122,9 @@ module type Major_mode = sig
   (** [(describe-function 'asm-mode)] *)
   module Asm : S_with_lazy_keymap
 
+  (** [(describe-function 'python-mode)] *)
+  module Python : S_with_lazy_keymap
+
   (** [(describe-function 'define-derived-mode)]
       [(Info-goto-node "(elisp)Derived Modes")]
 

@@ -17,7 +17,7 @@ module Named_char_class = struct
     | Space
     | Upper
     | Word
-  [@@deriving sexp_of]
+  [@@deriving enumerate, sexp_of]
 end
 
 module Char_class = struct
@@ -80,6 +80,10 @@ module T = struct
 end
 
 module type Rx = sig
+  module Named_char_class : module type of struct
+    include Named_char_class
+  end
+
   module Char_class : module type of struct
     include Char_class
   end
@@ -92,4 +96,3 @@ module type Rx = sig
 
   val pattern : t -> string
 end
-

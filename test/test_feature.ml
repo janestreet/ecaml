@@ -43,6 +43,7 @@ let%expect_test "[all_provided]" =
  base64
  bookmark
  button
+ cairo
  case-table
  cham
  charprop
@@ -63,6 +64,7 @@ let%expect_test "[all_provided]" =
  derived
  dnd
  dynamic-setting
+ easymenu
  ediff-hook
  edmacro
  eldoc
@@ -134,6 +136,7 @@ let%expect_test "[all_provided]" =
  subr-x
  syntax
  system-font-setting
+ tab-bar
  tabulated-list
  tai-viet
  term/common-win
@@ -141,6 +144,7 @@ let%expect_test "[all_provided]" =
  term/x-win
  text-mode
  text-properties
+ text-property-search
  thai
  thingatpt
  threads

@@ -29,6 +29,7 @@ let%expect_test "[Raw_prefix_argument]" =
     true |}];
   let%bind () =
     Deferred.List.iter
+      ~how:`Sequential
       [ Value.nil
       ; 3 |> Value.of_int_exn
       ; Value.list [ 4 |> Value.of_int_exn ]

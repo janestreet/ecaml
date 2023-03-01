@@ -84,6 +84,7 @@ let%expect_test "[setup_hook]" =
      (hook_type Normal_hook)
      (value ((
        rfn-eshadow-setup-minibuffer
+       minibuffer-error-initialize
        minibuffer-history-isearch-setup
        minibuffer-history-initialize)))) |}];
   return ()

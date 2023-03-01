@@ -55,7 +55,11 @@ module Include_minibuffer : sig
 end
 
 (** [(describe-function 'window-list)] *)
-val window_list : ?include_minibuffer:Include_minibuffer.t -> unit -> Window0.t list
+val window_list
+  :  ?include_minibuffer:Include_minibuffer.t
+  -> ?frame:t
+  -> unit
+  -> Window0.t list
 
 (** [(describe-function 'frame-live-p)] *)
 val is_live : t -> bool

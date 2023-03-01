@@ -307,9 +307,11 @@ let call_exn
       ?working_directory
       ?(strip_whitespace = true)
       ?(verbose_exn = true)
+      ~stderr
       prog
       args
   =
+  let strip_if_requested s = if strip_whitespace then String.strip s else s in
   Current_buffer.set_temporarily_to_temp_buffer Sync (fun () ->
     match
       call_result_exn
@@ -317,13 +319,25 @@ let call_exn
         args
         ?input
         ?working_directory
-        ~output:Before_point_in_current_buffer
+        ~output:
+          (match stderr with
+           | `Mix -> Before_point_in_current_buffer
+           | `Split stderr -> Split { stdout = Before_point_in_current_buffer; stderr })
     with
     | Exit_status 0 ->
       let buffer_contents = Current_buffer.contents () |> Text.to_utf8_bytes in
-      if strip_whitespace then String.strip buffer_contents else buffer_contents
+      strip_if_requested buffer_contents
     | result ->
       let output = Current_buffer.contents () |> Lines_or_sexp.of_text in
+      let stderr =
+        match stderr with
+        | `Mix -> None
+        | `Split (Overwrite_file file : Call.Output.Stderr.t) ->
+          (match In_channel.read_all file with
+           | "" -> None
+           | s -> Some (strip_if_requested s))
+        | `Split (Dev_null : Call.Output.Stderr.t) -> None
+      in
       (match verbose_exn with
        | true ->
          raise_s
@@ -332,8 +346,58 @@ let call_exn
                (prog : string)
                (args : string list)
                (result : Call.Result.t)
-               (output : Lines_or_sexp.t)]
-       | false -> raise_s [%sexp (output : Lines_or_sexp.t)]))
+               (output : Lines_or_sexp.t)
+               (stderr : (string option[@sexp.option]))]
+       | false ->
+         (match stderr with
+          | None -> raise_s [%sexp (output : Lines_or_sexp.t)]
+          | Some stderr -> raise_s [%sexp { output : Lines_or_sexp.t; stderr : string }])))
+;;
+
+let call_drop_stderr_if_ok_exn
+      ?input
+      ?working_directory
+      ?strip_whitespace
+      ?verbose_exn
+      prog
+      args
+  =
+  File.with_temp_file Sync ~prefix:"emacs" ~suffix:"process-stderr" ~f:(fun stderr_file ->
+    let result =
+      call_exn
+        ~stderr:(`Split (Overwrite_file stderr_file : Call.Output.Stderr.t))
+        ?input
+        ?working_directory
+        ?strip_whitespace
+        ?verbose_exn
+        prog
+        args
+    in
+    (* Ignoring stderr in the OK case.
+       Stderr will be printed by [call_exn] in the error case. *)
+    result)
+;;
+
+let call_exn
+      ?input
+      ?working_directory
+      ?strip_whitespace
+      ?verbose_exn
+      ?(stderr = `Mix)
+      prog
+      args
+  =
+  match stderr with
+  | `Drop_if_ok ->
+    call_drop_stderr_if_ok_exn
+      ?input
+      ?working_directory
+      ?strip_whitespace
+      ?verbose_exn
+      prog
+      args
+  | (`Mix | `Split _) as stderr ->
+    call_exn ?input ?working_directory ?strip_whitespace ?verbose_exn ~stderr prog args
 ;;
 
 let call_expect_no_output_exn

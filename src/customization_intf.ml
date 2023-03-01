@@ -46,6 +46,7 @@ module type Customization = sig
     val to_symbol : t -> Symbol.t
   end
 
+
   (** [(Info-goto-node "(elisp)Customization Types")] *)
   module Type : sig
     type t =
@@ -66,6 +67,7 @@ module type Customization = sig
       | Group of t
       | Hook
       | Integer
+      | Key_sequence
       | List of t list
       | Number
       | Option of string * t

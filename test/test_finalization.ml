@@ -2,8 +2,23 @@ open! Core
 open! Async_kernel
 open! Import
 
-let callback_from_emacs_to_ocaml =
-  Function.to_value (lambda_nullary_nil [%here] (fun () -> ()))
+(* When Emacs is no longer holding onto an embedded OCaml value, it is freed by C function
+   [free_embedded_caml_values], which is called only in [acquire_ocaml_lock_from_emacs],
+   which in turn is only called in [Fdispatch].  The latter function is used when Emacs
+   wants to call into OCaml, for example to invoke an Elisp function whose underlying
+   implementation is an OCaml function. *)
+let run_in_a_different_environment_staged f =
+  let lambda = lambda_nullary_nil [%here] f in
+  stage (fun () -> Function.to_value lambda |> Value.funcall0_i)
+;;
+
+(* This function is staged so that we only allocate the lambda once. *)
+let free_embedded_ocaml_values =
+  unstage (run_in_a_different_environment_staged (fun () -> ()))
+;;
+
+let run_in_a_different_environment f =
+  unstage (run_in_a_different_environment_staged f) ()
 ;;
 
 let make_ocaml_garbage_not_keep_emacs_values_alive () =
@@ -12,7 +27,7 @@ let make_ocaml_garbage_not_keep_emacs_values_alive () =
   Gc.compact ();
   (* and make sure we call a wrapped ocaml function, which is where we actually call the
      emacs free function *)
-  Value.funcall0_i callback_from_emacs_to_ocaml
+  free_embedded_ocaml_values ()
 ;;
 
 let emacs_garbage_collect =
@@ -21,7 +36,7 @@ let emacs_garbage_collect =
     garbage_collect ();
     (* Remove reference to OCaml values that are no longer referenced by emacs. We need to
        go into dispatch for that to happen so we just need to call a function here *)
-    Value.funcall0_i callback_from_emacs_to_ocaml
+    free_embedded_ocaml_values ()
 ;;
 
 let%expect_test "finalization of embedded ocaml values" =
@@ -37,31 +52,31 @@ let%expect_test "finalization of embedded ocaml values" =
     |> print_s
   in
   dump_embedded_values ();
-  [%expect {|
-    () |}];
-  let module A = struct
-    type t =
-      { a : string
-      ; b : int
-      }
-    [@@deriving sexp_of]
+  run_in_a_different_environment (fun () ->
+    [%expect {| () |}];
+    let module A = struct
+      type t =
+        { a : string
+        ; b : int
+        }
+      [@@deriving sexp_of]
 
-    let type_id = Type_equal.Id.create ~name:"A" sexp_of_t
-  end
-  in
-  let a_type = Caml_embed.create_type A.type_id in
-  let var_name = "embedded-var-a" in
-  let var = Var.create (Symbol.create ~name:var_name) a_type in
-  Var.make_buffer_local_always var;
-  let v1 : A.t = { a = "V1"; b = 1 } in
-  let v2 : A.t = { a = "V2"; b = 2 } in
-  Current_buffer.set_temporarily_to_temp_buffer Sync (fun () ->
-    Current_buffer.set_value var v1;
-    Current_buffer.set_value var v2;
-    dump_embedded_values ());
-  [%expect {|
-    (((a V1) (b 1))
-     ((a V2) (b 2))) |}];
+      let type_id = Type_equal.Id.create ~name:"A" sexp_of_t
+    end
+    in
+    let a_type = Caml_embed.create_type A.type_id in
+    let var_name = "embedded-var-a" in
+    let var = Var.create (Symbol.create ~name:var_name) a_type in
+    Var.make_buffer_local_always var;
+    let v1 : A.t = { a = "V1"; b = 1 } in
+    let v2 : A.t = { a = "V2"; b = 2 } in
+    Current_buffer.set_temporarily_to_temp_buffer Sync (fun () ->
+      Current_buffer.set_value var v1;
+      Current_buffer.set_value var v2;
+      dump_embedded_values ());
+    [%expect {|
+      (((a V1) (b 1))
+       ((a V2) (b 2))) |}]);
   make_ocaml_garbage_not_keep_emacs_values_alive ();
   emacs_garbage_collect ();
   make_ocaml_garbage_not_keep_emacs_values_alive ();

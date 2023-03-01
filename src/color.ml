@@ -68,9 +68,9 @@ let of_rgb { RGB.r; g; b } =
 ;;
 
 let of_rgb8 ~r ~g ~b =
-  let min_value = 0 in
-  let max_value = 255 in
-  let clamp i = Int.max min_value (Int.min max_value i) in
+  let min = 0 in
+  let max = 255 in
+  let clamp i = Int.clamp_exn i ~min ~max in
   let p c = sprintf "%02X" (clamp c) in
   of_name (concat [ "#"; p r; p g; p b ])
 ;;

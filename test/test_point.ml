@@ -14,7 +14,7 @@ let%expect_test "[get]" =
     insert "foo";
     show ();
     [%expect {|
-      "#<buffer *temp-buffer*>"
+      "#<buffer  *temp*>"
       (point 4) |}]);
   return ()
 ;;
@@ -242,11 +242,11 @@ let%expect_test "[marker_at*]" =
     Point.insert "foo";
     Point.goto_char (2 |> Position.of_int_exn);
     show (marker_at ());
-    [%expect {| "#<marker at 2 in *temp-buffer*>" |}];
+    [%expect {| "#<marker at 2 in  *temp*>" |}];
     show (marker_at_min ());
-    [%expect {| "#<marker at 1 in *temp-buffer*>" |}];
+    [%expect {| "#<marker at 1 in  *temp*>" |}];
     show (marker_at_max ());
-    [%expect {| "#<marker at 4 in *temp-buffer*>" |}]);
+    [%expect {| "#<marker at 4 in  *temp*>" |}]);
   return ()
 ;;
 

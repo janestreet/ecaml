@@ -25,6 +25,7 @@ module K = struct
   let around = ":around" |> Symbol.intern
   let background = ":background" |> Symbol.intern
   let box = ":box" |> Symbol.intern
+  let extend = ":extend" |> Symbol.intern
   let family = ":family" |> Symbol.intern
   let file = ":file" |> Symbol.intern
   let filter = ":filter" |> Symbol.intern

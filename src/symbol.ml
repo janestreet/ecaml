@@ -3,7 +3,7 @@ open! Import0
 include Ecaml_value.Symbol
 
 module Q = struct
-  let cl = "cl" |> intern
+  let cl_lib = "cl-lib" |> intern
 end
 
 let name = Funcall.Wrap.("symbol-name" <: t @-> return string)
@@ -21,11 +21,11 @@ let function_exn t =
 
 let make_symbol = Funcall.Wrap.("make-symbol" <: string @-> return t)
 let create ~name = make_symbol name
-let require_cl = Memo.unit (fun () -> Ecaml_value.Feature.require Q.cl)
+let require_cl_lib = Memo.unit (fun () -> Ecaml_value.Feature.require Q.cl_lib)
 let gensym = Funcall.Wrap.("gensym" <: nil_or string @-> return t)
 
 let gensym ?prefix () =
-  require_cl ();
+  require_cl_lib ();
   gensym prefix
 ;;
 

@@ -148,7 +148,7 @@ let%expect_test "[after_load] hooks" =
   add after_load f1;
   add after_load ~one_shot:true (create_after_load_fun "after_load one_shot hook");
   add after_load f2;
-  let file = Caml.Filename.temp_file "ecamltest" ".el" in
+  let file = Stdlib.Filename.temp_file "ecamltest" ".el" in
   Out_channel.write_all file ~data:"'()";
   let%bind () = Load.load ~message:false file in
   [%expect {|
@@ -178,7 +178,7 @@ let%expect_test "Blocking async hook" =
            print_s [%message "f1"])
     in
     add after_load f1;
-    let file = Caml.Filename.temp_file "ecamltest" ".el" in
+    let file = Stdlib.Filename.temp_file "ecamltest" ".el" in
     Out_channel.write_all file ~data:"'()";
     let%bind () = Load.load ~message:false file in
     remove after_load f1;
