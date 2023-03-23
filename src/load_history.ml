@@ -112,8 +112,7 @@ let update_emacs_with_entries ~chop_prefix ~in_dir =
   let addition =
     !entries
     |> List.map ~f:(fun ((source_code_position : Source_code_position.t), entry) ->
-      ( String.chop_prefix_exn source_code_position.pos_fname ~prefix:chop_prefix
-      , entry ))
+      String.chop_prefix_exn source_code_position.pos_fname ~prefix:chop_prefix, entry)
     |> String.Table.of_alist_multi
     |> Hashtbl.to_alist
     |> List.map ~f:(fun (file, entries) ->

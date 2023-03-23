@@ -199,8 +199,7 @@ let draw ?sort_by t rows =
      a sortable column *)
   Option.iter sort_by ~f:(fun (sort_header, _) ->
     match
-      List.find t.columns ~f:(fun column ->
-        String.equal sort_header column.format.header)
+      List.find t.columns ~f:(fun column -> String.equal sort_header column.format.header)
     with
     | None -> raise_s [%sexp "Unknown header to sort by", (sort_header : string)]
     | Some column ->

@@ -1260,12 +1260,7 @@ let color_region_in_current_buffer
   =
   Current_buffer.save_excursion Sync (fun () ->
     ignore
-      (color_region
-         ~start
-         ~end_
-         ~use_temp_file
-         ~preserve_state
-         ~drop_unsupported_escapes
+      (color_region ~start ~end_ ~use_temp_file ~preserve_state ~drop_unsupported_escapes
        : bool))
 ;;
 

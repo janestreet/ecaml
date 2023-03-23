@@ -760,8 +760,7 @@ let%expect_test "drop unsupported escape sequences" =
     [ "\027"; "\027["; "\027[foo"; "\027[31foo"; "\027Жm"; "\027[K" ]
     ~f:(fun input ->
       print_s
-        [%message
-          "" input ~_:(color_string ~drop_unsupported_escapes:true input : Text.t)]);
+        [%message "" input ~_:(color_string ~drop_unsupported_escapes:true input : Text.t)]);
   [%expect
     {|
     ("\027" "<incomplete ANSI escape sequence \"\\027\">")
@@ -834,8 +833,7 @@ let%expect_test "color region incrementally" =
   let outputs input =
     List.range ~start:`inclusive 1 ~stop:`inclusive (String.length input)
     |> List.map ~f:(fun chunk_size ->
-      color_incrementally input ~preserve_state:true ~chunk_size
-      |> Text.to_utf8_bytes)
+      color_incrementally input ~preserve_state:true ~chunk_size |> Text.to_utf8_bytes)
     |> List.dedup_and_sort ~compare:String.compare
     |> fun o -> print_s [%sexp (o : string list)]
   in
@@ -956,8 +954,7 @@ let%expect_test "color buffer twice" =
       (foo 0 3 (face (:foreground red3) font-lock-face (:foreground red3))) |}];
     color_current_buffer ();
     show ();
-    [%expect
-      {| (foo 0 3 (face (:foreground red3) font-lock-face (:foreground red3))) |}]);
+    [%expect {| (foo 0 3 (face (:foreground red3) font-lock-face (:foreground red3))) |}]);
   return ()
 ;;
 
@@ -1166,9 +1163,7 @@ let%expect_test "colors" =
       [ color; bright_color; background_color; bright_background_color ]
       ~f:(fun color ->
         test ~show_input:false (sprintf "%scolor %d" (escape [ color ]) color);
-        test
-          ~show_input:false
-          (sprintf "%scolor %d with faint" (escape [ color; 2 ]) color)));
+        test ~show_input:false (sprintf "%scolor %d with faint" (escape [ color; 2 ]) color)));
   [%expect
     {|
     (Ok (

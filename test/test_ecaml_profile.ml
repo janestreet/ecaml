@@ -71,10 +71,7 @@ let%expect_test "tag-frame-function" =
     ~f:(fun () ->
       Current_buffer.set_temporarily_to_temp_buffer Sync (fun () ->
         test_setup ~f:(fun clock ->
-          profile
-            Sync
-            (lazy [%sexp "nest"])
-            (fun () -> Clock.advance clock ~by:(sec 0.3)))));
+          profile Sync (lazy [%sexp "nest"]) (fun () -> Clock.advance clock ~by:(sec 0.3)))));
   [%expect
     {|
     ((rendering_took 0us)

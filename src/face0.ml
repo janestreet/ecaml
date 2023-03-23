@@ -180,7 +180,8 @@ module Height = struct
          | f -> Scale_underlying_face f
          | exception _ ->
            raise_s
-             [%message "[Face.Height.of_value_exn] got unexpected value" (value : Value.t)]))
+             [%message
+               "[Face.Height.of_value_exn] got unexpected value" (value : Value.t)]))
   ;;
 
   let to_value = function

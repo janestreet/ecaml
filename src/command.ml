@@ -57,9 +57,7 @@ let call_interactively =
   in
   fun ?(raw_prefix_argument = Raw_prefix_argument.Absent) ?(record = false) command ->
     Value.Private.run_outside_async [%here] (fun () ->
-      Current_buffer.set_value
-        Raw_prefix_argument.for_current_command
-        raw_prefix_argument;
+      Current_buffer.set_value Raw_prefix_argument.for_current_command raw_prefix_argument;
       call_interactively command record)
 ;;
 

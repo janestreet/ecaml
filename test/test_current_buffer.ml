@@ -369,9 +369,7 @@ let%expect_test "[text_property_is_present]" =
     [%expect {| false |}];
     let insert property_name =
       Point.insert_text
-        (Text.propertize
-           (Text.of_utf8_bytes "foo")
-           [ T (property_name, background_red) ])
+        (Text.propertize (Text.of_utf8_bytes "foo") [ T (property_name, background_red) ])
     in
     insert Text.Property_name.font_lock_face;
     show ();
@@ -515,8 +513,7 @@ let%expect_test "[undo], [add_undo_boundary]" =
   set_temporarily_to_temp_buffer ~name:"*temp*" Sync (fun () ->
     let show () =
       print_s
-        [%message
-          "" ~contents:(contents () : Text.t) ~undo_list:(undo_list () : Value.t)]
+        [%message "" ~contents:(contents () : Text.t) ~undo_list:(undo_list () : Value.t)]
     in
     show ();
     [%expect {|
@@ -849,12 +846,9 @@ void f () {
 
 let%expect_test "[set_revert_buffer_function (Returns_deferred Value.Type.unit)]" =
   set_temporarily_to_temp_buffer Async (fun () ->
-    set_revert_buffer_function
-      [%here]
-      (Returns_deferred Value.Type.unit)
-      (fun ~confirm ->
-         let%map () = Clock.after (sec 0.01) in
-         print_s [%message "called after pause" (confirm : bool)]);
+    set_revert_buffer_function [%here] (Returns_deferred Value.Type.unit) (fun ~confirm ->
+      let%map () = Clock.after (sec 0.01) in
+      print_s [%message "called after pause" (confirm : bool)]);
     let%bind () = revert () in
     [%expect {| ("called after pause" (confirm false)) |}];
     let%bind () = revert () ~confirm:true in
@@ -1003,8 +997,7 @@ let%expect_test "[save_excursion Async] from background job" =
     Deferred.create (fun background_job_done ->
       Background.don't_wait_for [%here] (fun () ->
         let%bind () =
-          show_raise_async ~hide_positions:true (fun () ->
-            save_excursion Async return)
+          show_raise_async ~hide_positions:true (fun () -> save_excursion Async return)
         in
         Ivar.fill background_job_done ();
         return ()))
@@ -1136,9 +1129,7 @@ let%expect_test "[paragraph_start], [paragraph_separate]" =
 let%expect_test "[describe_mode]" =
   let%bind () =
     Current_buffer.set_temporarily_to_temp_buffer Async (fun () ->
-      let%bind () =
-        Current_buffer.change_major_mode Major_mode.Fundamental.major_mode
-      in
+      let%bind () = Current_buffer.change_major_mode Major_mode.Fundamental.major_mode in
       describe_mode ();
       Selected_window.other_window 1;
       print_endline

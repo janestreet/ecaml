@@ -35,8 +35,7 @@ let parameters t =
   frame_parameters t
   |> List.map ~f:(fun pair ->
     if not (Value.is_cons pair)
-    then
-      raise_s [%message "[Frame.parameters] got strange value" ~_:(pair : Value.t)];
+    then raise_s [%message "[Frame.parameters] got strange value" ~_:(pair : Value.t)];
     Value.car_exn pair |> Symbol.of_value_exn, Value.cdr_exn pair)
 ;;
 

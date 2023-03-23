@@ -216,7 +216,8 @@ module Programmed_completion = struct
             collection. Let's not work on this until someone needs it. *)
          let s = "Programmed completion not supported with [Elisp _]." in
          raise_s
-           [%message s (annotation_function : _ option) (display_sort_function : _ option)])
+           [%message
+             s (annotation_function : _ option) (display_sort_function : _ option)])
   ;;
 end
 

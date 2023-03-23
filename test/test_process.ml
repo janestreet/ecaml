@@ -23,10 +23,10 @@ let show t =
         ~command:(command t : string list option)
         ~is_in_all_emacs_children:(List.mem (all_emacs_children ()) t ~equal : bool)
         ~pid_is_positive:
-          (match pid t with
-           | None -> None
-           | Some pid -> Some (Pid.to_int pid >= 0)
-                         : bool option)
+          ((match pid t with
+             | None -> None
+             | Some pid -> Some (Pid.to_int pid >= 0))
+           : bool option)
         ~status:(status t : Status.t)
         ~exit_status:(exit_status t : Exit_status.t)]
 ;;
@@ -438,10 +438,7 @@ let%expect_test "[Call.Output.Split]" =
 
 let%expect_test "[call_exn] dropping stderr" =
   show_raise (fun () ->
-    call_exn
-      ~stderr:`Drop_if_ok
-      "bash"
-      [ "-c"; "echo out-put; echo >&2 err-or; exit 1" ]);
+    call_exn ~stderr:`Drop_if_ok "bash" [ "-c"; "echo out-put; echo >&2 err-or; exit 1" ]);
   [%expect
     {|
     (raised (

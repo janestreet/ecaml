@@ -80,9 +80,7 @@ let%expect_test "[set_char]" =
       | Inherit_standard -> ()
       | _ ->
         set_char t char class_ [];
-        let round_trip =
-          Current_buffer.syntax_class (char |> Char_code.of_char_exn)
-        in
+        let round_trip = Current_buffer.syntax_class (char |> Char_code.of_char_exn) in
         require
           [%here]
           (Class.equal class_ round_trip)

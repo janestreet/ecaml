@@ -109,8 +109,7 @@ module Which_buffers = struct
       Function.create [%here] ~args:[] (fun _ ->
         let buffer = Current_buffer0.get () in
         try f buffer |> Value.of_bool with
-        | exn ->
-          raise_s [%message "[Which_buffers.These]" (buffer : buffer) (exn : exn)])
+        | exn -> raise_s [%message "[Which_buffers.These]" (buffer : buffer) (exn : exn)])
       |> Function.to_value
   ;;
 

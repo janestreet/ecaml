@@ -228,8 +228,7 @@ let%expect_test "[insert_file_contents_exn] raise" =
     Current_buffer.set_temporarily_to_temp_buffer Sync (fun () ->
       insert_file_contents_exn "/zzz";
       print_s
-        [%sexp
-          (Current_buffer.contents () ~end_:(11 |> Position.of_int_exn) : Text.t)]));
+        [%sexp (Current_buffer.contents () ~end_:(11 |> Position.of_int_exn) : Text.t)]));
   [%expect
     {|
     (raised (file-missing ("Opening input file" "No such file or directory" /zzz))) |}];
@@ -374,8 +373,7 @@ let%expect_test "[search_forward_regexp] and [Regexp.Last_match]" =
     goto_char (min ());
     print_s
       [%sexp
-        (search_forward_regexp ("z" |> Regexp.of_pattern) ~update_last_match:true
-         : bool)];
+        (search_forward_regexp ("z" |> Regexp.of_pattern) ~update_last_match:true : bool)];
     [%expect {| false |}];
     show_last_match ();
     [%expect

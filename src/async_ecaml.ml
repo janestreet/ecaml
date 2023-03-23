@@ -254,7 +254,8 @@ type t =
   ; mutable last_cycle_finished_at : Time_ns.t
   ; scheduler : Scheduler.t
   ; mutable pending_emacs_calls : Pending_emacs_call.t Queue.t
-  ; mutable pending_foreground_block_on_asyncs :
+  ; mutable
+    pending_foreground_block_on_asyncs :
       Pending_foreground_block_on_async.t Queue.t
   }
 
@@ -565,11 +566,8 @@ Periodically request an Async cycle.
       if Value.Expert.have_active_env ()
       then
         (* We really want to see the error, so we inhibit quit while displaying it. *)
-        Current_buffer.set_value_temporarily
-          Sync
-          Command.inhibit_quit
-          true
-          ~f:(fun () -> message_s [%sexp (exn : exn)])
+        Current_buffer.set_value_temporarily Sync Command.inhibit_quit true ~f:(fun () ->
+          message_s [%sexp (exn : exn)])
       else
         t.exceptions_raised_outside_emacs_env
         <- exn :: t.exceptions_raised_outside_emacs_env)
@@ -895,8 +893,7 @@ seconds, and then open a buffer with a hello-world message.
          Background.schedule_foreground_block_on_async [%here] (fun () ->
            let%bind () = Clock.after (sec 1.) in
            let%bind () =
-             Selected_window.switch_to_buffer
-               (Buffer.find_or_create ~name:"test buffer")
+             Selected_window.switch_to_buffer (Buffer.find_or_create ~name:"test buffer")
            in
            Point.insert "Hello foreground world!";
            return ())))

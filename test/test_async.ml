@@ -79,8 +79,7 @@ let%expect_test "Nested calls to block_on_async include Nested_profile backtrace
         Nested_profile.profile
           Sync
           (lazy [%message "Some badly-behaved function"])
-          (fun () ->
-             Async_ecaml.Private.block_on_async [%here] (fun () -> Deferred.unit)))));
+          (fun () -> Async_ecaml.Private.block_on_async [%here] (fun () -> Deferred.unit)))));
   [%expect
     {|
     (raised (
@@ -252,9 +251,7 @@ let%expect_test "assert_foreground in run_outside_async" =
             ~allowed_in_background:true
             (fun () ->
                require_does_raise [%here] ~hide_positions:true (fun () ->
-                 Background.assert_foreground
-                   [%here]
-                   ~message:[%message "should raise"]))
+                 Background.assert_foreground [%here] ~message:[%message "should raise"]))
         in
         Ivar.fill background_job_complete ();
         return ()))

@@ -582,8 +582,7 @@ let%expect_test "rendering OCaml exceptions in Emacs and Ocaml" =
           ignore
             (Value.funcall1
                ("(lambda (f) (funcall f))" |> Form.Blocking.eval_string)
-               (lambda_nullary_nil [%here] (fun () -> raise_s message)
-                |> Function.to_value)
+               (lambda_nullary_nil [%here] (fun () -> raise_s message) |> Function.to_value)
              : Value.t));
       assert false
     with
@@ -614,7 +613,10 @@ let%expect_test "rendering OCaml exceptions in Emacs and Ocaml" =
                  {v
                    foo: (a b), c, d
                  v} *)
-              printf "%s: %s\n" string (concat ~sep:", " (List.map rest ~f:prin1_to_string)))
+              printf
+                "%s: %s\n"
+                string
+                (concat ~sep:", " (List.map rest ~f:prin1_to_string)))
        | _ -> require [%here] false)
   in
   test [%message "foo"];

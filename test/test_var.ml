@@ -87,8 +87,7 @@ let%expect_test "sexpable value in a var" =
     Current_buffer.set_temporarily Sync buf ~f:(fun () ->
       let v = Current_buffer.value_exn t in
       print_s
-        [%message
-          "" ~buffer:(Buffer.name buf : string option) ~var:(v : A.t * Marker.t)])
+        [%message "" ~buffer:(Buffer.name buf : string option) ~var:(v : A.t * Marker.t)])
   in
   let buf1 = Buffer.create ~name:"buf1" in
   let buf2 = Buffer.create ~name:"buf2" in

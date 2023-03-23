@@ -224,9 +224,7 @@ Test [Minibuffer.y_or_n_with_timeout].
       (Returns_deferred Value.Type.unit)
       (fun () ->
          let%bind int =
-           Minibuffer.y_or_n_with_timeout
-             ~prompt:"prompt"
-             ~timeout:(Time_ns.Span.second, 13)
+           Minibuffer.y_or_n_with_timeout ~prompt:"prompt" ~timeout:(Time_ns.Span.second, 13)
          in
          message_s [%message (int : int Minibuffer.Y_or_n_with_timeout.t)];
          return ());

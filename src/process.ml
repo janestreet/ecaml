@@ -248,8 +248,7 @@ end
 
 let call_region_exn
       ?(input =
-        Call.Region_input.Region
-          { start = Point.min (); end_ = Point.max (); delete = false })
+        Call.Region_input.Region { start = Point.min (); end_ = Point.max (); delete = false })
       ?(output = Call.Output.Dev_null)
       ?(redisplay_on_output = false)
       ?(working_directory = Working_directory.Root)
@@ -468,9 +467,9 @@ let wrap_sentinel
   in
   match returns with
   | Returns _ ->
-    (try sentinel ~event with
-     | exn -> log_exn exn
-              : a)
+    ((try sentinel ~event with
+       | exn -> log_exn exn)
+     : a)
   | Returns_deferred _ ->
     (match%map Monitor.try_with ~extract_exn:true (fun () -> sentinel ~event) with
      | Ok () -> ()

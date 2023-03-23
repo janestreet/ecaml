@@ -425,15 +425,11 @@ Benchmark the Ecaml profiler's rendering of a large %{name}.
          Profile.disown (fun () ->
            let data = create () in
            Ref.set_temporarily Profile.should_profile true ~f:(fun () ->
-             Ref.set_temporarily
-               Profile.hide_if_less_than
-               Time_ns.Span.zero
-               ~f:(fun () ->
-                 Ref.set_temporarily
-                   Profile.hide_top_level_if_less_than
-                   Time_ns.Span.zero
-                   ~f:(fun () ->
-                     Funcall.Wrap.(helper_name <: value @-> return nil) data)))))
+             Ref.set_temporarily Profile.hide_if_less_than Time_ns.Span.zero ~f:(fun () ->
+               Ref.set_temporarily
+                 Profile.hide_top_level_if_less_than
+                 Time_ns.Span.zero
+                 ~f:(fun () -> Funcall.Wrap.(helper_name <: value @-> return nil) data)))))
   ;;
 
   let large_string = lazy (String.make 1024 'a' |> Value.of_utf8_bytes)

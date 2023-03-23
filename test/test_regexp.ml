@@ -355,14 +355,10 @@ let%expect_test "[of_rx]" =
   Current_buffer.set_temporarily_to_temp_buffer Sync (fun () ->
     Point.insert "foobar";
     Point.goto_min ();
-    let matches =
-      Point.search_forward_regexp (of_rx (Seq [ Point; Exactly "foobar" ]))
-    in
+    let matches = Point.search_forward_regexp (of_rx (Seq [ Point; Exactly "foobar" ])) in
     print_s [%message (matches : bool)];
     Point.goto_min ();
-    let matches =
-      Point.search_forward_regexp (of_rx (Seq [ Exactly "foobar"; Point ]))
-    in
+    let matches = Point.search_forward_regexp (of_rx (Seq [ Exactly "foobar"; Point ])) in
     print_s [%message (matches : bool)]);
   [%expect {|
     (matches true)
@@ -441,8 +437,7 @@ let%expect_test "[of_rx]" =
       List.iter [ "foobarbaz"; "foobaz"; "foo" ] ~f:(fun input ->
         let matches = does_match ~update_last_match:true t (Text.of_utf8_bytes input) in
         let submatch_1 = Option.try_with (fun () -> Last_match.text_exn ~subexp:1 ()) in
-        print_s
-          [%message (input : string) (matches : bool) (submatch_1 : Text.t option)]))
+        print_s [%message (input : string) (matches : bool) (submatch_1 : Text.t option)]))
     [ Rx.Submatch (Exactly "bar")
     ; Submatch (Exactly "qux")
     ; Submatch_n { index = 1; t = Exactly "bar" }
