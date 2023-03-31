@@ -8,7 +8,8 @@
 ### Using Dune
 
 Compile your plugin using `(modes (native shared_object))` in the executable
-stanza of your dune file. See `example/dune.example` for an example.
+stanza of your dune file. See [`example/dune.example`](example/dune.example)
+for an example.
 
 ### Using Jane Street jenga rules
 
