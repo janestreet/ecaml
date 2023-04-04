@@ -26,6 +26,10 @@ val temporarily_disable : (unit, 'a) Sync_or_async.t -> t -> f:(unit -> 'a) -> '
     [(describe-function 'abbrev-mode)] *)
 val abbrev : t
 
+(** [(describe-variable 'auto-fill-mode)]
+    [(describe-function 'auto-fill-mode)]*)
+val auto_fill : t
+
 (** [(describe-variable 'goto-address-mode)]
     [(describe-function 'goto-address-mode)]*)
 val goto_address : t

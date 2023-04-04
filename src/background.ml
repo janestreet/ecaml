@@ -21,7 +21,8 @@ let schedule_foreground_block_on_async here ?raise_exceptions_to_monitor f =
   then
     raise_s
       [%sexp
-        "Assertion failed -- [Background.become_foreground] called from foreground job"
+        "Assertion failed -- [Background.schedule_foreground_block_on_async] called from \
+         foreground job"
       , (here : Source_code_position.t)];
   Value.Private.enqueue_foreground_block_on_async
     here

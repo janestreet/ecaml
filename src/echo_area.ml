@@ -28,16 +28,35 @@ let message_text ?echo text =
   maybe_echo ~echo (fun () -> Value.Private.message_t (Text.to_value text))
 ;;
 
-let wrap_message ?echo message ~f =
+let wrap_message
+      (type a b)
+      ?allow_in_background
+      ?echo
+      here
+      (sync_or_async : (a, b) Sync_or_async.t)
+      message
+      ~f
+  =
   let message = concat [ message; " ... " ] in
+  let returned_normally = ref false in
   message_s ?echo [%sexp (message : string)];
-  match%map Monitor.try_with f with
-  | Ok x ->
-    message_s ?echo [%sexp (concat [ message; "done" ] : string)];
-    x
-  | Error exn ->
-    message_s ?echo [%sexp (concat [ message; "raised" ] : string)];
-    raise exn
+  let (f : unit -> b) =
+    match sync_or_async with
+    | Sync ->
+      fun () ->
+        let result = f () in
+        returned_normally := true;
+        result
+    | Async ->
+      fun () ->
+        let%map result = f () in
+        returned_normally := true;
+        result
+  in
+  Sync_or_async.protect ?allow_in_background here sync_or_async ~f ~finally:(fun () ->
+    match !returned_normally with
+    | true -> message_s ?echo [%sexp (concat [ message; "done" ] : string)]
+    | false -> message_s ?echo [%sexp (concat [ message; "raised" ] : string)])
 ;;
 
 let clear =

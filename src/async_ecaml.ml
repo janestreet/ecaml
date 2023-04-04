@@ -41,12 +41,19 @@ module Cycle_report = struct
 
   let generate_report () =
     let open Async in
-    message "Collecting 10 seconds of cycle data...";
-    measuring := true;
-    let%bind () = Clock_ns.after (sec_ns 10.) in
-    measuring := false;
-    let samples = !cycles in
-    cycles := [];
+    let%bind samples =
+      Echo_area.wrap_message
+        [%here]
+        Async
+        "Collecting 10 seconds of cycle data"
+        ~f:(fun () ->
+          measuring := true;
+          let%bind () = Clock_ns.after (sec_ns 10.) in
+          measuring := false;
+          let samples = !cycles in
+          cycles := [];
+          return samples)
+    in
     let buffer = Buffer.find_or_create ~name:"cycle report" in
     let%bind () = Selected_window.switch_to_buffer buffer in
     List.iter samples ~f:(fun sample ->

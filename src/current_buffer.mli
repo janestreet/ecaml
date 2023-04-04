@@ -283,8 +283,10 @@ val mark_is_active : unit -> bool
 
 (** [(describe-function 'region-beginning)]
     [(describe-function 'region-end)]
+    [(describe-function 'use-region-p)]
 
-    Returns [(region-beginning), (region-end)] if the mark is active. *)
+    Returns [(region-beginning), (region-end)] if the region should be used (according to
+    [use-region-p]). *)
 val active_region : unit -> (Position.t * Position.t) option
 
 (** [(describe-function 'deactivate-mark)]

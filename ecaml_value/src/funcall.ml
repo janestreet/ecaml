@@ -97,7 +97,9 @@ let wrap_unrolled : type a. a t -> Value.t -> a =
 
 let apply t f args ~on_parse_error =
   let wrong_number_of_args message =
-    raise_s [%message message (arity t : int) (args : Value.t list)]
+    Error.create_s [%message message (arity t : int) (args : Value.t list)]
+    |> Error.to_exn
+    |> on_parse_error
   in
   let rec apply : type a. a t -> a -> Value.t list -> Value.t =
     fun t f args ->

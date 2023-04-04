@@ -628,13 +628,37 @@ CAMLprim value ecaml_to_string(value val) {
   CAMLreturn(ret);
 }
 
-CAMLprim value ecaml_of_string(value val) {
+CAMLprim value ecaml_multibyte_of_string(value val) {
   CAMLparam1(val);
   CAMLlocal1(ret);
   emacs_env *env = ecaml_active_env_or_die();
   const char *buf = String_val(val);
   int len = caml_string_length(val);
   emacs_value ret_val = env->make_string(env, buf, len);
+  ret = ocaml_of_emacs(env, ret_val);
+  CAMLreturn(ret);
+}
+
+CAMLprim value ecaml_unibyte_of_string(value val) {
+  CAMLparam1(val);
+  CAMLlocal1(ret);
+  emacs_env *env = ecaml_active_env_or_die();
+  const char *buf = String_val(val);
+  int len = caml_string_length(val);
+  /* Stay compatible with Emacs 27 modules, which don't have
+   * make_unibyte_string. */
+  emacs_value ret_val;
+#if EMACS_MAJOR_VERSION < 28
+  ret_val = env->make_string(env, buf, len);
+#else
+  /* We might compile using the Emacs 28 headers but still need to be able to
+     run with Emacs 27 at runtime. */
+  if (offsetof(emacs_env, make_unibyte_string) < (size_t)env->size) {
+    ret_val = env->make_unibyte_string(env, buf, len);
+  } else {
+    ret_val = env->make_string(env, buf, len);
+  }
+#endif
   ret = ocaml_of_emacs(env, ret_val);
   CAMLreturn(ret);
 }

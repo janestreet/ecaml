@@ -47,7 +47,7 @@ let build_function here f =
      and symbol = required "symbol" Symbol.type_
      and newval = required "newval" Value.Type.value
      and operation = required "operation" Operation.type_
-     and where = required "where" (Value.Type.option Buffer.type_) in
+     and where = required "where" (Value.Type.nil_or Buffer.type_) in
      f
        { Event.local_to_buffer = where
        ; new_value = newval

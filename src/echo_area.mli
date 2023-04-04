@@ -19,10 +19,13 @@ val message : ?echo:bool (** default is [true] *) -> string -> unit
 val clear : unit -> unit
 
 val wrap_message
-  :  ?echo:bool (** default is [true] *)
+  :  ?allow_in_background:bool (** default is [false] *)
+  -> ?echo:bool (** default is [true] *)
+  -> Source_code_position.t
+  -> (_, 'a) Sync_or_async.t
   -> string
-  -> f:(unit -> 'a Deferred.t)
-  -> 'a Deferred.t
+  -> f:(unit -> 'a)
+  -> 'a
 
 val messagef
   :  ?echo:bool (** default is [true] *)

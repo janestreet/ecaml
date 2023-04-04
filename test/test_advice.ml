@@ -88,22 +88,75 @@ let%expect_test "[around_funcall ~on_parse_error]" =
   [%expect
     {|
     (raised ((
-      "unable to convert Elisp value to OCaml value"
-      (type_ string)
-      (value 1)
-      (exn (wrong-type-argument (stringp 1)))))) |}];
+      "Advice failed to parse its arguments"
+      app/emacs/lib/ecaml/test/test_advice.ml:71:8
+      ("unable to convert Elisp value to OCaml value"
+       (type_ string)
+       (value 1)
+       (exn (wrong-type-argument (stringp 1))))))) |}];
   show_raise (fun () -> test Value.Type.string ~on_parse_error:Allow_raise);
   [%expect
     {|
     (raised ((
-      "unable to convert Elisp value to OCaml value"
-      (type_ string)
-      (value 1)
-      (exn (wrong-type-argument (stringp 1)))))) |}];
+      "Advice failed to parse its arguments"
+      app/emacs/lib/ecaml/test/test_advice.ml:71:8
+      ("unable to convert Elisp value to OCaml value"
+       (type_ string)
+       (value 1)
+       (exn (wrong-type-argument (stringp 1))))))) |}];
   test Value.Type.string ~on_parse_error:Call_inner_function;
   [%expect {|
     (test-function (args (1)))
     (call (result 13)) |}];
+  return ()
+;;
+
+let%expect_test "[around_funcall] with arity mismatch" =
+  initialize ();
+  let advice_body () =
+    print_s [%message "Advice got called."];
+    -1
+  in
+  let test ?on_parse_error funcall f =
+    let t =
+      Advice.defun_around_funcall
+        advice_name
+        [%here]
+        ~docstring:"<docstring>"
+        funcall
+        ?on_parse_error
+        f
+    in
+    Advice.add t ~to_function:test_function;
+    call_test_function ();
+    Advice.remove t ~from_function:test_function
+  in
+  (* correct arity *)
+  test Funcall.Wrap.(int @-> return int) (fun _ _ -> advice_body ());
+  [%expect {|
+    "Advice got called."
+    (call (result -1)) |}];
+  (* requires more arguments than the underlying *)
+  show_raise (fun () ->
+    test Funcall.Wrap.(int @-> int @-> return int) (fun _ _ _ -> advice_body ()));
+  [%expect
+    {|
+    (raised ((
+      "Advice failed to parse its arguments"
+      app/emacs/lib/ecaml/test/test_advice.ml:124:8
+      ("unable to convert Elisp value to OCaml value"
+       (type_ int)
+       (value nil)
+       (exn (wrong-type-argument (integerp nil))))))) |}];
+  (* permits fewer arguments than the underlying *)
+  show_raise (fun () ->
+    test Funcall.Wrap.(nullary @-> return int) (fun _ () -> advice_body ()));
+  [%expect
+    {|
+    (raised ((
+      "Advice failed to parse its arguments"
+      app/emacs/lib/ecaml/test/test_advice.ml:124:8
+      ("Extra args." ("arity t" 0) (args (1)))))) |}];
   return ()
 ;;
 

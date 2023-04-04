@@ -136,7 +136,7 @@ let provide = (Feature.provide [@warning "-3"])
 let inhibit_read_only = Current_buffer.inhibit_read_only
 
 let () =
-  if not Ppx_inline_test_lib.am_running
+  if not am_running_test
   then
     let module Unix = Core_unix in
     let should_reopen_stdin = ref true in

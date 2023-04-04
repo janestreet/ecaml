@@ -260,12 +260,13 @@ let mark = Funcall.Wrap.("mark-marker" <: nullary @-> return Marker.t)
 let set_mark = Funcall.Wrap.("set-mark" <: Position.t @-> return nil)
 let mark_active = Buffer_local.Wrap.("mark-active" <: bool)
 let mark_is_active () = get_buffer_local mark_active
+let use_region_p = Funcall.Wrap.("use-region-p" <: nullary @-> return bool)
 let deactivate_mark = Funcall.Wrap.("deactivate-mark" <: nullary @-> return nil)
 let region_beginning = Funcall.Wrap.("region-beginning" <: nullary @-> return Position.t)
 let region_end = Funcall.Wrap.("region-end" <: nullary @-> return Position.t)
 
 let active_region () =
-  if mark_is_active () then Some (region_beginning (), region_end ()) else None
+  if use_region_p () then Some (region_beginning (), region_end ()) else None
 ;;
 
 let make_local_variable = Funcall.Wrap.("make-local-variable" <: Symbol.t @-> return nil)

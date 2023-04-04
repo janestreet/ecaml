@@ -195,8 +195,12 @@ let tabulated_list_print =
 ;;
 
 let draw ?sort_by t rows =
-  (* Work around an emacs bug where tabulated-list.el doesn't check that we're sorting by
-     a sortable column *)
+  (* tabulated-list.el doesn't check that we're sorting by a sortable column, if we just
+     set [tabulated-list-sort-key].  Instead, it just displays the list unsorted.  We
+     prefer to raise instead.
+
+     It only signals an error if you invoke [tabulated-list-sort] with point in an
+     unsortable column. *)
   Option.iter sort_by ~f:(fun (sort_header, _) ->
     match
       List.find t.columns ~f:(fun column -> String.equal sort_header column.format.header)

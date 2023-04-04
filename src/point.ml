@@ -5,6 +5,7 @@ module Q = struct
   include Q
 
   let simple = "simple" |> Symbol.intern
+  let text_property_search = "text-property-search" |> Symbol.intern
 end
 
 module Current_buffer = Current_buffer0
@@ -193,3 +194,63 @@ let variable_at =
 ;;
 
 let yank = Funcall.Wrap.("yank" <: nullary @-> return nil)
+
+module Property_search = struct
+  module Raw_match = struct
+    include Value.Make_subtype (struct
+        let here = [%here]
+        let name = "prop-match"
+        let is_in_subtype = Funcall.Wrap.("prop-match-p" <: value @-> return bool)
+      end)
+
+    let beginning = Funcall.Wrap.("prop-match-beginning" <: t @-> return Position.t)
+    let end_ = Funcall.Wrap.("prop-match-end" <: t @-> return Position.t)
+    let value = Funcall.Wrap.("prop-match-value" <: t @-> return value)
+  end
+
+  module Match = struct
+    type 'a t =
+      { beginning : Position.t
+      ; end_ : Position.t
+      ; property_value : 'a
+      }
+    [@@deriving sexp_of]
+
+    let of_value_exn property_value_of_value_exn raw_match =
+      { beginning = Raw_match.beginning raw_match
+      ; end_ = Raw_match.end_ raw_match
+      ; property_value = Raw_match.value raw_match |> property_value_of_value_exn
+      }
+    ;;
+  end
+
+  module Which = struct
+    type 'a t =
+      | First_equal_to of 'a
+      | First_non_nil
+    [@@deriving enumerate, sexp_of]
+  end
+
+  let text_property_search_forward =
+    let f =
+      Funcall.Wrap.(
+        "text-property-search-forward"
+        <: Symbol.t @-> value @-> bool @-> return (nil_or Raw_match.t))
+    in
+    fun name value predicate ->
+      Feature.require Q.text_property_search;
+      f name value predicate
+  ;;
+
+  let forward property_name ~(which : _ Which.t) =
+    let value, predicate =
+      match which with
+      | First_equal_to value -> Text.Property_name.to_value property_name value, true
+      | First_non_nil -> Value.nil, false
+    in
+    let%map.Option raw_match =
+      text_property_search_forward (Text.Property_name.name property_name) value predicate
+    in
+    raw_match |> Match.of_value_exn (Text.Property_name.of_value_exn property_name)
+  ;;
+end

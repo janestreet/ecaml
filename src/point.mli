@@ -219,3 +219,29 @@ val variable_at : unit -> Symbol.t option
 
 (** [(describe-function 'yank)] *)
 val yank : unit -> unit
+
+(** Search for text properties in the current buffer.
+
+    [(find-library 'text-property-search)] *)
+module Property_search : sig
+  module Match : sig
+    type 'a t = private
+      { beginning : Position.t
+      ; end_ : Position.t
+      ; property_value : 'a
+      }
+    [@@deriving sexp_of]
+  end
+
+  module Which : sig
+    type 'a t =
+      | First_equal_to of 'a
+      | First_non_nil
+    [@@deriving enumerate, sexp_of]
+  end
+
+  (** [(describe-function 'text-property-search-forward)]
+
+      If a match is found, moves point to the end of the match. *)
+  val forward : 'a Text.Property_name.t -> which:'a Which.t -> 'a Match.t option
+end

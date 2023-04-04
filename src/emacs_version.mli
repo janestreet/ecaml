@@ -8,3 +8,6 @@ open! Import
 
 (** [(describe-function 'emacs-version)] *)
 val version_string : unit -> string
+
+(** [(describe-variable 'emacs-major-version)] *)
+val major_version : int

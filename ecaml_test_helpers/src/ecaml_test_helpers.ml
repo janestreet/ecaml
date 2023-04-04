@@ -12,18 +12,54 @@ let show ?(show_point = true) () =
 
 let raise_if_in_minibuffer_key = "<f13>"
 let minibuffer_was_open = ref false
+let read_event_depth = ref 0
 
 let () =
+  let advice =
+    Advice.defun_around_values
+      ("jane-fe-test-count-read-event-depth" |> Symbol.intern)
+      [%here]
+      ~docstring:"For testing."
+      Sync
+      (fun f args ->
+         incr read_event_depth;
+         Exn.protect ~f:(fun () -> f args) ~finally:(fun () -> decr read_event_depth))
+  in
+  let commands_that_call_read_event_manually =
+    (* Add advice around any functions that explicitly call [read-event] or
+       [read-char{,-exclusive}].  These functions don't make [query-replace-map] active, and
+       messages aren't shown in the echo area ([current-message] returns nil) in
+       noninteractive emacs, so it's hard to otherwise determine if we're in key-by-key
+       prompting function. *)
+    [ "map-y-or-n-p" ]
+  in
+  List.iter commands_that_call_read_event_manually ~f:(fun name ->
+    Advice.add advice ~to_function:(Symbol.intern name))
+;;
+
+let is_minibuffer_open () =
+  match Minibuffer.active_window () with
+  | Some _ -> true
+  | None -> !read_event_depth > 0
+;;
+
+let () =
+  let query_replace_map =
+    Var.Wrap.("query-replace-map" <: Keymap.t) |> Current_buffer.value_exn
+  in
   defun_nullary_nil
     ("jane-fe-test-raise-if-in-minibuffer" |> Symbol.intern)
     [%here]
     ~docstring:"For testing."
     ~interactive:No_arg
-    ~define_keys:[ Keymap.global (), raise_if_in_minibuffer_key ]
+    ~define_keys:
+      [ Keymap.global (), raise_if_in_minibuffer_key
+      ; query_replace_map, raise_if_in_minibuffer_key
+      ]
     (fun () ->
-       match Minibuffer.active_window () with
-       | None -> minibuffer_was_open := false
-       | Some _ ->
+       match is_minibuffer_open () with
+       | false -> minibuffer_was_open := false
+       | true ->
          minibuffer_was_open := true;
          let prompt = Minibuffer.prompt () in
          message_s [%sexp "Minibuffer open", { prompt : string option }];
@@ -102,7 +138,7 @@ let () =
 let press_and_show_minibuffer ?(show_contents = true) key_sequence =
   match%map
     try_with (fun () ->
-      execute_keys [ key_sequence; show_minibuffer_key_sequence ~show_contents; "C-g" ])
+      execute_keys [ key_sequence; show_minibuffer_key_sequence ~show_contents; "C-]" ])
   with
   | Error _ -> ()
   | Ok () -> require [%here] false

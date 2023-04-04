@@ -96,23 +96,30 @@ let get_in_current_buffer t =
           ~value:(Current_buffer.symbol_value t.symbol : Value.t)]
 ;;
 
+let buffer_local_value =
+  Funcall.Wrap.("buffer-local-value" <: Symbol.t @-> Buffer.t @-> return value)
+;;
+
 let get t buffer =
-  Current_buffer.set_temporarily Sync buffer ~f:(fun () -> get_in_current_buffer t)
+  Value.Type.of_value_exn (var t).type_ (buffer_local_value (symbol t) buffer)
+;;
+
+let raise_buffer_has_no_value_for_variable t ~buffer =
+  raise_s
+    [%message
+      "buffer has no value for variable" ~variable:(t : _ Var.t) (buffer : Buffer.t)]
 ;;
 
 let get_in_current_buffer_exn t =
   match get_in_current_buffer t with
   | Some x -> x
-  | None ->
-    raise_s
-      [%message
-        "buffer has no value for variable"
-          ~variable:(t : _ Var.t)
-          ~buffer:(Current_buffer.get () : Buffer.t)]
+  | None -> raise_buffer_has_no_value_for_variable t ~buffer:(Current_buffer.get ())
 ;;
 
 let get_exn t buffer =
-  Current_buffer.set_temporarily Sync buffer ~f:(fun () -> get_in_current_buffer_exn t)
+  match get t buffer with
+  | Some x -> x
+  | None -> raise_buffer_has_no_value_for_variable t ~buffer
 ;;
 
 let update_exn t buffer ~f =

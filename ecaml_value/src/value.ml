@@ -119,6 +119,7 @@ module Q = struct
   let print_level = "print-level" |> intern
   let processp = "processp" |> intern
   let set = "set" |> intern
+  let string_as_multibyte = "string-as-multibyte" |> intern
   let stringp = "stringp" |> intern
   let substring_no_properties = "substring-no-properties" |> intern
   let symbol_value = "symbol-value" |> intern
@@ -410,9 +411,24 @@ external to_float_exn : t -> float = "ecaml_to_float"
 
 let to_float_exn = wrap_raise1 to_float_exn
 
-external of_utf8_bytes : string -> t = "ecaml_of_string"
+(* multibyte strings contain UTF-8 *)
+external multibyte_of_string : string -> t = "ecaml_multibyte_of_string"
 
-let of_utf8_bytes = wrap_raise1 of_utf8_bytes
+let _multibyte_of_string = wrap_raise1 multibyte_of_string
+
+(* unibyte strings contain arbitrary bytes *)
+external unibyte_of_string : string -> t = "ecaml_unibyte_of_string"
+
+let unibyte_of_string = wrap_raise1 unibyte_of_string
+
+(* Unfortunately, there are lots of places where we can call of_utf8_bytes on things which
+   are not in fact UTF-8.  If we naively use multibyte_of_string here, we'll break Emacs
+   by creating broken multibyte strings.  So we want to try to parse the input string as
+   UTF-8, but if there's any non-UTF-8 bytes, we want to escape them somehow.
+
+   That's what string-as-multibyte does when passed a unibyte string.
+*)
+let of_utf8_bytes s = funcall1 Q.string_as_multibyte (unibyte_of_string s)
 let of_utf8_bytes_cache = Hashtbl.create (module String)
 
 let of_utf8_bytes_cached string =

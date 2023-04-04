@@ -447,7 +447,8 @@ let%expect_test "[looking_at ~update_last_match:true]" =
       true
       ((text  (Ok a))
        (start (Ok 1))
-       (end_  (Ok 2))) |}];
+       (end_  (Ok 2)))
+ |}];
     looking_at "b";
     [%expect
       {|
@@ -479,5 +480,58 @@ def
     [%expect {| 4 |}];
     test 4;
     [%expect {| 7 |}]);
+  return ()
+;;
+
+let%expect_test "[Property_search.forward]" =
+  let property_name =
+    Text.Property_name.Create.("jane-test-text-property" <: Value.Type.int)
+  in
+  Current_buffer.set_temporarily_to_temp_buffer Sync (fun () ->
+    (* Insert some text with no properties, then 10 digits, each with the property set to
+       the value of the digit. *)
+    insert "text with no properties\n";
+    for i = 0 to 9 do
+      let text = i |> Int.to_string |> Text.of_utf8_bytes in
+      Text.add_properties text [ T (property_name, i) ];
+      insert_text text
+    done;
+    let test which =
+      goto_min ();
+      let match_ = Property_search.forward property_name ~which in
+      print_s
+        [%message
+          (which : int Property_search.Which.t)
+            (match_ : int Property_search.Match.t option)]
+    in
+    let all_search_targets =
+      let all_of_int = [ 0; 1; 5; 12 ] in
+      [%all: int Property_search.Which.t]
+    in
+    List.iter all_search_targets ~f:(fun which ->
+      require_does_not_raise [%here] (fun () -> test which));
+    [%expect
+      {|
+      ((which (First_equal_to 0))
+       (match_ ((
+         (beginning      25)
+         (end_           26)
+         (property_value 0)))))
+      ((which (First_equal_to 1))
+       (match_ ((
+         (beginning      26)
+         (end_           27)
+         (property_value 1)))))
+      ((which (First_equal_to 5))
+       (match_ ((
+         (beginning      30)
+         (end_           31)
+         (property_value 5)))))
+      ((which (First_equal_to 12)) (match_ ()))
+      ((which First_non_nil)
+       (match_ ((
+         (beginning      25)
+         (end_           26)
+         (property_value 0))))) |}]);
   return ()
 ;;

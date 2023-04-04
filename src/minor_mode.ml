@@ -5,6 +5,7 @@ module Q = struct
   include Q
 
   let abbrev_mode = "abbrev-mode" |> Symbol.intern
+  let auto_fill_mode = "auto-fill-mode" |> Symbol.intern
   let buffer_read_only = "buffer-read-only" |> Symbol.intern
   let define_minor_mode = "define-minor-mode" |> Symbol.intern
   let goto_address_mode = "goto-address-mode" |> Symbol.intern
@@ -27,6 +28,7 @@ let create ?variable_name function_name =
 
 let compare_name a b = Comparable.lift Symbol.compare_name ~f:function_name a b
 let abbrev = { function_name = Q.abbrev_mode; variable_name = Q.abbrev_mode }
+let auto_fill = { function_name = Q.auto_fill_mode; variable_name = Q.auto_fill_mode }
 
 let goto_address =
   { function_name = Q.goto_address_mode; variable_name = Q.goto_address_mode }
