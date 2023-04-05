@@ -95,10 +95,10 @@ module type Type = sig
       representation of [a]. *)
   val option : 'a t -> 'a option t
 
-  (** [nil_or t_] represents [None] as [nil] and [Some a] as [v], where [v] is the
+  (** [nil_or t] represents [None] as [nil] and [Some a] as [v], where [v] is the
       representation of [a].  This is a common representation used by Elisp functions.
       But it is only correct if [nil] is not a representation of any value in [t]; in that
-      situation use [Type.option_]. *)
+      situation use [Type.option]. *)
   val nil_or : 'a t -> 'a option t
 
   val alist : 'a t -> 'b t -> ('a * 'b) list t
