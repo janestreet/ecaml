@@ -300,7 +300,7 @@ let run_pending_emacs_calls () =
           Background.Private.mark_running_in_foreground ~f:run_job
       in
       Scheduler.lock t.scheduler;
-      Ivar.fill pending_emacs_call.result result));
+      Ivar.fill_exn pending_emacs_call.result result));
   has_work_to_do
 ;;
 

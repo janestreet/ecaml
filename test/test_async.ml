@@ -196,7 +196,7 @@ let%expect_test "raising to a try-with that has already returned" =
   with
   | Error _ -> assert false
   | Ok () ->
-    Ivar.fill raise_error ();
+    Ivar.fill_exn raise_error ();
     let%bind () = Scheduler.yield_until_no_jobs_remain () in
     [%expect
       {|
@@ -213,7 +213,7 @@ let%expect_test "assert_foreground" =
       Background.don't_wait_for [%here] (fun () ->
         show_raise ~hide_positions:true (fun () ->
           Background.assert_foreground [%here] ~message:[%message "should raise"]);
-        Ivar.fill background_job_complete ();
+        Ivar.fill_exn background_job_complete ();
         return ()))
   in
   [%expect
@@ -253,7 +253,7 @@ let%expect_test "assert_foreground in run_outside_async" =
                require_does_raise [%here] ~hide_positions:true (fun () ->
                  Background.assert_foreground [%here] ~message:[%message "should raise"]))
         in
-        Ivar.fill background_job_complete ();
+        Ivar.fill_exn background_job_complete ();
         return ()))
   in
   [%expect
@@ -276,7 +276,7 @@ let%expect_test "[run_outside_async ~allowed_in_background:false]" =
               ~allowed_in_background:false
               (fun () -> ()))
         in
-        Ivar.fill background_job_complete ();
+        Ivar.fill_exn background_job_complete ();
         return ()))
   in
   [%expect
@@ -296,10 +296,10 @@ let%expect_test "raise in [Background.don't_wait_for]" =
         Deferred.create (fun background_job_ran ->
           Background.don't_wait_for [%here] (fun () ->
             let%bind () = Ivar.read ready_to_raise in
-            Ivar.fill background_job_ran ();
+            Ivar.fill_exn background_job_ran ();
             raise_s [%message "something bad happened"]))
       in
-      Ivar.fill ready_to_raise ();
+      Ivar.fill_exn ready_to_raise ();
       background_job_ran)
   in
   [%expect
@@ -326,7 +326,7 @@ module Test_enqueue_block_on_async = struct
           Background.schedule_foreground_block_on_async [%here] (fun () ->
             print_endline "foreground";
             require [%here] (Background.am_running_in_foreground ());
-            Ivar.fill test_finished ();
+            Ivar.fill_exn test_finished ();
             return ());
           return ()))
     in
@@ -350,7 +350,7 @@ module Test_enqueue_block_on_async = struct
                 print_endline "outside async";
                 require [%here] (Background.am_running_in_foreground ()))
             in
-            Ivar.fill test_finished ();
+            Ivar.fill_exn test_finished ();
             return ());
           return ()))
     in
@@ -367,7 +367,7 @@ module Test_enqueue_block_on_async = struct
         let monitor = Monitor.create ~name:"test monitor" () in
         Monitor.detach_and_iter_errors monitor ~f:(fun exn ->
           print_s [%sexp (exn : exn)];
-          Ivar.fill test_finished ());
+          Ivar.fill_exn test_finished ());
         Background.don't_wait_for [%here] (fun () ->
           Background.Private.schedule_foreground_block_on_async
             [%here]

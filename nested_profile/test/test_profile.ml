@@ -135,7 +135,7 @@ let%expect_test "bad call to profile_async" =
      (pending_children 1))
     (110_000us [1 pending child] outer "1970-01-01 00:00:02Z") |}];
   (* The child exiting at this point will not lead to any output. *)
-  Ivar.fill child_exits ();
+  Ivar.fill_exn child_exits ();
   let%bind () = Scheduler.yield_until_no_jobs_remain () in
   [%expect {| |}];
   (* A bad call doesn't corrupt the profile stack. *)

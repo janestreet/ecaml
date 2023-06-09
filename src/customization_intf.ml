@@ -10,15 +10,6 @@ module type Enum_arg = sig
   val to_symbol : t -> Symbol.t
 end
 
-module type Enum = sig
-  type t
-  type 'a customization
-
-  include Valueable.S with type t := t
-
-  val customization : t customization
-end
-
 module type Customization = sig
   module Group : sig
     type t [@@deriving sexp_of]

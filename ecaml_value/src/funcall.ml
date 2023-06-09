@@ -21,10 +21,10 @@ let return_type_of_value symbol (type_ : 'a Value.Type.t) value =
 let arity t =
   let rec arity : type a. a t -> int -> int =
     fun t i ->
-      match t with
-      | Return _ -> i
-      | Nullary _ -> i
-      | _ :: t -> arity t (i + 1)
+    match t with
+    | Return _ -> i
+    | Nullary _ -> i
+    | _ :: t -> arity t (i + 1)
   in
   arity t 0
 ;;
@@ -33,16 +33,16 @@ let wrap : type a. a t -> Value.t -> a =
   fun t symbol ->
   let rec curry : type a. a t -> Value.t -> Value.t array -> int -> a =
     fun t symbol args i ->
-      match t with
-      | type_ :: t ->
-        fun arg ->
-          args.(i) <- Value.Type.to_value type_ arg;
-          curry t symbol args (i + 1)
-      | Nullary return_type ->
-        assert (Int.( = ) i 0);
-        fun _ -> Value.funcall0 symbol |> return_type_of_value symbol return_type
-      | Return type_ ->
-        Value.funcallN_array symbol args |> return_type_of_value symbol type_
+    match t with
+    | type_ :: t ->
+      fun arg ->
+        args.(i) <- Value.Type.to_value type_ arg;
+        curry t symbol args (i + 1)
+    | Nullary return_type ->
+      assert (Int.( = ) i 0);
+      fun _ -> Value.funcall0 symbol |> return_type_of_value symbol return_type
+    | Return type_ ->
+      Value.funcallN_array symbol args |> return_type_of_value symbol type_
   in
   let args = Array.create ~len:(arity t) Value.nil in
   curry t symbol args 0
@@ -103,26 +103,26 @@ let apply t f args ~on_parse_error =
   in
   let rec apply : type a. a t -> a -> Value.t list -> Value.t =
     fun t f args ->
-      match t with
-      | type_ :: t ->
-        (match args with
-         | arg :: args ->
-           (match Value.Type.of_value_exn type_ arg with
-            | arg -> apply t (f arg) args
-            | exception exn -> on_parse_error exn)
-         | [] ->
-           (* Emacs convention: missing arguments are nil. *)
-           (match Value.Type.of_value_exn type_ Value.nil with
-            | arg -> apply t (f arg) args
-            | exception exn -> on_parse_error exn))
-      | Return type_ ->
-        (match args with
-         | [] -> Value.Type.to_value type_ f
-         | _ :: _ -> wrong_number_of_args "Extra args.")
-      | Nullary type_ ->
-        (match args with
-         | [] -> Value.Type.to_value type_ (f ())
-         | _ :: _ -> wrong_number_of_args "Extra args.")
+    match t with
+    | type_ :: t ->
+      (match args with
+       | arg :: args ->
+         (match Value.Type.of_value_exn type_ arg with
+          | arg -> apply t (f arg) args
+          | exception exn -> on_parse_error exn)
+       | [] ->
+         (* Emacs convention: missing arguments are nil. *)
+         (match Value.Type.of_value_exn type_ Value.nil with
+          | arg -> apply t (f arg) args
+          | exception exn -> on_parse_error exn))
+    | Return type_ ->
+      (match args with
+       | [] -> Value.Type.to_value type_ f
+       | _ :: _ -> wrong_number_of_args "Extra args.")
+    | Nullary type_ ->
+      (match args with
+       | [] -> Value.Type.to_value type_ (f ())
+       | _ :: _ -> wrong_number_of_args "Extra args.")
   in
   apply t f args
 ;;

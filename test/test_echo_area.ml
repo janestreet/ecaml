@@ -104,6 +104,6 @@ let%expect_test "[inhibit_messages] in background job" =
             app/emacs/lib/ecaml/test/test_echo_area.ml:LINE:COL)
            (assertion_failed_at app/emacs/lib/ecaml/src/echo_area.ml:LINE:COL))
           "Echo_area.inhibit_messages called asynchronously in background job")) |}];
-      Ivar.fill ivar ();
+      Ivar.fill_exn ivar ();
       return ()))
 ;;

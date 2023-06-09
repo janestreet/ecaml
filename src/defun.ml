@@ -89,30 +89,30 @@ let apply t args ~function_ ~defined_at =
   in
   let rec loop : type a. a t -> a =
     fun t ->
-      match t with
-      | Return a -> a
-      | Map (t, f) -> f (loop t)
-      | Both (t1, t2) ->
-        let x1 = loop t1 in
-        let x2 = loop t2 in
-        x1, x2
-      | Required (symbol, type_) ->
-        if Int.( >= ) !pos len
-        then
-          raise_s
-            [%message
-              "Not enough arguments.  Emacs should have raised wrong-number-of-arguments."]
-        else consume_arg symbol type_
-      | Optional (symbol, type_) ->
-        if Int.( >= ) !pos len then None else consume_arg symbol type_
-      | Rest (symbol, type_) ->
-        let retval =
-          Array.sub args ~pos:!pos ~len:(len - !pos)
-          |> Array.map ~f:(fun value -> convert_arg symbol type_ value)
-          |> Array.to_list
-        in
-        pos := len;
-        retval
+    match t with
+    | Return a -> a
+    | Map (t, f) -> f (loop t)
+    | Both (t1, t2) ->
+      let x1 = loop t1 in
+      let x2 = loop t2 in
+      x1, x2
+    | Required (symbol, type_) ->
+      if Int.( >= ) !pos len
+      then
+        raise_s
+          [%message
+            "Not enough arguments.  Emacs should have raised wrong-number-of-arguments."]
+      else consume_arg symbol type_
+    | Optional (symbol, type_) ->
+      if Int.( >= ) !pos len then None else consume_arg symbol type_
+    | Rest (symbol, type_) ->
+      let retval =
+        Array.sub args ~pos:!pos ~len:(len - !pos)
+        |> Array.map ~f:(fun value -> convert_arg symbol type_ value)
+        |> Array.to_list
+      in
+      pos := len;
+      retval
   in
   let result = loop t in
   let pos = !pos in
@@ -160,13 +160,13 @@ end
 let get_args t =
   let rec loop : type a. a t -> _ -> _ =
     fun t args ->
-      match t with
-      | Return _ -> args
-      | Map (t, _) -> loop t args
-      | Both (t1, t2) -> loop t1 (loop t2 args)
-      | Required (name, _) -> Args.add_required args name
-      | Optional (name, _) -> Args.add_optional args name
-      | Rest (name, _) -> Args.add_rest args name
+    match t with
+    | Return _ -> args
+    | Map (t, _) -> loop t args
+    | Both (t1, t2) -> loop t1 (loop t2 args)
+    | Required (name, _) -> Args.add_required args name
+    | Optional (name, _) -> Args.add_optional args name
+    | Rest (name, _) -> Args.add_rest args name
   in
   loop t Args.empty
 ;;

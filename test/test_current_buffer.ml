@@ -960,7 +960,7 @@ let%expect_test "[set_temporarily_to_temp_buffer Async] from background job" =
           show_raise_async ~hide_positions:true (fun () ->
             set_temporarily_to_temp_buffer Async return)
         in
-        Ivar.fill background_job_done ();
+        Ivar.fill_exn background_job_done ();
         return ()))
   in
   [%expect
@@ -999,7 +999,7 @@ let%expect_test "[save_excursion Async] from background job" =
         let%bind () =
           show_raise_async ~hide_positions:true (fun () -> save_excursion Async return)
         in
-        Ivar.fill background_job_done ();
+        Ivar.fill_exn background_job_done ();
         return ()))
   in
   [%expect

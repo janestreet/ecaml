@@ -109,6 +109,7 @@ let defalias = Defun.defalias
 let defconst = Defconst.defconst
 let defconst_i = Defconst.defconst_i
 let defcustom = Customization.defcustom
+let defcustom_enum = Customization.defcustom_enum
 let defgroup = Customization.Group.defgroup
 let define_derived_mode = Major_mode.define_derived_mode
 let define_minor_mode = Minor_mode.define_minor_mode

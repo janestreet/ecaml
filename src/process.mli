@@ -192,6 +192,7 @@ val call_exn
   -> ?strip_whitespace:bool (** default is [true] *)
   -> ?verbose_exn:bool (** default is [true] *)
   -> ?stderr:[ `Drop_if_ok | `Mix | `Split of Call.Output.Stderr.t ]
+  (** default is [`Mix] *)
   -> string
   -> string list
   -> string
