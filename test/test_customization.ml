@@ -50,7 +50,7 @@ let%expect_test "[Boolean] with default [nil]" =
      \nCustomization type: boolean" :group (quote test-customization-group) :type
      (quote boolean))
 
-    Hide Test Customization Symbol 1: [Toggle]  off (nil)
+    Hide Test Customization Symbol 1: Boolean: [Toggle]  off (nil)
        [ State ]: STANDARD.
        <docstring> Hide
 
@@ -65,7 +65,7 @@ let%expect_test "[Boolean] with default [t]" =
   test Value.Type.bool Boolean true;
   [%expect
     {|
-    Hide Test Customization Symbol 2: [Toggle]  on (non-nil)
+    Hide Test Customization Symbol 2: Boolean: [Toggle]  on (non-nil)
        [ State ]: STANDARD.
        <docstring> Hide
 
@@ -81,7 +81,7 @@ let%expect_test "[Const]" =
   test Value.Type.int (Choice [ Const (Value.Type.(to_value int) 13) ]) 13;
   [%expect
     {|
-    Hide Test Customization Symbol 3: [Value Menu] 13
+    Hide Test Customization Symbol 3: Choice: [Value Menu] 13
        [ State ]: STANDARD.
        <docstring> Hide
 
@@ -113,7 +113,7 @@ let%expect_test "[enum]" =
   test M.t (Type.enum M.all M.to_value) A;
   [%expect
     {|
-    Hide Test Customization Symbol 4: [Value Menu] A
+    Hide Test Customization Symbol 4: Choice: [Value Menu] A
        [ State ]: STANDARD.
        <docstring> Hide
 

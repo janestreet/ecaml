@@ -15,10 +15,10 @@ let%expect_test "[create_exn]" =
     (C-c C-c)
     (C-M-q C-M-q)
     (<f5> <f5>)
-    (C-<f5> <C-f5>)
-    (C-<right> <C-right>)
+    (C-<f5> C-<f5>)
+    (C-<right> C-<right>)
     (<mouse-2> <mouse-2>)
-    (C-<down-mouse-3> <C-down-mouse-3>) |}];
+    (C-<down-mouse-3> C-<down-mouse-3>) |}];
   return ()
 ;;
 

@@ -40,6 +40,27 @@ val run_after_i
   -> docstring:string
   -> unit
 
+(** [(describe-function 'run-with-idle-timer)]
+    [(Info-goto-node "(elisp) Idle Timers")] *)
+val run_after_idle
+  :  ?repeat:Time_ns.Span.t
+  -> Source_code_position.t
+  -> Time_ns.Span.t
+  -> f:(unit -> unit)
+  -> name:Symbol.t
+  -> docstring:string
+  -> t
+
+(** [run_after_idle_i s f = ignore (run_after_idle s f)] *)
+val run_after_idle_i
+  :  ?repeat:Time_ns.Span.t
+  -> Source_code_position.t
+  -> Time_ns.Span.t
+  -> f:(unit -> unit)
+  -> name:Symbol.t
+  -> docstring:string
+  -> unit
+
 (** [(describe-function 'cancel-timer)]
     [(Info-goto-node "(elisp)Timers")] *)
 val cancel : t -> unit

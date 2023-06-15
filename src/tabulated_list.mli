@@ -22,17 +22,6 @@ module Column : sig
     -> ('record -> string)
     -> 'record t
 
-  (** Shows only stripped first line of possibly multiline string *)
-  val first_line
-    :  ?align_right:bool
-    -> ?max_width:int
-    -> ?min_width:int
-    -> ?pad_right:int
-    -> ?sortable:bool
-    -> header:string
-    -> ('record -> string)
-    -> 'record t
-
   val text
     :  ?align_right:bool
     -> ?max_width:int
@@ -42,33 +31,41 @@ module Column : sig
     -> header:string
     -> ('record -> Text.t)
     -> 'record t
+
+  val create_gen
+    :  ?align_right:bool
+    -> ?max_width:int
+    -> ?min_width:int
+    -> ?pad_right:int
+    -> header:string
+    -> get_field:('record -> 'field)
+    -> render_field:('field -> Text.t)
+    -> compare_field:('field -> 'field -> int)
+    -> unit
+    -> 'record t
 end
 
-type ('record, 'id) t
+type 'record t
 
 (** Raises unless the major mode derives from [Tabulated_list_mode.major_mode]. *)
-val create
-  :  Major_mode.t
-  -> 'record Column.t list
-  -> id_equal:('id -> 'id -> bool)
-  -> id_type:'id Value.Type.t
-  -> id_of_record:('record -> 'id)
-  -> ('record, 'id) t
+val create : Major_mode.t -> 'record Column.t list -> 'record t
 
 val keymap : _ t -> Keymap.t
 val major_mode : _ t -> Major_mode.t
 
 val draw
   :  ?sort_by:string * [ `Ascending | `Descending ]
-  -> ('record, 'id) t
+  -> 'record t
   -> 'record list
   -> unit
 
-(** [get_id_at_point_exn] returns [None] if there is no id at point, and raises if the id
-    at point cannot be [of_value_exn]'ed. *)
-val get_id_at_point_exn : ('record, 'id) t -> 'id option
+(** [get_record_at_point_exn] returns [None] if there is no record at point, and raises if
+    the record at point cannot be [of_value_exn]'ed. *)
+val get_record_at_point_exn : 'record t -> 'record option
 
-val move_point_to_id : ('record, 'id) t -> 'id -> unit
+(** [move_point_to_record] moves the point to the first record stisfying the predicate [f] *)
+val move_point_to_record : 'record t -> f:('record -> bool) -> unit
+
 val current_buffer_has_entries : unit -> bool
 
 (** [(describe-variable 'tabulated-list-revert-hook)] *)

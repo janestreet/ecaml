@@ -244,10 +244,10 @@ let%expect_test "[set_property]" =
     (failed (args-out-of-range (1 2)))
     ((start 2)
      (end_  0))
-    (failed (args-out-of-range (0 2)))
+    (failed (args-out-of-range (2 0)))
     ((start 2)
      (end_  1))
-    (failed (args-out-of-range (1 2)))
+    (failed (args-out-of-range (2 1)))
     ((start 2)
      (end_  2))
     ((text a) (property (Ok ()))) |}];

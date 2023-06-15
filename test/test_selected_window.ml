@@ -23,7 +23,12 @@ let%test_module _ =
     ;;
 
     let%expect_test "[split_horizontally_exn] raise" =
-      show_raise (fun () -> Selected_window.split_horizontally_exn ());
+      show_raise (fun () ->
+        Current_buffer.set_value_temporarily
+          Sync
+          Var.Wrap.("window-min-width" <: int)
+          45
+          ~f:(fun () -> Selected_window.split_horizontally_exn ()));
       [%expect {| (raised ("Window #<window 1 on *scratch*> too small for splitting")) |}];
       return ()
     ;;

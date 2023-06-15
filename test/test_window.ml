@@ -31,12 +31,12 @@ let%expect_test "accessors" =
   show t;
   [%expect
     {|
-    ((body_height (Ok 8))
+    ((body_height (Ok 23))
      (buffer      (Ok "#<buffer *scratch*>"))
-     (height      (Ok 9))
+     (height      (Ok 24))
      (is_live     (Ok true))
      (point       (Ok 1))
-     (width       (Ok 10))) |}];
+     (width       (Ok 80))) |}];
   return ()
 ;;
 
@@ -85,12 +85,12 @@ let%expect_test "[Tree]" =
   [%expect
     {|
     (Window "#<window 4 on *scratch*>")
-    ((body_height (Ok 8))
+    ((body_height (Ok 23))
      (buffer      (Ok "#<buffer *scratch*>"))
-     (height      (Ok 9))
+     (height      (Ok 24))
      (is_live     (Ok true))
      (point       (Ok 2))
-     (width       (Ok 10))) |}];
+     (width       (Ok 80))) |}];
   Selected_window.split_vertically_exn ();
   show ();
   [%expect
@@ -101,21 +101,21 @@ let%expect_test "[Tree]" =
         (Window "#<window 6 on *scratch*>")))
       (direction Top_to_bottom)
       (edges (
-        (bottom 10)
+        (bottom 25)
         (left   0)
-        (right  10)
+        (right  80)
         (top    1))))
-    ((body_height (Ok 4))
+    ((body_height (Ok 11))
      (buffer      (Ok "#<buffer *scratch*>"))
-     (height      (Ok 5))
+     (height      (Ok 12))
      (is_live     (Ok true))
      (point       (Ok 2))
-     (width       (Ok 10)))
-    ((body_height (Ok 3))
+     (width       (Ok 80)))
+    ((body_height (Ok 11))
      (buffer      (Ok "#<buffer *scratch*>"))
-     (height      (Ok 4))
+     (height      (Ok 12))
      (is_live     (Ok true))
      (point       (Ok 2))
-     (width       (Ok 10))) |}];
+     (width       (Ok 80))) |}];
   return ()
 ;;

@@ -1098,7 +1098,6 @@ let%expect_test "[bury]" =
     {|
     ("#<buffer  *Minibuf-0*>"
      "#<buffer *Messages*>"
-     "#<buffer  *code-conversion-work*>"
      "#<buffer b1>"
      "#<buffer b2>"
      "#<buffer zzz>"
@@ -1108,7 +1107,6 @@ let%expect_test "[bury]" =
   [%expect
     {|
     ("#<buffer  *Minibuf-0*>"
-     "#<buffer  *code-conversion-work*>"
      "#<buffer b1>"
      "#<buffer b2>"
      "#<buffer zzz>"
@@ -1142,12 +1140,12 @@ let%expect_test "[describe_mode]" =
     {|
     Type C-x 1 to delete the help window, C-M-v to scroll help.
     Enabled minor modes: Auto-Composition Auto-Compression Auto-Encryption
-    Electric-Indent File-Name-Shadow Global-Eldoc Line-Number Mouse-Wheel
-    Tooltip Transient-Mark
+    Electric-Indent File-Name-Shadow Global-Eldoc Indent-Tabs Line-Number
+    Mouse-Wheel Show-Paren Tooltip Transient-Mark
 
     (Information about these minor modes follows the major mode info.)
 
-     mode defined in `simple.el':
+     mode defined in `../../../../../.sink-2023-03-29_22-56-16.868721/28.2-20230329-185045/share/emacs/28.2/lisp/simple.el':
     Major mode not specialized for anything in particular.
     Other major modes are defined by comparison with this one.
 
@@ -1155,10 +1153,19 @@ let%expect_test "[describe_mode]" =
     Auto-Composition minor mode (no indicator):
     Toggle Auto Composition mode.
 
-    If called interactively, enable Auto-Composition mode if ARG is
-    positive, and disable it if ARG is zero or negative.  If called from
-    Lisp, also enable the mode if ARG is omitted or nil, and toggle it if
-    ARG is `toggle'; disable the mode otherwise.
+    This is a minor mode.  If called interactively, toggle the
+    `Auto-Composition mode' mode.  If the prefix argument is positive,
+    enable the mode, and if it is zero or negative, disable the mode.
+
+    If called from Lisp, toggle the mode if ARG is `toggle'.  Enable the
+    mode if ARG is nil, omitted, or is a positive number.  Disable the
+    mode if ARG is a negative number.
+
+    To check whether the minor mode is enabled in the current buffer,
+    evaluate `auto-composition-mode'.
+
+    The mode's hook is called both when the mode is enabled and when it is
+    disabled.
 
     When Auto Composition mode is enabled, text characters are
     automatically composed by functions registered in
@@ -1171,10 +1178,19 @@ let%expect_test "[describe_mode]" =
     Auto-Compression minor mode (no indicator):
     Toggle Auto Compression mode.
 
-    If called interactively, enable Auto-Compression mode if ARG is
-    positive, and disable it if ARG is zero or negative.  If called from
-    Lisp, also enable the mode if ARG is omitted or nil, and toggle it if
-    ARG is `toggle'; disable the mode otherwise.
+    This is a minor mode.  If called interactively, toggle the
+    `Auto-Compression mode' mode.  If the prefix argument is positive,
+    enable the mode, and if it is zero or negative, disable the mode.
+
+    If called from Lisp, toggle the mode if ARG is `toggle'.  Enable the
+    mode if ARG is nil, omitted, or is a positive number.  Disable the
+    mode if ARG is a negative number.
+
+    To check whether the minor mode is enabled in the current buffer,
+    evaluate `(default-value 'auto-compression-mode)'.
+
+    The mode's hook is called both when the mode is enabled and when it is
+    disabled.
 
     Auto Compression mode is a global minor mode.  When enabled,
     compressed files are automatically uncompressed for reading, and
@@ -1184,22 +1200,46 @@ let%expect_test "[describe_mode]" =
     Auto-Encryption minor mode (no indicator):
     Toggle automatic file encryption/decryption (Auto Encryption mode).
 
-    If called interactively, enable Auto-Encryption mode if ARG is
-    positive, and disable it if ARG is zero or negative.  If called from
-    Lisp, also enable the mode if ARG is omitted or nil, and toggle it if
-    ARG is `toggle'; disable the mode otherwise.
+    This is a minor mode.  If called interactively, toggle the
+    `Auto-Encryption mode' mode.  If the prefix argument is positive,
+    enable the mode, and if it is zero or negative, disable the mode.
+
+    If called from Lisp, toggle the mode if ARG is `toggle'.  Enable the
+    mode if ARG is nil, omitted, or is a positive number.  Disable the
+    mode if ARG is a negative number.
+
+    To check whether the minor mode is enabled in the current buffer,
+    evaluate `(default-value 'auto-encryption-mode)'.
+
+    The mode's hook is called both when the mode is enabled and when it is
+    disabled.
 
 
     Electric-Indent minor mode (no indicator):
-    Toggle on-the-fly reindentation (Electric Indent mode).
+    Toggle on-the-fly reindentation of text lines (Electric Indent mode).
 
-    If called interactively, enable Electric-Indent mode if ARG is
-    positive, and disable it if ARG is zero or negative.  If called from
-    Lisp, also enable the mode if ARG is omitted or nil, and toggle it if
-    ARG is `toggle'; disable the mode otherwise.
+    This is a minor mode.  If called interactively, toggle the
+    `Electric-Indent mode' mode.  If the prefix argument is positive,
+    enable the mode, and if it is zero or negative, disable the mode.
+
+    If called from Lisp, toggle the mode if ARG is `toggle'.  Enable the
+    mode if ARG is nil, omitted, or is a positive number.  Disable the
+    mode if ARG is a negative number.
+
+    To check whether the minor mode is enabled in the current buffer,
+    evaluate `(default-value 'electric-indent-mode)'.
+
+    The mode's hook is called both when the mode is enabled and when it is
+    disabled.
 
     When enabled, this reindents whenever the hook `electric-indent-functions'
-    returns non-nil, or if you insert a character from `electric-indent-chars'.
+    returns non-nil, or if you insert one of the "electric characters".
+    The electric characters normally include the newline, but can
+    also include other characters as needed by the major mode; see
+    `electric-indent-chars' for the actual list.
+
+    By "reindent" we mean remove any existing indentation, and then
+    indent the line according to context and rules of the major mode.
 
     This is a global minor mode.  To toggle the mode in a single buffer,
     use `electric-indent-local-mode'.
@@ -1208,10 +1248,19 @@ let%expect_test "[describe_mode]" =
     File-Name-Shadow minor mode (no indicator):
     Toggle file-name shadowing in minibuffers (File-Name Shadow mode).
 
-    If called interactively, enable File-Name-Shadow mode if ARG is
-    positive, and disable it if ARG is zero or negative.  If called from
-    Lisp, also enable the mode if ARG is omitted or nil, and toggle it if
-    ARG is `toggle'; disable the mode otherwise.
+    This is a minor mode.  If called interactively, toggle the
+    `File-Name-Shadow mode' mode.  If the prefix argument is positive,
+    enable the mode, and if it is zero or negative, disable the mode.
+
+    If called from Lisp, toggle the mode if ARG is `toggle'.  Enable the
+    mode if ARG is nil, omitted, or is a positive number.  Disable the
+    mode if ARG is a negative number.
+
+    To check whether the minor mode is enabled in the current buffer,
+    evaluate `(default-value 'file-name-shadow-mode)'.
+
+    The mode's hook is called both when the mode is enabled and when it is
+    disabled.
 
     File-Name Shadow mode is a global minor mode.  When enabled, any
     part of a filename being read in the minibuffer that would be
@@ -1224,43 +1273,119 @@ let%expect_test "[describe_mode]" =
     Global-Eldoc minor mode (no indicator):
     Toggle Eldoc mode in all buffers.
     With prefix ARG, enable Global Eldoc mode if ARG is positive;
-    otherwise, disable it.  If called from Lisp, enable the mode if
-    ARG is omitted or nil.
+    otherwise, disable it.
 
-    Eldoc mode is enabled in all buffers where
-    `turn-on-eldoc-mode' would do it.
+    If called from Lisp, toggle the mode if ARG is `toggle'.
+    Enable the mode if ARG is nil, omitted, or is a positive number.
+    Disable the mode if ARG is a negative number.
+
+    Eldoc mode is enabled in all buffers where `turn-on-eldoc-mode' would
+    do it.
+
     See `eldoc-mode' for more information on Eldoc mode.
+
+
+    Indent-Tabs minor mode (no indicator):
+    Toggle whether indentation can insert TAB characters.
+
+    This is a minor mode.  If called interactively, toggle the
+    `Indent-Tabs mode' mode.  If the prefix argument is positive, enable
+    the mode, and if it is zero or negative, disable the mode.
+
+    If called from Lisp, toggle the mode if ARG is `toggle'.  Enable the
+    mode if ARG is nil, omitted, or is a positive number.  Disable the
+    mode if ARG is a negative number.
+
+    To check whether the minor mode is enabled in the current buffer,
+    evaluate `indent-tabs-mode'.
+
+    The mode's hook is called both when the mode is enabled and when it is
+    disabled.
 
 
     Line-Number minor mode (no indicator):
     Toggle line number display in the mode line (Line Number mode).
 
-    If called interactively, enable Line-Number mode if ARG is positive,
-    and disable it if ARG is zero or negative.  If called from Lisp, also
-    enable the mode if ARG is omitted or nil, and toggle it if ARG is
-    `toggle'; disable the mode otherwise.
+    This is a minor mode.  If called interactively, toggle the
+    `Line-Number mode' mode.  If the prefix argument is positive, enable
+    the mode, and if it is zero or negative, disable the mode.
+
+    If called from Lisp, toggle the mode if ARG is `toggle'.  Enable the
+    mode if ARG is nil, omitted, or is a positive number.  Disable the
+    mode if ARG is a negative number.
+
+    To check whether the minor mode is enabled in the current buffer,
+    evaluate `(default-value 'line-number-mode)'.
+
+    The mode's hook is called both when the mode is enabled and when it is
+    disabled.
 
     Line numbers do not appear for very large buffers and buffers
     with very long lines; see variables `line-number-display-limit'
     and `line-number-display-limit-width'.
 
+    See `mode-line-position-line-format' for how this number is
+    presented.
+
 
     Mouse-Wheel minor mode (no indicator):
     Toggle mouse wheel support (Mouse Wheel mode).
 
-    If called interactively, enable Mouse-Wheel mode if ARG is positive,
-    and disable it if ARG is zero or negative.  If called from Lisp, also
-    enable the mode if ARG is omitted or nil, and toggle it if ARG is
-    `toggle'; disable the mode otherwise.
+    This is a minor mode.  If called interactively, toggle the
+    `Mouse-Wheel mode' mode.  If the prefix argument is positive, enable
+    the mode, and if it is zero or negative, disable the mode.
+
+    If called from Lisp, toggle the mode if ARG is `toggle'.  Enable the
+    mode if ARG is nil, omitted, or is a positive number.  Disable the
+    mode if ARG is a negative number.
+
+    To check whether the minor mode is enabled in the current buffer,
+    evaluate `(default-value 'mouse-wheel-mode)'.
+
+    The mode's hook is called both when the mode is enabled and when it is
+    disabled.
+
+
+    Show-Paren minor mode (no indicator):
+    Toggle visualization of matching parens (Show Paren mode).
+
+    This is a minor mode.  If called interactively, toggle the `Show-Paren
+    mode' mode.  If the prefix argument is positive, enable the mode, and
+    if it is zero or negative, disable the mode.
+
+    If called from Lisp, toggle the mode if ARG is `toggle'.  Enable the
+    mode if ARG is nil, omitted, or is a positive number.  Disable the
+    mode if ARG is a negative number.
+
+    To check whether the minor mode is enabled in the current buffer,
+    evaluate `(default-value 'show-paren-mode)'.
+
+    The mode's hook is called both when the mode is enabled and when it is
+    disabled.
+
+    When enabled, any matching parenthesis is highlighted in `show-paren-style'
+    after `show-paren-delay' seconds of Emacs idle time.
+
+    This is a global minor mode.  To toggle the mode in a single buffer,
+    use `show-paren-local-mode'.
 
 
     Tooltip minor mode (no indicator):
     Toggle Tooltip mode.
 
-    If called interactively, enable Tooltip mode if ARG is positive, and
-    disable it if ARG is zero or negative.  If called from Lisp, also
-    enable the mode if ARG is omitted or nil, and toggle it if ARG is
-    `toggle'; disable the mode otherwise.
+    This is a minor mode.  If called interactively, toggle the `Tooltip
+    mode' mode.  If the prefix argument is positive, enable the mode, and
+    if it is zero or negative, disable the mode.
+
+    If called from Lisp, toggle the mode if ARG is `toggle'.  Enable the
+    mode if ARG is nil, omitted, or is a positive number.  Disable the
+    mode if ARG is a negative number.
+
+    To check whether the minor mode is enabled in the current buffer,
+    evaluate `(default-value 'tooltip-mode)'.
+
+    The mode's hook is called both when the mode is enabled and when it is
+    disabled.
 
     When this global minor mode is enabled, Emacs displays help
     text (e.g. for buttons and menu items that you put the mouse on)
@@ -1273,10 +1398,19 @@ let%expect_test "[describe_mode]" =
     Transient-Mark minor mode (no indicator):
     Toggle Transient Mark mode.
 
-    If called interactively, enable Transient-Mark mode if ARG is
-    positive, and disable it if ARG is zero or negative.  If called from
-    Lisp, also enable the mode if ARG is omitted or nil, and toggle it if
-    ARG is `toggle'; disable the mode otherwise.
+    This is a minor mode.  If called interactively, toggle the
+    `Transient-Mark mode' mode.  If the prefix argument is positive,
+    enable the mode, and if it is zero or negative, disable the mode.
+
+    If called from Lisp, toggle the mode if ARG is `toggle'.  Enable the
+    mode if ARG is nil, omitted, or is a positive number.  Disable the
+    mode if ARG is a negative number.
+
+    To check whether the minor mode is enabled in the current buffer,
+    evaluate `(default-value 'transient-mark-mode)'.
+
+    The mode's hook is called both when the mode is enabled and when it is
+    disabled.
 
     Transient Mark mode is a global minor mode.  When enabled, the
     region is highlighted with the `region' face whenever the mark

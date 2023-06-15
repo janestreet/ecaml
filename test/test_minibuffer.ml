@@ -17,7 +17,7 @@ let%expect_test "[y_or_n]" =
   let%bind () = show_raise_async (fun () -> test "z") in
   [%expect
     {|
-    (y or n) Please answer y or n.  (y or n) (raised ("Error reading from stdin")) |}];
+    (y or n) Please answer y or n.  (y or n) (raised (end-of-file ("Error reading from stdin"))) |}];
   return ()
 ;;
 
@@ -37,7 +37,7 @@ let%expect_test "[y_or_n_with_timeout]" =
   let%bind () = show_raise_async (fun () -> test "z") in
   [%expect
     {|
-    (y or n) Please answer y or n.  (y or n) (raised ("Error reading from stdin")) |}];
+    (y or n) Please answer y or n.  (y or n) (raised (end-of-file ("Error reading from stdin"))) |}];
   return ()
 ;;
 
@@ -72,7 +72,7 @@ let%expect_test "[exit_hook]" =
     {|
     ((symbol    minibuffer-exit-hook)
      (hook_type Normal_hook)
-     (value (()))) |}];
+     (value ((minibuffer-restore-windows)))) |}];
   return ()
 ;;
 

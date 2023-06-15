@@ -18,13 +18,26 @@ let run_at_time =
   Funcall.Wrap.("run-at-time" <: float @-> nil_or float @-> Symbol.t @-> return t)
 ;;
 
-let run_after ?repeat here span ~f ~name ~docstring =
-  Defun.defun_nullary_nil name here ~docstring f;
-  run_at_time (span |> to_seconds) (repeat |> Option.map ~f:to_seconds) name
+let run_with_idle_timer =
+  Funcall.Wrap.("run-with-idle-timer" <: float @-> nil_or float @-> Symbol.t @-> return t)
 ;;
+
+let run_with_timer ~idle ?repeat here span ~f ~name ~docstring =
+  Defun.defun_nullary_nil name here ~docstring f;
+  let make_timer = if idle then run_with_idle_timer else run_at_time in
+  make_timer (span |> to_seconds) (repeat |> Option.map ~f:to_seconds) name
+;;
+
+let run_after = run_with_timer ~idle:false
 
 let run_after_i ?repeat here span ~f ~name ~docstring =
   ignore (run_after here ?repeat span ~f ~name ~docstring : t)
+;;
+
+let run_after_idle = run_with_timer ~idle:true
+
+let run_after_idle_i ?repeat here span ~f ~name ~docstring =
+  ignore (run_after_idle here ?repeat span ~f ~name ~docstring : t)
 ;;
 
 let cancel = Funcall.Wrap.("cancel-timer" <: t @-> return nil)

@@ -43,8 +43,12 @@ let%expect_test "[all_provided]" =
  base64
  bookmark
  button
+ byte-compile
+ byte-opt
+ bytecomp
  cairo
  case-table
+ cconv
  cham
  charprop
  charscript
@@ -71,12 +75,12 @@ let%expect_test "[all_provided]" =
  electric
  elisp-mode
  emacs
+ emoji-zwj
  env
  epa-hook
  ethiopic
  eucjp-ms
  european
- facemenu
  faces
  files
  find-func
@@ -90,6 +94,7 @@ let%expect_test "[all_provided]" =
  fringe
  georgian
  greek
+ gv
  hashtable-print-readable
  hebrew
  help
@@ -97,6 +102,7 @@ let%expect_test "[all_provided]" =
  indian
  inotify
  isearch
+ iso-transl
  japanese
  jit-lock
  jka-cmpr-hook
@@ -121,6 +127,7 @@ let%expect_test "[all_provided]" =
  obarray
  overlay
  page
+ paren
  pp
  prog-mode
  regexp-opt
@@ -130,6 +137,7 @@ let%expect_test "[all_provided]" =
  romanian
  scroll-bar
  select
+ seq
  sha1
  simple
  slovak
@@ -146,7 +154,6 @@ let%expect_test "[all_provided]" =
  text-properties
  text-property-search
  thai
- thingatpt
  threads
  tibetan
  timer
@@ -157,6 +164,7 @@ let%expect_test "[all_provided]" =
  vc-hooks
  vietnamese
  widget
+ window
  x
  x-dnd
  x-toolkit

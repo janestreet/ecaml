@@ -9,7 +9,7 @@ let%expect_test "[iter], [standard]" =
   (* We ignore the last two digits of the length to reduce noise. *)
   print_s [%sexp (List.length !all / 100 * 100 : int)];
   [%expect {|
-    16_600 |}];
+    17_600 |}];
   print_s
     [%sexp
       (!all |> List.sort ~compare:String.compare |> fun l -> List.take l 100
@@ -19,16 +19,20 @@ let%expect_test "[iter], [standard]" =
     (%
      &context
      &define
+     &interpose
      &key
+     &name
      &optional
      &or
      &rest
+     "(setf seq-elt)"
      *
      **
      +
      ,
      ,@
      -
+     --displaying-byte-compile-warnings-fn
      --dolist-tail--
      --dotimes-counter--
      --dotimes-limit--
@@ -37,9 +41,14 @@ let%expect_test "[iter], [standard]" =
      ...
      /
      /=
+     0-1
      1+
      1-
+     1-2
+     1-3
      1value
+     2-3
+     2-and
      2C-associate-buffer
      2C-command
      2C-split
@@ -60,6 +69,7 @@ let%expect_test "[iter], [standard]" =
      :active
      :adstyle
      :advertised-binding
+     :affixation-function
      :after
      :after-hook
      :after-until
@@ -68,6 +78,8 @@ let%expect_test "[iter], [standard]" =
      :all
      :allow-other-keys
      :animate-buffer
+     :animate-multi-frame-data
+     :animate-tardiness
      :annotation-function
      :antialias
      :append
@@ -83,6 +95,7 @@ let%expect_test "[iter], [standard]" =
      :avgwidth
      :background
      :base
+     :base-uri
      :before
      :before-until
      :before-while
@@ -96,25 +109,12 @@ let%expect_test "[iter], [standard]" =
      :buffer
      :button
      :byte
+     :byte-func
      :bytesize
+     :c-name
+     :captured+mutated
      :case-fixed
      :category
-     :ccl-decoder
-     :ccl-encoder
-     :charset-list
-     :cipher-aead-capable
-     :cipher-blocksize
-     :cipher-id
-     :cipher-ivsize
-     :cipher-keysize
-     :cipher-tagsize
-     :cl--generic--under-construction
-     :code-offset
-     :code-space
-     :coding
-     :coding-type
-     :color
-     :color-adjustment
-     :color-symbols) |}];
+     :ccl-decoder) |}];
   return ()
 ;;

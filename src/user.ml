@@ -37,3 +37,5 @@ Test the [Ecaml.User] module by showing the output of some of its functions.
              (system_user_names () : string list)
              (system_group_names () : string list)])
 ;;
+
+let init_file = Var.Wrap.("user-init-file" <: nil_or Ecaml_filename.Filename.t)

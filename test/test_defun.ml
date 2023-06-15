@@ -230,8 +230,9 @@ let%expect_test "[defalias]" =
 
     (f &rest NUMBERS-OR-MARKERS)
 
-      Probably introduced at or before Emacs version 1.6.
+    Return sum of any number of arguments, which are numbers or markers.
 
-    Return sum of any number of arguments, which are numbers or markers. |}];
+      Probably introduced at or before Emacs version 1.6.
+      This function does not change global state, including the match data. |}];
   return ()
 ;;

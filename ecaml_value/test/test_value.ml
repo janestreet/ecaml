@@ -44,7 +44,7 @@ let%expect_test "[sexp_of_t] on a hash table respects [Print.length]" =
   test 1;
   [%expect
     {|
-      "#s(hash-table size 65 test eql rehash-size 1.5 rehash-threshold 0.8125 data (1 1 ...))" |}];
+      "#s(hash-table size 65 test eql rehash-size 1.5 rehash-threshold 0.8125 data (1 1))" |}];
   test 20;
   [%expect
     {|

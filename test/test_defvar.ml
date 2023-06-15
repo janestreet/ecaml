@@ -55,10 +55,9 @@ let%expect_test "[defvaralias]" =
     {|
     x's value is 13
 
-      Probably introduced at or before Emacs version 1.4.
+    some text
 
-    Documentation:
-    some text |}];
+      Probably introduced at or before Emacs version 1.4. |}];
   let y1 = "y1" |> Symbol.intern in
   defvaralias y1 [%here] ~alias_of:x ();
   print_endline (Help.describe_variable_text y1);
@@ -66,11 +65,10 @@ let%expect_test "[defvaralias]" =
     {|
     y1's value is 13
 
-      This variable is an alias for `x'.
-      Probably introduced at or before Emacs version 22.1.
+    some text
 
-    Documentation:
-    some text |}];
+      This variable is an alias for `x'.
+      Probably introduced at or before Emacs version 22.1. |}];
   let y2 = "y2" |> Symbol.intern in
   defvaralias y2 [%here] ~alias_of:x ~docstring:"some other text" ();
   print_endline (Help.describe_variable_text y2);
@@ -78,10 +76,9 @@ let%expect_test "[defvaralias]" =
     {|
     y2's value is 13
 
-      This variable is an alias for `x'.
+    some other text
 
-    Documentation:
-    some other text |}];
+      This variable is an alias for `x'. |}];
   return ()
 ;;
 
@@ -99,12 +96,11 @@ let%expect_test "[define_obsolete_alias]" =
     {|
     x's value is 13
 
+    some docs
+
       This variable is an alias for `y'.
       This variable is obsolete since then;
       use `y' instead.
-      Probably introduced at or before Emacs version 1.4.
-
-    Documentation:
-    some docs |}];
+      Probably introduced at or before Emacs version 1.4. |}];
   return ()
 ;;

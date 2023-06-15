@@ -54,10 +54,10 @@ let%expect_test "accessors" =
         ~pixel_width:(pixel_height t : int)];
   [%expect
     {|
-    ((num_cols     10)
-     (num_rows     9)
-     (pixel_height 10)
-     (pixel_width  10)) |}];
+    ((num_cols     80)
+     (num_rows     25)
+     (pixel_height 25)
+     (pixel_width  25)) |}];
   return ()
 ;;
 
@@ -71,17 +71,18 @@ let%expect_test "accessors" =
       (menu-bar-lines     1)
       (buried-buffer-list nil)
       (buffer-list ("#<buffer *scratch*>"))
-      (unsplittable     nil)
-      (modeline         t)
-      (width            10)
-      (height           9)
-      (name             F1)
-      (font             tty)
-      (background-color unspecified-bg)
-      (foreground-color unspecified-fg)
-      (cursor-color     white)
-      (background-mode  dark)
-      (display-type     mono)
-      (minibuffer       t))) |}];
+      (unsplittable          nil)
+      (modeline              t)
+      (width                 80)
+      (height                25)
+      (name                  F1)
+      (font                  tty)
+      (background-color      unspecified-bg)
+      (foreground-color      unspecified-fg)
+      (scroll-bar-foreground white)
+      (cursor-color          white)
+      (background-mode       dark)
+      (display-type          mono)
+      (minibuffer            t))) |}];
   return ()
 ;;

@@ -2,14 +2,13 @@ open! Core
 open! Import
 
 module Q = struct
+  let end_of_file = "end-of-file" |> Symbol.intern
   let eval = "eval" |> Symbol.intern
   let interactive = "interactive" |> Symbol.intern
   let lambda = "lambda" |> Symbol.intern
   let let_ = "let" |> Symbol.intern
   let progn = "progn" |> Symbol.intern
   let quote = "quote" |> Symbol.intern
-  let read_from_whole_string = "read-from-whole-string" |> Symbol.intern
-  let thingatpt = "thingatpt" |> Symbol.intern
 
   module A = struct
     let optional = "&optional" |> Symbol.intern
@@ -28,10 +27,37 @@ let symbol s = s |> Symbol.to_value |> of_value_exn
 let int i = i |> Value.of_int_exn |> of_value_exn
 
 let read =
-  Feature.require Q.thingatpt;
+  let read_from_string =
+    Funcall.Wrap.(
+      "read-from-string" <: string @-> nil_or int @-> return (tuple value int))
+  in
+  (* This implementation is cribbed from [thingatpt.el]'s [read-from-whole-string].  That
+     function was originally exported, but is actually an internal thingatpt function and
+     is now obsolete. *)
   fun string ->
-    Symbol.funcall1 Q.read_from_whole_string (string |> Value.of_utf8_bytes)
-    |> of_value_exn
+    let value, end_of_first_read = read_from_string string None in
+    match read_from_string string (Some end_of_first_read) with
+    | exception Value.For_testing.Elisp_signal { symbol; data = _ }
+      when Value.eq symbol (Symbol.to_value Q.end_of_file) ->
+      (* Unfortunately, we can't distinguish between these two reasons for the second read
+         signaling end-of-error:
+
+         1. There's nothing after the first form.
+         2. There's an unbalanced opening delimiter after the first form.
+
+         E.g., [(read-from-string "")] and [(read-from-string "(")] do not produce
+         distinguishable results. *)
+      of_value_exn value
+    | exception exn ->
+      raise_s
+        [%message
+          "Raised while scanning for trailing data"
+            (string : string)
+            (end_of_first_read : int)
+            (exn : exn)]
+    | _ ->
+      raise_s
+        [%message "Trailing data in string" (string : string) (end_of_first_read : int)]
 ;;
 
 module Blocking = struct

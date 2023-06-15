@@ -24,3 +24,47 @@ let%expect_test "[eval_string]" =
   [%expect {| 3 |}];
   return ()
 ;;
+
+let test_read string =
+  let form = Form.read string in
+  print_s [%sexp (form : Form.t)]
+;;
+
+let%expect_test "[read]" =
+  test_read "(+ 1 2)";
+  [%expect {| (+ 1 2) |}];
+  return ()
+;;
+
+let%expect_test "[read] with invalid syntax" =
+  require_does_raise [%here] (fun () -> test_read ")");
+  [%expect {| (invalid-read-syntax (")")) |}];
+  return ()
+;;
+
+let%expect_test "[read] with trailing unclosed delimiter" =
+  test_read "(+ 1 2) (";
+  [%expect {| (+ 1 2) |}];
+  return ()
+;;
+
+let%expect_test "[read] with trailing garbage" =
+  require_does_raise [%here] (fun () -> test_read "(+ 1 2) a");
+  [%expect
+    {|
+    ("Trailing data in string"
+      (string            "(+ 1 2) a")
+      (end_of_first_read 7)) |}];
+  return ()
+;;
+
+let%expect_test "[read] with trailing invalid syntax" =
+  require_does_raise [%here] (fun () -> test_read "(+ 1 2)))");
+  [%expect
+    {|
+    ("Raised while scanning for trailing data"
+      (string            "(+ 1 2)))")
+      (end_of_first_read 7)
+      (exn (invalid-read-syntax (")")))) |}];
+  return ()
+;;

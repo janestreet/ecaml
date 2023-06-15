@@ -30,7 +30,8 @@ let save_sync save_function args f =
              ]))
      : Value.t);
   match !r with
-  | None -> assert false
+  | None ->
+    assert false
   | Some a -> a
 ;;
 

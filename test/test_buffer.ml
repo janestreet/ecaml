@@ -11,10 +11,7 @@ let%expect_test "[all_live]" =
   print_s [%sexp (all_live () : t list)];
   [%expect
     {|
-    ("#<buffer *scratch*>"
-     "#<buffer  *Minibuf-0*>"
-     "#<buffer *Messages*>"
-     "#<buffer  *code-conversion-work*>") |}];
+    ("#<buffer *scratch*>" "#<buffer  *Minibuf-0*>" "#<buffer *Messages*>") |}];
   return ()
 ;;
 
@@ -186,8 +183,10 @@ let%expect_test "[buffer_local_variables]" =
        (buffer-invisibility-spec     (_))
        (buffer-read-only             (_))
        (buffer-saved-size            (_))
+       (buffer-undo-list             (_))
        (default-directory            (_))
        (enable-multibyte-characters  (_))
+       (local-minor-modes            (_))
        (major-mode                   (_))
        (mark-active                  (_))
        (mode-name                    (_))
@@ -207,8 +206,10 @@ let%expect_test "[buffer_local_variables]" =
        (buffer-invisibility-spec     (_))
        (buffer-read-only             (_))
        (buffer-saved-size            (_))
+       (buffer-undo-list             (_))
        (default-directory            (_))
        (enable-multibyte-characters  (_))
+       (local-minor-modes            (_))
        (major-mode                   (_))
        (mark-active                  (_))
        (mode-name                    (_))
