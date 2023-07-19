@@ -429,11 +429,7 @@ let unibyte_of_string = wrap_raise1 unibyte_of_string
    That's what string-as-multibyte does when passed a unibyte string.
 *)
 let of_utf8_bytes s = funcall1 Q.string_as_multibyte (unibyte_of_string s)
-let of_utf8_bytes_cache = Hashtbl.create (module String)
-
-let of_utf8_bytes_cached string =
-  Hashtbl.find_or_add of_utf8_bytes_cache string ~default:(fun () -> of_utf8_bytes string)
-;;
+let of_utf8_bytes_cached = Memo.general ~hashable:String.hashable of_utf8_bytes
 
 external to_utf8_bytes_exn : t -> string = "ecaml_to_string"
 

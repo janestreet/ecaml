@@ -47,8 +47,16 @@ end
 
 type 'record t
 
-(** Raises unless the major mode derives from [Tabulated_list_mode.major_mode]. *)
-val create : Major_mode.t -> 'record Column.t list -> 'record t
+(** Raises unless the major mode derives from [Tabulated_list_mode.major_mode].
+
+    [get_id] is used to extract an ID value from each row.  This ID is used to, among
+    other things, preserve the position of point on a given row when the list is
+    redrawn.  The ID string must not be empty, due to implementation constraints. *)
+val create
+  :  Major_mode.t
+  -> 'record Column.t list
+  -> get_id:('record -> string)
+  -> 'record t
 
 val keymap : _ t -> Keymap.t
 val major_mode : _ t -> Major_mode.t

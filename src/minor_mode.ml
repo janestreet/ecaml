@@ -110,6 +110,12 @@ let define_minor_mode
                 |> Function.to_value)
            ]
        ]);
+  Load_history.add_entry here (Fun name);
+  Load_history.add_entry here (Var (Var.symbol keymap_var));
+  List.iter [ "hook"; "on-hook"; "off-hook" ] ~f:(fun suffix ->
+    Load_history.add_entry
+      here
+      (Var (concat [ name |> Symbol.name; "-"; suffix ] |> Symbol.intern)));
   all_minor_modes := t :: !all_minor_modes;
   t
 ;;

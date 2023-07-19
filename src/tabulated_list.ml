@@ -294,7 +294,16 @@ type 'record t =
   { columns : 'record Column.t_internal list
   ; entries_var : 'record list Buffer_local.t
   ; major_mode : Major_mode.t
-  ; type_ : 'record Value.Type.t
+  ; original_record : 'record Text.Property_name.t
+  (* The original record is smuggled as a text property on the ID string of line.  The IDs
+     are compared with [equal], so including the original record as an opaque pointer in
+     the normal way (e.g., in a cons) would cause the "same" IDs to always be considered
+     not-equal.
+
+     There's no place allotted in [tabulated-list-entries] to store any extra data like
+     this.  The alternative would be to keep a buffer-local map variable in OCaml and look
+     up the original record by ID, but this solution has the nice property of not needing
+     [find_exn]. *)
   }
 [@@deriving fields]
 
@@ -350,7 +359,7 @@ let draw ?sort_by t rows =
 
 module Tabulated_list_mode = (val Major_mode.wrap_existing "tabulated-list-mode" [%here])
 
-let create major_mode (type a) (column_specs : a Column.t list) =
+let create major_mode (type a) (column_specs : a Column.t list) ~get_id =
   if not (Major_mode.is_derived major_mode ~from:Tabulated_list_mode.major_mode)
   then
     raise_s
@@ -361,14 +370,26 @@ let create major_mode (type a) (column_specs : a Column.t list) =
     Type_equal.Id.create ~name:(Current_buffer.name ()) [%sexp_of: _]
     |> Caml_embed.create_type
   in
+  let original_record =
+    Text.Property_name.Create.("tabulated-list-original-record" <: type_)
+  in
   let entry_type =
     let open Value.Type in
     map
-      (tuple type_ (tuple (vector Text.t) unit))
+      (tuple Text.t (tuple (vector Text.t) unit))
       ~name:[%message "tabulated-list-entries" ~_:(type_ : _ Value.Type.t)]
-      ~of_:fst
+      ~of_:(fun (id, _) ->
+        Text.property_value id original_record ~at:0
+        |> Option.value_exn
+             ~here:[%here]
+             ~message:"Tabulated list entry ID missing original record")
       ~to_:(fun record ->
-        ( record
+        let id = get_id record in
+        (* If the ID were empty, the text property would not be applied to any
+           characters. *)
+        if String.is_empty id
+        then raise_s [%message "Tabulated list entry ID is not allowed to be empty"];
+        ( Text.propertize (Text.of_utf8_bytes id) [ T (original_record, record) ]
         , ( List.map column_specs ~f:(fun spec -> Column.Spec.render_field spec record)
             |> Array.of_list
           , () ) ))
@@ -377,15 +398,16 @@ let create major_mode (type a) (column_specs : a Column.t list) =
     List.map column_specs ~f:(fun spec -> Column.create_internal spec entry_type)
   in
   let entries_var = Buffer_local.Wrap.("tabulated-list-entries" <: list entry_type) in
-  { columns; entries_var; major_mode; type_ }
+  { columns; entries_var; major_mode; original_record }
 ;;
 
 let tabulated_list_get_id =
-  Funcall.Wrap.("tabulated-list-get-id" <: nullary @-> return (nil_or value))
+  Funcall.Wrap.("tabulated-list-get-id" <: nullary @-> return (nil_or Text.t))
 ;;
 
 let get_record_at_point_exn t =
-  Option.map (tabulated_list_get_id ()) ~f:(Value.Type.of_value_exn t.type_)
+  let%bind.Option id = tabulated_list_get_id () in
+  Text.property_value id t.original_record ~at:0
 ;;
 
 let move_point_to_record t ~f =

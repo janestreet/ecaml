@@ -28,7 +28,7 @@ let t =
     ; Column.create ~header:"s3" ~align_right:true s3
     ]
   in
-  create M.major_mode format
+  create M.major_mode format ~get_id:s1
 ;;
 
 let entries =
@@ -110,6 +110,18 @@ let%expect_test "id at point" =
         (s1 a)
         (i2 2)
         (s3 z))) |}];
+    (* Point is preserved when list is redrawn. *)
+    let%bind () = draw_and_print entries in
+    [%expect {|
+      b    1   y
+      a    2   z
+      c    3   x |}];
+    print_s [%sexp (get_record_at_point_exn t : entry option)];
+    [%expect {|
+      ((
+        (s1 a)
+        (i2 2)
+        (s3 z))) |}];
     Point.goto_max ();
     print_s [%sexp (get_record_at_point_exn t : entry option)];
     [%expect {| () |}];
@@ -154,6 +166,7 @@ let%expect_test "generic sortable column" =
       [ Column.create ~align_right:true ~header:"idx" ~sortable:true (fst >> Int.to_string)
       ; Column.create ~header:"file" ~sortable:true snd
       ]
+      ~get_id:(fst >> Int.to_string)
   in
   let t_with_sort =
     create
@@ -179,6 +192,7 @@ let%expect_test "generic sortable column" =
                   >> Int.of_string))
           ()
       ]
+      ~get_id:(fst >> Int.to_string)
   in
   let data =
     [ 1; 2; 10; 11; 20 ] |> List.map ~f:(fun idx -> idx, sprintf "file%i.txt" idx)

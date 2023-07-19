@@ -76,6 +76,7 @@ module Point = Point
 module Position = Position
 module Print = Print
 module Process = Process
+module Progress_reporter = Progress_reporter
 module Regexp = Regexp
 module Rx = Rx
 module Selected_window = Selected_window
