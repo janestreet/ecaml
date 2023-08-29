@@ -7,7 +7,7 @@ type 'a t =
   { symbol : Symbol.t
   ; type_ : 'a Value.Type.t
   }
-[@@deriving fields]
+[@@deriving fields ~getters]
 
 let sexp_of_t _ { symbol; type_ } =
   [%message "" ~_:(symbol : Symbol.t) ~_:(type_ : _ Value.Type.t)]

@@ -126,7 +126,7 @@ module Programmed_completion = struct
       { annotation_function : (string -> string) option
       ; display_sort_function : (string list -> string list) option
       }
-    [@@deriving fields]
+    [@@deriving fields ~iterators:create ~direct_iterators:(exists, to_list)]
 
     let create = Fields.create
 

@@ -10,7 +10,7 @@ type entry =
   ; i2 : int
   ; s3 : string
   }
-[@@deriving fields, sexp_of]
+[@@deriving fields ~getters, sexp_of]
 
 module M =
   (val define_derived_mode

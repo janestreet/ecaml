@@ -20,7 +20,7 @@ type t =
   ; hook : Hook.normal Hook.t Or_error.t
   ; syntax_table_var : Syntax_table.t Var.t
   }
-[@@deriving fields, sexp_of]
+[@@deriving fields ~getters ~fields, sexp_of]
 
 let equal t1 t2 = Symbol.equal t1.symbol t2.symbol
 let compare_name t1 t2 = Symbol.compare_name t1.symbol t2.symbol

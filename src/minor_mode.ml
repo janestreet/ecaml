@@ -20,7 +20,7 @@ type t =
   { function_name : Symbol.t
   ; variable_name : Symbol.t
   }
-[@@deriving fields, sexp_of]
+[@@deriving fields ~getters, sexp_of]
 
 let create ?variable_name function_name =
   { function_name; variable_name = Option.value variable_name ~default:function_name }

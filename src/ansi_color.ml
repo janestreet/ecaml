@@ -237,7 +237,7 @@ Bright colors used to color escape sequences 90-97 (foreground) and 100-107 (bac
     ; faint : Color.t By_color_index.t
     ; faint_default_color : Color.t
     }
-  [@@deriving fields, sexp_of]
+  [@@deriving fields ~getters, sexp_of]
 
   (* The standard does not seem to specify how [rgb6_component] and [grayscale24] should
      work, but this is how most of the terminals do it.
@@ -448,7 +448,7 @@ end = struct
     ; reverse_video : bool
     ; underline : bool
     }
-  [@@deriving compare, fields, sexp_of, hash]
+  [@@deriving compare, fields ~iterators:fold, sexp_of, hash]
 
   let equal = [%compare.equal: t]
 
@@ -1009,7 +1009,7 @@ module Colorization_state = struct
       ; last_colorized : Marker.t
       ; state_machine : State_machine.t
       }
-    [@@deriving sexp_of, fields]
+    [@@deriving sexp_of, fields ~getters]
   end
 
   include T

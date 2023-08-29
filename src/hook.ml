@@ -7,7 +7,7 @@ module Function = struct
     { symbol : Symbol.t
     ; hook_type : 'a Hook_type.t
     }
-  [@@deriving fields, sexp_of]
+  [@@deriving sexp_of]
 
   let defun
         (type a b)

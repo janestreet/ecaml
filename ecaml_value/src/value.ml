@@ -693,7 +693,7 @@ module Type = struct
     ; of_value_exn : value -> 'a
     ; to_value : 'a -> value
     }
-  [@@deriving fields, sexp_of]
+  [@@deriving fields ~getters, sexp_of]
 
   type 'a t = ('a, sync) t_ [@@deriving sexp_of]
 

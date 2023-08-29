@@ -19,7 +19,7 @@ module type Var = sig
     { symbol : Symbol.t
     ; type_ : 'a Value.Type.t
     }
-  [@@deriving fields, sexp_of]
+  [@@deriving fields ~getters, sexp_of]
 
   type 'a var := 'a t
 

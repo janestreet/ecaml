@@ -127,7 +127,7 @@ module Column = struct
       { max_width : int option
       ; min_width : int
       }
-    [@@deriving compare, fields, sexp_of]
+    [@@deriving compare, fields ~iterators:create, sexp_of]
 
     let create = Fields.create
 
@@ -153,7 +153,7 @@ module Column = struct
       ; pad_right : int option
       ; header : string
       }
-    [@@deriving fields]
+    [@@deriving fields ~iterators:create]
 
     type 'record t = T : ('record, 'field) t_unpacked -> 'record t
 
@@ -187,7 +187,6 @@ module Column = struct
     { spec : 'record Spec.t
     ; format : Variable_width.t Format.t
     }
-  [@@deriving fields]
 
   let is_sortable t = Sortable.is_sortable t.format.sortable
   let render_field t v = Spec.render_field t.spec v
@@ -305,7 +304,7 @@ type 'record t =
      up the original record by ID, but this solution has the nice property of not needing
      [find_exn]. *)
   }
-[@@deriving fields]
+[@@deriving fields ~getters]
 
 let keymap t = Major_mode.keymap (major_mode t)
 

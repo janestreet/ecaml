@@ -208,7 +208,7 @@ module Property_name = struct
     { name : Symbol.t
     ; type_ : 'a Value.Type.t
     }
-  [@@deriving fields]
+  [@@deriving fields ~getters]
 
   type 'a property_name = 'a t
 

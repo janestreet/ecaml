@@ -40,7 +40,7 @@ type 'a t =
   { var : Function.t list Var.t
   ; hook_type : 'a Hook_type.t
   }
-[@@deriving fields]
+[@@deriving fields ~getters]
 
 let symbol t = t.var.symbol
 let value t = Current_buffer.value t.var

@@ -11,7 +11,7 @@ type t =
   { function_name : Symbol.t
   ; variable_name : Symbol.t
   }
-[@@deriving fields, sexp_of]
+[@@deriving fields ~getters, sexp_of]
 
 val create : ?variable_name:Symbol.t -> Symbol.t -> t
 
