@@ -45,9 +45,9 @@ let%expect_test "finalization of embedded ocaml values" =
     Ecaml.debug_embedded_caml_values ()
     |> [%of_sexp: (int * Sexp.t) list]
     |> List.filter_map ~f:(fun (_, sexp) ->
-      match sexp with
-      | Atom "<fun>" -> None
-      | _ -> Some sexp)
+         match sexp with
+         | Atom "<fun>" -> None
+         | _ -> Some sexp)
     |> [%sexp_of: Sexp.t list]
     |> print_s
   in
@@ -139,4 +139,3 @@ let%expect_test "Emacs objects no longer referenced from OCaml can be gc'ed by E
  *      (alive_after  false)) |}];
  *   return ()
  * ;; *)
-

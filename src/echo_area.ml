@@ -29,13 +29,13 @@ let message_text ?echo text =
 ;;
 
 let wrap_message
-      (type a b)
-      ?allow_in_background
-      ?echo
-      here
-      (sync_or_async : (a, b) Sync_or_async.t)
-      message
-      ~f
+  (type a b)
+  ?allow_in_background
+  ?echo
+  here
+  (sync_or_async : (a, b) Sync_or_async.t)
+  message
+  ~f
   =
   let message = concat [ message; " ... " ] in
   let returned_normally = ref false in

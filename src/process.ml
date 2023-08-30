@@ -41,25 +41,25 @@ module Status = struct
   include T
 
   include Valueable.Make (struct
-      type nonrec t = t
+    type nonrec t = t
 
-      let type_ =
-        Value.Type.enum
-          [%sexp "process-status"]
-          (module T)
-          (Symbol.to_value
-           << function
-             | Closed -> Q.closed
-             | Connect -> Q.connect
-             | Exit -> Q.exit_
-             | Failed -> Q.failed
-             | Listen -> Q.listen
-             | Open -> Q.open_
-             | Run -> Q.run
-             | Signal -> Q.signal
-             | Stop -> Q.stop)
-      ;;
-    end)
+    let type_ =
+      Value.Type.enum
+        [%sexp "process-status"]
+        (module T)
+        (Symbol.to_value
+         << function
+         | Closed -> Q.closed
+         | Connect -> Q.connect
+         | Exit -> Q.exit_
+         | Failed -> Q.failed
+         | Listen -> Q.listen
+         | Open -> Q.open_
+         | Run -> Q.run
+         | Signal -> Q.signal
+         | Stop -> Q.stop)
+    ;;
+  end)
 end
 
 let is_alive = Funcall.Wrap.("process-live-p" <: t @-> return bool)
@@ -247,13 +247,13 @@ module Call = struct
 end
 
 let call_region_exn
-      ?(input =
-        Call.Region_input.Region { start = Point.min (); end_ = Point.max (); delete = false })
-      ?(output = Call.Output.Dev_null)
-      ?(redisplay_on_output = false)
-      ?(working_directory = Working_directory.Root)
-      prog
-      args
+  ?(input =
+    Call.Region_input.Region { start = Point.min (); end_ = Point.max (); delete = false })
+  ?(output = Call.Output.Dev_null)
+  ?(redisplay_on_output = false)
+  ?(working_directory = Working_directory.Root)
+  prog
+  args
   =
   Working_directory.within working_directory Sync ~f:(fun () ->
     let start, end_, delete =
@@ -276,12 +276,12 @@ let call_region_exn
 ;;
 
 let call_result_exn
-      ?(input = Call.Input.Dev_null)
-      ?(output = Call.Output.Dev_null)
-      ?(redisplay_on_output = false)
-      ?(working_directory = Working_directory.Root)
-      prog
-      args
+  ?(input = Call.Input.Dev_null)
+  ?(output = Call.Output.Dev_null)
+  ?(redisplay_on_output = false)
+  ?(working_directory = Working_directory.Root)
+  prog
+  args
   =
   Working_directory.within working_directory Sync ~f:(fun () ->
     Symbol.funcallN
@@ -302,13 +302,13 @@ module Lines_or_sexp = struct
 end
 
 let call_exn
-      ?input
-      ?working_directory
-      ?(strip_whitespace = true)
-      ?(verbose_exn = true)
-      ~stderr
-      prog
-      args
+  ?input
+  ?working_directory
+  ?(strip_whitespace = true)
+  ?(verbose_exn = true)
+  ~stderr
+  prog
+  args
   =
   let strip_if_requested s = if strip_whitespace then String.strip s else s in
   Current_buffer.set_temporarily_to_temp_buffer Sync (fun () ->
@@ -354,12 +354,12 @@ let call_exn
 ;;
 
 let call_drop_stderr_if_ok_exn
-      ?input
-      ?working_directory
-      ?strip_whitespace
-      ?verbose_exn
-      prog
-      args
+  ?input
+  ?working_directory
+  ?strip_whitespace
+  ?verbose_exn
+  prog
+  args
   =
   File.with_temp_file Sync ~prefix:"emacs" ~suffix:"process-stderr" ~f:(fun stderr_file ->
     let result =
@@ -378,13 +378,13 @@ let call_drop_stderr_if_ok_exn
 ;;
 
 let call_exn
-      ?input
-      ?working_directory
-      ?strip_whitespace
-      ?verbose_exn
-      ?(stderr = `Mix)
-      prog
-      args
+  ?input
+  ?working_directory
+  ?strip_whitespace
+  ?verbose_exn
+  ?(stderr = `Mix)
+  prog
+  args
   =
   match stderr with
   | `Drop_if_ok ->
@@ -400,12 +400,12 @@ let call_exn
 ;;
 
 let call_expect_no_output_exn
-      ?input
-      ?working_directory
-      ?(strip_whitespace = false)
-      ?verbose_exn
-      prog
-      args
+  ?input
+  ?working_directory
+  ?(strip_whitespace = false)
+  ?verbose_exn
+  prog
+  args
   =
   let result =
     call_exn ?input ?working_directory ?verbose_exn ~strip_whitespace prog args
@@ -450,12 +450,12 @@ let set_process_sentinel =
 ;;
 
 let wrap_sentinel
-      (type a)
-      here
-      t
-      (returns : (unit, a) Defun.Returns.t)
-      ~(sentinel : event:string -> a)
-      ~event
+  (type a)
+  here
+  t
+  (returns : (unit, a) Defun.Returns.t)
+  ~(sentinel : event:string -> a)
+  ~event
   =
   let log_exn exn =
     message_s
@@ -468,8 +468,8 @@ let wrap_sentinel
   match returns with
   | Returns _ ->
     ((try sentinel ~event with
-       | exn -> log_exn exn)
-     : a)
+      | exn -> log_exn exn)
+      : a)
   | Returns_deferred _ ->
     (match%map Monitor.try_with ~extract_exn:true (fun () -> sentinel ~event) with
      | Ok () -> ()
@@ -477,11 +477,11 @@ let wrap_sentinel
 ;;
 
 let set_sentinel
-      (type a)
-      here
-      t
-      (returns : (unit, a) Defun.Returns.t)
-      ~(sentinel : event:string -> a)
+  (type a)
+  here
+  t
+  (returns : (unit, a) Defun.Returns.t)
+  ~(sentinel : event:string -> a)
   =
   let sentinel = wrap_sentinel here t returns ~sentinel in
   set_process_sentinel
@@ -496,11 +496,11 @@ let set_sentinel
 ;;
 
 let extend_sentinel
-      (type a)
-      here
-      t
-      (returns : (unit, a) Defun.Returns.t)
-      ~(sentinel : event:string -> a)
+  (type a)
+  here
+  t
+  (returns : (unit, a) Defun.Returns.t)
+  ~(sentinel : event:string -> a)
   =
   let sentinel = wrap_sentinel here t returns ~sentinel in
   let previous_sentinel = process_sentinel t in

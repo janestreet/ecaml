@@ -32,13 +32,13 @@ module Initial_input = struct
           | false -> None
           | exception _ -> None)
       ; (fun value ->
-           match Value.to_utf8_bytes_exn value with
-           | s -> Some (Point_at_end s)
-           | exception _ -> None)
+          match Value.to_utf8_bytes_exn value with
+          | s -> Some (Point_at_end s)
+          | exception _ -> None)
       ; (fun value ->
-           match Value.Type.(tuple string int |> of_value_exn) value with
-           | s, i -> Some (Point_at_pos (s, i))
-           | exception _ -> None)
+          match Value.Type.(tuple string int |> of_value_exn) value with
+          | s, i -> Some (Point_at_pos (s, i))
+          | exception _ -> None)
       ]
   ;;
 
@@ -103,22 +103,22 @@ module Programmed_completion = struct
     [@@deriving sexp_of]
 
     include Valueable.Make (struct
-        type nonrec t = t
+      type nonrec t = t
 
-        let type_ =
-          let metadata_value = Symbol.intern "metadata" |> Symbol.to_value in
-          Value.Type.create
-            [%message elisp_name]
-            [%sexp_of: t]
-            (fun value ->
-               match Value.equal value metadata_value with
-               | true -> Metadata
-               | false -> Other value)
-            (function
-              | Metadata -> metadata_value
-              | Other value -> value)
-        ;;
-      end)
+      let type_ =
+        let metadata_value = Symbol.intern "metadata" |> Symbol.to_value in
+        Value.Type.create
+          [%message elisp_name]
+          [%sexp_of: t]
+          (fun value ->
+            match Value.equal value metadata_value with
+            | true -> Metadata
+            | false -> Other value)
+          (function
+           | Metadata -> metadata_value
+           | Other value -> value)
+      ;;
+    end)
   end
 
   module Metadata = struct
@@ -235,13 +235,13 @@ let completing_read =
          @-> return string)
   in
   fun ~prompt
-    ~programmed_completion
-    ?(predicate = Value.nil)
-    ?(require_match = Require_match.default)
-    ?(initial_input = Initial_input.Empty)
-    ?default
-    ~history
-    () ->
+      ~programmed_completion
+      ?(predicate = Value.nil)
+      ?(require_match = Require_match.default)
+      ?(initial_input = Initial_input.Empty)
+      ?default
+      ~history
+      () ->
     Async_ecaml.Private.run_outside_async [%here] (fun () ->
       let prompt =
         match default with
@@ -259,15 +259,15 @@ let completing_read =
 ;;
 
 let read
-      ~prompt
-      ~collection
-      ?annotation_function
-      ?display_sort_function
-      ?require_match
-      ?initial_input
-      ?default
-      ~history
-      ()
+  ~prompt
+  ~collection
+  ?annotation_function
+  ?display_sort_function
+  ?require_match
+  ?initial_input
+  ?default
+  ~history
+  ()
   =
   completing_read
     ~prompt
@@ -284,14 +284,14 @@ let read
 ;;
 
 let read_map_key
-      ~prompt
-      ~collection
-      ?annotation_function
-      ?display_sort_function
-      ?initial_input
-      ?default
-      ~history
-      ()
+  ~prompt
+  ~collection
+  ?annotation_function
+  ?display_sort_function
+  ?initial_input
+  ?default
+  ~history
+  ()
   =
   let%bind choice =
     read
@@ -324,13 +324,13 @@ let read_multiple =
          @-> return (list string))
   in
   fun ~prompt
-    ~collection
-    ?(require_match = Require_match.False)
-    ?(separator_regexp = "[ \t]*,[ \t]*")
-    ?(initial_input = Initial_input.Empty)
-    ?default
-    ~history
-    () ->
+      ~collection
+      ?(require_match = Require_match.False)
+      ?(separator_regexp = "[ \t]*,[ \t]*")
+      ?(initial_input = Initial_input.Empty)
+      ?default
+      ~history
+      () ->
     Async_ecaml.Private.run_outside_async [%here] (fun () ->
       let predicate = Value.nil in
       let prompt =
@@ -343,24 +343,24 @@ let read_multiple =
         crm_separator
         separator_regexp
         ~f:(fun () ->
-          completing_read_multiple
-            prompt
-            (collection |> Collection.to_value)
-            predicate
-            require_match
-            initial_input
-            (Minibuffer.History.symbol history)
-            default))
+        completing_read_multiple
+          prompt
+          (collection |> Collection.to_value)
+          predicate
+          require_match
+          initial_input
+          (Minibuffer.History.symbol history)
+          default))
 ;;
 
 let read_multiple_map_keys
-      ~prompt
-      ~collection
-      ?separator_regexp
-      ?initial_input
-      ?default
-      ~history
-      ()
+  ~prompt
+  ~collection
+  ?separator_regexp
+  ?initial_input
+  ?default
+  ~history
+  ()
   =
   let%bind choices =
     read_multiple

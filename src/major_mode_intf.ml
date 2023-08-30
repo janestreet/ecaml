@@ -53,8 +53,8 @@ module type Major_mode = sig
   end
 
   include module type of Intf (struct
-      type nonrec t = t
-    end)
+    type nonrec t = t
+  end)
 
   (** Accessors *)
 

@@ -354,10 +354,10 @@ let%expect_test "[to_utf8_bytes_exn] raise" =
 
 module Make_subtype = struct
   module Non_nil = Make_subtype (struct
-      let name = "non-nil"
-      let here = [%here]
-      let is_in_subtype = is_not_nil
-    end)
+    let name = "non-nil"
+    let here = [%here]
+    let is_in_subtype = is_not_nil
+  end)
 
   open Non_nil
 
@@ -526,7 +526,7 @@ let%expect_test "Elisp throw translated into OCaml and back" =
         print_s
           [%sexp
             "Inner Ecaml function caught exception, reraising"
-          , (sexp_of_throw exn : Sexp.t)];
+            , (sexp_of_throw exn : Sexp.t)];
         (* Raising the throw back to elisp and catching it below checks that throws are
            translated from ecaml to elisp correctly. *)
         raise exn)
@@ -579,11 +579,11 @@ let%expect_test "rendering OCaml exceptions in Emacs and Ocaml" =
         (Debugger.debug_on_error |> Customization.var)
         debug_on_error
         ~f:(fun () ->
-          ignore
-            (Value.funcall1
-               ("(lambda (f) (funcall f))" |> Form.Blocking.eval_string)
-               (lambda_nullary_nil [%here] (fun () -> raise_s message) |> Function.to_value)
-             : Value.t));
+        ignore
+          (Value.funcall1
+             ("(lambda (f) (funcall f))" |> Form.Blocking.eval_string)
+             (lambda_nullary_nil [%here] (fun () -> raise_s message) |> Function.to_value)
+            : Value.t));
       assert false
     with
     | exn ->

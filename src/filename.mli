@@ -53,7 +53,6 @@ val is_absolute : t -> bool
     [(Info-goto-node "(elisp)Relative File Names")] *)
 val make_relative : t -> relative_to:t -> t
 
-
 (** [(describe-function 'expand-file-name)]
     [(Info-goto-node "(elisp)File Name Expansion")] *)
 val expand : t -> in_dir:t -> t

@@ -6,15 +6,15 @@ module F0 = struct
 end
 
 include Value.Make_subtype (struct
-    let name = "time"
-    let here = [%here]
+  let name = "time"
+  let here = [%here]
 
-    let is_in_subtype value =
-      match F0.float_time value with
-      | exception _ -> false
-      | (_ : float) -> true
-    ;;
-  end)
+  let is_in_subtype value =
+    match F0.float_time value with
+    | exception _ -> false
+    | (_ : float) -> true
+  ;;
+end)
 
 let t = type_
 

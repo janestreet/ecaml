@@ -18,14 +18,14 @@ let%expect_test "mutual recursion between Emacs and OCaml" =
         1 + Value.to_int_exn (Value.funcall1 v (i - 1 |> Value.of_int_exn)))
   in
   r
-  := Some
-       (Function.to_value
-          (lambda
-             [%here]
-             (Returns Value.Type.int)
-             (let%map_open.Defun () = return ()
-              and i = required "int" int in
-              loop i)));
+    := Some
+         (Function.to_value
+            (lambda
+               [%here]
+               (Returns Value.Type.int)
+               (let%map_open.Defun () = return ()
+                and i = required "int" int in
+                loop i)));
   print_s [%message "result" ~_:(loop 5 : int)];
   [%expect {|
     (i 5)
@@ -130,12 +130,12 @@ let%expect_test "raising from OCaml to OCaml through many layers of Emacs" =
     (Debugger.debug_on_error |> Customization.var)
     true
     ~f:(fun () ->
-      let show_errors = false in
-      match show_errors with
-      | true ->
-        Ref.set_temporarily Backtrace.elide false ~f:(fun () ->
-          require_does_raise ~show_backtrace:true [%here] (fun () -> loop 1))
-      | false -> require_does_raise [%here] (fun () -> loop 1));
+    let show_errors = false in
+    match show_errors with
+    | true ->
+      Ref.set_temporarily Backtrace.elide false ~f:(fun () ->
+        require_does_raise ~show_backtrace:true [%here] (fun () -> loop 1))
+    | false -> require_does_raise [%here] (fun () -> loop 1));
   [%expect
     {|
     (((foo bar baz) (backtrace ("<backtrace elided in test>")))

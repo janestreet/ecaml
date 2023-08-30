@@ -129,11 +129,11 @@ module type Subtype = sig
 end
 
 module Make_subtype (Arg : sig
-    type t [@@deriving enumerate, sexp_of]
+  type t [@@deriving enumerate, sexp_of]
 
-    val module_name : string
-    val to_symbol : t -> symbol
-  end) : Subtype with type t := Arg.t
+  val module_name : string
+  val to_symbol : t -> symbol
+end) : Subtype with type t := Arg.t
 
 module Compare_name : sig
   type t = symbol [@@deriving compare, sexp_of]

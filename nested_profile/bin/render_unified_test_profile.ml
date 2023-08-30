@@ -32,18 +32,18 @@ let process_lines lines ~test_name =
       Sync
       (lazy [%sexp (test_name : string)])
       (fun () ->
-         List.fold lines ~init:None ~f:(fun last_line line ->
-           let line = Line.parse line in
-           match last_line with
-           | None -> Some line
-           | Some last_line ->
-             profile
-               Sync
-               (lazy [%sexp (last_line.command : string)])
-               (fun () ->
-                  let diff = Time_ns.diff line.timestamp last_line.timestamp in
-                  Profile.Private.Clock.advance clock ~by:diff);
-             Some line))
+        List.fold lines ~init:None ~f:(fun last_line line ->
+          let line = Line.parse line in
+          match last_line with
+          | None -> Some line
+          | Some last_line ->
+            profile
+              Sync
+              (lazy [%sexp (last_line.command : string)])
+              (fun () ->
+                let diff = Time_ns.diff line.timestamp last_line.timestamp in
+                Profile.Private.Clock.advance clock ~by:diff);
+            Some line))
   in
   ()
 ;;
@@ -71,12 +71,11 @@ and output a Nested_profile representation.
        Profile.hide_top_level_if_less_than := Time_ns.Span.zero;
        Profile.never_show_rendering_took := true;
        (Profile.output_profile
-        := fun str ->
-          Out_channel.with_file output_file ~f:(fun ch ->
-            Out_channel.output_string ch str));
+          := fun str ->
+               Out_channel.with_file output_file ~f:(fun ch ->
+                 Out_channel.output_string ch str));
        Reader.file_lines file >>| process_lines ~test_name)
     ~behave_nicely_in_pipeline:false
 ;;
-
 
 let () = Command_unix.run command

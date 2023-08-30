@@ -17,7 +17,7 @@ let create elisp_name =
         Obarray.iter Obarray.standard ~f:(fun symbol ->
           let name = Symbol.name symbol in
           if Value.is_command (symbol |> Symbol.to_value)
-          && String.is_prefix ~prefix:symbol_prefix name
+             && String.is_prefix ~prefix:symbol_prefix name
           then result := symbol :: !result);
         List.sort !result ~compare:(fun a b ->
           Comparable.lift [%compare: string] ~f:Symbol.name a b))

@@ -11,8 +11,8 @@ open! Import
 let omit_args_for_determinism backtrace =
   Parsexp.Many.parse_string_exn backtrace
   |> List.filter_map ~f:(function
-    | List _ -> None
-    | Atom s -> Some s)
+       | List _ -> None
+       | Atom s -> Some s)
   |> String.concat ~sep:"\n"
 ;;
 

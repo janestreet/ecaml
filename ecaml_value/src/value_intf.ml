@@ -348,7 +348,7 @@ module type Value = sig
       type t =
         { f :
             'a.
-              Source_code_position.t
+            Source_code_position.t
             -> ?context:Sexp.t Lazy.t
             -> (unit -> 'a Deferred.t)
             -> 'a
@@ -374,7 +374,7 @@ module type Value = sig
       type t =
         { f :
             'a.
-              Source_code_position.t
+            Source_code_position.t
             -> ?allowed_in_background:bool
             -> (unit -> 'a)
             -> 'a Deferred.t

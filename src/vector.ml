@@ -8,10 +8,10 @@ module Q = struct
 end
 
 include Value.Make_subtype (struct
-    let name = "vector"
-    let here = [%here]
-    let is_in_subtype = Value.is_vector
-  end)
+  let name = "vector"
+  let here = [%here]
+  let is_in_subtype = Value.is_vector
+end)
 
 let make_vector = Funcall.Wrap.("make-vector" <: int @-> value @-> return t)
 let create ~len value = make_vector len value
@@ -53,11 +53,11 @@ let type_ (type a) (type_ : a Value.Type.t) =
     (sexp_of_array (Value.Type.to_sexp type_))
     (fun v -> v |> of_value_exn |> to_array ~f:(Value.Type.of_value_exn type_))
     (fun a ->
-       a
-       |> Array.map ~f:(Value.Type.to_value type_)
-       |> Array.to_list
-       |> of_list
-       |> to_value)
+      a
+      |> Array.map ~f:(Value.Type.to_value type_)
+      |> Array.to_list
+      |> of_list
+      |> to_value)
 ;;
 
 let t = type_

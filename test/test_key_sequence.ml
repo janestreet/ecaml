@@ -15,7 +15,7 @@ let%expect_test "[create_exn]" =
     ; "C-<down-mouse-3>"
     ]
     ~f:(fun string ->
-      print_s [%message "" ~_:(string : string) ~_:(create_exn string : t)]);
+    print_s [%message "" ~_:(string : string) ~_:(create_exn string : t)]);
   [%expect
     {|
     ("" "")

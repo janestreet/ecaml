@@ -741,9 +741,9 @@ let%expect_test "customization to disable rendering invalid escape sequences" =
     (Ansi_color.show_invalid_escapes |> Customization.var)
     false
     ~f:(fun () ->
-      List.iter
-        [ "\027"; "\027["; "\027[foo"; "\027[31foo"; "\027Жm"; "\027[K" ]
-        ~f:(fun input -> print_s [%message "" input ~_:(color_string input : Text.t)]));
+    List.iter
+      [ "\027"; "\027["; "\027[foo"; "\027[31foo"; "\027Жm"; "\027[K" ]
+      ~f:(fun input -> print_s [%message "" input ~_:(color_string input : Text.t)]));
   [%expect
     {|
     ("\027" "\027")
@@ -759,8 +759,8 @@ let%expect_test "drop unsupported escape sequences" =
   List.iter
     [ "\027"; "\027["; "\027[foo"; "\027[31foo"; "\027Жm"; "\027[K" ]
     ~f:(fun input ->
-      print_s
-        [%message "" input ~_:(color_string ~drop_unsupported_escapes:true input : Text.t)]);
+    print_s
+      [%message "" input ~_:(color_string ~drop_unsupported_escapes:true input : Text.t)]);
   [%expect
     {|
     ("\027" "<incomplete ANSI escape sequence \"\\027\">")
@@ -781,19 +781,19 @@ let%expect_test "color region incrementally" =
         (Ansi_color.show_invalid_escapes |> Customization.var)
         false
         ~f:(fun () ->
-          let rec loop s =
-            if String.length s > 0
-            then (
-              let prefix = String.prefix s chunk_size in
-              let rest = String.drop_prefix s chunk_size in
-              let start = Point.get () in
-              Point.insert prefix;
-              let end_ = Point.get () in
-              color_region_in_current_buffer ~start ~end_ ~preserve_state ();
-              loop rest)
-          in
-          loop input_string;
-          Current_buffer.contents ~text_properties:true ()))
+        let rec loop s =
+          if String.length s > 0
+          then (
+            let prefix = String.prefix s chunk_size in
+            let rest = String.drop_prefix s chunk_size in
+            let start = Point.get () in
+            Point.insert prefix;
+            let end_ = Point.get () in
+            color_region_in_current_buffer ~start ~end_ ~preserve_state ();
+            loop rest)
+        in
+        loop input_string;
+        Current_buffer.contents ~text_properties:true ()))
   in
   let input = concat [ escape [ 31; 42 ]; "foo"; escape [ 0 ]; "bar" ] in
   show (color_incrementally input ~preserve_state:false ~chunk_size:1);
@@ -833,7 +833,7 @@ let%expect_test "color region incrementally" =
   let outputs input =
     List.range ~start:`inclusive 1 ~stop:`inclusive (String.length input)
     |> List.map ~f:(fun chunk_size ->
-      color_incrementally input ~preserve_state:true ~chunk_size |> Text.to_utf8_bytes)
+         color_incrementally input ~preserve_state:true ~chunk_size |> Text.to_utf8_bytes)
     |> List.dedup_and_sort ~compare:String.compare
     |> fun o -> print_s [%sexp (o : string list)]
   in
@@ -1162,8 +1162,8 @@ let%expect_test "colors" =
     List.iter
       [ color; bright_color; background_color; bright_background_color ]
       ~f:(fun color ->
-        test ~show_input:false (sprintf "%scolor %d" (escape [ color ]) color);
-        test ~show_input:false (sprintf "%scolor %d with faint" (escape [ color; 2 ]) color)));
+      test ~show_input:false (sprintf "%scolor %d" (escape [ color ]) color);
+      test ~show_input:false (sprintf "%scolor %d with faint" (escape [ color; 2 ]) color)));
   [%expect
     {|
     (Ok (

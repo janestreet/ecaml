@@ -160,15 +160,15 @@ module Column = struct
     let render_field (T t) record = record |> t.get_field |> t.render_field
 
     let create
-          ~get_field
-          ~render_field
-          ~sortable
-          ?align_right
-          ?max_width
-          ?min_width
-          ?pad_right
-          ~header
-          ()
+      ~get_field
+      ~render_field
+      ~sortable
+      ?align_right
+      ?max_width
+      ?min_width
+      ?pad_right
+      ~header
+      ()
       =
       Fields_of_t_unpacked.create
         ~get_field
@@ -192,18 +192,18 @@ module Column = struct
   let render_field t v = Spec.render_field t.spec v
 
   let create_internal
-        ((T
-            { get_field
-            ; render_field = _
-            ; sortable
-            ; align_right
-            ; max_width
-            ; min_width
-            ; pad_right
-            ; header
-            } :
-            _ Spec.t) as spec)
-        entry_type
+    ((T
+        { get_field
+        ; render_field = _
+        ; sortable
+        ; align_right
+        ; max_width
+        ; min_width
+        ; pad_right
+        ; header
+        } :
+       _ Spec.t) as spec)
+    entry_type
     =
     { spec
     ; format =
@@ -226,15 +226,15 @@ module Column = struct
   type 'record t = 'record Spec.t
 
   let create_gen
-        ?align_right
-        ?max_width
-        ?min_width
-        ?pad_right
-        ~header
-        ~get_field
-        ~render_field
-        ~compare_field
-        ()
+    ?align_right
+    ?max_width
+    ?min_width
+    ?pad_right
+    ~header
+    ~get_field
+    ~render_field
+    ~compare_field
+    ()
     =
     Spec.create
       ~get_field
@@ -249,13 +249,13 @@ module Column = struct
   ;;
 
   let text
-        ?align_right
-        ?max_width
-        ?min_width
-        ?pad_right
-        ?(sortable = true)
-        ~header
-        field_of_record
+    ?align_right
+    ?max_width
+    ?min_width
+    ?pad_right
+    ?(sortable = true)
+    ~header
+    field_of_record
     =
     Spec.create
       ~get_field:field_of_record
@@ -270,13 +270,13 @@ module Column = struct
   ;;
 
   let create
-        ?align_right
-        ?max_width
-        ?min_width
-        ?pad_right
-        ?sortable
-        ~header
-        field_of_record
+    ?align_right
+    ?max_width
+    ?min_width
+    ?pad_right
+    ?sortable
+    ~header
+    field_of_record
     =
     text
       ?align_right
@@ -294,7 +294,7 @@ type 'record t =
   ; entries_var : 'record list Buffer_local.t
   ; major_mode : Major_mode.t
   ; original_record : 'record Text.Property_name.t
-  (* The original record is smuggled as a text property on the ID string of line.  The IDs
+      (* The original record is smuggled as a text property on the ID string of line.  The IDs
      are compared with [equal], so including the original record as an opaque pointer in
      the normal way (e.g., in a cons) would cause the "same" IDs to always be considered
      not-equal.
@@ -345,8 +345,8 @@ let draw ?sort_by t rows =
        sort_by
        ~f:
          (Tuple2.map_snd ~f:(function
-            | `Ascending -> false
-            | `Descending -> true)));
+           | `Ascending -> false
+           | `Descending -> true)));
   Current_buffer.set_buffer_local t.entries_var rows;
   Current_buffer.set_buffer_local
     tabulated_list_format_var

@@ -28,19 +28,18 @@ let save_sync save_function args f =
                    [ Q.funcall |> Form.symbol; f |> Function.to_value |> Form.quote ]
                ]
              ]))
-     : Value.t);
+      : Value.t);
   match !r with
-  | None ->
-    assert false
+  | None -> assert false
   | Some a -> a
 ;;
 
 let save_
-      (type a b)
-      (sync_or_async : (a, b) Sync_or_async.t)
-      save_function
-      args
-      (f : unit -> b)
+  (type a b)
+  (sync_or_async : (a, b) Sync_or_async.t)
+  save_function
+  args
+  (f : unit -> b)
   : b
   =
   match sync_or_async with
@@ -53,7 +52,7 @@ let save_
           (sprintf
              "%s called asynchronously in background job"
              (Symbol.name save_function)
-           : string)];
+            : string)];
     Value.Private.run_outside_async [%here] (fun () ->
       save_sync save_function args (fun () -> Value.Private.block_on_async [%here] f))
 ;;

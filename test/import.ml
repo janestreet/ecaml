@@ -38,7 +38,7 @@ let show_last_match ?subexp () =
       ""
         ~text:
           (Or_error.try_with (fun () -> Last_match.text_exn ?subexp ())
-           : Text.t Or_error.t)
+            : Text.t Or_error.t)
         ~start:
           (Or_error.try_with (fun () -> Last_match.start_exn ?subexp ()) : int Or_error.t)
         ~end_:
@@ -75,7 +75,7 @@ let show_current_buffer_local_variables () =
     [%sexp
       (Buffer.buffer_local_variables (Current_buffer.get ())
        |> List.sort ~compare:(fun (s1, _) (s2, _) -> Symbol.compare_name s1 s2)
-       : (Symbol.t * _ option) list)]
+        : (Symbol.t * _ option) list)]
 ;;
 
 (* [with_input_macro keystrokes f] simulates typing [keystrokes] into [f] by defining a

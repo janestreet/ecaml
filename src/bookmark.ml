@@ -5,18 +5,18 @@ let () = Feature.require ("bookmark" |> Symbol.intern)
 
 include (
   String :
-  sig
-    type t = string [@@deriving sexp_of]
+    sig
+      type t = string [@@deriving sexp_of]
 
-    include Comparator.S with type t := t
-    include Stringable.S with type t := t
-  end)
+      include Comparator.S with type t := t
+      include Stringable.S with type t := t
+    end)
 
 include Valueable.Make (struct
-    type nonrec t = t
+  type nonrec t = t
 
-    let type_ = Value.Type.string
-  end)
+  let type_ = Value.Type.string
+end)
 
 module Property = struct
   type 'a t =
@@ -44,15 +44,15 @@ module Record = struct
   type t = Value.t Map.M(Symbol.Compare_name).t [@@deriving sexp_of]
 
   include Valueable.Make (struct
-      type nonrec t = t
+    type nonrec t = t
 
-      let type_ =
-        Value.Type.(map (list (tuple Symbol.type_ value)))
-          ~name:[%message "bookmark-record"]
-          ~of_:(Map.of_alist_exn (module Symbol.Compare_name))
-          ~to_:Map.to_alist
-      ;;
-    end)
+    let type_ =
+      Value.Type.(map (list (tuple Symbol.type_ value)))
+        ~name:[%message "bookmark-record"]
+        ~of_:(Map.of_alist_exn (module Symbol.Compare_name))
+        ~to_:Map.to_alist
+    ;;
+  end)
 
   let get t { Property.symbol; type_ } =
     Map.find t symbol |> Option.map ~f:(Value.Type.of_value_exn type_)
@@ -101,17 +101,17 @@ module Make_record_function = struct
       }
 
     include Valueable.Make (struct
-        type nonrec t = t
+      type nonrec t = t
 
-        let type_ =
-          Value.Type.(map (tuple (nil_or string) Record.t))
-            ~name:[%sexp "bookmark-make-record-function-return-type"]
-            ~of_:(fun (suggested_bookmark_name, record) ->
-              { record; suggested_bookmark_name })
-            ~to_:(fun { record; suggested_bookmark_name } ->
-              suggested_bookmark_name, record)
-        ;;
-      end)
+      let type_ =
+        Value.Type.(map (tuple (nil_or string) Record.t))
+          ~name:[%sexp "bookmark-make-record-function-return-type"]
+          ~of_:(fun (suggested_bookmark_name, record) ->
+            { record; suggested_bookmark_name })
+          ~to_:(fun { record; suggested_bookmark_name } ->
+            suggested_bookmark_name, record)
+      ;;
+    end)
   end
 
   type t = unit -> Return_type.t

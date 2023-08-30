@@ -157,7 +157,7 @@ let () =
                 (should_reopen_stdin : bool ref)
                 ~recent_keys:
                   (Input_event.recent_commands_and_keys ()
-                   : Input_event.Command_or_key.t array)]))
+                    : Input_event.Command_or_key.t array)]))
 ;;
 
 let () =
@@ -205,11 +205,11 @@ Test [Process.set_sentinel] on a sentinel that raises.
 |}
     ~interactive:No_arg
     (fun () ->
-       Process.set_sentinel
-         [%here]
-         (Process.create "true" [] ~name:"true" ())
-         (Returns Value.Type.unit)
-         ~sentinel:(fun ~event:_ -> failwith "some error message"));
+    Process.set_sentinel
+      [%here]
+      (Process.create "true" [] ~name:"true" ())
+      (Returns Value.Type.unit)
+      ~sentinel:(fun ~event:_ -> failwith "some error message"));
   (* Replace [false] with [true] to define a function for testing
      [Minibuffer.read_from]. *)
   if false
@@ -225,11 +225,11 @@ Test [Minibuffer.y_or_n_with_timeout].
       ~interactive:No_arg
       (Returns_deferred Value.Type.unit)
       (fun () ->
-         let%bind int =
-           Minibuffer.y_or_n_with_timeout ~prompt:"prompt" ~timeout:(Time_ns.Span.second, 13)
-         in
-         message_s [%message (int : int Minibuffer.Y_or_n_with_timeout.t)];
-         return ());
+      let%bind int =
+        Minibuffer.y_or_n_with_timeout ~prompt:"prompt" ~timeout:(Time_ns.Span.second, 13)
+      in
+      message_s [%message (int : int Minibuffer.Y_or_n_with_timeout.t)];
+      return ());
     defun_nullary
       ("ecaml-test-minibuffer" |> Symbol.intern)
       [%here]
@@ -241,36 +241,36 @@ Test [Minibuffer.read_from].
       ~interactive:No_arg
       (Returns_deferred Value.Type.unit)
       (fun () ->
-         let test
-               ?default_value
-               ?(history = Minibuffer.history)
-               ?history_pos
-               ?initial_contents
-               ()
-               ~prompt
-           =
-           let%bind result =
-             Minibuffer.read_from
-               ~prompt:(concat [ prompt; ": " ])
-               ?initial_contents
-               ?default_value
-               ~history
-               ?history_pos
-               ()
-           in
-           message (concat [ "result: "; result ]);
-           return ()
-         in
-         let%bind () = test () ~prompt:"test 1" in
-         let%bind () = test () ~prompt:"test 2" ~default_value:"some-default" in
-         let%bind () = test () ~prompt:"test 3" ~initial_contents:"some-contents" in
-         test
-           ()
-           ~prompt:"test 4"
-           ~history:
-             (Minibuffer.History.find_or_create
-                ("some-history-list" |> Symbol.intern)
-                [%here])))
+      let test
+        ?default_value
+        ?(history = Minibuffer.history)
+        ?history_pos
+        ?initial_contents
+        ()
+        ~prompt
+        =
+        let%bind result =
+          Minibuffer.read_from
+            ~prompt:(concat [ prompt; ": " ])
+            ?initial_contents
+            ?default_value
+            ~history
+            ?history_pos
+            ()
+        in
+        message (concat [ "result: "; result ]);
+        return ()
+      in
+      let%bind () = test () ~prompt:"test 1" in
+      let%bind () = test () ~prompt:"test 2" ~default_value:"some-default" in
+      let%bind () = test () ~prompt:"test 3" ~initial_contents:"some-contents" in
+      test
+        ()
+        ~prompt:"test 4"
+        ~history:
+          (Minibuffer.History.find_or_create
+             ("some-history-list" |> Symbol.intern)
+             [%here])))
 ;;
 
 let () =
@@ -285,9 +285,9 @@ Show the result of `recent-keys' rendered as Ecaml values.
 |}
     ~interactive:No_arg
     (fun () ->
-       message_s
-         [%sexp
-           (Input_event.recent_commands_and_keys () : Input_event.Command_or_key.t array)])
+    message_s
+      [%sexp
+        (Input_event.recent_commands_and_keys () : Input_event.Command_or_key.t array)])
 ;;
 
 let debug_embedded_caml_values () = Caml_embed.debug_sexp ()

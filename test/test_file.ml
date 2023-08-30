@@ -57,11 +57,11 @@ let%expect_test "[is_below]" =
         print_s
           [%sexp
             (result : bool)
-          , ~~(dir : string)
-          , ~~(Ecaml.File.truename file : string)
-          , ~~(Ecaml.File.truename dir : string)
-          , ~~(Ecaml.File.exists dir : bool)
-          , ~~(Ecaml.File.is_directory dir : bool)];
+            , ~~(dir : string)
+            , ~~(Ecaml.File.truename file : string)
+            , ~~(Ecaml.File.truename dir : string)
+            , ~~(Ecaml.File.exists dir : bool)
+            , ~~(Ecaml.File.is_directory dir : bool)];
         let tree_output =
           Process.call_exn "tree" [ "-p"; Filename.directory dir |> Option.value_exn ]
         in
@@ -109,25 +109,25 @@ let%expect_test "[locate_dominating_file]" =
     ~prefix:"test-locate_dominating_file"
     ~suffix:""
     ~f:(fun dir ->
-      Directory.create (concat [ dir; "/b/c" ]) ~parents:true;
-      let basename = "foo" in
-      touch (concat [ dir; "/"; basename ]);
-      let test ~above =
-        print_s
-          [%sexp
-            (locate_dominating_file ~above:(concat [ dir; "/"; above ]) ~basename
-             |> Option.map ~f:(fun x ->
-               x |> File.truename |> String.chop_prefix_exn ~prefix:dir)
-             : string option)]
-      in
-      test ~above:"b/c";
-      [%expect {|
+    Directory.create (concat [ dir; "/b/c" ]) ~parents:true;
+    let basename = "foo" in
+    touch (concat [ dir; "/"; basename ]);
+    let test ~above =
+      print_s
+        [%sexp
+          (locate_dominating_file ~above:(concat [ dir; "/"; above ]) ~basename
+           |> Option.map ~f:(fun x ->
+                x |> File.truename |> String.chop_prefix_exn ~prefix:dir)
+            : string option)]
+    in
+    test ~above:"b/c";
+    [%expect {|
       (/) |}];
-      test ~above:"b";
-      [%expect {|
+    test ~above:"b";
+    [%expect {|
       (/) |}];
-      test ~above:"";
-      [%expect {|
+    test ~above:"";
+    [%expect {|
       (/) |}]);
   return ()
 ;;

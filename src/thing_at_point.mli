@@ -10,13 +10,13 @@ type t =
   | Line
   | List
   | Number
-  (** Any other "thing" supported by [thing-at-point]. Use [defthing] to register a new
+      (** Any other "thing" supported by [thing-at-point]. Use [defthing] to register a new
       thing type. *)
   | Other of Symbol.t
   | Page
   | Sentence
   | Sexp
-  (** Any string containing only characters in [chars], which is a regexp character
+      (** Any string containing only characters in [chars], which is a regexp character
       alternative (i.e. a string that would go between square brackets in a regexp). *)
   | String_of of { chars : string }
   | Symbol
@@ -52,7 +52,6 @@ val end_exn : t -> unit
 (** [end_] tries [end_exn] and returns false if it would have raised. *)
 val end_ : t -> bool
 
-
 (** Define [symbol] as a "thing" so that [Other symbol] works as the argument to [find],
     etc (but not [forward]). The effect is to define a property of the symbol; so long as
     that property isn't otherwise used, the symbol can be used for other purposes as well.
@@ -61,5 +60,5 @@ val defthing
   :  Symbol.t
   -> Source_code_position.t
   -> bounds:(unit -> (Position.t * Position.t) option)
-  (** An implementation of [bounds]. *)
+       (** An implementation of [bounds]. *)
   -> t

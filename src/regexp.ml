@@ -4,10 +4,10 @@ module Current_buffer = Current_buffer0
 
 module Strict = struct
   include Value.Make_subtype (struct
-      let name = "regexp"
-      let here = [%here]
-      let is_in_subtype = Value.is_string
-    end)
+    let name = "regexp"
+    let here = [%here]
+    let is_in_subtype = Value.is_string
+  end)
 
   let of_pattern string = string |> Value.of_utf8_bytes |> of_value_exn
 end

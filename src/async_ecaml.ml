@@ -47,12 +47,12 @@ module Cycle_report = struct
         Async
         "Collecting 10 seconds of cycle data"
         ~f:(fun () ->
-          measuring := true;
-          let%bind () = Clock_ns.after (sec_ns 10.) in
-          measuring := false;
-          let samples = !cycles in
-          cycles := [];
-          return samples)
+        measuring := true;
+        let%bind () = Clock_ns.after (sec_ns 10.) in
+        measuring := false;
+        let samples = !cycles in
+        cycles := [];
+        return samples)
     in
     let buffer = Buffer.find_or_create ~name:"cycle report" in
     let%bind () = Selected_window.switch_to_buffer buffer in
@@ -173,7 +173,7 @@ end = struct
           (Unix.write_assume_fd_is_nonblocking
              t.write_to_request_cycle
              (Bytes.of_string "\x05")
-           : int);
+            : int);
         t.exists_unread_byte <- true
       with
       | _ ->
@@ -204,14 +204,14 @@ end = struct
           ~name:"Async scheduler"
           ~socket_path
           ~filter:(fun client_process _ ->
-            assert (Scheduler.am_holding_lock (Scheduler.t ()));
-            t.exists_unread_byte <- false;
-            (match t.client_process with
-             | Some _ -> ()
-             | None ->
-               t.client_process <- Some client_process;
-               Process.set_query_on_exit client_process false);
-            run_cycle ())
+          assert (Scheduler.am_holding_lock (Scheduler.t ()));
+          t.exists_unread_byte <- false;
+          (match t.client_process with
+           | Some _ -> ()
+           | None ->
+             t.client_process <- Some client_process;
+             Process.set_query_on_exit client_process false);
+          run_cycle ())
       in
       Process.set_query_on_exit server_process false;
       Unix.connect t.write_to_request_cycle ~addr:(ADDR_UNIX socket_path);
@@ -262,7 +262,7 @@ type t =
   ; scheduler : Scheduler.t
   ; mutable pending_emacs_calls : Pending_emacs_call.t Queue.t
   ; mutable
-    pending_foreground_block_on_asyncs :
+      pending_foreground_block_on_asyncs :
       Pending_foreground_block_on_async.t Queue.t
   }
 
@@ -324,26 +324,26 @@ module Block_on_async = struct
   let rec if_safe_run_pending () =
     assert (not t.am_running_async_cycle);
     if (not (am_blocking_on_async ()))
-    && not (Queue.is_empty t.pending_foreground_block_on_asyncs)
+       && not (Queue.is_empty t.pending_foreground_block_on_asyncs)
     then (
       let pending_foreground_block_on_asyncs = t.pending_foreground_block_on_asyncs in
       t.pending_foreground_block_on_asyncs <- Queue.create ();
       Queue.iter
         pending_foreground_block_on_asyncs
         ~f:(fun { context; execution_context; f; here } ->
-          (* We ignore any error because [within_context] already sent it to
+        (* We ignore any error because [within_context] already sent it to
              [execution_context]'s monitor. *)
-          let (_ : (unit, unit) result) =
-            Scheduler.within_context execution_context (fun () ->
-              block_on_async here ?context f)
-          in
-          ()))
+        let (_ : (unit, unit) result) =
+          Scheduler.within_context execution_context (fun () ->
+            block_on_async here ?context f)
+        in
+        ()))
 
   (* When the scheduler requests an Async cycle, [in_emacs_have_lock_do_cycle] runs the
      cycle inside the emacs thread and notifies the scheduler when it is finished. *)
   and in_emacs_have_lock_do_cycle () =
     if (not (Value.Expert.have_active_env ()))
-    || not (Scheduler.am_holding_lock t.scheduler)
+       || not (Scheduler.am_holding_lock t.scheduler)
     then raise_s [%sexp "[in_emacs_have_lock_do_cycle] should only be called by emacs"];
     (* If we are already running an Async cycle, then we can't start a new one, so we do
        nothing.  We can reach here with [t.am_running_async_cycle = true] if Ecaml calls a
@@ -472,8 +472,8 @@ let lock_async_during_module_initialization () =
     [%here]
     ~should_run_holding_async_lock:false
     ~f:(fun () ->
-      message_s [%message "Loaded Ecaml."];
-      Scheduler.unlock t.scheduler)
+    message_s [%message "Loaded Ecaml."];
+    Scheduler.unlock t.scheduler)
 ;;
 
 let max_inter_cycle_timeout = Time_ns.Span.second
@@ -491,23 +491,23 @@ let start_scheduler () =
     (* We hold the Async lock, so it should be impossible for the scheduler to try to run
        a cycle. *)
     t.scheduler.have_lock_do_cycle
-    <- Some (fun () -> raise_s [%message "BUG in Async_ecaml" [%here]]);
+      <- Some (fun () -> raise_s [%message "BUG in Async_ecaml" [%here]]);
     let scheduler_thread =
       Thread.create
         (fun () ->
-           match Scheduler.go () ~raise_unhandled_exn:true with
-           | _ -> .
-           | exception exn ->
-             (match !Scheduler_status.status with
-              (* If we requested the scheduler to stop, this exception is expected. *)
-              | Stopped -> ()
-              | Running | Uninitialized -> raise exn))
+          match Scheduler.go () ~raise_unhandled_exn:true with
+          | _ -> .
+          | exception exn ->
+            (match !Scheduler_status.status with
+             (* If we requested the scheduler to stop, this exception is expected. *)
+             | Stopped -> ()
+             | Running | Uninitialized -> raise exn))
         ()
     in
     (* We set [have_lock_do_cycle] as early as possible so that the Async scheduler runs
        cycles in the desired way, even if later parts of initialization raise. *)
     t.scheduler.have_lock_do_cycle
-    <- Some (request_emacs_run_cycle (Thread.id scheduler_thread));
+      <- Some (request_emacs_run_cycle (Thread.id scheduler_thread));
     Defun.defun
       Q.ecaml_async_take_lock_do_cycle
       [%here]
@@ -531,19 +531,19 @@ until it can acquire the Async lock and then run a cycle.
        will never run, we add a timer to ensure we run a cycle once per
        [max_inter_cycle_timeout]. *)
     t.keepalive_timer
-    <- Some
-         (Timer.run_after
-            [%here]
-            max_inter_cycle_timeout
-            ~repeat:max_inter_cycle_timeout
-            ~name:("async-ecaml-keepalive-timer" |> Symbol.intern)
-            ~docstring:
-              {|
+      <- Some
+           (Timer.run_after
+              [%here]
+              max_inter_cycle_timeout
+              ~repeat:max_inter_cycle_timeout
+              ~name:("async-ecaml-keepalive-timer" |> Symbol.intern)
+              ~docstring:
+                {|
 Internal to Async Ecaml.
 
 Periodically request an Async cycle.
 |}
-            ~f:(fun () ->
+              ~f:(fun () ->
               try
                 if Time_ns.Span.( >= )
                      (Time_ns.diff (Time_ns.now ()) t.last_cycle_finished_at)
@@ -561,11 +561,11 @@ Periodically request an Async cycle.
        already returned.  That logs to stderr, which doesn't work well in Emacs.  So we
        install a handler that reports the error with [message_s]. *)
     (Async_kernel.Monitor.Expert.try_with_log_exn
-     := fun exn ->
-       message_s
-         [%message
-           "Exception raised to [Monitor.try_with] that already returned."
-             ~_:(exn : exn)]);
+       := fun exn ->
+            message_s
+              [%message
+                "Exception raised to [Monitor.try_with] that already returned."
+                  ~_:(exn : exn)]);
     (* Async would normally deal with errors that reach the main monitor by printing to
        stderr and then exiting 1.  This would look like an emacs crash to the user, so we
        instead output the error to the minibuffer. *)
@@ -577,7 +577,7 @@ Periodically request an Async cycle.
           message_s [%sexp (exn : exn)])
       else
         t.exceptions_raised_outside_emacs_env
-        <- exn :: t.exceptions_raised_outside_emacs_env)
+          <- exn :: t.exceptions_raised_outside_emacs_env)
 ;;
 
 module Export = struct
@@ -594,10 +594,10 @@ module Private = struct
   let block_on_async = Block_on_async.block_on_async
 
   let enqueue_foreground_block_on_async
-        here
-        ?context
-        ?(raise_exceptions_to_monitor = Async.Monitor.main)
-        f
+    here
+    ?context
+    ?(raise_exceptions_to_monitor = Async.Monitor.main)
+    f
     =
     assert (Scheduler.am_holding_lock t.scheduler);
     Queue.enqueue
@@ -687,10 +687,10 @@ let shutdown () =
   | Uninitialized | Stopped -> ()
   | Running ->
     t.scheduler.have_lock_do_cycle
-    <- Some
-         (fun () ->
-            Scheduler.unlock t.scheduler;
-            raise_s [%sexp "Async shutdown"])
+      <- Some
+           (fun () ->
+             Scheduler.unlock t.scheduler;
+             raise_s [%sexp "Async shutdown"])
 ;;
 
 let () =
@@ -726,9 +726,9 @@ This runs Async cycles for 10s and then shows how long the cycles took.
       ~interactive:No_arg
       (Returns_deferred Value.Type.unit)
       (fun () ->
-         let open Async in
-         let%map time = f () in
-         message_s time)
+      let open Async in
+      let%map time = f () in
+      message_s time)
   in
   defun_benchmark
     ~name:"ecaml-async-benchmark-small-pings"
@@ -762,8 +762,8 @@ Block on [Deferred.never ()] until you press [C-g].
 |}
     (Returns_deferred Value.Type.unit)
     (fun () ->
-       message_s [%message "blocking forever -- press C-g to interrupt"];
-       Async.Deferred.never ());
+    message_s [%message "blocking forever -- press C-g to interrupt"];
+    Async.Deferred.never ());
   Defun.defun_nullary_nil
     ("ecaml-async-test-execution-context-handling" |> Symbol.intern)
     [%here]
@@ -775,46 +775,46 @@ Check aspects of Async Ecaml's handling of execution contexts.
 |}
     ~interactive:No_arg
     (fun () ->
-       let open Async in
-       let test_passed = ref true in
-       let check_execution_context () =
-         let execution_context = Scheduler.current_execution_context () in
-         if not (phys_equal execution_context Execution_context.main)
-         then (
-           test_passed := false;
-           message_s
-             [%message
-               "Ecaml callback not running in main execution context"
-                 (execution_context : Execution_context.t)])
-       in
-       check_execution_context ();
-       let timer =
-         Timer.run_after
-           ~repeat:(sec_ns 0.1)
-           [%here]
-           (sec_ns 0.1)
-           ~f:check_execution_context
-           ~name:("check-execution-context-timer" |> Symbol.intern)
-           ~docstring:
-             {|
+    let open Async in
+    let test_passed = ref true in
+    let check_execution_context () =
+      let execution_context = Scheduler.current_execution_context () in
+      if not (phys_equal execution_context Execution_context.main)
+      then (
+        test_passed := false;
+        message_s
+          [%message
+            "Ecaml callback not running in main execution context"
+              (execution_context : Execution_context.t)])
+    in
+    check_execution_context ();
+    let timer =
+      Timer.run_after
+        ~repeat:(sec_ns 0.1)
+        [%here]
+        (sec_ns 0.1)
+        ~f:check_execution_context
+        ~name:("check-execution-context-timer" |> Symbol.intern)
+        ~docstring:
+          {|
 Internal to Async Ecaml.
 
 Periodically check that the execution context in which Async jobs run is
 [Execution_context.main].
 |}
+    in
+    don't_wait_for
+      (let%map _ignored =
+         Monitor.try_with (fun () ->
+           let%bind () = Clock.after (sec 0.1) in
+           let%bind () = Clock.after (sec 2.) in
+           Timer.cancel timer;
+           messagef
+             "Execution-context test %s"
+             (if !test_passed then "passed" else "failed");
+           return ())
        in
-       don't_wait_for
-         (let%map _ignored =
-            Monitor.try_with (fun () ->
-              let%bind () = Clock.after (sec 0.1) in
-              let%bind () = Clock.after (sec 2.) in
-              Timer.cancel timer;
-              messagef
-                "Execution-context test %s"
-                (if !test_passed then "passed" else "failed");
-              return ())
-          in
-          ()));
+       ()));
   Defun.defun_nullary_nil
     ("ecaml-async-test-in-thread-run" |> Symbol.intern)
     [%here]
@@ -826,34 +826,34 @@ Call [In_thread.run] a number of times and report on its performance.
 |}
     ~interactive:No_arg
     (fun () ->
-       let open Async in
-       don't_wait_for
-         (let open Deferred.Let_syntax in
-          message_s [%message "testing"];
-          let all_elapsed = ref [] in
-          let long_cutoff = sec_ns 0.01 in
-          let rec loop i =
-            if i = 0
-            then (
-              let all_elapsed =
-                List.sort
-                  ~compare:Time_ns.Span.compare
-                  (let x = !all_elapsed in
-                   all_elapsed := [];
-                   x)
-              in
-              message_s [%message "test finished" (all_elapsed : Time_ns.Span.t list)];
-              return ())
-            else (
-              let before = Time_ns.now () in
-              let%bind () = In_thread.run (fun () -> Thread.yield ()) in
-              let elapsed = Time_ns.diff (Time_ns.now ()) before in
-              all_elapsed := elapsed :: !all_elapsed;
-              if Time_ns.Span.( >= ) elapsed long_cutoff
-              then message_s [%message "Slow [In_thread.run]" (elapsed : Time_ns.Span.t)];
-              loop (i - 1))
-          in
-          loop 100));
+    let open Async in
+    don't_wait_for
+      (let open Deferred.Let_syntax in
+       message_s [%message "testing"];
+       let all_elapsed = ref [] in
+       let long_cutoff = sec_ns 0.01 in
+       let rec loop i =
+         if i = 0
+         then (
+           let all_elapsed =
+             List.sort
+               ~compare:Time_ns.Span.compare
+               (let x = !all_elapsed in
+                all_elapsed := [];
+                x)
+           in
+           message_s [%message "test finished" (all_elapsed : Time_ns.Span.t list)];
+           return ())
+         else (
+           let before = Time_ns.now () in
+           let%bind () = In_thread.run (fun () -> Thread.yield ()) in
+           let elapsed = Time_ns.diff (Time_ns.now ()) before in
+           all_elapsed := elapsed :: !all_elapsed;
+           if Time_ns.Span.( >= ) elapsed long_cutoff
+           then message_s [%message "Slow [In_thread.run]" (elapsed : Time_ns.Span.t)];
+           loop (i - 1))
+       in
+       loop 100));
   let dummy_key = Univ_map.Key.create ~name:"dummy" [%sexp_of: int] in
   Defun.defun_nullary_nil
     ("ecaml-async-test-execution-context-reset" |> Symbol.intern)
@@ -867,21 +867,21 @@ not preserve the current Async execution context.
 |}
     ~interactive:No_arg
     (fun () ->
-       (* The key-value pair starts out absent. *)
-       assert (Option.is_none (Async.Scheduler.find_local dummy_key));
-       let print_data =
-         Function.create_nullary [%here] (fun () ->
-           match Async.Scheduler.find_local dummy_key with
-           | None -> Echo_area.message "BUG: execution context is not preserved"
-           | Some data ->
-             Echo_area.message_s [%message "Execution context preserved" (data : int)])
-         |> Function.to_value
-       in
-       Async.Scheduler.with_local dummy_key (Some 42) ~f:(fun () ->
-         (* The key-value pair is present. *)
-         assert (Option.is_some (Async.Scheduler.find_local dummy_key));
-         Form.list [ Form.symbol ("funcall" |> Symbol.intern); Form.quote print_data ]
-         |> Form.Blocking.eval_i));
+    (* The key-value pair starts out absent. *)
+    assert (Option.is_none (Async.Scheduler.find_local dummy_key));
+    let print_data =
+      Function.create_nullary [%here] (fun () ->
+        match Async.Scheduler.find_local dummy_key with
+        | None -> Echo_area.message "BUG: execution context is not preserved"
+        | Some data ->
+          Echo_area.message_s [%message "Execution context preserved" (data : int)])
+      |> Function.to_value
+    in
+    Async.Scheduler.with_local dummy_key (Some 42) ~f:(fun () ->
+      (* The key-value pair is present. *)
+      assert (Option.is_some (Async.Scheduler.find_local dummy_key));
+      Form.list [ Form.symbol ("funcall" |> Symbol.intern); Form.quote print_data ]
+      |> Form.Blocking.eval_i));
   Defun.defun_nullary_nil
     ("ecaml-async-test-enqueue-block-on-async" |> Symbol.intern)
     [%here]
@@ -894,14 +894,14 @@ seconds, and then open a buffer with a hello-world message.
 |}
     ~interactive:No_arg
     (fun () ->
-       let open Async in
-       Background.don't_wait_for [%here] (fun () ->
-         let%map () = Clock.after (sec 1.) in
-         Background.schedule_foreground_block_on_async [%here] (fun () ->
-           let%bind () = Clock.after (sec 1.) in
-           let%bind () =
-             Selected_window.switch_to_buffer (Buffer.find_or_create ~name:"test buffer")
-           in
-           Point.insert "Hello foreground world!";
-           return ())))
+    let open Async in
+    Background.don't_wait_for [%here] (fun () ->
+      let%map () = Clock.after (sec 1.) in
+      Background.schedule_foreground_block_on_async [%here] (fun () ->
+        let%bind () = Clock.after (sec 1.) in
+        let%bind () =
+          Selected_window.switch_to_buffer (Buffer.find_or_create ~name:"test buffer")
+        in
+        Point.insert "Hello foreground world!";
+        return ())))
 ;;

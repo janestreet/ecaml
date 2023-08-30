@@ -36,10 +36,10 @@ let%expect_test "[defcustom], [defvar], [defun], [update_emacs_with_entries], \
        ~customization_type:Boolean
        ~standard_value:false
        ()
-     : _ Customization.t);
+      : _ Customization.t);
   ignore
     (defvar var [%here] ~docstring:"foo" ~type_:Value.Type.bool ~initial_value:false ()
-     : _ Var.t);
+      : _ Var.t);
   defun_nullary_nil fun_ [%here] ~docstring:"<docstring>" Fn.id;
   update_emacs_with_entries ~chop_prefix:"app/emacs/" ~in_dir:"<dir>";
   let show_defining_file symbol =
@@ -63,7 +63,7 @@ let%expect_test "[define_derived_mode]" =
        ~docstring:"derived major mode docstring"
        ~mode_line:"test-load-history"
        ()
-     : (module Major_mode.S));
+      : (module Major_mode.S));
   update_emacs_with_entries ~chop_prefix:"app/emacs/" ~in_dir:"<dir>";
   show_defining_file base_symbol;
   [%expect
@@ -87,7 +87,7 @@ let%expect_test "[define_minor_mode]" =
        ~global:false
        ~docstring:"minor mode docstring"
        ()
-     : Minor_mode.t);
+      : Minor_mode.t);
   update_emacs_with_entries ~chop_prefix:"app/emacs/" ~in_dir:"<dir>";
   show_defining_file base_symbol;
   [%expect

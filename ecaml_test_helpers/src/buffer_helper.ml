@@ -161,7 +161,7 @@ let show_with_overlay_text () =
             with
             | Some end_of_invisibility
               when (* Avoid infinite loop *)
-                Position.( > ) end_of_invisibility (Point.get ()) ->
+                   Position.( > ) end_of_invisibility (Point.get ()) ->
               write
                 "<invisible>"
                 (Current_buffer.contents

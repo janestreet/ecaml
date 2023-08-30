@@ -225,8 +225,8 @@ let%expect_test "Async initialization function" =
            ~initialize:
              ( Returns_deferred Value.Type.unit
              , fun () ->
-               let%map () = Clock.after (Time_float.Span.of_ms 1.) in
-               print_s [%message "initialized"] )
+                 let%map () = Clock.after (Time_float.Span.of_ms 1.) in
+                 print_s [%message "initialized"] )
            ())
   in
   let%bind () = Current_buffer.change_major_mode M.major_mode in

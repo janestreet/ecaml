@@ -2,10 +2,10 @@ open! Core
 open! Import
 
 include Value.Make_subtype (struct
-    let here = [%here]
-    let name = "overlay"
-    let is_in_subtype = Funcall.Wrap.("overlayp" <: value @-> return bool)
-  end)
+  let here = [%here]
+  let name = "overlay"
+  let is_in_subtype = Funcall.Wrap.("overlayp" <: value @-> return bool)
+end)
 
 let make_overlay =
   Funcall.Wrap.(

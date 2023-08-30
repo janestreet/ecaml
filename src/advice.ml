@@ -13,13 +13,13 @@ let add =
 let of_function symbol = symbol
 
 let defun_internal
-      advice_name
-      here
-      ~docstring
-      ?interactive
-      ?should_profile
-      sync_or_async
-      f
+  advice_name
+  here
+  ~docstring
+  ?interactive
+  ?should_profile
+  sync_or_async
+  f
   =
   Defun.defun
     advice_name
@@ -37,13 +37,13 @@ let defun_internal
 ;;
 
 let defun_around_values
-      advice_name
-      here
-      sync_or_async
-      ~docstring
-      ?interactive
-      ?should_profile
-      f
+  advice_name
+  here
+  sync_or_async
+  ~docstring
+  ?interactive
+  ?should_profile
+  f
   =
   defun_internal
     advice_name
@@ -63,14 +63,14 @@ module On_parse_error = struct
 end
 
 let defun_around_funcall
-      advice_name
-      here
-      ~docstring
-      ?interactive
-      ?(on_parse_error = On_parse_error.Allow_raise)
-      ?should_profile
-      funcall
-      f
+  advice_name
+  here
+  ~docstring
+  ?interactive
+  ?(on_parse_error = On_parse_error.Allow_raise)
+  ?should_profile
+  funcall
+  f
   =
   defun_internal
     advice_name
@@ -80,28 +80,28 @@ let defun_around_funcall
     ?should_profile
     Sync
     (fun inner rest ->
-       Funcall.Private.apply
-         funcall
-         (f (Funcall.Private.wrap_unrolled funcall inner))
-         rest
-         ~on_parse_error:
-           (match (on_parse_error : On_parse_error.t) with
-            | Allow_raise ->
-              fun exn ->
-                raise_s
-                  [%message
-                    "Advice failed to parse its arguments"
-                      ~_:(here : Source_code_position.t)
-                      ~_:(exn : exn)]
-            | Call_inner_function ->
-              fun exn ->
-                Echo_area.inhibit_messages Sync (fun () ->
-                  message_s
-                    [%message
-                      "Ignoring advice that failed to parse its arguments"
-                        ~_:(here : Source_code_position.t)
-                        ~_:(exn : exn)]);
-                Value.funcallN inner rest))
+    Funcall.Private.apply
+      funcall
+      (f (Funcall.Private.wrap_unrolled funcall inner))
+      rest
+      ~on_parse_error:
+        (match (on_parse_error : On_parse_error.t) with
+         | Allow_raise ->
+           fun exn ->
+             raise_s
+               [%message
+                 "Advice failed to parse its arguments"
+                   ~_:(here : Source_code_position.t)
+                   ~_:(exn : exn)]
+         | Call_inner_function ->
+           fun exn ->
+             Echo_area.inhibit_messages Sync (fun () ->
+               message_s
+                 [%message
+                   "Ignoring advice that failed to parse its arguments"
+                     ~_:(here : Source_code_position.t)
+                     ~_:(exn : exn)]);
+             Value.funcallN inner rest))
 ;;
 
 let remove =

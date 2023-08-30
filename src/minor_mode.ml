@@ -15,7 +15,6 @@ module Q = struct
   let visual_line_mode = "visual-line-mode" |> Symbol.intern
 end
 
-
 type t =
   { function_name : Symbol.t
   ; variable_name : Symbol.t
@@ -68,14 +67,14 @@ module Private = struct
 end
 
 let define_minor_mode
-      name
-      here
-      ~docstring
-      ?(define_keys = [])
-      ?mode_line
-      ~global
-      ?(initialize = (ignore : t -> unit))
-      ()
+  name
+  here
+  ~docstring
+  ?(define_keys = [])
+  ?mode_line
+  ~global
+  ?(initialize = (ignore : t -> unit))
+  ()
   =
   let docstring = docstring |> String.strip in
   require_nonempty_docstring here ~docstring;
@@ -96,8 +95,7 @@ let define_minor_mode
        ; Q.K.lighter |> Form.symbol
        ; Option.value_map
            mode_line
-           ~f:(fun mode_line ->
-             String.concat [ " "; mode_line ] |> Form.string)
+           ~f:(fun mode_line -> String.concat [ " "; mode_line ] |> Form.string)
            ~default:Form.nil
        ; Q.K.keymap |> Form.symbol
        ; Var.symbol_as_value keymap_var |> Form.of_value_exn

@@ -10,14 +10,14 @@ module Function = struct
   [@@deriving sexp_of]
 
   let defun
-        (type a b)
-        symbol
-        here
-        ~docstring
-        ?should_profile
-        ~(hook_type : a Hook_type.t)
-        (returns : (unit, b) Defun.Returns.t)
-        (f : a -> b)
+    (type a b)
+    symbol
+    here
+    ~docstring
+    ?should_profile
+    ~(hook_type : a Hook_type.t)
+    (returns : (unit, b) Defun.Returns.t)
+    (f : a -> b)
     =
     let handle_result = function
       | Ok () -> ()
@@ -167,8 +167,8 @@ let add ?(buffer_local = false) ?(one_shot = false) ?(where = Where.Start) t fun
         ~hook_type:function_.hook_type
         (Returns Value.Type.unit)
         (fun x ->
-           remove t (Option.value_exn !hook_function_ref);
-           Function.funcall function_ x)
+        remove t (Option.value_exn !hook_function_ref);
+        Function.funcall function_ x)
     in
     hook_function_ref := Some hook_function;
     add hook_function

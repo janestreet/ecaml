@@ -17,10 +17,10 @@ module Q = struct
 end
 
 include Value.Make_subtype (struct
-    let name = "form"
-    let here = [%here]
-    let is_in_subtype _ = true
-  end)
+  let name = "form"
+  let here = [%here]
+  let is_in_subtype _ = true
+end)
 
 let string s = s |> Value.of_utf8_bytes |> of_value_exn
 let symbol s = s |> Symbol.to_value |> of_value_exn
@@ -125,7 +125,7 @@ let lambda =
     ; docstring |> Value.of_utf8_bytes |> some
     ; interactive
       |> Option.map ~f:(fun interactive ->
-        Value.list [ Q.interactive |> Symbol.to_value; interactive ])
+           Value.list [ Q.interactive |> Symbol.to_value; interactive ])
     ; body |> to_value |> some
     ]
     |> List.filter_opt

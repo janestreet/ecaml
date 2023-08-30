@@ -18,11 +18,11 @@ let directory_files =
 ;;
 
 let files
-      ?(absolute = false)
-      ?(include_dot_and_dotdot = false)
-      ?matching
-      ?(sort = true)
-      dirname
+  ?(absolute = false)
+  ?(include_dot_and_dotdot = false)
+  ?matching
+  ?(sort = true)
+  dirname
   =
   let files = directory_files dirname absolute matching (not sort) in
   if include_dot_and_dotdot
@@ -41,9 +41,9 @@ let directory_files_recursively =
 ;;
 
 let files_recursively
-      ?(include_directories = false)
-      ?(matching = Regexp.match_anything)
-      dirname
+  ?(include_directories = false)
+  ?(matching = Regexp.match_anything)
+  dirname
   =
   directory_files_recursively dirname matching include_directories
 ;;

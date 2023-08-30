@@ -81,9 +81,9 @@ let buffer_local_variables =
 let buffer_local_variables t =
   buffer_local_variables t
   |> List.map ~f:(fun value ->
-    if Value.is_symbol value
-    then value |> Symbol.of_value_exn, None
-    else Value.car_exn value |> Symbol.of_value_exn, Some (Value.cdr_exn value))
+       if Value.is_symbol value
+       then value |> Symbol.of_value_exn, None
+       else Value.car_exn value |> Symbol.of_value_exn, Some (Value.cdr_exn value))
 ;;
 
 let find_file_noselect =

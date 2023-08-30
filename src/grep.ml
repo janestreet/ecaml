@@ -25,9 +25,9 @@ module Save_buffers = struct
       [%message "Grep.Save_buffers.t"]
       (module T)
       (function
-        | Ask -> ask
-        | False -> Value.nil
-        | True -> Value.t)
+       | Ask -> ask
+       | False -> Value.nil
+       | True -> Value.t)
   ;;
 
   let t = type_

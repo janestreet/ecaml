@@ -15,7 +15,7 @@ let%expect_test "[emacs-module.h] is up to date" =
       (lazy
         [%sexp
           "app/emacs/lib/ecaml_value/src/emacs-module.h is out of date."
-        , { should_be_identical_to = (expected_file : string) }]);
+          , { should_be_identical_to = (expected_file : string) }]);
   [%expect {| |}];
   return ()
 ;;

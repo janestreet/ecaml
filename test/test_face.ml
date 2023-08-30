@@ -51,7 +51,7 @@ let%expect_test "[is_relative]" =
             ~is_relative:(Attribute.is_relative attribute value : bool)
             ~unspecified_is_relative:
               (Attribute.is_relative attribute (Attribute.unspecified_value attribute)
-               : bool)]);
+                : bool)]);
   [%expect
     {|
     ((Background (Color red))

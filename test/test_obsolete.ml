@@ -173,7 +173,7 @@ let%expect_test "obsolete an defined variable" =
        ~type_:Value.Type.bool
        ~initial_value:false
        ()
-     : _ Var.t);
+      : _ Var.t);
   let show () =
     print_endline (Help.describe_variable_text obsolete);
     print_endline "";
@@ -218,7 +218,7 @@ let%expect_test "define an obsoleted variable" =
        ~type_:Value.Type.bool
        ~initial_value:false
        ()
-     : _ Var.t);
+      : _ Var.t);
   print_endline (Help.describe_variable_text obsolete);
   [%expect
     {|
@@ -242,7 +242,7 @@ let%expect_test "define an obsoleted variable with no current replacement" =
        ~type_:Value.Type.bool
        ~initial_value:false
        ()
-     : _ Var.t);
+      : _ Var.t);
   print_endline (Help.describe_variable_text obsolete);
   [%expect
     {|

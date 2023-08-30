@@ -100,17 +100,17 @@ module Record = struct
   let took t = Time_ns.diff t.stop t.start
 
   let rec sexp_of_t
-            ({ start = _; stop = _; message; children; had_parallel_children; pending_children }
-             as t)
+    ({ start = _; stop = _; message; children; had_parallel_children; pending_children }
+    as t)
     =
     [%sexp
       (took t |> Time_ns.Span.to_string_hum : string)
-    , (if had_parallel_children then Some `parallel else None
-                                                         : ([ `parallel ] option[@sexp.option]))
-    , (if pending_children <> 0 then Some (`pending_children pending_children) else None
-                                                                                    : ([ `pending_children of int ] option[@sexp.option]))
-    , (Message.force message : Sexp.t)
-    , (children : (t list[@sexp.omit_nil]))]
+      , (if had_parallel_children then Some `parallel else None
+          : ([ `parallel ] option[@sexp.option]))
+      , (if pending_children <> 0 then Some (`pending_children pending_children) else None
+          : ([ `pending_children of int ] option[@sexp.option]))
+      , (Message.force message : Sexp.t)
+      , (children : (t list[@sexp.omit_nil]))]
   ;;
 
   let sexp_to_string_on_one_line =
@@ -195,7 +195,7 @@ module Record = struct
            frames.  We also hide the gap frame if it took less than 1us, since a gap frame
            that says 0us would be noise. *)
         if Time_ns.Span.( < ) gap_took !hide_if_less_than
-        || Time_ns.Span.( < ) gap_took Time_ns.Span.microsecond
+           || Time_ns.Span.( < ) gap_took Time_ns.Span.microsecond
         then ts
         else
           { start
@@ -212,9 +212,9 @@ module Record = struct
           t.children
           ~init:(t.start, [])
           ~f:(fun (last_stop, rev_children) child ->
-            ( child.stop
-            , insert_gap_frames child
-              :: maybe_add_gap rev_children ~start:last_stop ~stop:child.start ))
+          ( child.stop
+          , insert_gap_frames child
+            :: maybe_add_gap rev_children ~start:last_stop ~stop:child.start ))
       in
       let rev_children = maybe_add_gap rev_children ~start:last_stop ~stop:t.stop in
       { t with children = List.rev rev_children })
@@ -233,9 +233,9 @@ module Record = struct
     in
     let start = [%sexp (t.start : Time_ns.t)] |> Sexp.to_string in
     let rec loop
-              ({ message; children; had_parallel_children; pending_children; _ } as t)
-              ~depth
-              ~parent_took
+      ({ message; children; had_parallel_children; pending_children; _ } as t)
+      ~depth
+      ~parent_took
       =
       let took = took t in
       let percentage =
@@ -301,7 +301,7 @@ module Record = struct
     let rendering_took = Time_ns.diff rendering_finished rendering_started in
     let rendering_took =
       if !never_show_rendering_took
-      || Time_ns.Span.( < ) rendering_took !hide_top_level_if_less_than
+         || Time_ns.Span.( < ) rendering_took !hide_top_level_if_less_than
       then None
       else
         Some
@@ -429,11 +429,11 @@ let with_profile_context frame ~f =
 ;;
 
 let profile
-      (type a)
-      ?hide_if_less_than
-      (sync_or_async : a Sync_or_async.t)
-      (message : Sexp.t Lazy.t)
-      (f : unit -> a)
+  (type a)
+  ?hide_if_less_than
+  (sync_or_async : a Sync_or_async.t)
+  (message : Sexp.t Lazy.t)
+  (f : unit -> a)
   : a
   =
   if not (!profiling_is_allowed && !should_profile)
@@ -462,7 +462,7 @@ let profile
         fun ~by ->
           parent.pending_children <- parent.pending_children + by;
           parent.max_pending_children
-          <- Int.max parent.max_pending_children parent.pending_children
+            <- Int.max parent.max_pending_children parent.pending_children
     in
     incr_pending_children ~by:1;
     let f () = with_profile_context (Some frame) ~f in
@@ -472,14 +472,10 @@ let profile
         record_profile ?hide_if_less_than frame;
         incr_pending_children ~by:(-1))
     | Async ->
-      Monitor.protect
-        ~run:`Schedule
-        ~rest:`Log
-        f
-        ~finally:(fun () ->
-          record_profile ?hide_if_less_than frame;
-          incr_pending_children ~by:(-1);
-          return ()))
+      Monitor.protect ~run:`Schedule ~rest:`Log f ~finally:(fun () ->
+        record_profile ?hide_if_less_than frame;
+        incr_pending_children ~by:(-1);
+        return ()))
 ;;
 
 let backtrace () =

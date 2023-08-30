@@ -3,10 +3,10 @@ open! Import0
 module Frame = Frame0
 
 include Value.Make_subtype (struct
-    let name = "color"
-    let here = [%here]
-    let is_in_subtype = Value.is_string
-  end)
+  let name = "color"
+  let here = [%here]
+  let is_in_subtype = Value.is_string
+end)
 
 let to_name t = t |> to_value |> Value.to_utf8_bytes_exn
 let compare t1 t2 = String.compare (t1 |> to_name) (t2 |> to_name)

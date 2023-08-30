@@ -116,11 +116,11 @@ module type Subtype = sig
 end
 
 module Make_subtype (Arg : sig
-    type t [@@deriving enumerate, sexp_of]
+  type t [@@deriving enumerate, sexp_of]
 
-    val module_name : string
-    val to_symbol : t -> symbol
-  end) =
+  val module_name : string
+  val to_symbol : t -> symbol
+end) =
 struct
   let to_symbol = Arg.to_symbol
 

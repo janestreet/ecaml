@@ -20,12 +20,12 @@ let return (type a b) (t : (a, b) t) (a : a) : b =
 ;;
 
 let protect
-      (type a b)
-      ?(allow_in_background = false)
-      here
-      (t : (a, b) t)
-      ~(f : unit -> b)
-      ~finally
+  (type a b)
+  ?(allow_in_background = false)
+  here
+  (t : (a, b) t)
+  ~(f : unit -> b)
+  ~finally
   : b
   =
   match t with

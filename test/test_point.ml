@@ -384,7 +384,7 @@ let%expect_test "[search_forward_regexp] and [Regexp.Last_match]" =
     print_s
       [%sexp
         (search_forward_regexp ({|\(b\)|} |> Regexp.of_pattern) ~update_last_match:true
-         : bool)];
+          : bool)];
     [%expect {| true |}];
     show_last_match ();
     [%expect {|

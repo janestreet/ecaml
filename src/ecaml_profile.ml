@@ -185,33 +185,33 @@ let () =
     (* We start initializing the profile buffer, so that it exists when we need it. *)
     ignore (Profile_buffer.profile_buffer () : Buffer.t option);
   (Profile.Private.on_async_out_of_order
-   := fun (lazy sexp) -> Echo_area.inhibit_messages Sync (fun () -> message_s sexp));
+     := fun (lazy sexp) -> Echo_area.inhibit_messages Sync (fun () -> message_s sexp));
   (Profile.sexp_of_time_ns
-   := fun time_ns ->
-     match [%sexp (time_ns : Time_ns_unix.t)] with
-     | List [ date; ofday ] -> List [ ofday; date ]
-     | sexp -> sexp);
+     := fun time_ns ->
+          match [%sexp (time_ns : Time_ns_unix.t)] with
+          | List [ date; ofday ] -> List [ ofday; date ]
+          | sexp -> sexp);
   (Profile.output_profile
-   := fun string ->
-     (* If [output_profile] raises, then Nested_profile use [eprint_s] to print the
+     := fun string ->
+          (* If [output_profile] raises, then Nested_profile use [eprint_s] to print the
         exception, which doesn't work well in Emacs.  So we do our own exception
         handling. *)
-     try
-       match Profile_buffer.profile_buffer () with
-       | None -> ()
-       | Some buffer ->
-         Current_buffer.set_temporarily Sync buffer ~f:(fun () ->
-           Current_buffer.inhibit_read_only Sync (fun () ->
-             Current_buffer.append_to string))
-     with
-     | exn -> message_s [%message "unable to output profile" ~_:(exn : exn)]);
+          try
+            match Profile_buffer.profile_buffer () with
+            | None -> ()
+            | Some buffer ->
+              Current_buffer.set_temporarily Sync buffer ~f:(fun () ->
+                Current_buffer.inhibit_read_only Sync (fun () ->
+                  Current_buffer.append_to string))
+          with
+          | exn -> message_s [%message "unable to output profile" ~_:(exn : exn)]);
   Profile.tag_frames_with
-  := Some
-       (fun () ->
-          match Current_buffer.value_exn tag_function with
-          | None -> None
-          | Some f ->
-            Some (f |> Function.to_value |> Value.funcall0 |> [%sexp_of: Value.t]));
+    := Some
+         (fun () ->
+           match Current_buffer.value_exn tag_function with
+           | None -> None
+           | Some f ->
+             Some (f |> Function.to_value |> Value.funcall0 |> [%sexp_of: Value.t]));
   Hook.add
     Elisp_gc.post_gc_hook
     (Hook.Function.create
@@ -223,7 +223,7 @@ Internal to the Ecaml profiler.
 
 Called by `post-gc-hook' to add Elisp GC information to the Ecaml profiler.
 |}
-       (* We don't profile this hook so that the gc frame is attributed to the enclosing
+         (* We don't profile this hook so that the gc frame is attributed to the enclosing
           frame that actually experienced the gc. *)
        ~should_profile:false
        ~hook_type:Normal_hook
@@ -302,10 +302,10 @@ Called by `post-gc-hook' to add Elisp GC information to the Ecaml profiler.
        in
        Args
          (fun () ->
-            let%bind function_name =
-              Completing.read_function_name ~prompt:"Profile function: " ~history
-            in
-            return [ function_name |> Value.intern ]))
+           let%bind function_name =
+             Completing.read_function_name ~prompt:"Profile function: " ~history
+           in
+           return [ function_name |> Value.intern ]))
     (Returns Value.Type.unit)
     (let%map_open.Defun () = return ()
      and fn = required "function" Symbol.t in
@@ -323,10 +323,10 @@ Tell the Ecaml profiler about calls to an Elisp function.
           ~should_profile:false
           Sync
           (fun f args ->
-             profile
-               Sync
-               (lazy [%sexp ((fn |> Symbol.to_value) :: args : Value.t list)])
-               (fun () -> f args)));
+          profile
+            Sync
+            (lazy [%sexp ((fn |> Symbol.to_value) :: args : Value.t list)])
+            (fun () -> f args)));
      Hash_set.add profiled_elisp_functions (Symbol.name fn);
      message (concat [ "You just added Ecaml profiling of ["; fn |> Symbol.name; "]" ]));
   Defun.defun
@@ -341,15 +341,15 @@ Tell the Ecaml profiler about calls to an Elisp function.
        in
        Args
          (fun () ->
-            let%bind function_name =
-              Completing.read
-                ()
-                ~prompt:"Unprofile function: "
-                ~history
-                ~collection:(This (Hash_set.to_list profiled_elisp_functions))
-                ~require_match:True
-            in
-            return [ function_name |> Value.intern ]))
+           let%bind function_name =
+             Completing.read
+               ()
+               ~prompt:"Unprofile function: "
+               ~history
+               ~collection:(This (Hash_set.to_list profiled_elisp_functions))
+               ~require_match:True
+           in
+           return [ function_name |> Value.intern ]))
     (Returns Value.Type.unit)
     (let%map_open.Defun () = return ()
      and fn = required "function" Symbol.t in
@@ -367,22 +367,22 @@ Test how the Ecaml profiler handles two Async jobs running in parallel.
 |}
     (Returns_deferred Value.Type.unit)
     (fun () ->
-       profile
-         Async
-         (lazy [%sexp "The whole thing"])
-         (fun () ->
-            let%bind () =
-              profile
-                Async
-                (lazy [%sexp "branch1"])
-                (fun () -> Async.Clock.after (Time_float.Span.of_sec 1.))
-            and () =
-              profile
-                Async
-                (lazy [%sexp "branch2"])
-                (fun () -> Async.Clock.after (Time_float.Span.of_sec 0.8))
-            in
-            return ()))
+    profile
+      Async
+      (lazy [%sexp "The whole thing"])
+      (fun () ->
+        let%bind () =
+          profile
+            Async
+            (lazy [%sexp "branch1"])
+            (fun () -> Async.Clock.after (Time_float.Span.of_sec 1.))
+        and () =
+          profile
+            Async
+            (lazy [%sexp "branch2"])
+            (fun () -> Async.Clock.after (Time_float.Span.of_sec 0.8))
+        in
+        return ()))
 ;;
 
 [@@@warning "-unused-module"]
@@ -419,17 +419,17 @@ Benchmark the Ecaml profiler's rendering of a large %{name}.
 |}]
       ~interactive:No_arg
       (fun () ->
-         (* We [Profile.disown] because we want to render the profile below under the
+        (* We [Profile.disown] because we want to render the profile below under the
             settings of our own choosing, rather than have it incorporated into
             the profile of the outer command. *)
-         Profile.disown (fun () ->
-           let data = create () in
-           Ref.set_temporarily Profile.should_profile true ~f:(fun () ->
-             Ref.set_temporarily Profile.hide_if_less_than Time_ns.Span.zero ~f:(fun () ->
-               Ref.set_temporarily
-                 Profile.hide_top_level_if_less_than
-                 Time_ns.Span.zero
-                 ~f:(fun () -> Funcall.Wrap.(helper_name <: value @-> return nil) data)))))
+        Profile.disown (fun () ->
+          let data = create () in
+          Ref.set_temporarily Profile.should_profile true ~f:(fun () ->
+            Ref.set_temporarily Profile.hide_if_less_than Time_ns.Span.zero ~f:(fun () ->
+              Ref.set_temporarily
+                Profile.hide_top_level_if_less_than
+                Time_ns.Span.zero
+                ~f:(fun () -> Funcall.Wrap.(helper_name <: value @-> return nil) data)))))
   ;;
 
   let large_string = lazy (String.make 1024 'a' |> Value.of_utf8_bytes)

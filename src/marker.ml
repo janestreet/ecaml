@@ -2,10 +2,10 @@ open! Core
 open! Import
 
 include Value.Make_subtype (struct
-    let name = "marker"
-    let here = [%here]
-    let is_in_subtype = Value.is_marker
-  end)
+  let name = "marker"
+  let here = [%here]
+  let is_in_subtype = Value.is_marker
+end)
 
 module Insertion_type = struct
   type t =

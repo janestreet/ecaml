@@ -72,8 +72,8 @@ module Coding_system = struct
       [%sexp "buffer-file-coding-system"]
       (module T)
       (function
-        | Utf_8 -> "utf-8" |> Value.intern
-        | Utf_8_unix -> "utf-8-unix" |> Value.intern)
+       | Utf_8 -> "utf-8" |> Value.intern
+       | Utf_8_unix -> "utf-8-unix" |> Value.intern)
   ;;
 
   let t = type_
@@ -292,9 +292,9 @@ let buffer_local_variables =
 let buffer_local_variables () =
   buffer_local_variables ()
   |> List.map ~f:(fun value ->
-    if Value.is_symbol value
-    then value |> Symbol.of_value_exn, None
-    else Value.car_exn value |> Symbol.of_value_exn, Some (Value.cdr_exn value))
+       if Value.is_symbol value
+       then value |> Symbol.of_value_exn, None
+       else Value.car_exn value |> Symbol.of_value_exn, Some (Value.cdr_exn value))
 ;;
 
 let kill_local_variable = Funcall.Wrap.("kill-local-variable" <: Symbol.t @-> return nil)
@@ -389,7 +389,7 @@ let replace_buffer_contents =
               buffer
               (Option.map max_duration ~f:Time_ns.Span.to_sec)
               max_costs
-            : bool))
+             : bool))
 ;;
 
 let size = Funcall.Wrap.("buffer-size" <: nullary @-> return int)

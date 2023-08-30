@@ -39,8 +39,8 @@ module Make_test (M : Monad) = struct
         ?hide_if_less_than
         (lazy [%message "bar"])
         (fun () ->
-           advance_clock_by (sec 0.2);
-           return ())
+          advance_clock_by (sec 0.2);
+          return ())
     in
     let baz () =
       profile
@@ -48,10 +48,10 @@ module Make_test (M : Monad) = struct
         ?hide_if_less_than
         (lazy [%message "baz"])
         (fun () ->
-           let%bind () = bar () in
-           non_async_profile ();
-           advance_clock_by (sec 0.2);
-           return ())
+          let%bind () = bar () in
+          non_async_profile ();
+          advance_clock_by (sec 0.2);
+          return ())
     in
     let foo () =
       profile
@@ -59,11 +59,11 @@ module Make_test (M : Monad) = struct
         ?hide_if_less_than
         (lazy [%message "foo"])
         (fun () ->
-           let%bind () = bar () in
-           let%bind () = baz () in
-           let%bind () = bar () in
-           advance_clock_by (sec 0.1);
-           return ())
+          let%bind () = bar () in
+          let%bind () = baz () in
+          let%bind () = bar () in
+          advance_clock_by (sec 0.1);
+          return ())
     in
     let%bind () = foo () in
     return ()
@@ -71,16 +71,16 @@ module Make_test (M : Monad) = struct
 end
 
 module Test_profile = Make_test (struct
-    include Monad.Ident
+  include Monad.Ident
 
-    let sync_or_async = Sync_or_async.Sync
-  end)
+  let sync_or_async = Sync_or_async.Sync
+end)
 
 module Test_profile_async = Make_test (struct
-    include Deferred
+  include Deferred
 
-    let sync_or_async = Sync_or_async.Async
-  end)
+  let sync_or_async = Sync_or_async.Async
+end)
 
 let%expect_test "Non-async profile" =
   Test_profile.test ();
@@ -119,15 +119,15 @@ let%expect_test "bad call to profile_async" =
       Async
       (lazy [%message "outer"])
       (fun () ->
-         don't_wait_for
-           (profile
-              Async
-              (lazy [%message "inner"])
-              (fun () ->
-                 advance_clock_by (sec 0.1);
-                 Ivar.read child_exits));
-         advance_clock_by (sec 0.01);
-         return ())
+        don't_wait_for
+          (profile
+             Async
+             (lazy [%message "inner"])
+             (fun () ->
+               advance_clock_by (sec 0.1);
+               Ivar.read child_exits));
+        advance_clock_by (sec 0.01);
+        return ())
   in
   [%expect
     {|
@@ -159,23 +159,23 @@ let%expect_test "parallel calls to profile_async" =
       Async
       (lazy [%message "outer"])
       (fun () ->
-         advance_clock_by (sec 0.1);
-         let%map () =
-           profile
-             Async
-             (lazy [%message "inner-a"])
-             (fun () ->
-                advance_clock_by (sec 0.01);
-                return ())
-         and () =
-           profile
-             Async
-             (lazy [%message "inner-b"])
-             (fun () ->
-                advance_clock_by (sec 0.01);
-                return ())
-         in
-         advance_clock_by (sec 0.1))
+        advance_clock_by (sec 0.1);
+        let%map () =
+          profile
+            Async
+            (lazy [%message "inner-a"])
+            (fun () ->
+              advance_clock_by (sec 0.01);
+              return ())
+        and () =
+          profile
+            Async
+            (lazy [%message "inner-b"])
+            (fun () ->
+              advance_clock_by (sec 0.01);
+              return ())
+        in
+        advance_clock_by (sec 0.1))
   in
   [%expect
     {|
@@ -187,21 +187,20 @@ let%expect_test "parallel calls to profile_async" =
   return ()
 ;;
 
-
 let%expect_test "inner ends after outer ends" =
   let%bind () =
     profile
       Async
       (lazy [%message "outer"])
       (fun () ->
-         don't_wait_for
-           (profile
-              Async
-              (lazy [%message "inner"])
-              (fun () ->
-                 Clock.advance clock ~by:(Time_ns.Span.of_ms 100.);
-                 return ()));
-         return ())
+        don't_wait_for
+          (profile
+             Async
+             (lazy [%message "inner"])
+             (fun () ->
+               Clock.advance clock ~by:(Time_ns.Span.of_ms 100.);
+               return ()));
+        return ())
   in
   [%expect
     {|
@@ -238,16 +237,16 @@ let call_profile () =
     Sync
     (lazy [%sexp "context"])
     (fun () ->
-       advance_clock_by (sec 1.);
-       print_endline "function supplied to [profile] ran")
+      advance_clock_by (sec 1.);
+      print_endline "function supplied to [profile] ran")
 ;;
 
 let%expect_test "calling [profile] within [output_profile]" =
   Ref.set_temporarily
     output_profile
     (fun string ->
-       call_profile ();
-       print_endline string)
+      call_profile ();
+      print_endline string)
     ~f:(fun () -> Ref.set_temporarily hide_if_less_than Time_ns.Span.zero ~f:call_profile);
   [%expect
     {|
@@ -264,8 +263,8 @@ let%expect_test "calling [profile] within the [Sexp.t Lazy.t] supplied to [profi
       (call_profile ();
        [%sexp "outer context"]))
     (fun () ->
-       advance_clock_by (sec 1.);
-       print_endline "outer call");
+      advance_clock_by (sec 1.);
+      print_endline "outer call");
   [%expect
     {|
     outer call
@@ -370,15 +369,15 @@ let%expect_test "[backtrace]" =
         Sync
         (lazy [%message "Outer profile"])
         (fun () ->
-           profile
-             Sync
-             (lazy [%message "Inner profile"])
-             (fun () ->
-                print_s
-                  [%sexp
-                    "Backtrace from inner function", (backtrace () : Sexp.t list option)]);
-           print_s
-             [%sexp "Backtrace from outer function", (backtrace () : Sexp.t list option)]))
+          profile
+            Sync
+            (lazy [%message "Inner profile"])
+            (fun () ->
+              print_s
+                [%sexp
+                  "Backtrace from inner function", (backtrace () : Sexp.t list option)]);
+          print_s
+            [%sexp "Backtrace from outer function", (backtrace () : Sexp.t list option)]))
   in
   test_backtrace ~should_profile:true;
   [%expect
@@ -420,8 +419,8 @@ let%expect_test "[tag_frames_with] runs before f" =
         Sync
         (lazy [%message "Increment some_int"])
         (fun () ->
-           incr some_int;
-           advance_clock_by (sec 1.)));
+          incr some_int;
+          advance_clock_by (sec 1.)));
   [%expect
     {|
       (1_000_000us ("Increment some_int" ((some_int 0))) "1970-01-01 00:00:16.43Z") |}];

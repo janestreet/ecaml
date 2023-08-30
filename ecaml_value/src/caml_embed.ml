@@ -58,7 +58,7 @@ let create_type (type_id : _ Type_equal.Id.t) =
     [%message "caml_embed" ~type_id:(Type_equal.Id.name type_id : string)]
     (Type_equal.Id.to_sexp type_id)
     (fun v ->
-       let embed = of_value_exn v in
-       extract_exn embed type_id)
+      let embed = of_value_exn v in
+      extract_exn embed type_id)
     (fun a -> create type_id a |> to_value)
 ;;

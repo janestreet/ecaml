@@ -8,9 +8,7 @@ module Q = struct
   let normal = "normal" |> Symbol.intern
 end
 
-let is_in_use () =
-  Feature.is_provided Q.evil
-;;
+let is_in_use () = Feature.is_provided Q.evil
 
 let evil_declare_ignore_repeat =
   Funcall.Wrap.("evil-declare-ignore-repeat" <: Symbol.t @-> return ignored)

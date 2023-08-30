@@ -33,10 +33,10 @@ let%expect_test "" =
       ~docstring:"<docstring>"
       Sync
       (fun inner rest ->
-         print_s [%message "advice" (rest : Value.t list)];
-         let inner_result = inner ((0 |> Value.of_int_exn) :: rest) in
-         print_s [%message "advice" (inner_result : Value.t)];
-         Value.Type.(int |> to_value) (1 + (inner_result |> Value.to_int_exn)))
+      print_s [%message "advice" (rest : Value.t list)];
+      let inner_result = inner ((0 |> Value.of_int_exn) :: rest) in
+      print_s [%message "advice" (inner_result : Value.t)];
+      Value.Type.(int |> to_value) (1 + (inner_result |> Value.to_int_exn)))
   in
   Advice.add t ~to_function:test_function;
   call_test_function ();
@@ -73,8 +73,8 @@ let%expect_test "[around_funcall ~on_parse_error]" =
         Funcall.Wrap.(arg_type @-> return int)
         ?on_parse_error
         (fun _ _ ->
-           print_s [%message "Advice got called."];
-           -1)
+          print_s [%message "Advice got called."];
+          -1)
     in
     Advice.add t ~to_function:test_function;
     call_test_function ();
@@ -169,11 +169,11 @@ let%expect_test "Async advice" =
       ~docstring:"<docstring>"
       Async
       (fun inner rest ->
-         let%map () = Clock.after (sec 0.001) in
-         print_s [%message "advice" (rest : Value.t list)];
-         let inner_result = inner ((0 |> Value.of_int_exn) :: rest) in
-         print_s [%message "advice" (inner_result : Value.t)];
-         Value.Type.(int |> to_value) (1 + (inner_result |> Value.to_int_exn)))
+      let%map () = Clock.after (sec 0.001) in
+      print_s [%message "advice" (rest : Value.t list)];
+      let inner_result = inner ((0 |> Value.of_int_exn) :: rest) in
+      print_s [%message "advice" (inner_result : Value.t)];
+      Value.Type.(int |> to_value) (1 + (inner_result |> Value.to_int_exn)))
   in
   Advice.add t ~to_function:test_function;
   let call_test_function () =

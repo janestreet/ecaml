@@ -7,10 +7,10 @@ let%expect_test "test generating intermediate logs from .t files" =
     Process.run_exn
       ~env:
         (`Extend
-           [ "HGRCPATH", ""
-           ; (* This is a hack and will need to be updated if this file is moved *)
-             "ROOT", Filename_unix.realpath "../../.."
-           ])
+          [ "HGRCPATH", ""
+          ; (* This is a hack and will need to be updated if this file is moved *)
+            "ROOT", Filename_unix.realpath "../../.."
+          ])
       ~prog:"./run-unified-tests"
       ~args:
         [ "./test-hello.t"
@@ -46,22 +46,22 @@ let%expect_test "test generating Nested_profiles from intermediate logs" =
   Monitor.protect
     ~finally:(fun () -> Unix.unlink tmpfile)
     (fun () ->
-       let%bind () =
-         Process.run_exn
-           ~prog:"../bin/render_unified_test_profile.exe"
-           ~args:
-             [ "-output-file"
-             ; tmpfile
-             ; "-test-name"
-             ; "test-hg.t"
-             ; "test_profile_intermediate_file.log"
-             ]
-           ()
-         >>| print_endline
-       in
-       let%bind () = Reader.file_contents tmpfile >>| print_endline in
-       [%expect
-         {|
+      let%bind () =
+        Process.run_exn
+          ~prog:"../bin/render_unified_test_profile.exe"
+          ~args:
+            [ "-output-file"
+            ; tmpfile
+            ; "-test-name"
+            ; "test-hg.t"
+            ; "test_profile_intermediate_file.log"
+            ]
+          ()
+        >>| print_endline
+      in
+      let%bind () = Reader.file_contents tmpfile >>| print_endline in
+      [%expect
+        {|
     (1_900_000us test-hg.t "2021-11-09 16:08:17.455591583Z" (
        ( 17%   330_000us start_test)
        (  0%     2_000us "cat >can_load_re2.py <<EOF")
@@ -70,5 +70,5 @@ let%expect_test "test generating Nested_profiles from intermediate logs" =
        ( 20%   380_000us "hg pull foo -e 'echo >&2 running ssh'")
        ( 10%   190_000us "hg debuginstall | grep 'Python version'")
        (  4%    75_000us "hg debuginstall | grep 'Python version'"))) |}];
-       return ())
+      return ())
 ;;

@@ -11,8 +11,8 @@ let test f =
     ~name:(Symbol.gensym ())
     ~docstring:"<docstring>"
     ~f:(fun () ->
-      print_s [%message "ran"];
-      continue := false);
+    print_s [%message "ran"];
+    continue := false);
   while_ (fun () -> !continue) ~do_:(fun () -> f (sec_ns 0.001))
 ;;
 
@@ -39,11 +39,11 @@ let%expect_test "[run_after ~repeat]" =
     ~name:(Symbol.gensym ())
     ~docstring:"<docstring>"
     ~f:(fun () ->
-      if !r = 3
-      then continue := false
-      else (
-        incr r;
-        print_s [%message "" ~_:(!r : int)]));
+    if !r = 3
+    then continue := false
+    else (
+      incr r;
+      print_s [%message "" ~_:(!r : int)]));
   let%bind () = while_ (fun () -> !continue) ~do_:(fun () -> sit_for (sec_ns 0.001)) in
   [%expect {|
     1

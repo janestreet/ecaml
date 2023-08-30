@@ -23,11 +23,11 @@ end
 module Char_class = struct
   type t =
     | Chars_in of string
-    (** [Chars_in s] matches characters in [s] (e.g., "[:digit:]" matches ':')  *)
+        (** [Chars_in s] matches characters in [s] (e.g., "[:digit:]" matches ':')  *)
     | Named of Named_char_class.t
-    (** [Named name] matches characters from a named character class, e.g., [alpha]. *)
+        (** [Named name] matches characters from a named character class, e.g., [alpha]. *)
     | Range of char * char
-    (** [Range (c1, c2)] matches characters between [c1] and [c2] inclusive. *)
+        (** [Range (c1, c2)] matches characters between [c1] and [c2] inclusive. *)
   [@@deriving sexp_of]
 end
 
@@ -43,13 +43,13 @@ module T = struct
     | Any_char
     | Any_in of Char_class.t list
     | Exactly of string
-    (** [Exactly s] matches exactly the string [s] (e.g., '.' only matches '.') *)
+        (** [Exactly s] matches exactly the string [s] (e.g., '.' only matches '.') *)
     | Line of Start_or_end.t
     | None_in of Char_class.t list
     | One_or_more of t
     | Or of t list
     | Pattern of string
-    (** [Pattern s] interprets [s] as a regexp (e.g., '.' matches any character) *)
+        (** [Pattern s] interprets [s] as a regexp (e.g., '.' matches any character) *)
     | Point (** Matches zero characters, but only where the point is. *)
     | Repeat of
         { min : int
@@ -58,7 +58,7 @@ module T = struct
         }
     | Seq of t list
     | Submatch of t
-    (** Text matched by [Submatch] can be retrieved using [Regexp.Last_match.text_exn
+        (** Text matched by [Submatch] can be retrieved using [Regexp.Last_match.text_exn
         ~subexp:index].
 
         [index] is the number of parentheses to the left of this submatch in the regexp
@@ -67,7 +67,7 @@ module T = struct
         { index : int
         ; t : t
         }
-    (** Text matched by [Submatch_n] can be retrieved using [Regexp.Last_match.text_exn
+        (** Text matched by [Submatch_n] can be retrieved using [Regexp.Last_match.text_exn
         ~subexp:index].
 
         [index] must be at least the number of parentheses left of this submatch in the

@@ -54,10 +54,10 @@ module Brightness = struct
 end
 
 module Bounded_int (Config : sig
-    val max_value : int
-    val name : string
-  end)
-    () : sig
+  val max_value : int
+  val name : string
+end)
+() : sig
   type t [@@deriving compare, hash, sexp]
 
   val _min_value : t
@@ -69,21 +69,21 @@ end = struct
   let max_value = Config.max_value
 
   include Validated.Make_bin_io_compare_hash_sexp (struct
-      let here = [%here]
+    let here = [%here]
 
-      type t = int [@@deriving sexp, compare, hash, bin_io]
+    type t = int [@@deriving sexp, compare, hash, bin_io]
 
-      let validate color_index =
-        if min_value <= color_index && color_index <= max_value
-        then Validate.pass
-        else
-          Validate.fail_s
-            [%message
-              (sprintf "%s not between 0 and %d" Config.name max_value) (color_index : int)]
-      ;;
+    let validate color_index =
+      if min_value <= color_index && color_index <= max_value
+      then Validate.pass
+      else
+        Validate.fail_s
+          [%message
+            (sprintf "%s not between 0 and %d" Config.name max_value) (color_index : int)]
+    ;;
 
-      let validate_binio_deserialization = true
-    end)
+    let validate_binio_deserialization = true
+  end)
 
   let to_int = raw
   let of_int_exn = create_exn
@@ -160,8 +160,7 @@ module Color_spec = struct
     match t with
     | Standard t ->
       Standard { t with brightness = t.brightness |> Brightness.make_fainter }
-    | x ->
-      x
+    | x -> x
   ;;
 end
 
@@ -189,7 +188,7 @@ end = struct
          ~customization_type:(Vector (List.init 8 ~f:(fun _ -> Customization.Type.Color)))
          ~standard_value
          ()
-       : _ Customization.t)
+        : _ Customization.t)
   ;;
 
   let () =
@@ -663,7 +662,7 @@ end = struct
     ;;
 
     let sexp_of_t
-          { attributes_state; next_state_by_code; text_properties; add_text_properties = _ }
+      { attributes_state; next_state_by_code; text_properties; add_text_properties = _ }
       =
       [%message.omit_nil
         ""
@@ -695,11 +694,11 @@ end = struct
     let all_states =
       Hashtbl.data all_states
       |> List.sort ~compare:(fun a b ->
-        Comparable.lift
-          State.Attributes_state.compare
-          ~f:(fun x -> x.State.attributes_state)
-          a
-          b)
+           Comparable.lift
+             State.Attributes_state.compare
+             ~f:(fun x -> x.State.attributes_state)
+             a
+             b)
     in
     [%message.omit_nil
       "" (current_state : State.t) (empty_state : State.t) (all_states : State.t list)]
@@ -925,7 +924,7 @@ end = struct
          then (
            let region = { Region.pos = start; len } in
            temp_file_state.regions
-           <- (region, add_text_properties) :: temp_file_state.regions));
+             <- (region, add_text_properties) :: temp_file_state.regions));
       t.region_start <- t.region_start + len;
       t.output_pos <- end_)
   ;;
@@ -987,11 +986,11 @@ type t =
   }
 
 let create
-      ~mode
-      ~allow_partial_trailing_escape
-      ~drop_unsupported_escapes
-      ?(state_machine = State_machine.create ())
-      ()
+  ~mode
+  ~allow_partial_trailing_escape
+  ~drop_unsupported_escapes
+  ?(state_machine = State_machine.create ())
+  ()
   =
   { backend = Colorization_backend.create ~mode
   ; saw_escape = false
@@ -1251,17 +1250,17 @@ let color_region ~start ~end_ ~use_temp_file ~preserve_state ~drop_unsupported_e
 ;;
 
 let color_region_in_current_buffer
-      ~start
-      ~end_
-      ?(use_temp_file = false)
-      ?(preserve_state = false)
-      ?(drop_unsupported_escapes = false)
-      ()
+  ~start
+  ~end_
+  ?(use_temp_file = false)
+  ?(preserve_state = false)
+  ?(drop_unsupported_escapes = false)
+  ()
   =
   Current_buffer.save_excursion Sync (fun () ->
     ignore
       (color_region ~start ~end_ ~use_temp_file ~preserve_state ~drop_unsupported_escapes
-       : bool))
+        : bool))
 ;;
 
 let color_current_buffer () =
@@ -1275,7 +1274,7 @@ let color_current_buffer () =
        ~use_temp_file:true
        ~preserve_state:false
        ~drop_unsupported_escapes:false
-     : bool);
+      : bool);
   if not buffer_was_modified then Current_buffer.set_modified false;
   Current_buffer.(set_buffer_local read_only) true;
   Point.goto_char (Point.min ())

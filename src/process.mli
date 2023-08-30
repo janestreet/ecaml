@@ -175,7 +175,7 @@ val call_result_exn
     [(describe-function 'call-process-region)] *)
 val call_region_exn
   :  ?input:Call.Region_input.t
-  (** default is [Region { start = Point.min (); end_ = Point.max ()}] *)
+       (** default is [Region { start = Point.min (); end_ = Point.max ()}] *)
   -> ?output:Call.Output.t (** default is [Dev_null] *)
   -> ?redisplay_on_output:bool (** default is [false] *)
   -> ?working_directory:Working_directory.t (** default is [Root] *)
@@ -192,7 +192,7 @@ val call_exn
   -> ?strip_whitespace:bool (** default is [true] *)
   -> ?verbose_exn:bool (** default is [true] *)
   -> ?stderr:[ `Drop_if_ok | `Mix | `Split of Call.Output.Stderr.t ]
-  (** default is [`Mix] *)
+       (** default is [`Mix] *)
   -> string
   -> string list
   -> string

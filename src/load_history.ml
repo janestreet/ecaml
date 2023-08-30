@@ -53,18 +53,18 @@ module Type = struct
   include T
 
   include Valueable.Make (struct
-      type nonrec t = t
+    type nonrec t = t
 
-      let type_ =
-        Value.Type.enum
-          [%sexp "load-history type"]
-          (module T)
-          (function
-            | Face -> Q.defface |> Symbol.to_value
-            | Fun -> Value.nil
-            | Var -> Q.defvar |> Symbol.to_value)
-      ;;
-    end)
+    let type_ =
+      Value.Type.enum
+        [%sexp "load-history type"]
+        (module T)
+        (function
+         | Face -> Q.defface |> Symbol.to_value
+         | Fun -> Value.nil
+         | Var -> Q.defvar |> Symbol.to_value)
+    ;;
+  end)
 end
 
 module Key = struct
@@ -112,13 +112,13 @@ let update_emacs_with_entries ~chop_prefix ~in_dir =
   let addition =
     !entries
     |> List.map ~f:(fun ((source_code_position : Source_code_position.t), entry) ->
-      String.chop_prefix_exn source_code_position.pos_fname ~prefix:chop_prefix, entry)
+         String.chop_prefix_exn source_code_position.pos_fname ~prefix:chop_prefix, entry)
     |> String.Table.of_alist_multi
     |> Hashtbl.to_alist
     |> List.map ~f:(fun (file, entries) ->
-      Value.cons
-        (Stdlib.Filename.concat in_dir file |> Value.of_utf8_bytes)
-        (Value.list (entries |> List.map ~f:Entry.to_value)))
+         Value.cons
+           (Stdlib.Filename.concat in_dir file |> Value.of_utf8_bytes)
+           (Value.list (entries |> List.map ~f:Entry.to_value)))
     |> Value.list
   in
   entries := [];

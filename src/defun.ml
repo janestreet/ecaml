@@ -21,15 +21,15 @@ module T0 = struct
 
   let rec sexp_of_t : type a. (a -> Sexp.t) -> a t -> Sexp.t =
     fun sexp_of_a -> function
-      | Return a -> [%message "Return" ~_:(a : a)]
-      | Map (t, _) -> [%message "Map" ~_:(t : _ t)]
-      | Both (t1, t2) -> [%message "Both" ~_:(t1 : _ t) ~_:(t2 : _ t)]
-      | Required (symbol, type_) ->
-        [%message "Required" ~_:(symbol : Symbol.t) ~_:(type_ : a Value.Type.t)]
-      | Optional (symbol, type_) ->
-        [%message "Optional" ~_:(symbol : Symbol.t) ~_:(type_ : a Value.Type.t)]
-      | Rest (symbol, type_) ->
-        [%message "Rest" ~_:(symbol : Symbol.t) ~_:(type_ : _ Value.Type.t)]
+    | Return a -> [%message "Return" ~_:(a : a)]
+    | Map (t, _) -> [%message "Map" ~_:(t : _ t)]
+    | Both (t1, t2) -> [%message "Both" ~_:(t1 : _ t) ~_:(t2 : _ t)]
+    | Required (symbol, type_) ->
+      [%message "Required" ~_:(symbol : Symbol.t) ~_:(type_ : a Value.Type.t)]
+    | Optional (symbol, type_) ->
+      [%message "Optional" ~_:(symbol : Symbol.t) ~_:(type_ : a Value.Type.t)]
+    | Rest (symbol, type_) ->
+      [%message "Rest" ~_:(symbol : Symbol.t) ~_:(type_ : _ Value.Type.t)]
   ;;
 
   let return x = Return x
@@ -142,7 +142,7 @@ module Args = struct
             | None -> []
             | Some rest -> [ Q.A.rest; rest ])
          ]
-       : Symbol.t list)]
+        : Symbol.t list)]
   ;;
 
   let empty = { required = []; optional = []; rest = None }
@@ -198,13 +198,13 @@ module Returns = struct
 end
 
 let call
-      (type a b)
-      (t : a t)
-      here
-      ~function_
-      ~args
-      ~(returns : (b, a) Returns.t)
-      ~should_profile
+  (type a b)
+  (t : a t)
+  here
+  ~function_
+  ~args
+  ~(returns : (b, a) Returns.t)
+  ~should_profile
   =
   let should_profile = Option.value should_profile ~default:true in
   let context : Sexp.t Lazy.t =
@@ -241,7 +241,7 @@ module Interactive = struct
             let form = Form.of_value_exn value in
             Args
               (fun () ->
-                 Deferred.return (Form.Blocking.eval form |> Value.to_list_exn ~f:Fn.id)))
+                Deferred.return (Form.Blocking.eval form |> Value.to_list_exn ~f:Fn.id)))
           else (
             match value |> Value.to_utf8_bytes_exn with
             | "i" -> Ignored
@@ -328,15 +328,15 @@ let maybe_disable_function name disabled =
 ;;
 
 let defun_internal
-      symbol
-      here
-      ~docstring
-      ?(define_keys = [])
-      ?(obsoletes : Obsoletes.t option)
-      ?interactive
-      ?(disabled = Symbol.Disabled.Not_disabled)
-      t
-      fn
+  symbol
+  here
+  ~docstring
+  ?(define_keys = [])
+  ?(obsoletes : Obsoletes.t option)
+  ?interactive
+  ?(disabled = Symbol.Disabled.Not_disabled)
+  t
+  fn
   =
   let symbol, obsoletes =
     if is_some obsoletes
@@ -364,17 +364,17 @@ let defun_internal
 ;;
 
 let defun
-      symbol
-      here
-      ~docstring
-      ?define_keys
-      ?obsoletes
-      ?should_profile
-      ?interactive
-      ?disabled
-      ?evil_config
-      returns
-      t
+  symbol
+  here
+  ~docstring
+  ?define_keys
+  ?obsoletes
+  ?should_profile
+  ?interactive
+  ?disabled
+  ?evil_config
+  returns
+  t
   =
   let function_ = [%sexp (symbol : Symbol.t)] in
   defun_internal
@@ -392,17 +392,17 @@ let defun
 ;;
 
 let defun_nullary
-      symbol
-      here
-      ~docstring
-      ?define_keys
-      ?obsoletes
-      ?should_profile
-      ?interactive
-      ?disabled
-      ?evil_config
-      returns
-      f
+  symbol
+  here
+  ~docstring
+  ?define_keys
+  ?obsoletes
+  ?should_profile
+  ?interactive
+  ?disabled
+  ?evil_config
+  returns
+  f
   =
   defun
     symbol
@@ -421,16 +421,16 @@ let defun_nullary
 ;;
 
 let defun_nullary_nil
-      symbol
-      here
-      ~docstring
-      ?define_keys
-      ?obsoletes
-      ?should_profile
-      ?interactive
-      ?disabled
-      ?evil_config
-      f
+  symbol
+  here
+  ~docstring
+  ?define_keys
+  ?obsoletes
+  ?should_profile
+  ?interactive
+  ?disabled
+  ?evil_config
+  f
   =
   defun_nullary
     symbol

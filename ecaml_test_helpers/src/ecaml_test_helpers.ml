@@ -22,8 +22,8 @@ let () =
       ~docstring:"For testing."
       Sync
       (fun f args ->
-         incr read_event_depth;
-         Exn.protect ~f:(fun () -> f args) ~finally:(fun () -> decr read_event_depth))
+      incr read_event_depth;
+      Exn.protect ~f:(fun () -> f args) ~finally:(fun () -> decr read_event_depth))
   in
   let commands_that_call_read_event_manually =
     (* Add advice around any functions that explicitly call [read-event] or
@@ -57,13 +57,13 @@ let () =
       ; query_replace_map, raise_if_in_minibuffer_key
       ]
     (fun () ->
-       match is_minibuffer_open () with
-       | false -> minibuffer_was_open := false
-       | true ->
-         minibuffer_was_open := true;
-         let prompt = Minibuffer.prompt () in
-         message_s [%sexp "Minibuffer open", { prompt : string option }];
-         never_returns (Command.abort_recursive_edit ()))
+      match is_minibuffer_open () with
+      | false -> minibuffer_was_open := false
+      | true ->
+        minibuffer_was_open := true;
+        let prompt = Minibuffer.prompt () in
+        message_s [%sexp "Minibuffer open", { prompt : string option }];
+        never_returns (Command.abort_recursive_edit ()))
 ;;
 
 let execute_keys keys =

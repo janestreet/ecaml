@@ -36,10 +36,10 @@ module Value = struct
 end
 
 include Value.Make_subtype (struct
-    let name = "face"
-    let here = [%here]
-    let is_in_subtype = Value.is_symbol
-  end)
+  let name = "face"
+  let here = [%here]
+  let is_in_subtype = Value.is_symbol
+end)
 
 let list_type = Value.Type.list t
 let of_name s = s |> Value.intern |> of_value_exn
@@ -88,10 +88,10 @@ module Color_or_unspecified = struct
 
   let of_value_exn value =
     if Value.eq value Value.unspecified
-    (* Sometimes Emacs returns an unspecified color as the string "unspecified-fg" or
+       (* Sometimes Emacs returns an unspecified color as the string "unspecified-fg" or
        "unspecified-bg" rather than the symbol [unspecified]. *)
-    || (Value.is_string value
-        && String.is_prefix ~prefix:"unspecified" (Value.to_utf8_bytes_exn value))
+       || (Value.is_string value
+           && String.is_prefix ~prefix:"unspecified" (Value.to_utf8_bytes_exn value))
     then Unspecified
     else Color (value |> Color.of_value_exn)
   ;;

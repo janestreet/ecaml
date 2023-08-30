@@ -117,7 +117,7 @@ let bounds_of_comment_at_point () =
        None
      | Some previous_end, Some comment_start, Some comment_end, Some next_start
        when Position.( >= ) previous_end comment_start
-         || Position.( <= ) next_start comment_end ->
+            || Position.( <= ) next_start comment_end ->
        (* We're between two comments. For example:
           {v /* comment 1 */ POINT /* comment 2 */ v} *)
        None

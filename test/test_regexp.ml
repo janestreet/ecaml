@@ -542,19 +542,19 @@ let%expect_test "named char classes" =
     Point.case_fold_search
     false
     ~f:(fun () ->
-      List.iter [%all: Rx.Named_char_class.t] ~f:(fun named_char_class ->
-        let member, not_member =
-          match named_char_class with
-          | Alphabetic -> 'a', '_'
-          | Alphanumeric -> '0', '^'
-          | Digit -> '5', 'a'
-          | Hex_digit -> 'f', 'g'
-          | Lower -> 'a', 'Z'
-          | Space -> '\t', '_'
-          | Upper -> 'A', 'b'
-          | Word -> 'z', '/'
-        in
-        test_tf named_char_class ~member ~not_member));
+    List.iter [%all: Rx.Named_char_class.t] ~f:(fun named_char_class ->
+      let member, not_member =
+        match named_char_class with
+        | Alphabetic -> 'a', '_'
+        | Alphanumeric -> '0', '^'
+        | Digit -> '5', 'a'
+        | Hex_digit -> 'f', 'g'
+        | Lower -> 'a', 'Z'
+        | Space -> '\t', '_'
+        | Upper -> 'A', 'b'
+        | Word -> 'z', '/'
+      in
+      test_tf named_char_class ~member ~not_member));
   [%expect
     {|
     [[:alpha:]]

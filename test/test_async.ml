@@ -41,8 +41,8 @@ let%expect_test "[block_on_async] with a quit" =
       ~docstring:"<docstring>"
       (Returns_deferred Value.Type.unit)
       (fun () ->
-         Clock.run_after (sec 0.01) Ecaml.Command.request_quit ();
-         Deferred.never ())
+      Clock.run_after (sec 0.01) Ecaml.Command.request_quit ();
+      Deferred.never ())
   in
   let%bind quit =
     Async_ecaml.Private.run_outside_async [%here] (fun () ->
@@ -250,8 +250,8 @@ let%expect_test "assert_foreground in run_outside_async" =
             [%here]
             ~allowed_in_background:true
             (fun () ->
-               require_does_raise [%here] ~hide_positions:true (fun () ->
-                 Background.assert_foreground [%here] ~message:[%message "should raise"]))
+            require_does_raise [%here] ~hide_positions:true (fun () ->
+              Background.assert_foreground [%here] ~message:[%message "should raise"]))
         in
         Ivar.fill_exn background_job_complete ();
         return ()))
@@ -373,8 +373,8 @@ module Test_enqueue_block_on_async = struct
             [%here]
             ~raise_exceptions_to_monitor:monitor
             (fun () ->
-               require [%here] (Background.am_running_in_foreground ());
-               raise_s [%message "Raise an exception!"]);
+            require [%here] (Background.am_running_in_foreground ());
+            raise_s [%message "Raise an exception!"]);
           return ()))
     in
     [%expect

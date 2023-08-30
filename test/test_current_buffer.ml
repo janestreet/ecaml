@@ -229,7 +229,7 @@ let%expect_test "[contents]" =
     print_s
       [%sexp
         (contents () ~start:(1 |> Position.of_int_exn) ~end_:(2 |> Position.of_int_exn)
-         : Text.t)];
+          : Text.t)];
     [%expect {| f |}]);
   return ()
 ;;
@@ -252,7 +252,7 @@ let%expect_test "[contents_text ~text_properties:true], [insert_text]" =
            ~start:(1 |> Position.of_int_exn)
            ~end_:(2 |> Position.of_int_exn)
            ~text_properties:true
-         : Text.t)];
+          : Text.t)];
     [%expect {| (f 0 1 (face (:background red))) |}]);
   return ()
 ;;
@@ -1068,9 +1068,9 @@ let%expect_test "[kill] with deferred kill hook" =
        ~hook_type:Normal_hook
        (Returns_deferred Value.Type.unit)
        (fun () ->
-          let%bind () = Clock.after (sec 0.001) in
-          print_s [%sexp "deferred hook ran"];
-          return ()));
+       let%bind () = Clock.after (sec 0.001) in
+       print_s [%sexp "deferred hook ran"];
+       return ()));
   let%bind () = kill () in
   [%expect {| "deferred hook ran" |}];
   return ()

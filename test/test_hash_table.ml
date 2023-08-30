@@ -56,8 +56,8 @@ let%expect_test "hashtable tests" =
     print_s
       [%sexp
         "find using physically nonequal key"
-      , (find t (key |> Value.to_utf8_bytes_exn |> Value.of_utf8_bytes)
-         : Value.t option)]
+        , (find t (key |> Value.to_utf8_bytes_exn |> Value.of_utf8_bytes)
+            : Value.t option)]
   in
   test Eq;
   [%expect

@@ -56,11 +56,11 @@ let defvar symbol here ?docstring ~type_ ~default_value () =
 ;;
 
 let defvar_embedded
-      (type a)
-      symbol
-      here
-      ?docstring
-      (module Arg : Defvar_embedded_arg with type t = a)
+  (type a)
+  symbol
+  here
+  ?docstring
+  (module Arg : Defvar_embedded_arg with type t = a)
   =
   defvar
     symbol

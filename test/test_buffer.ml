@@ -271,7 +271,7 @@ let%expect_test "[revert]" =
     let%bind () = Selected_window.find_file (concat [ dir; "/file" ]) in
     ignore
       (Process.shell_command_exn "echo foo >file" ~working_directory:Of_current_buffer
-       : string);
+        : string);
     print_s [%sexp (Current_buffer.contents () : Text.t)];
     [%expect {| "" |}];
     let%bind () = revert (Current_buffer.get ()) in

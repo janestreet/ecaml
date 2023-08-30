@@ -11,14 +11,14 @@ let%expect_test "[press_and_show_minibuffer] with [save-some-buffers] shows prom
       Current_buffer.directory
       (Some tmpdir)
       ~f:(fun () ->
-        let%bind () = press "C-x C-f foo.txt RET asdf" in
-        [%expect {| asdf█ |}];
-        (* It would be nicer if this only showed the prompt once, but it's not a huge
+      let%bind () = press "C-x C-f foo.txt RET asdf" in
+      [%expect {| asdf█ |}];
+      (* It would be nicer if this only showed the prompt once, but it's not a huge
            deal. *)
-        let%bind () = press_and_show_minibuffer "C-x s" in
-        print_string (replace [%expect.output] ~pattern:tmpdir ~with_:"$TMPDIR/");
-        [%expect
-          {|
+      let%bind () = press_and_show_minibuffer "C-x s" in
+      print_string (replace [%expect.output] ~pattern:tmpdir ~with_:"$TMPDIR/");
+      [%expect
+        {|
           Save file $TMPDIR/foo.txt? (y, n, !, ., q, C-r, C-f, d or C-h)
           Save file $TMPDIR/foo.txt? (y, n, !, ., q, C-r, C-f, d or C-h) C-u
           Type C-h for help.
@@ -27,7 +27,7 @@ let%expect_test "[press_and_show_minibuffer] with [save-some-buffers] shows prom
           Type C-h for help.
           Save file $TMPDIR/foo.txt? (y, n, !, ., q, C-r, C-f, d or C-h)
           Save file $TMPDIR/foo.txt? (y, n, !, ., q, C-r, C-f, d or C-h) C-] |}];
-        return ()))
+      return ()))
 ;;
 
 let%expect_test "[press] with [save-some-buffers] times out instead of showing prompt" =
@@ -37,15 +37,15 @@ let%expect_test "[press] with [save-some-buffers] times out instead of showing p
       Current_buffer.directory
       (Some tmpdir)
       ~f:(fun () ->
-        let%bind () = press "C-x C-f foo.txt RET asdf" in
-        [%expect {| asdf█ |}];
-        let%bind () = require_does_raise_async [%here] (fun () -> press "C-x s") in
-        print_string (replace [%expect.output] ~pattern:tmpdir ~with_:"$TMPDIR/");
-        [%expect
-          {|
+      let%bind () = press "C-x C-f foo.txt RET asdf" in
+      [%expect {| asdf█ |}];
+      let%bind () = require_does_raise_async [%here] (fun () -> press "C-x s") in
+      print_string (replace [%expect.output] ~pattern:tmpdir ~with_:"$TMPDIR/");
+      [%expect
+        {|
           Save file $TMPDIR/foo.txt? (y, n, !, ., q, C-r, C-f, d or C-h)
           Save file $TMPDIR/foo.txt? (y, n, !, ., q, C-r, C-f, d or C-h) <f13>
           ("Minibuffer open" ((prompt ())))
           (user-error ("No recursive edit is in progress")) |}];
-        return ()))
+      return ()))
 ;;

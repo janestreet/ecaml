@@ -24,9 +24,9 @@ let show t =
         ~is_in_all_emacs_children:(List.mem (all_emacs_children ()) t ~equal : bool)
         ~pid_is_positive:
           ((match pid t with
-             | None -> None
-             | Some pid -> Some (Pid.to_int pid >= 0))
-           : bool option)
+            | None -> None
+            | Some pid -> Some (Pid.to_int pid >= 0))
+            : bool option)
         ~status:(status t : Status.t)
         ~exit_status:(exit_status t : Exit_status.t)]
 ;;
@@ -153,10 +153,10 @@ let%expect_test "[extend_sentinel] runs sentinel in the background" =
       t
       (Returns.returns sync_or_async Value.Type.unit)
       ~sentinel:(fun ~event:_ ->
-        sentinel_ran := true;
-        print_s [%message "sentinel ran"];
-        require [%here] (Background.am_running_in_background ());
-        Sync_or_async.return sync_or_async ());
+      sentinel_ran := true;
+      print_s [%message "sentinel ran"];
+      require [%here] (Background.am_running_in_background ());
+      Sync_or_async.return sync_or_async ());
     while_ (fun () -> not !sentinel_ran) ~do_:(fun () -> Timer.sleep_for (0.01 |> sec_ns))
   in
   let%bind () = test Sync in
@@ -178,9 +178,9 @@ let%expect_test "Async [extend_sentinel]" =
       t
       (Returns_deferred Value.Type.unit)
       ~sentinel:(fun ~event:_ ->
-        let%map () = Clock.after (sec 0.01) in
-        print_s [%sexp "I'm another sentinel!"];
-        sentinels_ran := true);
+      let%map () = Clock.after (sec 0.01) in
+      print_s [%sexp "I'm another sentinel!"];
+      sentinels_ran := true);
     let timeout_at = Time_float.(add (now ()) (Span.of_sec 1.)) in
     let rec loop () =
       if (not !sentinels_ran) && Time_float.(now () < timeout_at)
@@ -261,12 +261,12 @@ let print_current_buffer_contents () =
 ;;
 
 let test_call_result_exn
-      ?input
-      ?(output = Call.Output.Before_point_in_current_buffer)
-      ?working_directory
-      ()
-      ~args
-      ~prog
+  ?input
+  ?(output = Call.Output.Before_point_in_current_buffer)
+  ?working_directory
+  ()
+  ~args
+  ~prog
   =
   Current_buffer.set_temporarily_to_temp_buffer Sync (fun () ->
     let result = call_result_exn prog args ?input ~output ?working_directory in

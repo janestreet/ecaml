@@ -38,11 +38,11 @@ let q value = Value.list [ Symbol.to_value Q.quote; value ]
 module Group = struct
   include (
     Symbol :
-    sig
-      type t = Symbol.t [@@deriving sexp_of]
+      sig
+        type t = Symbol.t [@@deriving sexp_of]
 
-      include Valueable.S with type t := t
-    end)
+        include Valueable.S with type t := t
+      end)
 
   let all_defgroups = ref []
 
@@ -221,16 +221,16 @@ let define_obsolete_alias obsolete here ?docstring ~alias_of ~since () =
 ;;
 
 let defcustom
-      ?(show_form = false)
-      symbol
-      here
-      ~docstring
-      ~group
-      ~type_
-      ~customization_type
-      ~standard_value
-      ?on_set
-      ()
+  ?(show_form = false)
+  symbol
+  here
+  ~docstring
+  ~group
+  ~type_
+  ~customization_type
+  ~standard_value
+  ?on_set
+  ()
   =
   let symbol =
     match Symbol.Automatic_migration.migrate ~old:symbol with
@@ -309,15 +309,15 @@ let defcustom
 ;;
 
 let defcustom_enum
-      (type t)
-      symbol
-      here
-      (module T : Enum_arg with type t = t)
-      ~docstring
-      ~group
-      ~standard_value
-      ?on_set
-      ()
+  (type t)
+  symbol
+  here
+  (module T : Enum_arg with type t = t)
+  ~docstring
+  ~group
+  ~standard_value
+  ?on_set
+  ()
   =
   let docstring = docstring |> String.strip in
   require_nonempty_docstring here ~docstring;
@@ -333,12 +333,12 @@ let defcustom_enum
       (docstring
        :: ""
        :: List.map T.all ~f:(fun t ->
-         let docstring =
-           match T.docstring t with
-           | "" -> []
-           | docstring -> [ ": "; docstring ]
-         in
-         concat ("  - " :: (t |> T.to_symbol |> Symbol.name) :: docstring)))
+            let docstring =
+              match T.docstring t with
+              | "" -> []
+              | docstring -> [ ": "; docstring ]
+            in
+            concat ("  - " :: (t |> T.to_symbol |> Symbol.name) :: docstring)))
   in
   defcustom
     symbol

@@ -193,7 +193,7 @@ let%expect_test "[get_property]" =
           (at : int)
           ~property:
             (Or_error.try_with (fun () -> property_value t ~at face)
-             : Face_spec.t option Or_error.t)]
+              : Face_spec.t option Or_error.t)]
   done;
   [%expect
     {|
@@ -216,7 +216,7 @@ let%expect_test "[set_property]" =
               ~text:(t : t)
               ~property:
                 (Or_error.try_with (fun () -> property_value t ~at:0 face)
-                 : Face_spec.t option Or_error.t)]
+                  : Face_spec.t option Or_error.t)]
       | exception exn -> print_s [%message "failed" ~_:(exn : exn)]
     done
   done;

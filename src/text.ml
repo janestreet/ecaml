@@ -18,10 +18,10 @@ module Q = struct
 end
 
 include Value.Make_subtype (struct
-    let name = "text"
-    let here = [%here]
-    let is_in_subtype = Value.is_string
-  end)
+  let name = "text"
+  let here = [%here]
+  let is_in_subtype = Value.is_string
+end)
 
 let char_code = Funcall.Wrap.("aref" <: t @-> int @-> return Char_code.t)
 let set_char_code = Funcall.Wrap.("aset" <: t @-> int @-> Char_code.t @-> return nil)
@@ -84,9 +84,9 @@ module Face_spec = struct
              (List.rev attributes)
              ~init:[]
              ~f:(fun ac (Face.Attribute_and_value.T (attribute, value)) ->
-               (attribute |> Face.Attribute.to_symbol |> Symbol.to_value)
-               :: (value |> Face.Attribute.to_value attribute)
-               :: ac))
+             (attribute |> Face.Attribute.to_symbol |> Symbol.to_value)
+             :: (value |> Face.Attribute.to_value attribute)
+             :: ac))
       | Face face -> face |> Face.to_value
     ;;
 

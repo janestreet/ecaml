@@ -27,8 +27,8 @@ let compare_name t1 t2 = Symbol.compare_name t1.symbol t2.symbol
 let t_by_symbol : t String.Table.t = Hashtbl.create (module String)
 
 include Intf (struct
-    type nonrec t = t
-  end)
+  type nonrec t = t
+end)
 
 module Compare_by_name = struct
   type nonrec t = t [@@deriving sexp_of]
@@ -151,16 +151,16 @@ let add_auto_mode auto_mode ~symbol =
 ;;
 
 let define_derived_mode
-      (type a)
-      ?auto_mode
-      symbol
-      here
-      ~docstring
-      ?(define_keys = [])
-      ~mode_line
-      ?parent
-      ?(initialize : ((unit, a) Defun.Returns.t * (unit -> a)) option)
-      ()
+  (type a)
+  ?auto_mode
+  symbol
+  here
+  ~docstring
+  ?(define_keys = [])
+  ~mode_line
+  ?parent
+  ?(initialize : ((unit, a) Defun.Returns.t * (unit -> a)) option)
+  ()
   =
   let symbol =
     match Symbol.Automatic_migration.migrate ~old:symbol with

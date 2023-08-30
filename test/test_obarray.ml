@@ -13,7 +13,7 @@ let%expect_test "[iter], [standard]" =
   print_s
     [%sexp
       (!all |> List.sort ~compare:String.compare |> fun l -> List.take l 100
-                                                             : string list)];
+        : string list)];
   [%expect
     {|
     (%

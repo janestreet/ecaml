@@ -39,11 +39,11 @@ let%expect_test _ =
       Sync
       (lazy [%sexp "nest"])
       (fun () ->
-         Clock.advance clock ~by:(sec 0.1);
-         Elisp_gc.garbage_collect ();
-         Clock.advance clock ~by:(sec 0.2);
-         Elisp_gc.garbage_collect ();
-         Clock.advance clock ~by:(sec 0.3)));
+        Clock.advance clock ~by:(sec 0.1);
+        Elisp_gc.garbage_collect ();
+        Clock.advance clock ~by:(sec 0.2);
+        Elisp_gc.garbage_collect ();
+        Clock.advance clock ~by:(sec 0.3)));
   [%expect
     {|
     ((rendering_took 0us)

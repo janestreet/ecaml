@@ -137,7 +137,7 @@ module Block_on_async = struct
   type t =
     { f :
         'a.
-          Source_code_position.t -> ?context:Sexp.t Lazy.t -> (unit -> 'a Deferred.t) -> 'a
+        Source_code_position.t -> ?context:Sexp.t Lazy.t -> (unit -> 'a Deferred.t) -> 'a
     }
 
   let set_once : t Set_once.t = Set_once.create ()
@@ -160,7 +160,7 @@ module Run_outside_async = struct
   type t =
     { f :
         'a.
-          Source_code_position.t
+        Source_code_position.t
         -> ?allowed_in_background:bool
         -> (unit -> 'a)
         -> 'a Deferred.t
@@ -496,8 +496,8 @@ let cadr_exn t = funcall1 Q.cadr t
 let is_cons ?car ?cdr t =
   funcall1 Q.consp t |> to_bool
   && (match car with
-    | None -> true
-    | Some is_car -> is_car (car_exn t))
+      | None -> true
+      | Some is_car -> is_car (car_exn t))
   &&
   match cdr with
   | None -> true
@@ -708,14 +708,14 @@ module Type = struct
     { id = Type_equal.Id.create ~name:(Sexp.to_string name) sexp_of_t
     ; of_value_exn =
         (fun value ->
-           try of_value_exn value with
-           | exn ->
-             raise_s
-               [%message
-                 "unable to convert Elisp value to OCaml value"
-                   ~type_:(name : Sexp.t)
-                   (value : value)
-                   (exn : exn)])
+          try of_value_exn value with
+          | exn ->
+            raise_s
+              [%message
+                "unable to convert Elisp value to OCaml value"
+                  ~type_:(name : Sexp.t)
+                  (value : value)
+                  (exn : exn)])
     ; to_value
     }
   ;;
@@ -820,12 +820,12 @@ module Type = struct
     create
       [%message "nil_or" ~_:(name t : Sexp.t)]
       (function
-        | None -> Atom "nil"
-        | Some v -> to_sexp t v)
+       | None -> Atom "nil"
+       | Some v -> to_sexp t v)
       (fun v -> if is_nil v then None else Some (v |> of_value_exn t))
       (function
-        | None -> nil
-        | Some v -> (to_value t) v)
+       | None -> nil
+       | Some v -> (to_value t) v)
   ;;
 
   let option t =
@@ -834,8 +834,8 @@ module Type = struct
       (sexp_of_option (to_sexp t))
       (fun v -> if is_nil v then None else Some (car_exn v |> of_value_exn t))
       (function
-        | None -> nil
-        | Some v -> cons (to_value t v) nil)
+       | None -> nil
+       | Some v -> cons (to_value t v) nil)
   ;;
 
   let stringable (type a) name (module M : Stringable.S with type t = a) =

@@ -46,7 +46,7 @@ let update_internal =
            [new-message], which allows one to change the message originally set at creation
            time.  Rewrap this function to make the types match. *)
         fun reporter value suffix ->
-          progress_reporter_force_update reporter value () suffix
+        progress_reporter_force_update reporter value () suffix
     in
     f reporter progress suffix
 ;;

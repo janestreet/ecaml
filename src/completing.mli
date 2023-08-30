@@ -18,7 +18,7 @@ module Require_match : sig
   type t =
     | Confirm (** Can exit without match by confirming *)
     | Confirm_after_completion
-    (** Can exit without match by typing, or by completing and then confirming *)
+        (** Can exit without match by typing, or by completing and then confirming *)
     | False (** Can exit without match *)
     | Require_match_or_null (** Cannot exit without match unless the input is nil *)
     | True (** Cannot exit without match *)

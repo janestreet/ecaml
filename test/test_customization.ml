@@ -28,7 +28,7 @@ let test ?show_form type_ customization_type standard_value =
        ~standard_value
        ?show_form
        ()
-     : _ Customization.t);
+      : _ Customization.t);
   ignoring_stderr (fun () -> customize_variable variable);
   Current_buffer.contents ()
   |> Text.to_utf8_bytes

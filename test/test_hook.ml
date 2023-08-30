@@ -174,8 +174,8 @@ let%expect_test "Blocking async hook" =
         ~hook_type:File_hook
         (Returns_deferred Value.Type.unit)
         (fun _ ->
-           let%map () = Clock.after pause in
-           print_s [%message "f1"])
+        let%map () = Clock.after pause in
+        print_s [%message "f1"])
     in
     add after_load f1;
     let file = Stdlib.Filename.temp_file "ecamltest" ".el" in
