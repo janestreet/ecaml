@@ -252,7 +252,7 @@ Called by `post-gc-hook' to add Elisp GC information to the Ecaml profiler.
             Profile.Private.record_frame
               ~start:(Time_ns.sub stop gc_took)
               ~stop
-              ~message:(lazy [%message "gc" (gcs_done : int opaque_in_test)]))));
+              ~message:[%lazy_message "gc" (gcs_done : int opaque_in_test)])));
   let set_should_profile bool =
     Customization.set_value should_profile bool;
     let verb = if !Profile.should_profile then "enabled" else "disabled" in
@@ -289,7 +289,7 @@ Called by `post-gc-hook' to add Elisp GC information to the Ecaml profiler.
     (let%map_open.Defun () = return ()
      and description = required "description" string
      and f = required "function" value in
-     profile Sync (lazy [%message description]) (fun () -> Value.funcall0 f));
+     profile Sync [%lazy_message description] (fun () -> Value.funcall0 f));
   Defun.defun
     ("ecaml-profile-elisp-function" |> Symbol.intern)
     [%here]
@@ -325,7 +325,7 @@ Tell the Ecaml profiler about calls to an Elisp function.
           (fun f args ->
           profile
             Sync
-            (lazy [%sexp ((fn |> Symbol.to_value) :: args : Value.t list)])
+            [%lazy_sexp ((fn |> Symbol.to_value) :: args : Value.t list)]
             (fun () -> f args)));
      Hash_set.add profiled_elisp_functions (Symbol.name fn);
      message (concat [ "You just added Ecaml profiling of ["; fn |> Symbol.name; "]" ]));
@@ -367,22 +367,15 @@ Test how the Ecaml profiler handles two Async jobs running in parallel.
 |}
     (Returns_deferred Value.Type.unit)
     (fun () ->
-    profile
-      Async
-      (lazy [%sexp "The whole thing"])
-      (fun () ->
-        let%bind () =
-          profile
-            Async
-            (lazy [%sexp "branch1"])
-            (fun () -> Async.Clock.after (Time_float.Span.of_sec 1.))
-        and () =
-          profile
-            Async
-            (lazy [%sexp "branch2"])
-            (fun () -> Async.Clock.after (Time_float.Span.of_sec 0.8))
-        in
-        return ()))
+    profile Async [%lazy_sexp "The whole thing"] (fun () ->
+      let%bind () =
+        profile Async [%lazy_sexp "branch1"] (fun () ->
+          Async.Clock.after (Time_float.Span.of_sec 1.))
+      and () =
+        profile Async [%lazy_sexp "branch2"] (fun () ->
+          Async.Clock.after (Time_float.Span.of_sec 0.8))
+      in
+      return ()))
 ;;
 
 [@@@warning "-unused-module"]

@@ -26,6 +26,11 @@ end)
 let char_code = Funcall.Wrap.("aref" <: t @-> int @-> return Char_code.t)
 let set_char_code = Funcall.Wrap.("aset" <: t @-> int @-> Char_code.t @-> return nil)
 let of_utf8_bytes string = string |> Value.of_utf8_bytes |> of_value_exn
+
+let of_utf8_bytes_replacing_invalid string =
+  string |> Value.of_utf8_bytes_replacing_invalid |> Tuple2.map_fst ~f:of_value_exn
+;;
+
 let to_utf8_bytes t = t |> to_value |> Value.to_utf8_bytes_exn
 
 module Compare_as_string = struct

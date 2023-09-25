@@ -98,7 +98,16 @@ val set_property : t -> Symbol.t -> Value.t -> unit
 
 (** [(Info-goto-node "(elisp)Asynchronous Processes")]
     [(describe-function 'start-process)] *)
-val create : string -> string list -> name:string -> ?buffer:Buffer.t -> unit -> t
+val create
+  :  ?buffer:Buffer.t
+  -> ?coding:Symbol.t
+  -> ?query_before_exit:bool (** default is true *)
+  -> ?stderr:Buffer.t
+  -> string
+  -> string list
+  -> name:string
+  -> unit
+  -> t
 
 (** [(describe-function 'get-process)]
     [(Info-goto-node "(elisp)Process Information")] *)

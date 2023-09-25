@@ -132,7 +132,7 @@ let%expect_test "[expand]" =
           ""
             (in_dir : string)
             (filename : string)
-            ~expanded:(expand filename ~in_dir : string)]);
+            ~expanded:(expand filename ~in_dir:(`This in_dir) : string)]);
   [%expect
     {|
     ((in_dir   /)

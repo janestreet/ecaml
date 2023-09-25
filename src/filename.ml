@@ -47,8 +47,16 @@ let directory_exn t =
 
 let file_relative_name = Funcall.Wrap.("file-relative-name" <: t @-> t @-> return t)
 let make_relative t ~relative_to = file_relative_name t relative_to
-let expand_file_name = Funcall.Wrap.("expand-file-name" <: t @-> t @-> return t)
-let expand t ~in_dir = expand_file_name t in_dir
+let expand_file_name = Funcall.Wrap.("expand-file-name" <: t @-> nil_or t @-> return t)
+
+let expand t ~in_dir =
+  let in_dir =
+    match in_dir with
+    | `Default_directory_in_current_buffer -> None
+    | `This dir -> Some dir
+  in
+  expand_file_name t in_dir
+;;
 
 let read =
   let read_file_name = Funcall.Wrap.("read-file-name" <: string @-> return t) in

@@ -85,7 +85,7 @@ let%expect_test "[set_char]" =
           [%here]
           (Class.equal class_ round_trip)
           ~if_false_then_print_s:
-            (lazy [%message "" (class_ : Class.t) (round_trip : Class.t)])));
+            [%lazy_message "" (class_ : Class.t) (round_trip : Class.t)]));
   [%expect {| |}];
   return ()
 ;;

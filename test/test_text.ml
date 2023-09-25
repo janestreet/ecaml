@@ -268,7 +268,7 @@ let%expect_test "various [Face_spec.t] values" =
     require
       [%here]
       (Value.equal (face_spec |> Face_spec.to_value) (round_trip |> Face_spec.to_value))
-      ~if_false_then_print_s:(lazy [%message (round_trip : Face_spec.t)])
+      ~if_false_then_print_s:[%lazy_message (round_trip : Face_spec.t)]
   in
   List.iter face_spec_ones ~f:(fun f1 ->
     check [ f1 ];

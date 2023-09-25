@@ -23,6 +23,11 @@ val char_code : t -> int -> Char_code.t
 val set_char_code : t -> int -> Char_code.t -> unit
 
 val of_utf8_bytes : string -> t
+
+val of_utf8_bytes_replacing_invalid
+  :  string
+  -> t * [ `First_malformed of (int * string) option ]
+
 val to_utf8_bytes : t -> string
 
 (** [length t] returns the number of characters in [t]. *)

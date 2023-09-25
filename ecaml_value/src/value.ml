@@ -178,7 +178,7 @@ external funcall_array : t -> t array -> bool -> t = "ecaml_funcall_array"
 let funcall_array ?should_profile t ts ~should_return_result =
   maybe_profile
     ~should_profile
-    (lazy [%sexp (t :: (ts |> Array.to_list) : t list)])
+    [%lazy_sexp (t :: (ts |> Array.to_list) : t list)]
     (fun () -> funcall_array t ts should_return_result)
 ;;
 
@@ -230,42 +230,42 @@ let external_funcall1 = funcall1
 let funcall0 f ~should_profile ~should_return_result =
   maybe_profile
     ~should_profile
-    (lazy [%sexp ([ f ] : t list)])
+    [%lazy_sexp ([ f ] : t list)]
     (fun () -> funcall0 f should_return_result)
 ;;
 
 let funcall1 f a1 ~should_profile ~should_return_result =
   maybe_profile
     ~should_profile
-    (lazy [%sexp ([ f; a1 ] : t list)])
+    [%lazy_sexp ([ f; a1 ] : t list)]
     (fun () -> funcall1 f a1 should_return_result)
 ;;
 
 let funcall2 f a1 a2 ~should_profile ~should_return_result =
   maybe_profile
     ~should_profile
-    (lazy [%sexp ([ f; a1; a2 ] : t list)])
+    [%lazy_sexp ([ f; a1; a2 ] : t list)]
     (fun () -> funcall2 f a1 a2 should_return_result)
 ;;
 
 let funcall3 f a1 a2 a3 ~should_profile ~should_return_result =
   maybe_profile
     ~should_profile
-    (lazy [%sexp ([ f; a1; a2; a3 ] : t list)])
+    [%lazy_sexp ([ f; a1; a2; a3 ] : t list)]
     (fun () -> funcall3 f a1 a2 a3 should_return_result)
 ;;
 
 let funcall4 f a1 a2 a3 a4 ~should_profile ~should_return_result =
   maybe_profile
     ~should_profile
-    (lazy [%sexp ([ f; a1; a2; a3; a4 ] : t list)])
+    [%lazy_sexp ([ f; a1; a2; a3; a4 ] : t list)]
     (fun () -> funcall4 f a1 a2 a3 a4 should_return_result)
 ;;
 
 let funcall5 f a1 a2 a3 a4 a5 ~should_profile ~should_return_result =
   maybe_profile
     ~should_profile
-    (lazy [%sexp ([ f; a1; a2; a3; a4; a5 ] : t list)])
+    [%lazy_sexp ([ f; a1; a2; a3; a4; a5 ] : t list)]
     (fun () -> funcall5 f a1 a2 a3 a4 a5 should_return_result)
 ;;
 
@@ -346,7 +346,7 @@ external funcall_int_int_value_unit
 let funcall_int_int_value_unit ?should_profile f a1 a2 a3 =
   maybe_profile
     ~should_profile
-    (lazy [%sexp (f : t), (a1 : int), (a2 : int), (a3 : t)])
+    [%lazy_sexp (f : t), (a1 : int), (a2 : int), (a3 : t)]
     (fun () -> funcall_int_int_value_unit f a1 a2 a3);
   raise_if_emacs_signaled ()
 ;;
@@ -363,7 +363,7 @@ external funcall_int_int_value_value_unit
 let funcall_int_int_value_value_unit ?should_profile f a1 a2 a3 a4 =
   maybe_profile
     ~should_profile
-    (lazy [%sexp (f : t), (a1 : int), (a2 : int), (a3 : t), (a4 : t)])
+    [%lazy_sexp (f : t), (a1 : int), (a2 : int), (a3 : t), (a4 : t)]
     (fun () -> funcall_int_int_value_value_unit f a1 a2 a3 a4);
   raise_if_emacs_signaled ()
 ;;
@@ -430,6 +430,23 @@ let unibyte_of_string = wrap_raise1 unibyte_of_string
 *)
 let of_utf8_bytes s = funcall1 Q.string_as_multibyte (unibyte_of_string s)
 let of_utf8_bytes_cached = Memo.general ~hashable:String.hashable of_utf8_bytes
+
+let of_utf8_bytes_replacing_invalid str =
+  let buffer = Buffer.create (String.length str) in
+  let first_malformed =
+    Uutf.String.fold_utf_8
+      (fun first_malformed pos -> function
+        | `Malformed bad_string ->
+          Uutf.Buffer.add_utf_8 buffer Uutf.u_rep;
+          Option.first_some first_malformed (Some (pos, bad_string))
+        | `Uchar uchar ->
+          Uutf.Buffer.add_utf_8 buffer uchar;
+          first_malformed)
+      None
+      str
+  in
+  of_utf8_bytes (Buffer.contents buffer), `First_malformed first_malformed
+;;
 
 external to_utf8_bytes_exn : t -> string = "ecaml_to_string"
 

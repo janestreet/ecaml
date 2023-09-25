@@ -37,15 +37,16 @@ let files
 let directory_files_recursively =
   Funcall.Wrap.(
     "directory-files-recursively"
-    <: Filename.t @-> Regexp.t @-> bool @-> return (list Filename.t))
+    <: Filename.t @-> Regexp.t @-> bool @-> bool @-> return (list Filename.t))
 ;;
 
 let files_recursively
   ?(include_directories = false)
+  ?(ignore_unreadable_dirs = false)
   ?(matching = Regexp.match_anything)
   dirname
   =
-  directory_files_recursively dirname matching include_directories
+  directory_files_recursively dirname matching include_directories ignore_unreadable_dirs
 ;;
 
 let make_temp_file =

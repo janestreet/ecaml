@@ -14,10 +14,10 @@ module Q = struct
   let listen = "listen" |> Symbol.intern
   let local = "local" |> Symbol.intern
   let make_network_process = "make-network-process" |> Symbol.intern
+  let make_process = "make-process" |> Symbol.intern
   let open_ = "open" |> Symbol.intern
   let run = "run" |> Symbol.intern
   let signal = "signal" |> Symbol.intern
-  let start_process = "start-process" |> Symbol.intern
   let stop = "stop" |> Symbol.intern
 end
 
@@ -111,16 +111,29 @@ let exit_status t : Exit_status.t =
 let find_by_name = Funcall.Wrap.("get-process" <: string @-> return (nil_or t))
 let all_emacs_children = Funcall.Wrap.("process-list" <: nullary @-> return (list t))
 
-let create prog args ~name ?buffer () =
+let create ?buffer ?coding ?(query_before_exit = true) ?stderr prog args ~name () =
   Symbol.funcallN
-    Q.start_process
-    ([ name |> Value.of_utf8_bytes
-     ; (match buffer with
-        | None -> Value.nil
-        | Some b -> b |> Buffer.to_value)
-     ; prog |> Value.of_utf8_bytes
-     ]
-     @ (args |> List.map ~f:Value.of_utf8_bytes))
+    Q.make_process
+    (List.concat
+       [ [ Q.K.name |> Symbol.to_value
+         ; name |> Value.of_utf8_bytes
+         ; Q.K.buffer |> Symbol.to_value
+         ; (match buffer with
+            | None -> Value.nil
+            | Some b -> b |> Buffer.to_value)
+         ; Q.K.command |> Symbol.to_value
+         ; prog :: args |> List.map ~f:Value.of_utf8_bytes |> Value.list
+         ; Q.K.noquery |> Symbol.to_value
+         ; (if query_before_exit then Value.nil else Value.t)
+         ]
+       ; (match coding with
+          | None -> []
+          | Some coding -> [ Q.K.coding |> Symbol.to_value; coding |> Symbol.to_value ])
+       ; (match stderr with
+          | None -> []
+          | Some stderr_buffer ->
+            [ Q.K.stderr |> Symbol.to_value; stderr_buffer |> Buffer.to_value ])
+       ])
   |> of_value_exn
 ;;
 

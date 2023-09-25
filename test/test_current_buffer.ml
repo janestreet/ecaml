@@ -1435,12 +1435,11 @@ let%expect_test "[describe_mode]" =
 
 let%expect_test "[chars_modified_tick]" =
   set_temporarily_to_temp_buffer Sync (fun () ->
-    print_s [%sexp (chars_modified_tick () : Modified_tick.t)];
+    let old = Current_buffer.chars_modified_tick () in
     Point.insert "foo";
-    print_s [%sexp (chars_modified_tick () : Modified_tick.t)]);
-  [%expect {|
-    1
-    2 |}];
+    let new_ = Current_buffer.chars_modified_tick () in
+    require_not_equal [%here] (module Modified_tick) old new_;
+    [%expect {| |}]);
   return ()
 ;;
 

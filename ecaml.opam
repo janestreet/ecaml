@@ -20,6 +20,7 @@ depends: [
   "expect_test_helpers_core"
   "ppx_jane"
   "dune"                     {>= "2.0.0"}
+  "uutf"                     {>= "1.0.2"}
 ]
 available: arch != "arm32" & arch != "x86_32"
 synopsis: "Library for writing Emacs plugin in OCaml"

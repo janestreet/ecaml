@@ -110,8 +110,8 @@ module type Major_mode = sig
   (** [(describe-function 'makefile-mode)] *)
   module Makefile : S_with_lazy_keymap
 
-  (** [(describe-function 'lisp-mode)] *)
-  module Lisp : S
+  (** [(describe-function 'lisp-data-mode)] *)
+  module Lisp_data : S
 
   (** [(describe-function 'scheme-mode)] *)
   module Scheme : S_with_lazy_keymap

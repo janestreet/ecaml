@@ -55,7 +55,7 @@ val make_relative : t -> relative_to:t -> t
 
 (** [(describe-function 'expand-file-name)]
     [(Info-goto-node "(elisp)File Name Expansion")] *)
-val expand : t -> in_dir:t -> t
+val expand : t -> in_dir:[ `Default_directory_in_current_buffer | `This of string ] -> t
 
 (** [(describe-function 'read-file-name)] *)
 val read : prompt:string -> t Deferred.t

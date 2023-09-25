@@ -78,7 +78,7 @@ let%expect_test "Nested calls to block_on_async include Nested_profile backtrace
       Ref.set_temporarily Nested_profile.Profile.should_profile true ~f:(fun () ->
         Nested_profile.profile
           Sync
-          (lazy [%message "Some badly-behaved function"])
+          [%lazy_message "Some badly-behaved function"]
           (fun () -> Async_ecaml.Private.block_on_async [%here] (fun () -> Deferred.unit)))));
   [%expect
     {|

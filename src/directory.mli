@@ -24,6 +24,7 @@ val files
     [(Info-goto-node "(elisp)Contents of Directories")]*)
 val files_recursively
   :  ?include_directories:bool (** default is [false] *)
+  -> ?ignore_unreadable_dirs:bool (** default is [false] *)
   -> ?matching:Regexp.t (** default is [Regexp.match_anything] *)
   -> Filename.t
   -> Filename.t list

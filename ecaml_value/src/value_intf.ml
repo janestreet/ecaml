@@ -252,6 +252,15 @@ module type Value = sig
       the conversion of OCaml values to Elisp values. *)
   val of_utf8_bytes_cached : string -> t
 
+  (** Like [of_utf8_bytes], but instead of failing on invalid UTF-8 sequences, replace
+      them with the Unicode replacement character (U+FFFD).
+
+      Return the resulting value, as well as the first malformed sequence (and its
+      index) in the input string, if any. *)
+  val of_utf8_bytes_replacing_invalid
+    :  string
+    -> t * [ `First_malformed of (int * string) option ]
+
   val to_utf8_bytes_exn : t -> string
   val vec_get : t -> int -> t
   val vec_set : t -> int -> t -> unit

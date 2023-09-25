@@ -661,7 +661,7 @@ module Expect_test_config = struct
   let run f =
     Block_on_async.block_on_async
       [%here]
-      ~context:(lazy [%message "Expect_test_config.run"])
+      ~context:[%lazy_message "Expect_test_config.run"]
       f
   ;;
 end

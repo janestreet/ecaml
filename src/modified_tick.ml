@@ -15,3 +15,5 @@ include Valueable.Make (struct
 
   let type_ = Value.Type.int
 end)
+
+let sexp_of_t = sexp_of_opaque

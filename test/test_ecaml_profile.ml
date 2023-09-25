@@ -35,15 +35,12 @@ let test_setup ~f =
 
 let%expect_test _ =
   test_setup ~f:(fun clock ->
-    profile
-      Sync
-      (lazy [%sexp "nest"])
-      (fun () ->
-        Clock.advance clock ~by:(sec 0.1);
-        Elisp_gc.garbage_collect ();
-        Clock.advance clock ~by:(sec 0.2);
-        Elisp_gc.garbage_collect ();
-        Clock.advance clock ~by:(sec 0.3)));
+    profile Sync [%lazy_sexp "nest"] (fun () ->
+      Clock.advance clock ~by:(sec 0.1);
+      Elisp_gc.garbage_collect ();
+      Clock.advance clock ~by:(sec 0.2);
+      Elisp_gc.garbage_collect ();
+      Clock.advance clock ~by:(sec 0.3)));
   [%expect
     {|
     ((rendering_took 0us)
@@ -71,7 +68,7 @@ let%expect_test "tag-frame-function" =
     ~f:(fun () ->
       Current_buffer.set_temporarily_to_temp_buffer Sync (fun () ->
         test_setup ~f:(fun clock ->
-          profile Sync (lazy [%sexp "nest"]) (fun () -> Clock.advance clock ~by:(sec 0.3)))));
+          profile Sync [%lazy_sexp "nest"] (fun () -> Clock.advance clock ~by:(sec 0.3)))));
   [%expect
     {|
     ((rendering_took 0us)
@@ -80,7 +77,7 @@ let%expect_test "tag-frame-function" =
 ;;
 
 let show_in_message value =
-  test_setup ~f:(fun _ -> profile Sync (lazy [%sexp (value : Value.t)]) ignore)
+  test_setup ~f:(fun _ -> profile Sync [%lazy_sexp (value : Value.t)] ignore)
 ;;
 
 let%expect_test "[Value.sexp_of_t] respect [print_length] in profile records" =
