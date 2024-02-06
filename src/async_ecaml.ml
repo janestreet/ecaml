@@ -670,7 +670,11 @@ module Expect_test_config_allowing_nested_block_on_async = struct
   include Expect_test_config
 
   let run f =
-    Block_on_async.block_on_async [%here] ~for_testing_allow_nested_block_on_async:true f
+    Block_on_async.block_on_async
+      [%here]
+      ~for_testing_allow_nested_block_on_async:true
+      ~context:[%lazy_message "Expect_test_config_allowing_nested_block_on_async.run"]
+      f
   ;;
 end
 

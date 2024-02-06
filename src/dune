@@ -1,9 +1,16 @@
-(library (name ecaml) (public_name ecaml) (library_flags -linkall)
+(library
+ (name ecaml)
+ (public_name ecaml)
+ (library_flags -linkall)
  (libraries async async_unix core_kernel.caml_threads
-  core_kernel.composition_infix core ecaml_bench ecaml_value
-  core_unix.error_checking_mutex expect_test_helpers_core nested_profile
-  core_unix.sys_unix)
- (preprocess (pps ppx_jane)))
+   core_kernel.composition_infix core ecaml_bench ecaml_value
+   core_unix.error_checking_mutex expect_test_helpers_core nested_profile
+   core_unix.sys_unix)
+ (preprocess
+  (pps ppx_jane)))
 
-(alias (name DEFAULT) (deps unnecessarily-global-symbols.sh glob_files *.ml)
- (action (bash ./unnecessarily-global-symbols.sh)))
+(rule
+ (alias DEFAULT)
+ (deps unnecessarily-global-symbols.sh glob_files *.ml)
+ (action
+  (bash ./unnecessarily-global-symbols.sh)))

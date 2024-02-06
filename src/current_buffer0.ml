@@ -62,7 +62,7 @@ let set_values_temporarily sync_or_async vars_and_values ~f =
   Sync_or_async.protect [%here] sync_or_async ~f ~finally:(fun () ->
     let new_buffer = get () in
     let buffer_changed = not (Buffer.equal old_buffer new_buffer) in
-    if buffer_changed then set old_buffer;
+    if buffer_changed && Buffer.is_live old_buffer then set old_buffer;
     List.iter olds ~f:(fun (Var.And_value_option.T (var, value_opt)) ->
       match value_opt with
       | None -> clear_value var

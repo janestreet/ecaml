@@ -89,7 +89,7 @@ let%expect_test "[around_funcall ~on_parse_error]" =
     {|
     (raised ((
       "Advice failed to parse its arguments"
-      app/emacs/lib/ecaml/test/test_advice.ml:71:8
+      app/emacs/lib/ecaml/test/test_advice.ml:72:8
       ("unable to convert Elisp value to OCaml value"
        (type_ string)
        (value 1)
@@ -99,7 +99,7 @@ let%expect_test "[around_funcall ~on_parse_error]" =
     {|
     (raised ((
       "Advice failed to parse its arguments"
-      app/emacs/lib/ecaml/test/test_advice.ml:71:8
+      app/emacs/lib/ecaml/test/test_advice.ml:72:8
       ("unable to convert Elisp value to OCaml value"
        (type_ string)
        (value 1)
@@ -143,7 +143,7 @@ let%expect_test "[around_funcall] with arity mismatch" =
     {|
     (raised ((
       "Advice failed to parse its arguments"
-      app/emacs/lib/ecaml/test/test_advice.ml:124:8
+      app/emacs/lib/ecaml/test/test_advice.ml:127:8
       ("unable to convert Elisp value to OCaml value"
        (type_ int)
        (value nil)
@@ -155,7 +155,7 @@ let%expect_test "[around_funcall] with arity mismatch" =
     {|
     (raised ((
       "Advice failed to parse its arguments"
-      app/emacs/lib/ecaml/test/test_advice.ml:124:8
+      app/emacs/lib/ecaml/test/test_advice.ml:127:8
       ("Extra args." ("arity t" 0) (args (1)))))) |}];
   return ()
 ;;

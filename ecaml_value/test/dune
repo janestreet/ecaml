@@ -1,4 +1,5 @@
-(library (name ecaml_value_test)
- (libraries core ecaml expect_test_helpers_core
-  jenga_rules_integration_normal_scrutiny)
- (preprocess (pps ppx_jane)))
+(library
+ (name ecaml_value_test)
+ (libraries core ecaml expect_test_helpers_core)
+ (preprocess
+  (pps ppx_jane)))

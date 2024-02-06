@@ -26,7 +26,8 @@ let%expect_test "[press_and_show_minibuffer] with [save-some-buffers] shows prom
           Save file $TMPDIR/foo.txt? (y, n, !, ., q, C-r, C-f, d or C-h) <f14>
           Type C-h for help.
           Save file $TMPDIR/foo.txt? (y, n, !, ., q, C-r, C-f, d or C-h)
-          Save file $TMPDIR/foo.txt? (y, n, !, ., q, C-r, C-f, d or C-h) C-] |}];
+          Save file $TMPDIR/foo.txt? (y, n, !, ., q, C-r, C-f, d or C-h) C-]
+           |}];
       return ()))
 ;;
 

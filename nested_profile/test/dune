@@ -1,4 +1,6 @@
-(library (name nested_profile_test)
+(library
+ (name nested_profile_test)
  (libraries async core expect_test_helpers_async expect_test_helpers_core
-  core_unix.filename_unix nested_profile)
- (preprocess (pps ppx_jane)))
+   core_unix.filename_unix nested_profile)
+ (preprocess
+  (pps ppx_jane)))

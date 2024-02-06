@@ -4,11 +4,14 @@ module Current_buffer = Current_buffer0
 
 module Q = struct
   let evil = "evil" |> Symbol.intern
+  let evil_mode = "evil-mode" |> Symbol.intern
   let evilified = "evilified" |> Symbol.intern
   let normal = "normal" |> Symbol.intern
 end
 
-let is_in_use () = Feature.is_provided Q.evil
+let is_in_use () =
+  Current_buffer.has_non_null_value { symbol = Q.evil_mode; type_ = Value.Type.bool }
+;;
 
 let evil_declare_ignore_repeat =
   Funcall.Wrap.("evil-declare-ignore-repeat" <: Symbol.t @-> return ignored)

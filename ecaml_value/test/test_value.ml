@@ -571,7 +571,7 @@ let%expect_test "[catch]ing a [throw] that travels through Ecaml" =
   return ()
 ;;
 
-let%expect_test "rendering OCaml exceptions in Emacs and Ocaml" =
+let%expect_test "rendering OCaml exceptions in Emacs and OCaml" =
   let test ?(debug_on_error = false) message =
     try
       Current_buffer.set_value_temporarily
@@ -587,7 +587,7 @@ let%expect_test "rendering OCaml exceptions in Emacs and Ocaml" =
       assert false
     with
     | exn ->
-      print_endline "Ocaml:";
+      print_endline "OCaml:";
       print_s [%sexp (exn : exn)];
       print_endline "Emacs:";
       (match exn with
@@ -621,34 +621,34 @@ let%expect_test "rendering OCaml exceptions in Emacs and Ocaml" =
   in
   test [%message "foo"];
   [%expect {|
-    Ocaml:
+    OCaml:
     (foo)
     Emacs:
     foo |}];
   test [%message "foo"] ~debug_on_error:true;
   [%expect
     {|
-    Ocaml:
+    OCaml:
     ((foo (backtrace ("<backtrace elided in test>"))))
     Emacs:
     (foo (backtrace ("<backtrace elided in test>"))) |}];
   test [%message "foo" "bar"];
   [%expect {|
-    Ocaml:
+    OCaml:
     ((foo bar))
     Emacs:
     (foo bar) |}];
   test [%message "foo" "bar"] ~debug_on_error:true;
   [%expect
     {|
-    Ocaml:
+    OCaml:
     (((foo bar) (backtrace ("<backtrace elided in test>"))))
     Emacs:
     ((foo bar) (backtrace ("<backtrace elided in test>"))) |}];
   test (List (List.init 15 ~f:(fun i -> Sexp.Atom ("foobar" ^ Int.to_string i))));
   [%expect
     {|
-    Ocaml:
+    OCaml:
     ((
       foobar0
       foobar1
