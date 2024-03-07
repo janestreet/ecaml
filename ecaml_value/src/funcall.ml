@@ -40,7 +40,7 @@ let wrap : type a. a t -> Value.t -> a =
         curry t symbol args (i + 1)
     | Nullary return_type ->
       assert (Int.( = ) i 0);
-      fun _ -> Value.funcall0 symbol |> return_type_of_value symbol return_type
+      fun () -> Value.funcall0 symbol |> return_type_of_value symbol return_type
     | Return type_ ->
       Value.funcallN_array symbol args |> return_type_of_value symbol type_
   in
@@ -55,7 +55,7 @@ let wrap_unrolled : type a. a t -> Value.t -> a =
   let ret type_ value = return_type_of_value symbol type_ value in
   match t with
   | Return type_ -> Value.funcall0 symbol |> ret type_
-  | Nullary return_type -> fun _ -> Value.funcall0 symbol |> ret return_type
+  | Nullary return_type -> fun () -> Value.funcall0 symbol |> ret return_type
   | type1 :: Return type_ ->
     fun a1 -> Value.funcall1 symbol (a1 |> Value.Type.to_value type1) |> ret type_
   | type1 :: type2 :: Return type_ ->

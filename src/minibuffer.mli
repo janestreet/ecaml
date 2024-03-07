@@ -78,11 +78,11 @@ val yes_or_no : prompt:string -> bool Deferred.t
 
 (** [(describe-variable 'minibuffer-exit-hook)]
     [(Info-goto-node "(elisp)Minibuffer Misc")] *)
-val exit_hook : Hook.normal Hook.t
+val exit_hook : (Hook.normal, unit) Hook.t
 
 (** [(describe-variable 'minibuffer-setup-hook)]
     [(Info-goto-node "(elisp)Minibuffer Misc")] *)
-val setup_hook : Hook.normal Hook.t
+val setup_hook : (Hook.normal, unit) Hook.t
 
 (** [(describe-function 'active-minibuffer-window)] *)
 val active_window : unit -> Window.t option

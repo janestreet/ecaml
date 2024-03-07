@@ -7,6 +7,7 @@ open! Core
 open! Import0
 open! Ecaml_filename
 open! Async_kernel
+module Hook := Hook0
 include Value.Subtype with type t = Buffer0.t
 
 type buffer := t
@@ -40,6 +41,9 @@ val create : name:string -> t
 (** [find ~name] returns the live buffer whose name is [name], if any.
     [(describe-function 'get-buffer)]. *)
 val find : name:string -> t option
+
+(** Find a live buffer using [f] *)
+val find_by : f:(t -> bool) -> t option
 
 val find_exn : name:string -> t
 
@@ -119,7 +123,7 @@ val with_temp_buffer
 val revert : ?confirm:bool (** default is [false] *) -> t -> unit Deferred.t
 
 (** [(describe-variable 'kill-buffer-query-functions)] *)
-val kill_buffer_query_functions : Function.t list Var.t
+val kill_buffer_query_functions : (unit, bool) Hook.t
 
 (** [(describe-function 'buffer-modified-tick)] *)
 val modified_tick : t -> Modified_tick.t

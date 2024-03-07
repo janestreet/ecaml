@@ -29,8 +29,6 @@ let gensym ?prefix () =
   gensym prefix
 ;;
 
-let set_function = Funcall.Wrap.("fset" <: t @-> value @-> return nil)
-
 module Automatic_migration = struct
   module New = struct
     type nonrec t =

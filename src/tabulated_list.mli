@@ -77,4 +77,4 @@ val move_point_to_record : 'record t -> f:('record -> bool) -> unit
 val current_buffer_has_entries : unit -> bool
 
 (** [(describe-variable 'tabulated-list-revert-hook)] *)
-val revert_hook : Hook.normal Hook.t
+val revert_hook : (Hook.normal, unit) Hook.t

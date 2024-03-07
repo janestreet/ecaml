@@ -425,19 +425,19 @@ module Block_on_async = struct
                 ~profile_backtrace:
                   (Nested_profile.Profile.backtrace () : Sexp.t list option)];
         let rec run_cycles_until_filled deferred =
-          if Ref.set_temporarily Profile.should_profile false ~f:Command.quit_requested
-          then error_s [%message "Blocking operation interrupted"]
-          else (
-            match Async.Deferred.peek deferred with
-            | Some result -> result
-            | None ->
-              (* [Thread.delay] gives the scheduler thread time to run before we run a
-                 cycle. *)
-              Scheduler.unlock t.scheduler;
-              Thread.delay (Time.Span.of_us 10. |> Time.Span.to_sec);
-              Scheduler.lock t.scheduler;
-              in_emacs_have_lock_do_cycle ();
-              run_cycles_until_filled deferred)
+          (match Value.Expert.process_input () with
+           | Continue -> ()
+           | Quit -> Value.Expert.raise_if_emacs_signaled ());
+          match Async.Deferred.peek deferred with
+          | Some result -> result
+          | None ->
+            (* [Thread.delay] gives the scheduler thread time to run before we run a
+               cycle. *)
+            Scheduler.unlock t.scheduler;
+            Thread.delay (Time.Span.of_us 10. |> Time.Span.to_sec);
+            Scheduler.lock t.scheduler;
+            in_emacs_have_lock_do_cycle ();
+            run_cycles_until_filled deferred
         in
         let deferred =
           Async.(

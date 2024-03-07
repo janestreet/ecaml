@@ -1,6 +1,8 @@
 open! Core
-open! Import
+open! Import0
 module Current_buffer = Current_buffer0
+module Frame = Frame0
+module Window = Window0
 
 type after_change =
   { beginning_of_changed_region : Position.t
@@ -26,19 +28,20 @@ type window =
 [@@deriving sexp_of]
 
 module Hook_type = struct
-  type 'a t =
-    | After_change_hook : after_change t
-    | Before_change_hook : before_change t
-    | File_hook : file t
-    | Normal_hook : normal t
-    | Frame_hook : frame t
-    | Window_hook : window t
+  type ('a, 'b) t =
+    | After_change_hook : (after_change, unit) t
+    | Before_change_hook : (before_change, unit) t
+    | File_hook : (file, unit) t
+    | Normal_hook : (normal, unit) t
+    | Frame_hook : (frame, unit) t
+    | Window_hook : (window, unit) t
+    | Query_function : (normal, bool) t
   [@@deriving sexp_of]
 end
 
-type 'a t =
+type ('a, 'b) t =
   { var : Function.t list Var.t
-  ; hook_type : 'a Hook_type.t
+  ; hook_type : ('a, 'b) Hook_type.t
   }
 [@@deriving fields ~getters]
 
@@ -46,11 +49,11 @@ let symbol t = t.var.symbol
 let value t = Current_buffer.value t.var
 let value_exn t = Current_buffer.value_exn t.var
 
-let sexp_of_t _ t =
+let sexp_of_t _ _ t =
   [%message
     ""
       ~symbol:(symbol t : Symbol.t)
-      ~hook_type:(t.hook_type : _ Hook_type.t)
+      ~hook_type:(t.hook_type : (_, _) Hook_type.t)
       ~value:(value t : Function.t list option)]
 ;;
 

@@ -102,7 +102,7 @@ let give_emacs_chance_to_signal () = ignore (Text.of_utf8_bytes "ignoreme" : Tex
 
 let%expect_test "quit" =
   show_raise (fun () ->
-    Command.request_quit ();
+    Command.Private.request_quit ();
     give_emacs_chance_to_signal ());
   [%expect {| (raised quit) |}];
   return ()
@@ -111,10 +111,17 @@ let%expect_test "quit" =
 let%expect_test "inhibit-quit" =
   show_raise (fun () ->
     Current_buffer.set_value_temporarily Sync inhibit_quit true ~f:(fun () ->
-      Command.request_quit ();
-      give_emacs_chance_to_signal ()));
-  [%expect {| "did not raise" |}];
-  show_raise (fun () -> give_emacs_chance_to_signal ());
+      Command.Private.request_quit ());
+    give_emacs_chance_to_signal ());
+  (* Once set_value_temporarily resets inhibit_quit back to nil, the quit gets raised. *)
   [%expect {| (raised quit) |}];
+  show_raise (fun () -> give_emacs_chance_to_signal ());
+  [%expect {| "did not raise" |}];
+  show_raise (fun () ->
+    Current_buffer.set_value_temporarily Sync inhibit_quit true ~f:(fun () ->
+      Command.Private.request_quit ();
+      give_emacs_chance_to_signal ();
+      Command.Private.suppress_quit ()));
+  [%expect {| "did not raise" |}];
   return ()
 ;;

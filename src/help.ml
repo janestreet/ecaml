@@ -19,40 +19,8 @@ let get_text_of_help ~invoke_help =
 
 let describe_function = Funcall.Wrap.("describe-function" <: Symbol.t @-> return nil)
 
-let sort_keybindings text =
-  let is_start_of_keybindings =
-    let regexp =
-      Regexp.of_rx
-        Rx.(
-          Seq
-            [ Line Start
-            ; Exactly "key"
-            ; One_or_more (Exactly " ")
-            ; Exactly "binding"
-            ; Line End
-            ])
-    in
-    fun line -> Regexp.does_match regexp (Text.of_utf8_bytes line)
-  in
-  let lines = String.split_lines text in
-  match List.findi lines ~f:(fun _ -> is_start_of_keybindings) with
-  | None -> text
-  | Some (index, _) ->
-    let mode_description, key_bindings = List.split_n lines (index + 2) in
-    String.concat
-      ~sep:"\n"
-      (List.concat
-         [ mode_description
-         ; key_bindings
-           |> List.filter ~f:(not << String.is_empty)
-           |> List.sort ~compare:String.compare
-         ])
-;;
-
 let describe_function_text ?(obscure_symbol = false) symbol =
-  let s =
-    get_text_of_help ~invoke_help:(fun () -> describe_function symbol) |> sort_keybindings
-  in
+  let s = get_text_of_help ~invoke_help:(fun () -> describe_function symbol) in
   if obscure_symbol
   then
     String.Search_pattern.replace_all

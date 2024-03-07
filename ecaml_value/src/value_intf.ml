@@ -307,8 +307,15 @@ module type Value = sig
   module Make_subtype (Subtype : Make_subtype_arg) : Subtype
 
   module Expert : sig
-    val have_active_env : unit -> bool
+    module Process_input : sig
+      type t =
+        | Continue
+        | Quit
+    end
+
+    val process_input : unit -> Process_input.t
     val raise_if_emacs_signaled : unit -> unit
+    val have_active_env : unit -> bool
     val non_local_exit_signal : exn -> unit
   end
 

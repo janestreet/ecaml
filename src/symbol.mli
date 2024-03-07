@@ -30,9 +30,6 @@ val create : name:string -> t
 (** [(describe-function 'gensym)]. *)
 val gensym : ?prefix:string -> unit -> t
 
-(** [(describe-function 'fset)]. *)
-val set_function : t -> Value.t -> unit
-
 (** [Automatic_migration] supports migrating from one symbol-naming convention to another.
     Use [Automatic_migration.add] to add a function that maps names from the old
     convention to the new.  Once you've done that, the following functions will

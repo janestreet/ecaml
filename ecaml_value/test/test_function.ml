@@ -163,10 +163,13 @@ let%expect_test "function descriptions" =
   let y = "y" |> Symbol.intern in
   let z = "z" |> Symbol.intern in
   let describe ?docstring ?optional_args ?rest_arg () ~args =
-    Symbol.set_function
+    Defun.defalias
       function_name
-      (Function.create [%here] do_nothing ?docstring ?optional_args ?rest_arg ~args
-       |> Function.to_value);
+      [%here]
+      ~alias_of:
+        (Function.create [%here] do_nothing ?docstring ?optional_args ?rest_arg ~args
+         |> Function.to_value)
+      ();
     print_endline (describe_function function_name |> hide_positions_in_string)
   in
   describe () ~args:[];

@@ -15,4 +15,4 @@ val buffers
 
 (** [(describe-variable 'ediff-cleanup-hook)]
     [(Info-goto-node "(ediff) Hooks")] *)
-val cleanup_hook : Hook.normal Hook.t
+val cleanup_hook : (Hook.normal, unit) Hook.t

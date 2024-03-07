@@ -59,6 +59,7 @@ module type Defun = sig
       | No_arg
       | Prompt of string
       | Raw_prefix
+      | Prefix
       | Region
 
     include Valueable.S with type t := t
@@ -104,7 +105,7 @@ module type Defun = sig
     :  Symbol.t
     -> Source_code_position.t
     -> ?docstring:string
-    -> alias_of:Symbol.t
+    -> alias_of:Value.t
     -> unit
     -> unit
 

@@ -11,6 +11,7 @@ module Ping_pong = struct
       ~version:1
       ~bin_query:Query.bin_t
       ~bin_response:Response.bin_t
+      ~include_in_error_count:Only_on_exn
   ;;
 
   module Server = struct
@@ -70,6 +71,7 @@ module Throughput = struct
       ~version:1
       ~bin_query:Query.bin_t
       ~bin_response:Response.bin_t
+      ~include_in_error_count:Only_on_exn
   ;;
 
   module Server = struct

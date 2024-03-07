@@ -13,6 +13,20 @@ end
 
 type value = t [@@deriving sexp_of]
 
+module Process_input = struct
+  type t =
+    | Continue
+    | Quit
+  [@@deriving variants]
+
+  let () =
+    assert (Variants.continue.rank = 0);
+    assert (Variants.quit.rank = 1)
+  ;;
+end
+
+external process_input : unit -> Process_input.t = "ecaml_process_input"
+
 (* [Funcall_exit.t] values are only constructed by [ecaml_non_local_exit_get_and_clear]
    in [ecaml_stubs.c]. *)
 module Funcall_exit = struct
@@ -55,27 +69,139 @@ let raise_if_emacs_signaled () =
   | Throw (tag, value) -> raise (Elisp_throw { tag; value })
 ;;
 
-let wrap_raise1 f a =
-  let r = f a in
-  raise_if_emacs_signaled ();
-  r
-;;
+module Must_check_exit = struct
+  external intern : string -> t = "ecaml_intern"
+  external funcall_array : t -> t array -> bool -> t = "ecaml_funcall_array"
+  external funcall0 : t -> bool -> t = "ecaml_funcall0"
+  external funcall1 : t -> t -> bool -> t = "ecaml_funcall1"
+  external funcall2 : t -> t -> t -> bool -> t = "ecaml_funcall2"
+  external funcall3 : t -> t -> t -> t -> bool -> t = "ecaml_funcall3"
 
-let wrap_raise2 f a1 a2 =
-  let r = f a1 a2 in
-  raise_if_emacs_signaled ();
-  r
-;;
+  external funcall4
+    :  t
+    -> t
+    -> t
+    -> t
+    -> t
+    -> bool
+    -> t
+    = "ecaml_funcall4_byte" "ecaml_funcall4"
 
-let wrap_raise3 f a1 a2 a3 =
-  let r = f a1 a2 a3 in
-  raise_if_emacs_signaled ();
-  r
-;;
+  external funcall5
+    :  t
+    -> t
+    -> t
+    -> t
+    -> t
+    -> t
+    -> bool
+    -> t
+    = "ecaml_funcall5_byte" "ecaml_funcall5"
 
-external intern : string -> t = "ecaml_intern"
+  external funcall_int_int_value_unit
+    :  t
+    -> int
+    -> int
+    -> t
+    -> unit
+    = "ecaml_funcall_int_int_value_unit"
 
-let intern = wrap_raise1 intern
+  external funcall_int_int_value_value_unit
+    :  t
+    -> int
+    -> int
+    -> t
+    -> t
+    -> unit
+    = "ecaml_funcall_int_int_value_value_unit"
+
+  external type_of : t -> t = "ecaml_type_of"
+  external is_not_nil : t -> bool = "ecaml_is_not_nil"
+  external eq : t -> t -> bool = "ecaml_eq"
+  external of_float : float -> t = "ecaml_of_float"
+  external to_float_exn : t -> float = "ecaml_to_float"
+  external multibyte_of_string : string -> t = "ecaml_multibyte_of_string"
+  external unibyte_of_string : string -> t = "ecaml_unibyte_of_string"
+  external to_utf8_bytes_exn : t -> string = "ecaml_to_string"
+  external vec_get : t -> int -> t = "ecaml_vec_get"
+  external vec_set : t -> int -> t -> unit = "ecaml_vec_set"
+  external vec_size : t -> int = "ecaml_vec_size"
+end
+[@@alert
+  must_check_exit
+    "The caller must check for a non-local exit immediately after calling any function \
+     in this module."]
+
+module Have_checked_exit = struct
+  let wrap_raise1 f a =
+    let r = f a in
+    raise_if_emacs_signaled ();
+    r
+  ;;
+
+  let wrap_raise2 f a1 a2 =
+    let r = f a1 a2 in
+    raise_if_emacs_signaled ();
+    r
+  ;;
+
+  let wrap_raise3 f a1 a2 a3 =
+    let r = f a1 a2 a3 in
+    raise_if_emacs_signaled ();
+    r
+  ;;
+
+  let wrap_raise4 f a1 a2 a3 a4 =
+    let r = f a1 a2 a3 a4 in
+    raise_if_emacs_signaled ();
+    r
+  ;;
+
+  let wrap_raise5 f a1 a2 a3 a4 a5 =
+    let r = f a1 a2 a3 a4 a5 in
+    raise_if_emacs_signaled ();
+    r
+  ;;
+
+  let wrap_raise6 f a1 a2 a3 a4 a5 a6 =
+    let r = f a1 a2 a3 a4 a5 a6 in
+    raise_if_emacs_signaled ();
+    r
+  ;;
+
+  let wrap_raise7 f a1 a2 a3 a4 a5 a6 a7 =
+    let r = f a1 a2 a3 a4 a5 a6 a7 in
+    raise_if_emacs_signaled ();
+    r
+  ;;
+
+  open Must_check_exit [@@alert "-must_check_exit"]
+
+  let intern = wrap_raise1 intern
+  let funcall_array = wrap_raise3 funcall_array
+  let funcall0 = wrap_raise2 funcall0
+  let funcall1 = wrap_raise3 funcall1
+  let funcall2 = wrap_raise4 funcall2
+  let funcall3 = wrap_raise5 funcall3
+  let funcall4 = wrap_raise6 funcall4
+  let funcall5 = wrap_raise7 funcall5
+  let funcall_int_int_value_unit = wrap_raise4 funcall_int_int_value_unit
+  let funcall_int_int_value_value_unit = wrap_raise5 funcall_int_int_value_value_unit
+  let type_of = wrap_raise1 type_of
+  let is_not_nil = wrap_raise1 is_not_nil
+  let eq = wrap_raise2 eq
+  let of_float = wrap_raise1 of_float
+  let to_float_exn = wrap_raise1 to_float_exn
+  let multibyte_of_string = wrap_raise1 multibyte_of_string
+  let unibyte_of_string = wrap_raise1 unibyte_of_string
+  let to_utf8_bytes_exn = wrap_raise1 to_utf8_bytes_exn
+  let vec_get = wrap_raise2 vec_get
+  let vec_set = wrap_raise3 vec_set
+  let vec_size = wrap_raise1 vec_size
+end
+
+include Have_checked_exit
+
 let interned_symbols = String.Hash_set.create ()
 
 let all_interned_symbols () =
@@ -173,8 +299,6 @@ let maybe_profile ~should_profile context f =
   if Option.value should_profile ~default:true then profile Sync context f else f ()
 ;;
 
-external funcall_array : t -> t array -> bool -> t = "ecaml_funcall_array"
-
 let funcall_array ?should_profile t ts ~should_return_result =
   maybe_profile
     ~should_profile
@@ -183,14 +307,11 @@ let funcall_array ?should_profile t ts ~should_return_result =
 ;;
 
 let funcallN_array ?should_profile t ts =
-  let r = funcall_array ?should_profile t ts ~should_return_result:true in
-  raise_if_emacs_signaled ();
-  r
+  funcall_array ?should_profile t ts ~should_return_result:true
 ;;
 
 let funcallN_array_i ?should_profile t ts =
-  ignore (funcall_array ?should_profile t ts ~should_return_result:false : t);
-  raise_if_emacs_signaled ()
+  ignore (funcall_array ?should_profile t ts ~should_return_result:false : t)
 ;;
 
 let funcallN ?should_profile t ts = funcallN_array ?should_profile t (ts |> Array.of_list)
@@ -198,34 +319,6 @@ let funcallN ?should_profile t ts = funcallN_array ?should_profile t (ts |> Arra
 let funcallN_i ?should_profile t ts =
   funcallN_array_i ?should_profile t (ts |> Array.of_list)
 ;;
-
-external funcall0 : t -> bool -> t = "ecaml_funcall0"
-external funcall1 : t -> t -> bool -> t = "ecaml_funcall1"
-external funcall2 : t -> t -> t -> bool -> t = "ecaml_funcall2"
-external funcall3 : t -> t -> t -> t -> bool -> t = "ecaml_funcall3"
-
-external funcall4
-  :  t
-  -> t
-  -> t
-  -> t
-  -> t
-  -> bool
-  -> t
-  = "ecaml_funcall4_byte" "ecaml_funcall4"
-
-external funcall5
-  :  t
-  -> t
-  -> t
-  -> t
-  -> t
-  -> t
-  -> bool
-  -> t
-  = "ecaml_funcall5_byte" "ecaml_funcall5"
-
-let external_funcall1 = funcall1
 
 let funcall0 f ~should_profile ~should_return_result =
   maybe_profile
@@ -270,115 +363,63 @@ let funcall5 f a1 a2 a3 a4 a5 ~should_profile ~should_return_result =
 ;;
 
 let funcall0_i ?should_profile f =
-  ignore (funcall0 f ~should_profile ~should_return_result:false : t);
-  raise_if_emacs_signaled ()
+  ignore (funcall0 f ~should_profile ~should_return_result:false : t)
 ;;
 
-let funcall0 ?should_profile f =
-  let r = funcall0 f ~should_profile ~should_return_result:true in
-  raise_if_emacs_signaled ();
-  r
-;;
+let funcall0 ?should_profile f = funcall0 f ~should_profile ~should_return_result:true
 
 let funcall1_i ?should_profile f a =
-  ignore (funcall1 f a ~should_profile ~should_return_result:false : t);
-  raise_if_emacs_signaled ()
+  ignore (funcall1 f a ~should_profile ~should_return_result:false : t)
 ;;
 
-let funcall1 ?should_profile f a =
-  let r = funcall1 f a ~should_profile ~should_return_result:true in
-  raise_if_emacs_signaled ();
-  r
-;;
+let funcall1 ?should_profile f a = funcall1 f a ~should_profile ~should_return_result:true
 
 let funcall2_i ?should_profile f a1 a2 =
-  ignore (funcall2 f a1 a2 ~should_profile ~should_return_result:false : t);
-  raise_if_emacs_signaled ()
+  ignore (funcall2 f a1 a2 ~should_profile ~should_return_result:false : t)
 ;;
 
 let funcall2 ?should_profile f a1 a2 =
-  let r = funcall2 f a1 a2 ~should_profile ~should_return_result:true in
-  raise_if_emacs_signaled ();
-  r
+  funcall2 f a1 a2 ~should_profile ~should_return_result:true
 ;;
 
 let funcall3_i ?should_profile f a1 a2 a3 =
-  ignore (funcall3 f a1 a2 a3 ~should_profile ~should_return_result:false : t);
-  raise_if_emacs_signaled ()
+  ignore (funcall3 f a1 a2 a3 ~should_profile ~should_return_result:false : t)
 ;;
 
 let funcall3 ?should_profile f a1 a2 a3 =
-  let r = funcall3 f a1 a2 a3 ~should_profile ~should_return_result:true in
-  raise_if_emacs_signaled ();
-  r
+  funcall3 f a1 a2 a3 ~should_profile ~should_return_result:true
 ;;
 
 let funcall4_i ?should_profile f a1 a2 a3 a4 =
-  ignore (funcall4 f a1 a2 a3 a4 ~should_profile ~should_return_result:false : t);
-  raise_if_emacs_signaled ()
+  ignore (funcall4 f a1 a2 a3 a4 ~should_profile ~should_return_result:false : t)
 ;;
 
 let funcall4 ?should_profile f a1 a2 a3 a4 =
-  let r = funcall4 f a1 a2 a3 a4 ~should_profile ~should_return_result:true in
-  raise_if_emacs_signaled ();
-  r
+  funcall4 f a1 a2 a3 a4 ~should_profile ~should_return_result:true
 ;;
 
 let funcall5_i ?should_profile f a1 a2 a3 a4 a5 =
-  ignore (funcall5 f a1 a2 a3 a4 a5 ~should_profile ~should_return_result:false : t);
-  raise_if_emacs_signaled ()
+  ignore (funcall5 f a1 a2 a3 a4 a5 ~should_profile ~should_return_result:false : t)
 ;;
 
 let funcall5 ?should_profile f a1 a2 a3 a4 a5 =
-  let r = funcall5 f a1 a2 a3 a4 a5 ~should_profile ~should_return_result:true in
-  raise_if_emacs_signaled ();
-  r
+  funcall5 f a1 a2 a3 a4 a5 ~should_profile ~should_return_result:true
 ;;
-
-external funcall_int_int_value_unit
-  :  t
-  -> int
-  -> int
-  -> t
-  -> unit
-  = "ecaml_funcall_int_int_value_unit"
 
 let funcall_int_int_value_unit ?should_profile f a1 a2 a3 =
   maybe_profile
     ~should_profile
     [%lazy_sexp (f : t), (a1 : int), (a2 : int), (a3 : t)]
-    (fun () -> funcall_int_int_value_unit f a1 a2 a3);
-  raise_if_emacs_signaled ()
+    (fun () -> funcall_int_int_value_unit f a1 a2 a3)
 ;;
-
-external funcall_int_int_value_value_unit
-  :  t
-  -> int
-  -> int
-  -> t
-  -> t
-  -> unit
-  = "ecaml_funcall_int_int_value_value_unit"
 
 let funcall_int_int_value_value_unit ?should_profile f a1 a2 a3 a4 =
   maybe_profile
     ~should_profile
     [%lazy_sexp (f : t), (a1 : int), (a2 : int), (a3 : t), (a4 : t)]
-    (fun () -> funcall_int_int_value_value_unit f a1 a2 a3 a4);
-  raise_if_emacs_signaled ()
+    (fun () -> funcall_int_int_value_value_unit f a1 a2 a3 a4)
 ;;
 
-external type_of : t -> t = "ecaml_type_of"
-
-let type_of = wrap_raise1 type_of
-
-external is_not_nil : t -> bool = "ecaml_is_not_nil"
-
-let is_not_nil = wrap_raise1 is_not_nil
-
-external eq : t -> t -> bool = "ecaml_eq"
-
-let eq = wrap_raise2 eq
 let[@inline always] is_integer (t : t) = Obj.is_int (Obj.repr t)
 
 let[@inline always] to_int_exn (t : t) =
@@ -403,23 +444,11 @@ let of_int_exn : int -> t =
     (Obj.magic n : t)
 ;;
 
-external of_float : float -> t = "ecaml_of_float"
-
-let of_float = wrap_raise1 of_float
-
-external to_float_exn : t -> float = "ecaml_to_float"
-
-let to_float_exn = wrap_raise1 to_float_exn
-
 (* multibyte strings contain UTF-8 *)
-external multibyte_of_string : string -> t = "ecaml_multibyte_of_string"
-
-let _multibyte_of_string = wrap_raise1 multibyte_of_string
+let _multibyte_of_string = multibyte_of_string
 
 (* unibyte strings contain arbitrary bytes *)
-external unibyte_of_string : string -> t = "ecaml_unibyte_of_string"
-
-let unibyte_of_string = wrap_raise1 unibyte_of_string
+let unibyte_of_string = unibyte_of_string
 
 (* Unfortunately, there are lots of places where we can call of_utf8_bytes on things which
    are not in fact UTF-8.  If we naively use multibyte_of_string here, we'll break Emacs
@@ -448,26 +477,11 @@ let of_utf8_bytes_replacing_invalid str =
   of_utf8_bytes (Buffer.contents buffer), `First_malformed first_malformed
 ;;
 
-external to_utf8_bytes_exn : t -> string = "ecaml_to_string"
-
-let to_utf8_bytes_exn = wrap_raise1 to_utf8_bytes_exn
-
-external vec_get : t -> int -> t = "ecaml_vec_get"
-
-let vec_get = wrap_raise2 vec_get
-
-external vec_set : t -> int -> t -> unit = "ecaml_vec_set"
-
-let vec_set = wrap_raise3 vec_set
-
-external vec_size : t -> int = "ecaml_vec_size"
-
-let vec_size = wrap_raise1 vec_size
 let percent_s = of_utf8_bytes "%s"
 let message s = funcall2_i Q.message percent_s (of_utf8_bytes s)
 
 let message_zero_alloc t =
-  ignore (external_funcall1 Q.message t false : t);
+  ignore ((Must_check_exit.funcall1 [@alert "-must_check_exit"]) Q.message t false : t);
   raise_if_emacs_signaled ()
 ;;
 
@@ -926,9 +940,12 @@ module Stat = struct
 end
 
 module Expert = struct
+  module Process_input = Process_input
+
+  let process_input = process_input
+  let raise_if_emacs_signaled = raise_if_emacs_signaled
   let have_active_env = have_active_env
   let non_local_exit_signal = non_local_exit_signal
-  let raise_if_emacs_signaled = raise_if_emacs_signaled
 end
 
 module For_testing = struct

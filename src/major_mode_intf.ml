@@ -60,7 +60,7 @@ module type Major_mode = sig
 
   val symbol : t -> Symbol.t
   val name : t -> Name.t
-  val hook : t -> Hook.normal Hook.t Or_error.t
+  val hook : t -> (Hook.normal, unit) Hook.t Or_error.t
   val keymap : t -> Keymap.t
   val keymap_var : t -> Keymap.t Var.t
   val syntax_table : t -> Syntax_table.t

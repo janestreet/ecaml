@@ -34,6 +34,27 @@ Use this as `print-level' for converting Elisp values to sexps in profile record
     ()
 ;;
 
+let profile_kill_buffer_query_function =
+  Hook.Function.create
+    ("ecaml-profile-kill-buffer-query-function" |> Symbol.intern)
+    [%here]
+    ~docstring:{|
+Prompt the user before killing the *profile* buffer and losing data.
+|}
+    ~hook_type:Query_function
+    (Returns_deferred Value.Type.bool)
+    (fun () ->
+    Minibuffer.yes_or_no
+      ~prompt:
+        (Documentation.substitute_command_keys
+           [%string
+             {|Killing the profile buffer loses data, and is probably not what you meant.
+
+Consider pressing \[quit-window] instead.
+
+Kill the profile buffer? |}]))
+;;
+
 include
   (val Major_mode.define_derived_mode
          ("ecaml-profile-mode" |> Symbol.intern)
@@ -51,7 +72,13 @@ The major mode for the *profile* buffer, which holds a log of Ecaml profile outp
            ]
          ~mode_line:"ecaml-profile"
          ~initialize:
-           (Returns Value.Type.unit, fun () -> Minor_mode.enable Minor_mode.read_only)
+           ( Returns Value.Type.unit
+           , fun () ->
+               Minor_mode.enable Minor_mode.read_only;
+               Hook.add
+                 ~buffer_local:true
+                 Buffer.kill_buffer_query_functions
+                 profile_kill_buffer_query_function )
          ())
 
 let () = Keymap.suppress_keymap keymap ~suppress_digits:true

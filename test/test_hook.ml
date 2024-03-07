@@ -5,7 +5,7 @@ open! Hook
 
 let t = Wrap.("some-hook" <: Normal_hook)
 let () = clear t
-let show t = print_s [%sexp (t : _ t)]
+let show t = print_s [%sexp (t : (_, _) t)]
 
 let create_function s =
   Function.create

@@ -35,7 +35,7 @@ let%expect_test "[function_exn] raise" =
 
 let%expect_test "[set_function], [function_exn]" =
   let t = create ~name:"z" in
-  set_function t (13 |> Value.of_int_exn);
+  Defun.defalias t [%here] ~alias_of:(13 |> Value.of_int_exn) ();
   print_s [%sexp (function_exn t : Value.t)];
   [%expect {| 13 |}];
   return ()

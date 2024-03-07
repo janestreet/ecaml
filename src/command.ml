@@ -64,13 +64,7 @@ let call_interactively =
 let inhibit_quit = Var.Wrap.("inhibit-quit" <: bool)
 let quit_flag = Var.Wrap.("quit-flag" <: bool)
 let request_quit () = Current_buffer.set_value quit_flag true
-
-let quit_requested () =
-  (* We use [try-with] because calling into Elisp can itself check [quit-flag]
-     and raise.  And in fact does, at least in Emacs 25.2. *)
-  try Current_buffer.value_exn quit_flag with
-  | _ -> true
-;;
+let suppress_quit () = Current_buffer.set_value quit_flag false
 
 let abort_recursive_edit () =
   let abort_recursive_edit =
@@ -79,3 +73,8 @@ let abort_recursive_edit () =
   abort_recursive_edit ();
   assert false
 ;;
+
+module Private = struct
+  let request_quit = request_quit
+  let suppress_quit = suppress_quit
+end

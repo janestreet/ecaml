@@ -6,7 +6,7 @@
 
 open! Core
 open! Import0
-include Value.Subtype
+include Value.Subtype with type t = Frame0.t
 
 (** Accessors *)
 

@@ -17,7 +17,7 @@ type t =
   ; symbol : Symbol.t
   ; keymap_var : Keymap.t Var.t
   ; name : (Name.t[@sexp.opaque])
-  ; hook : Hook.normal Hook.t Or_error.t
+  ; hook : (Hook.normal, unit) Hook.t Or_error.t
   ; syntax_table_var : Syntax_table.t Var.t
   }
 [@@deriving fields ~getters ~fields, sexp_of]

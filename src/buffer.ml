@@ -8,6 +8,7 @@ module Q = struct
   let visible = "visible" |> Symbol.intern
 end
 
+module Hook = Hook0
 module Process = Process0
 module Window = Window0
 include Buffer0
@@ -39,6 +40,7 @@ let process_exn t =
 let all_live = Funcall.Wrap.("buffer-list" <: nullary @-> return (list t))
 let get_buffer = Funcall.Wrap.("get-buffer" <: string @-> return (nil_or t))
 let find ~name = get_buffer name
+let find_by ~f = all_live () |> List.find ~f
 
 let find_exn ~name =
   match find ~name with
@@ -155,7 +157,7 @@ let revert =
 ;;
 
 let kill_buffer_query_functions =
-  Var.Wrap.("kill-buffer-query-functions" <: list Function.t)
+  Hook.Wrap.("kill-buffer-query-functions" <: Query_function)
 ;;
 
 let modified_tick = Funcall.Wrap.("buffer-modified-tick" <: t @-> return Modified_tick.t)

@@ -27,7 +27,14 @@ let schedule_foreground_block_on_async here ?raise_exceptions_to_monitor f =
   Value.Private.enqueue_foreground_block_on_async
     here
     ?raise_exceptions_to_monitor
-    (fun () -> Nested_profile.Profile.disown (fun () -> mark_running_in_foreground ~f))
+    (fun () ->
+    Nested_profile.Profile.disown (fun () ->
+      Nested_profile.Profile.profile
+        Async
+        [%lazy_message
+          "[Background.schedule_foreground_block_on_async]"
+            (here : Source_code_position.t)]
+        (fun () -> mark_running_in_foreground ~f)))
 ;;
 
 let don't_wait_for here f =
@@ -45,12 +52,20 @@ let don't_wait_for here f =
 module Clock = struct
   let every' ?start ?stop ?continue_on_error ?finished here interval f =
     mark_running_in_background here ~f:(fun () ->
-      Clock.every' ?start ?stop ?continue_on_error ?finished interval f)
+      Clock.every' ?start ?stop ?continue_on_error ?finished interval (fun () ->
+        Nested_profile.Profile.profile
+          Async
+          [%lazy_message "[Background.Clock.every']" (here : Source_code_position.t)]
+          f))
   ;;
 
   let every ?start ?stop ?continue_on_error here interval f =
     mark_running_in_background here ~f:(fun () ->
-      Clock.every ?start ?stop ?continue_on_error interval f)
+      Clock.every ?start ?stop ?continue_on_error interval (fun () ->
+        Nested_profile.Profile.profile
+          Sync
+          [%lazy_message "[Background.clock.every]" (here : Source_code_position.t)]
+          f))
   ;;
 end
 

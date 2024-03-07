@@ -41,7 +41,7 @@ let%expect_test "[block_on_async] with a quit" =
       ~docstring:"<docstring>"
       (Returns_deferred Value.Type.unit)
       (fun () ->
-      Clock.run_after (sec 0.01) Ecaml.Command.request_quit ();
+      Clock.run_after (sec 0.01) Ecaml.Command.Private.request_quit ();
       Deferred.never ())
   in
   let%bind quit =
@@ -50,7 +50,7 @@ let%expect_test "[block_on_async] with a quit" =
   in
   print_s [%sexp (quit : _ Or_error.t)];
   [%expect {|
-    (Error ("Blocking operation interrupted")) |}];
+    (Error quit) |}];
   return ()
 ;;
 

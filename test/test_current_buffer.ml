@@ -1145,7 +1145,7 @@ let%expect_test "[describe_mode]" =
 
     (Information about these minor modes follows the major mode info.)
 
-     mode defined in `../../../../.sink-2023-11-01_16-41-15.507781/28.2-20231101-123801/share/emacs/28.2/lisp/simple.el':
+     mode defined in `../../../../../.sink-2023-11-01_16-41-15.507781/28.2-20231101-123801/share/emacs/28.2/lisp/simple.el':
     Major mode not specialized for anything in particular.
     Other major modes are defined by comparison with this one.
 

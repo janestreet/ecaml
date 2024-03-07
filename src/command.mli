@@ -45,12 +45,13 @@ val call_interactively
     [(Info-goto-node "(elisp)Quitting")] *)
 val inhibit_quit : bool Var.t
 
-(** [(describe-variable 'quit-flag)]
-    [(Info-goto-node "(elisp)Quitting")] *)
-val quit_flag : bool Var.t
-
-val quit_requested : unit -> bool
-val request_quit : unit -> unit
-
 (** [(describe-function 'abort-recursive-edit)] *)
 val abort_recursive_edit : unit -> never_returns
+
+module Private : sig
+  (** [(describe-variable 'quit-flag)]
+      [(Info-goto-node "(elisp)Quitting")] *)
+  val request_quit : unit -> unit
+
+  val suppress_quit : unit -> unit
+end

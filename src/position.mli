@@ -11,7 +11,7 @@
     [(Info-goto-node "(elisp)Positions")]. *)
 
 open! Core
-open! Import
+open! Import0
 include Value.Subtype
 include Comparable.S_plain with type t := t
 

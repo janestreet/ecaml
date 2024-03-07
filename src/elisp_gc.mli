@@ -13,4 +13,4 @@ val gcs_done : unit -> int
 val gc_elapsed : unit -> Time_ns.Span.t
 
 (** [(describe-variable 'post-gc-hook)] *)
-val post_gc_hook : Hook.normal Hook.t
+val post_gc_hook : (Hook.normal, unit) Hook.t

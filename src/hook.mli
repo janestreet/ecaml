@@ -11,7 +11,7 @@ open! Core
 open! Async_kernel
 open! Import
 
-type 'a t = 'a Hook0.t [@@deriving sexp_of]
+type ('a, 'b) t = ('a, 'b) Hook0.t [@@deriving sexp_of]
 
 type after_change = Hook0.after_change =
   { beginning_of_changed_region : Position.t
@@ -37,18 +37,19 @@ type window = Hook0.window =
 [@@deriving sexp_of]
 
 module Hook_type : sig
-  type 'a t = 'a Hook0.Hook_type.t =
-    | After_change_hook : after_change t
-    | Before_change_hook : before_change t
-    | File_hook : file t
-    | Normal_hook : normal t
-    | Frame_hook : frame t
-    | Window_hook : window t
+  type ('a, 'b) t = ('a, 'b) Hook0.Hook_type.t =
+    | After_change_hook : (after_change, unit) t
+    | Before_change_hook : (before_change, unit) t
+    | File_hook : (file, unit) t
+    | Normal_hook : (normal, unit) t
+    | Frame_hook : (frame, unit) t
+    | Window_hook : (window, unit) t
+    | Query_function : (normal, bool) t
   [@@deriving sexp_of]
 end
 
 module Wrap : sig
-  val ( <: ) : string -> 'a Hook_type.t -> 'a t
+  val ( <: ) : string -> ('a, 'b) Hook_type.t -> ('a, 'b) t
 end
 
 val var : _ t -> Function.t list Var.t
@@ -61,7 +62,7 @@ module Where : sig
 end
 
 module Function : sig
-  type 'a t [@@deriving sexp_of]
+  type ('a, 'b) t [@@deriving sexp_of]
 
   (** [create here return_type symbol f] defines an emacs function named [symbol]
       that runs [f] when called. It returns an ['a t] usable for modifying hooks. *)
@@ -70,10 +71,10 @@ module Function : sig
     -> Source_code_position.t
     -> docstring:string
     -> ?should_profile:bool
-    -> hook_type:'a Hook_type.t
-    -> (unit, 'r) Defun.Returns.t
+    -> hook_type:('a, 'b) Hook_type.t
+    -> ('b, 'r) Defun.Returns.t
     -> ('a -> 'r)
-    -> 'a t
+    -> ('a, 'b) t
 
   (** [create_with_self here return_type symbol f] works the same as [create], except that
       the ['a t] it returns is also passed as an argument to [f].
@@ -84,10 +85,10 @@ module Function : sig
     :  Symbol.t
     -> Source_code_position.t
     -> docstring:string
-    -> hook_type:'a Hook_type.t
-    -> (unit, 'r) Defun.Returns.t
-    -> ('a t -> 'a -> 'r)
-    -> 'a t
+    -> hook_type:('a, 'b) Hook_type.t
+    -> ('b, 'r) Defun.Returns.t
+    -> (('a, 'b) t -> 'a -> 'r)
+    -> ('a, 'b) t
 
   val symbol : _ t -> Symbol.t
 end
@@ -100,74 +101,74 @@ val add
   :  ?buffer_local:bool (** default is [false] *)
   -> ?one_shot:bool (** default is [false] *)
   -> ?where:Where.t (** default is [Start] *)
-  -> 'a t
-  -> 'a Function.t
+  -> ('a, 'b) t
+  -> ('a, 'b) Function.t
   -> unit
 
 (** [(describe-function 'remove-hook)]
     [(Info-goto-node "(elisp)Setting Hooks")] *)
-val remove : ?buffer_local:bool -> 'a t -> 'a Function.t -> unit
+val remove : ?buffer_local:bool -> ('a, 'b) t -> ('a, 'b) Function.t -> unit
 
-val remove_symbol : ?buffer_local:bool -> 'a t -> Symbol.t -> unit
+val remove_symbol : ?buffer_local:bool -> ('a, 'b) t -> Symbol.t -> unit
 val clear : _ t -> unit
 
 (** [(describe-function 'run-hooks)]
     [(Info-goto-node "(elisp)Running Hooks")] *)
-val run : normal t -> unit Deferred.t
+val run : (normal, unit) t -> unit Deferred.t
 
 (** [(describe-variable 'after-change-functions)]
     [(Info-goto-node "(elisp)Change Hooks")] *)
-val after_change_functions : after_change t
+val after_change_functions : (after_change, unit) t
 
 (** [(describe-variable 'after-load-functions)]
     [(Info-goto-node "(elisp)Hooks for Loading")] *)
-val after_load : file t
+val after_load : (file, unit) t
 
 (** [(describe-variable 'after-revert-hook)]
     [(Info-goto-node "(elisp)Reverting")] *)
-val after_revert : normal t
+val after_revert : (normal, unit) t
 
 (** [(describe-variable 'after-save-hook)]
     [(Info-goto-node "(elisp)Saving Buffers")] *)
-val after_save : normal t
+val after_save : (normal, unit) t
 
 (** [(describe-variable 'before-change-functions)]
     [(Info-goto-node "(elisp)Change Hooks")] *)
-val before_change_functions : before_change t
+val before_change_functions : (before_change, unit) t
 
 (** [(describe-variable 'before-save-hook)]
     [(Info-goto-node "(elisp)Saving Buffers")] *)
-val before_save : normal t
+val before_save : (normal, unit) t
 
 (** [(describe-variable 'emacs-startup-hook)]
 
     Use this instead of [(describe-variable 'after-init-hook)], since the latter occurs
     before command-line arguments are handled (and therefore before the OCaml runtime is
     initialized). *)
-val emacs_startup : normal t
+val emacs_startup : (normal, unit) t
 
 (** [(describe-variable 'focus-in-hook)]
     [(Info-goto-node "(elisp)Input Focus")] *)
-val focus_in : normal t
+val focus_in : (normal, unit) t
 
 (** [(describe-variable 'kill-buffer-hook)]
     [(Info-goto-node "(elisp)Killing Buffers")] *)
-val kill_buffer : normal t
+val kill_buffer : (normal, unit) t
 
 (** [(describe-variable 'post-command-hook)]
     [(Info-goto-node "(elisp)Command Overview")] *)
-val post_command : normal t
+val post_command : (normal, unit) t
 
 (** [(describe-variable 'server-after-make-frame-hook)] *)
-val server_after_make_frame : normal t
+val server_after_make_frame : (normal, unit) t
 
 (** [(describe-variable 'window-configuration-change-hook)]
     [(Info-goto-node "(elisp)Window Hooks")] *)
-val window_configuration_change : normal t
+val window_configuration_change : (normal, unit) t
 
 (** [(describe-variable 'window-scroll-functions)]
     [(Info-goto-node "(elisp)Window Hooks")] *)
-val window_scroll_functions : window t
+val window_scroll_functions : (window, unit) t
 
 (** [(Info-goto-node "(elisp)Major Mode Conventions")] *)
-val major_mode_hook : Major_mode.t -> normal t
+val major_mode_hook : Major_mode.t -> (normal, unit) t

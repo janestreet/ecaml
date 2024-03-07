@@ -67,7 +67,7 @@ let%expect_test "[read_from]" =
 ;;
 
 let%expect_test "[exit_hook]" =
-  print_s [%sexp (exit_hook : _ Hook.t)];
+  print_s [%sexp (exit_hook : (_, _) Hook.t)];
   [%expect
     {|
     ((symbol    minibuffer-exit-hook)
@@ -77,7 +77,7 @@ let%expect_test "[exit_hook]" =
 ;;
 
 let%expect_test "[setup_hook]" =
-  print_s [%sexp (setup_hook : _ Hook.t)];
+  print_s [%sexp (setup_hook : (_, _) Hook.t)];
   [%expect
     {|
     ((symbol    minibuffer-setup-hook)

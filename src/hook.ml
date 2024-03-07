@@ -3,31 +3,48 @@ open! Import
 include Hook0
 
 module Function = struct
-  type 'a t =
+  type ('a, 'b) t =
     { symbol : Symbol.t
-    ; hook_type : 'a Hook_type.t
+    ; hook_type : ('a, 'b) Hook_type.t
     }
   [@@deriving sexp_of]
 
   let defun
-    (type a b)
+    (type a b r)
     symbol
     here
     ~docstring
     ?should_profile
-    ~(hook_type : a Hook_type.t)
-    (returns : (unit, b) Defun.Returns.t)
-    (f : a -> b)
+    ~(hook_type : (a, b) Hook_type.t)
+    (returns : (b, r) Defun.Returns.t)
+    (f : a -> r)
     =
-    let handle_result = function
+    let handle_unit_result = function
       | Ok () -> ()
       | Error err ->
         message_s [%message "Error in hook" ~_:(symbol : Symbol.t) ~_:(err : Error.t)]
     in
-    let try_with (f : unit -> b) : b =
+    let handle_bool_result = function
+      | Ok b -> b
+      | Error err ->
+        (* We failed to query the user, so the safest thing to do is to abort whatever
+           operation wanted to query in the first place. *)
+        raise_s [%message "Error in hook" ~_:(symbol : Symbol.t) ~_:(err : Error.t)]
+    in
+    let handle_result : b Or_error.t -> b =
+      match hook_type with
+      | After_change_hook -> handle_unit_result
+      | Before_change_hook -> handle_unit_result
+      | File_hook -> handle_unit_result
+      | Normal_hook -> handle_unit_result
+      | Frame_hook -> handle_unit_result
+      | Window_hook -> handle_unit_result
+      | Query_function -> handle_bool_result
+    in
+    let try_with (f : unit -> r) : r =
       match returns with
-      | Returns (_ : unit Value.Type.t) -> Or_error.try_with f |> handle_result
-      | Returns_deferred (_ : unit Value.Type.t) ->
+      | Returns (_ : b Value.Type.t) -> Or_error.try_with f |> handle_result
+      | Returns_deferred (_ : b Value.Type.t) ->
         let open Async in
         Deferred.Or_error.try_with f ~extract_exn:true >>| handle_result
     in
@@ -73,7 +90,11 @@ module Function = struct
          and end_of_changed_region = required "end-of-changed-region" Position.t
          and length_before_change = required "length-before-change" int in
          try_with (fun () ->
-           f { beginning_of_changed_region; end_of_changed_region; length_before_change }))
+           f { beginning_of_changed_region; end_of_changed_region; length_before_change })
+       | Query_function ->
+         let open Defun.Let_syntax in
+         let%map_open () = return () in
+         try_with f)
   ;;
 
   let create symbol here ~docstring ?should_profile ~hook_type returns f =
@@ -87,7 +108,7 @@ module Function = struct
     self
   ;;
 
-  let funcall (type a) ({ symbol; hook_type } : a t) (x : a) =
+  let funcall (type a b) ({ symbol; hook_type } : (a, b) t) (x : a) : b =
     let elisp_name = symbol |> Symbol.name in
     let open Funcall.Wrap in
     match hook_type, x with
@@ -106,6 +127,7 @@ module Function = struct
         beginning_of_changed_region
         end_of_changed_region
         length_before_change
+    | Query_function, () -> (elisp_name <: nullary @-> return bool) ()
   ;;
 
   let symbol t = t.symbol
@@ -145,7 +167,14 @@ let add_hook =
   Funcall.Wrap.("add-hook" <: Symbol.t @-> Symbol.t @-> bool @-> bool @-> return nil)
 ;;
 
-let add ?(buffer_local = false) ?(one_shot = false) ?(where = Where.Start) t function_ =
+let add
+  (type a b)
+  ?(buffer_local = false)
+  ?(one_shot = false)
+  ?(where = Where.Start)
+  (t : (a, b) t)
+  function_
+  =
   let add function_ =
     add_hook
       (t |> symbol)
@@ -154,6 +183,16 @@ let add ?(buffer_local = false) ?(one_shot = false) ?(where = Where.Start) t fun
        | End -> true
        | Start -> false)
       buffer_local
+  in
+  let type_ : b Value.Type.t =
+    match t.hook_type with
+    | After_change_hook -> Value.Type.unit
+    | Before_change_hook -> Value.Type.unit
+    | File_hook -> Value.Type.unit
+    | Normal_hook -> Value.Type.unit
+    | Frame_hook -> Value.Type.unit
+    | Window_hook -> Value.Type.unit
+    | Query_function -> Value.Type.bool
   in
   match one_shot with
   | false -> add function_
@@ -165,7 +204,7 @@ let add ?(buffer_local = false) ?(one_shot = false) ?(where = Where.Start) t fun
         [%here]
         ~docstring:"One-shot hook function."
         ~hook_type:function_.hook_type
-        (Returns Value.Type.unit)
+        (Returns type_)
         (fun x ->
         remove t (Option.value_exn !hook_function_ref);
         Function.funcall function_ x)

@@ -222,7 +222,7 @@ let%expect_test "[lambda]" =
 
 let%expect_test "[defalias]" =
   let f = "f" |> Symbol.intern in
-  defalias f [%here] ~alias_of:("+" |> Symbol.intern) ();
+  defalias f [%here] ~alias_of:("+" |> Value.intern) ();
   print_endline (Help.describe_function_text f);
   [%expect
     {|

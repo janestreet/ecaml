@@ -228,6 +228,7 @@ module Interactive = struct
     | No_arg
     | Prompt of string
     | Raw_prefix
+    | Prefix
     | Region
 
   let type_ =
@@ -247,6 +248,7 @@ module Interactive = struct
             | "i" -> Ignored
             | "" -> No_arg
             | "P" -> Raw_prefix
+            | "p" -> Prefix
             | "r" -> Region
             | s ->
               let prefixes =
@@ -276,6 +278,7 @@ module Interactive = struct
           | No_arg -> "" |> Value.of_utf8_bytes
           | Prompt prompt -> sprintf "s%s" prompt |> Value.of_utf8_bytes
           | Raw_prefix -> "P" |> Value.of_utf8_bytes
+          | Prefix -> "p" |> Value.of_utf8_bytes
           | Region -> "r" |> Value.of_utf8_bytes))
   ;;
 
@@ -295,27 +298,31 @@ let add_to_load_history symbol here =
 ;;
 
 let defalias =
-  Funcall.Wrap.("defalias" <: Symbol.t @-> Symbol.t @-> nil_or string @-> return nil)
+  Funcall.Wrap.("defalias" <: Symbol.t @-> value @-> nil_or string @-> return nil)
 ;;
 
+(* We use defalias for all function definitions, instead of fset.  The former correctly
+   handles things like advice that has already been defined for the symbol. *)
 let defalias symbol here ?docstring ~alias_of () =
   add_to_load_history symbol here;
   defalias symbol alias_of (docstring |> Option.map ~f:String.strip)
 ;;
 
 let define_obsolete_alias obsolete here ?docstring ~alias_of ~since () =
-  defalias obsolete here ?docstring ~alias_of ();
+  defalias obsolete here ?docstring ~alias_of:(alias_of |> Symbol.to_value) ();
   Obsolete.make_function_obsolete obsolete ~current:(Some alias_of) ~since
 ;;
 
 let defun_raw symbol here ~docstring ?interactive ~args ?optional_args ?rest_arg f =
   let docstring = String.strip docstring in
   require_nonempty_docstring here ~docstring;
-  add_to_load_history symbol here;
-  Symbol.set_function
+  defalias
     symbol
-    (Function.create here ~docstring ?interactive ~args ?optional_args ?rest_arg f
-     |> Function.to_value)
+    here
+    ~alias_of:
+      (Function.create here ~docstring ?interactive ~args ?optional_args ?rest_arg f
+       |> Function.to_value)
+    ()
 ;;
 
 let maybe_disable_function name disabled =

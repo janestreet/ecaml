@@ -6,6 +6,15 @@ module Format : sig
 
   (** [(describe-variable 'mode-line-format)] *)
   val in_buffer : t Buffer_local.t
+
+  (** [(describe-variable 'header-line-format)] *)
+  val header_line_in_buffer : t Buffer_local.t
+
+  val empty : t
+
+  (** Quotes any %-constructs in the string, so that the string is interpreted verbatim in
+      the mode line format. *)
+  val string_verbatim : string -> t
 end
 
 (** [(describe-function 'format-mode-line)]

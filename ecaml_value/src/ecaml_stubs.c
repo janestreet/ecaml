@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <threads.h>
 #include <unistd.h>
 
 #include "emacs-module.h"
@@ -21,8 +22,11 @@ int plugin_is_GPL_compatible;
 /* [active_env] is the currently active Emacs environment.  It is only correct
    to look at it and set it from the Emacs thread.  It is set for the duration
    of a call from Emacs to OCaml, in the [Fdispatch] function.  It is NULL when
-   we're not in a call from Emacs to OCaml. */
-static emacs_env *active_env = NULL;
+   we're not in a call from Emacs to OCaml.
+
+   To decrease the chance that it's used outside the Emacs thread, it's
+   thread-local. */
+static thread_local emacs_env *active_env = NULL;
 
 #define CAML_CALLBACK_1 caml_callback
 #define CAML_CALLBACK_2 caml_callback2
@@ -232,6 +236,16 @@ CAMLprim value ecaml_non_local_exit_get_and_clear(value unit) {
   }
 
   CAMLreturn(ret);
+}
+
+CAMLprim value ecaml_process_input(value unit) {
+  CAMLparam1(unit);
+
+  emacs_env *env = ecaml_active_env_or_die();
+
+  enum emacs_process_input_result result = env->process_input(env);
+
+  CAMLreturn(Val_long(result));
 }
 
 CAMLprim value ecaml_non_local_exit_signal(value symbol, value data) {
