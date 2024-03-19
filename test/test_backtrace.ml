@@ -20,10 +20,11 @@ let%expect_test _ =
   Emacs_backtrace.get () |> omit_args_for_determinism |> print_endline;
   [%expect
     {|
-      backtrace
-      load
-      command-line-1
-      command-line
-      normal-top-level |}];
+    backtrace
+    load
+    command-line-1
+    command-line
+    normal-top-level
+    |}];
   return ()
 ;;

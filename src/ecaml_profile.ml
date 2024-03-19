@@ -373,7 +373,7 @@ Tell the Ecaml profiler about calls to an Elisp function.
                ()
                ~prompt:"Unprofile function: "
                ~history
-               ~collection:(This (Hash_set.to_list profiled_elisp_functions))
+               ~collection:(Hash_set.to_list profiled_elisp_functions)
                ~require_match:True
            in
            return [ function_name |> Value.intern ]))

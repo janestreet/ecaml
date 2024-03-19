@@ -14,7 +14,8 @@ let%expect_test "[eval]" =
     (13 --> (Ok 13))
     ("(+ 1 4)" --> (Ok 5))
     ("((lambda (x) (+ x 1)) 13)" --> (Ok 14))
-    ("(+ \"foo\")" --> (Error (wrong-type-argument (number-or-marker-p foo)))) |}];
+    ("(+ \"foo\")" --> (Error (wrong-type-argument (number-or-marker-p foo))))
+    |}];
   return ()
 ;;
 
@@ -54,7 +55,8 @@ let%expect_test "[read] with trailing garbage" =
     {|
     ("Trailing data in string"
       (string            "(+ 1 2) a")
-      (end_of_first_read 7)) |}];
+      (end_of_first_read 7))
+    |}];
   return ()
 ;;
 
@@ -65,6 +67,7 @@ let%expect_test "[read] with trailing invalid syntax" =
     ("Raised while scanning for trailing data"
       (string            "(+ 1 2)))")
       (end_of_first_read 7)
-      (exn (invalid-read-syntax (")")))) |}];
+      (exn (invalid-read-syntax (")"))))
+    |}];
   return ()
 ;;

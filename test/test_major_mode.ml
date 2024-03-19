@@ -22,7 +22,8 @@ let%expect_test "[wrap_existing] failure" =
       (name org-mode)
       (wrapped_at app/emacs/lib/ecaml/test/test_major_mode.ml:18:76)
       (exn (
-        "[Current_buffer.value_exn] of undefined variable" (org-mode-map keymap)))) |}];
+        "[Current_buffer.value_exn] of undefined variable" (org-mode-map keymap))))
+    |}];
   return ()
 ;;
 
@@ -51,7 +52,8 @@ let%expect_test "duplicate [define_derived_mode]" =
             (symbol    test-major-mode-hook)
             (hook_type Normal_hook)
             (value (())))))
-        (syntax_table_var (test-major-mode-syntax-table syntax-table)))))) |}];
+        (syntax_table_var (test-major-mode-syntax-table syntax-table))))))
+    |}];
   return ()
 ;;
 
@@ -82,7 +84,8 @@ let%expect_test "[define_derived_mode]" =
        (hook (
          Error
          "fundamental-mode has no mode hook. [(Info-goto-node \"(elisp) Major Modes\")]"))
-       (syntax_table_var (fundamental-mode-syntax-table syntax-table))) |}];
+       (syntax_table_var (fundamental-mode-syntax-table syntax-table)))
+      |}];
     let%bind () = Current_buffer.change_major_mode M.major_mode in
     [%expect {| initialized |}];
     show_major_mode ();
@@ -97,7 +100,8 @@ let%expect_test "[define_derived_mode]" =
            (symbol    test-major-mode-hook)
            (hook_type Normal_hook)
            (value (())))))
-       (syntax_table_var (test-major-mode-syntax-table syntax-table))) |}];
+       (syntax_table_var (test-major-mode-syntax-table syntax-table)))
+      |}];
     return ())
 ;;
 
@@ -148,7 +152,8 @@ let%expect_test "[syntax_table]" =
      (Symbol_constitutent &*+-/<=>_|)
      (Whitespace          " ")
      (Word_constituent
-      $%0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz)) |}];
+      $%0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz))
+    |}];
   return ()
 ;;
 
@@ -164,7 +169,8 @@ let%expect_test "[prog]" =
      (Symbol_constitutent &*+-/<=>_|)
      (Whitespace          " ")
      (Word_constituent
-      $%0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz)) |}];
+      $%0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz))
+    |}];
   return ()
 ;;
 
@@ -180,7 +186,8 @@ let%expect_test "[special]" =
      (Symbol_constitutent &*+-/<=>_|)
      (Whitespace          " ")
      (Word_constituent
-      $%0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz)) |}];
+      $%0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz))
+    |}];
   return ()
 ;;
 
@@ -194,7 +201,8 @@ let%expect_test "[text]" =
      (Symbol_constitutent &*+-/<=>_|)
      (Whitespace          " ")
      (Word_constituent
-      $%'0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz)) |}];
+      $%'0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz))
+    |}];
   return ()
 ;;
 

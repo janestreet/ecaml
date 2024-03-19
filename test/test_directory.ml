@@ -23,7 +23,8 @@ let%expect_test "[create ~parents:true], [delete ~recursive:true]" =
 
 let%expect_test "[create] raise" =
   show_raise (fun () -> create "/zzz");
-  [%expect {| (raised (file-error ("Creating directory" "Permission denied" /zzz))) |}];
+  [%expect
+    {| (raised (permission-denied ("Creating directory" "Permission denied" /zzz))) |}];
   return ()
 ;;
 
@@ -37,7 +38,8 @@ let%expect_test "[delete] raise" =
       file-missing (
         "Removing directory"
         "No such file or directory"
-        <current-directory>/zzz))) |}];
+        <current-directory>/zzz)))
+    |}];
   return ()
 ;;
 
@@ -45,13 +47,11 @@ let%expect_test "[files]" =
   create "zzz";
   let show_files () = print_s [%sexp (files "zzz" : Filename.t list)] in
   show_files ();
-  [%expect {|
-    () |}];
+  [%expect {| () |}];
   touch "zzz/a";
   touch "zzz/b";
   show_files ();
-  [%expect {|
-    (a b) |}];
+  [%expect {| (a b) |}];
   delete "zzz" ~recursive:true;
   return ()
 ;;
@@ -61,8 +61,7 @@ let%expect_test "[files_recursively]" =
   List.iter ~f:touch [ "a/z1"; "a/b/z2"; "a/b/c/z3" ];
   print_s
     [%sexp (files_recursively "a" ~matching:("" |> Regexp.of_pattern) : Filename.t list)];
-  [%expect {|
-    (a/b/c/z3 a/b/z2 a/z1) |}];
+  [%expect {| (a/b/c/z3 a/b/z2 a/z1) |}];
   delete "a" ~recursive:true;
   return ()
 ;;

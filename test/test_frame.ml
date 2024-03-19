@@ -57,7 +57,8 @@ let%expect_test "accessors" =
     ((num_cols     80)
      (num_rows     25)
      (pixel_height 25)
-     (pixel_width  25)) |}];
+     (pixel_width  25))
+    |}];
   return ()
 ;;
 
@@ -79,10 +80,12 @@ let%expect_test "accessors" =
       (font                  tty)
       (background-color      unspecified-bg)
       (foreground-color      unspecified-fg)
-      (scroll-bar-foreground white)
       (cursor-color          white)
+      (scroll-bar-background nil)
+      (scroll-bar-foreground nil)
       (background-mode       dark)
       (display-type          mono)
-      (minibuffer            t))) |}];
+      (minibuffer            t)))
+    |}];
   return ()
 ;;

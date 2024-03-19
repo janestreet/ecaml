@@ -9,19 +9,24 @@ let%expect_test "[defvar]" =
     (defvar x [%here] ~docstring:"some text" ~type_:Value.Type.int ~initial_value:13 ()
       : _ Var.t);
   print_s [%sexp (Current_buffer.value_exn { symbol = x; type_ = Value.Type.int } : int)];
-  [%expect {|
-    13 |}];
+  [%expect {| 13 |}];
   print_s [%sexp (Plist.of_symbol x : Plist.t)];
   [%expect
     {|
     (custom-group
-      ((x-dnd-test-function custom-variable)
-       (x-dnd-types-alist   custom-variable)
-       (x-dnd-known-types   custom-variable)
-       (x-gtk-stock-map     custom-variable)
-       (icon-map-list       custom-variable))
+      ((lost-selection-mode        custom-variable)
+       (x-dnd-test-function        custom-variable)
+       (x-dnd-types-alist          custom-variable)
+       (x-dnd-known-types          custom-variable)
+       (x-dnd-use-offix-drop       custom-variable)
+       (x-dnd-direct-save-function custom-variable)
+       (x-dnd-copy-types           custom-variable)
+       (x-gtk-stock-map            custom-variable)
+       (icon-map-list              custom-variable)
+       (x-display-cursor-at-start-of-preedit-string custom-variable))
       variable-documentation
-      "some text") |}];
+      "some text")
+    |}];
   return ()
 ;;
 
@@ -44,7 +49,8 @@ let%expect_test "[defvar] with invalid value" =
       ("unable to convert Elisp value to OCaml value"
        (type_ int)
        (value nil)
-       (exn (wrong-type-argument (integerp nil)))))) |}];
+       (exn (wrong-type-argument (integerp nil))))))
+    |}];
   return ()
 ;;
 
@@ -57,7 +63,8 @@ let%expect_test "[defvaralias]" =
 
     some text
 
-      Probably introduced at or before Emacs version 1.4. |}];
+      Probably introduced at or before Emacs version 1.4.
+    |}];
   let y1 = "y1" |> Symbol.intern in
   defvaralias y1 [%here] ~alias_of:x ();
   print_endline (Help.describe_variable_text y1);
@@ -68,7 +75,7 @@ let%expect_test "[defvaralias]" =
     some text
 
       This variable is an alias for `x'.
-      Probably introduced at or before Emacs version 22.1. |}];
+    |}];
   let y2 = "y2" |> Symbol.intern in
   defvaralias y2 [%here] ~alias_of:x ~docstring:"some other text" ();
   print_endline (Help.describe_variable_text y2);
@@ -78,7 +85,8 @@ let%expect_test "[defvaralias]" =
 
     some other text
 
-      This variable is an alias for `x'. |}];
+      This variable is an alias for `x'.
+    |}];
   return ()
 ;;
 
@@ -96,11 +104,12 @@ let%expect_test "[define_obsolete_alias]" =
     {|
     x's value is 13
 
+    This variable is obsolete since then; use `y' instead.
+
     some docs
 
       This variable is an alias for `y'.
-      This variable is obsolete since then;
-      use `y' instead.
-      Probably introduced at or before Emacs version 1.4. |}];
+      Probably introduced at or before Emacs version 1.4.
+    |}];
   return ()
 ;;

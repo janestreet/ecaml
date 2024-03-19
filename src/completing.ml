@@ -89,8 +89,6 @@ module Require_match = struct
   let default = False
 end
 
-module Collection = (val Ocaml_or_elisp_value.make Value.Type.(list string_cached))
-
 module Programmed_completion = struct
   include (val Symbol_prefix.extend symbol_prefix "programmed-completion")
 
@@ -126,14 +124,9 @@ module Programmed_completion = struct
       { annotation_function : (string -> string) option
       ; display_sort_function : (string list -> string list) option
       }
-    [@@deriving fields ~iterators:create ~direct_iterators:(exists, to_list)]
+    [@@deriving fields ~iterators:create ~direct_iterators:to_list]
 
     let create = Fields.create
-
-    let exists =
-      let f _field _t option = Option.is_some option in
-      Fields.Direct.exists ~annotation_function:f ~display_sort_function:f
-    ;;
 
     let to_value =
       let metadatum_type = Value.Type.(tuple Symbol.t Function.t) in
@@ -163,7 +156,6 @@ module Programmed_completion = struct
   end
 
   type t =
-    | Abstract_collection of Collection.abstract
     | Symbol of Symbol.t
     | T of
         { collection : string list
@@ -175,7 +167,6 @@ module Programmed_completion = struct
   ;;
 
   let to_value = function
-    | Abstract_collection collection -> Collection.to_value (Elisp collection)
     | Symbol symbol -> Symbol.function_exn symbol
     | T { collection; metadata } ->
       (* Using the full "Programmed Completion" interface is necessary to provide
@@ -183,12 +174,13 @@ module Programmed_completion = struct
          create a basic implementation of the interface, which we can delegate to for
          everything except adding our metadata. *)
       let dynamic =
+        let value = Value.Type.(to_value (list string)) collection in
         completion_table_dynamic
           (Defun.lambda
              [%here]
-             (Returns Value.Type.(list string))
+             (Returns Value.Type.value)
              (let%map_open.Defun () = required "PREFIX" ignored in
-              collection))
+              value))
       in
       Defun.lambda
         [%here]
@@ -204,20 +196,9 @@ module Programmed_completion = struct
       |> Function.to_value
   ;;
 
-  let create (collection : Collection.t) ~annotation_function ~display_sort_function =
+  let create (collection : string list) ~annotation_function ~display_sort_function =
     let metadata = Metadata.create ~annotation_function ~display_sort_function in
-    match collection with
-    | This collection -> T { collection; metadata }
-    | Elisp abstract ->
-      (match Metadata.exists metadata with
-       | false -> Abstract_collection abstract
-       | true ->
-         (* Not sure how to make [display_sort_function] work with the abstract
-            collection. Let's not work on this until someone needs it. *)
-         let s = "Programmed completion not supported with [Elisp _]." in
-         raise_s
-           [%message
-             s (annotation_function : _ option) (display_sort_function : _ option)])
+    T { collection; metadata }
   ;;
 end
 
@@ -296,7 +277,7 @@ let read_map_key
   let%bind choice =
     read
       ~prompt
-      ~collection:(This (Map.keys collection))
+      ~collection:(Map.keys collection)
       ~require_match:True
       ?annotation_function
       ?display_sort_function
@@ -315,7 +296,7 @@ let read_multiple =
     Funcall.Wrap.(
       "completing-read-multiple"
       <: string
-         @-> value
+         @-> list string
          @-> value
          @-> Require_match.t
          @-> Initial_input.t
@@ -345,7 +326,7 @@ let read_multiple =
         ~f:(fun () ->
         completing_read_multiple
           prompt
-          (collection |> Collection.to_value)
+          collection
           predicate
           require_match
           initial_input
@@ -365,7 +346,7 @@ let read_multiple_map_keys
   let%bind choices =
     read_multiple
       ~prompt
-      ~collection:(This (Map.keys collection))
+      ~collection:(Map.keys collection)
       ~require_match:True
       ?separator_regexp
       ?initial_input

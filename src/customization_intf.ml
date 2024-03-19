@@ -60,7 +60,10 @@ module type Customization = sig
       | Key_sequence
       | List of t list
       | Number
-      | Option of string * t
+      | Option of
+          { doc_for_none : string
+          ; t : t
+          }
       | Plist
       | Radio of t list
       | Regexp

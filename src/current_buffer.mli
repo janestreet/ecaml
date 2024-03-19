@@ -66,10 +66,6 @@ val add_undo_boundary : unit -> unit
 (** [(describe-function 'undo)] *)
 val undo : int -> unit
 
-(** [(describe-function 'describe-mode)]
-    [(Info-goto-node "(elisp)Mode Help")] *)
-val describe_mode : unit -> unit
-
 (** [set_temporarily_to_temp_buffer f] creates a temporary buffer and runs [f] with the
     current buffer set to the temporary buffer.  [(describe-function 'with-temp-buffer)]. *)
 val set_temporarily_to_temp_buffer
@@ -345,11 +341,12 @@ val set_revert_buffer_function
   -> (confirm:bool -> 'a)
   -> unit
 
-(** [(describe-function 'replace-buffer-contents)]
-    This function was introduced in Emacs 26 and the value is an error if an earlier
-    version of emacs is used. *)
+(** [(describe-function 'replace-buffer-contents)] *)
 val replace_buffer_contents
-  : (?max_duration:Time_ns.Span.t -> ?max_costs:int -> Buffer.t -> unit) Or_error.t
+  :  ?max_duration:Time_ns.Span.t
+  -> ?max_costs:int
+  -> Buffer.t
+  -> unit
 
 (** [replace_string ~from ~to_] replaces all occurrences of [from] with [to_].  It is like
     [(describe-function 'replace-string)], but doesn't actually call that,

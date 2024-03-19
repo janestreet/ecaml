@@ -154,7 +154,8 @@ let%expect_test "[set_value_temporarily] with a buffer-local and changed buffer"
   show_values ();
   [%expect {|
     ((b1 ())
-     (b2 ())) |}];
+     (b2 ()))
+    |}];
   Current_buffer.set_temporarily Sync b1 ~f:(fun () ->
     set_value var (Some 13);
     show_values ();
@@ -293,7 +294,8 @@ let%expect_test "[save_excursion] preserves point" =
   [%expect {|
     (point 1)
     (point 4)
-    (point 1) |}];
+    (point 1)
+    |}];
   return ()
 ;;
 
@@ -305,7 +307,8 @@ let%expect_test "[save_excursion] preserves current buffer" =
   show ();
   [%expect {|
     "#<buffer zzz>"
-    "#<buffer *scratch*>" |}];
+    "#<buffer *scratch*>"
+    |}];
   return ()
 ;;
 
@@ -456,7 +459,8 @@ let%expect_test "[set_text_properties_staged]" =
         (face (:foreground red))
         2
         3
-        (face (:foreground blue))) |}]);
+        (face (:foreground blue)))
+      |}]);
   return ()
 ;;
 
@@ -468,7 +472,7 @@ let%expect_test "[add_text_properties]" =
     [%expect {| (foo 0 3 (face (:foreground red))) |}];
     add_text_properties [ T (font_lock_face, foreground_red) ];
     show ();
-    [%expect {| (foo 0 3 (face (:foreground red) font-lock-face (:foreground red))) |}]);
+    [%expect {| (foo 0 3 (font-lock-face (:foreground red) face (:foreground red))) |}]);
   return ()
 ;;
 
@@ -483,13 +487,14 @@ let%expect_test "[add_text_properties_staged]" =
     [%expect
       {|
       (foo 0 1
-        (font-lock-face (:foreground blue) face (:foreground red))
+        (face (:foreground red) font-lock-face (:foreground blue))
         1
         2
-        (font-lock-face (:foreground blue) face (:foreground red))
+        (face (:foreground red) font-lock-face (:foreground blue))
         2
         3
-        (font-lock-face (:foreground blue))) |}]);
+        (font-lock-face (:foreground blue)))
+      |}]);
   return ()
 ;;
 
@@ -518,12 +523,14 @@ let%expect_test "[undo], [add_undo_boundary]" =
     show ();
     [%expect {|
       ((contents  "")
-       (undo_list nil)) |}];
+       (undo_list nil))
+      |}];
     add_undo_boundary ();
     show ();
     [%expect {|
       ((contents  "")
-       (undo_list nil)) |}];
+       (undo_list nil))
+      |}];
     Point.insert "foo";
     show ();
     [%expect
@@ -531,7 +538,8 @@ let%expect_test "[undo], [add_undo_boundary]" =
       ((contents foo)
        (undo_list (
          (1 . 4)
-         (t . 0)))) |}];
+         (t . 0))))
+      |}];
     add_undo_boundary ();
     show ();
     [%expect
@@ -540,7 +548,8 @@ let%expect_test "[undo], [add_undo_boundary]" =
        (undo_list (
          nil
          (1 . 4)
-         (t . 0)))) |}];
+         (t . 0))))
+      |}];
     undo 1;
     show ();
     [%expect
@@ -550,7 +559,8 @@ let%expect_test "[undo], [add_undo_boundary]" =
          (foo . 1)
          nil
          (1 . 4)
-         (t . 0)))) |}];
+         (t . 0))))
+      |}];
     Point.insert "bar";
     add_undo_boundary ();
     Point.insert "baz";
@@ -566,7 +576,8 @@ let%expect_test "[undo], [add_undo_boundary]" =
          (foo . 1)
          nil
          (1 . 4)
-         (t . 0)))) |}];
+         (t . 0))))
+      |}];
     undo 2;
     show ();
     [%expect
@@ -585,7 +596,8 @@ let%expect_test "[undo], [add_undo_boundary]" =
          (foo . 1)
          nil
          (1 . 4)
-         (t . 0)))) |}]);
+         (t . 0))))
+      |}]);
   restore_stderr ();
   return ()
 ;;
@@ -655,13 +667,15 @@ let%expect_test "[make_buffer_local], [is_buffer_local], [is_buffer_local_if_set
       {|
       ((value (13))
        (is_buffer_local        true)
-       (is_buffer_local_if_set true)) |}]);
+       (is_buffer_local_if_set true))
+      |}]);
   show_var var;
   [%expect
     {|
     ((value ())
      (is_buffer_local        false)
-     (is_buffer_local_if_set false)) |}];
+     (is_buffer_local_if_set false))
+    |}];
   return ()
 ;;
 
@@ -676,14 +690,16 @@ let%expect_test "[kill_buffer_local]" =
       {|
       ((value (14))
        (is_buffer_local        true)
-       (is_buffer_local_if_set true)) |}];
+       (is_buffer_local_if_set true))
+      |}];
     kill_buffer_local var;
     show_var var;
     [%expect
       {|
       ((value (13))
        (is_buffer_local        false)
-       (is_buffer_local_if_set false)) |}]);
+       (is_buffer_local_if_set false))
+      |}]);
   return ()
 ;;
 
@@ -755,7 +771,8 @@ let%expect_test "[minor_mode_keymaps]" =
         (69       . View-exit-and-edit)
         (81       . View-quit-all)
         (99       . View-leave)
-        (67       . View-kill-and-leave))) |}]);
+        (67       . View-kill-and-leave)))
+      |}]);
   return ()
 ;;
 
@@ -774,7 +791,8 @@ a
     [%expect {|
       a
       b
-      c |}]);
+      c
+      |}]);
   return ()
 ;;
 
@@ -794,7 +812,8 @@ a
       a
       a
       c
-      a |}]);
+      a
+      |}]);
   return ()
 ;;
 
@@ -812,7 +831,8 @@ c
       a
       b
       c
-      d |}]);
+      d
+      |}]);
   return ()
 ;;
 
@@ -840,7 +860,8 @@ void f () {
       void f () {
         foo;
         bar;
-      } |}]);
+      }
+      |}]);
   return ()
 ;;
 
@@ -863,8 +884,7 @@ let%expect_test "[set_values_temporarily async]" =
   set_value v1 13;
   set_value v2 14;
   show ();
-  [%expect {|
-    (13 14) |}];
+  [%expect {| (13 14) |}];
   (* Incorrectly using [set_values_temporarily _ _ Sync] on an Async value, we get the
      wrong result *)
   let%bind () =
@@ -898,8 +918,7 @@ let%expect_test "[set_value_temporarily async]" =
   let show () = print_s [%sexp (value_exn var : int)] in
   set_value var 13;
   show ();
-  [%expect {|
-    13 |}];
+  [%expect {| 13 |}];
   (* Incorrectly using [set_value_temporarily _ _ Sync] on an Async value, we get the
      wrong result *)
   let%bind () =
@@ -935,8 +954,7 @@ let%expect_test "[set_temporarily async]" =
       return ())
   in
   show ();
-  [%expect {|
-    "#<buffer *scratch*>" |}];
+  [%expect {| "#<buffer *scratch*>" |}];
   Buffer.kill t
 ;;
 
@@ -965,11 +983,12 @@ let%expect_test "[set_temporarily_to_temp_buffer Async] from background job" =
   in
   [%expect
     {|
-      (raised (
-        "Assertion failed -- running in background job"
-        ((background_job_started_at
-          app/emacs/lib/ecaml/test/test_current_buffer.ml:LINE:COL)
-         (assertion_failed_at app/emacs/lib/ecaml/src/buffer.ml:LINE:COL)))) |}];
+    (raised (
+      "Assertion failed -- running in background job"
+      ((background_job_started_at
+        app/emacs/lib/ecaml/test/test_current_buffer.ml:LINE:COL)
+       (assertion_failed_at app/emacs/lib/ecaml/src/buffer.ml:LINE:COL))))
+    |}];
   return ()
 ;;
 
@@ -1004,12 +1023,13 @@ let%expect_test "[save_excursion Async] from background job" =
   in
   [%expect
     {|
-      (raised (
-        "Assertion failed -- running in background job"
-        ((background_job_started_at
-          app/emacs/lib/ecaml/test/test_current_buffer.ml:LINE:COL)
-         (assertion_failed_at app/emacs/lib/ecaml/src/save_wrappers.ml:LINE:COL))
-        "save-excursion called asynchronously in background job")) |}];
+    (raised (
+      "Assertion failed -- running in background job"
+      ((background_job_started_at
+        app/emacs/lib/ecaml/test/test_current_buffer.ml:LINE:COL)
+       (assertion_failed_at app/emacs/lib/ecaml/src/save_wrappers.ml:LINE:COL))
+      "save-excursion called asynchronously in background job"))
+    |}];
   return ()
 ;;
 
@@ -1101,7 +1121,8 @@ let%expect_test "[bury]" =
      "#<buffer b1>"
      "#<buffer b2>"
      "#<buffer zzz>"
-     "#<buffer z>") |}];
+     "#<buffer z>")
+    |}];
   bury ();
   print_s [%sexp (Buffer.all_live () : Buffer.t list)];
   [%expect
@@ -1111,7 +1132,8 @@ let%expect_test "[bury]" =
      "#<buffer b2>"
      "#<buffer zzz>"
      "#<buffer z>"
-     "#<buffer *Messages*>") |}];
+     "#<buffer *Messages*>")
+    |}];
   return ()
 ;;
 
@@ -1121,315 +1143,6 @@ let%expect_test "[paragraph_start], [paragraph_separate]" =
   [%expect {| "\012\\|[ \t]*$" |}];
   show paragraph_separate;
   [%expect {| "[ \t\012]*$" |}];
-  return ()
-;;
-
-let%expect_test "[describe_mode]" =
-  let%bind () =
-    Current_buffer.set_temporarily_to_temp_buffer Async (fun () ->
-      let%bind () = Current_buffer.change_major_mode Major_mode.Fundamental.major_mode in
-      describe_mode ();
-      Selected_window.other_window 1;
-      print_endline
-        (Current_buffer.contents ()
-         |> Text.to_utf8_bytes
-         |> String.tr ~target:'\012' ~replacement:'\n');
-      Selected_window.quit ())
-  in
-  [%expect
-    {|
-    Type C-x 1 to delete the help window, C-M-v to scroll help.
-    Enabled minor modes: Auto-Composition Auto-Compression Auto-Encryption
-    Electric-Indent File-Name-Shadow Global-Eldoc Indent-Tabs Line-Number
-    Mouse-Wheel Show-Paren Tooltip Transient-Mark
-
-    (Information about these minor modes follows the major mode info.)
-
-     mode defined in `../../../../../.sink-2023-11-01_16-41-15.507781/28.2-20231101-123801/share/emacs/28.2/lisp/simple.el':
-    Major mode not specialized for anything in particular.
-    Other major modes are defined by comparison with this one.
-
-
-    Auto-Composition minor mode (no indicator):
-    Toggle Auto Composition mode.
-
-    This is a minor mode.  If called interactively, toggle the
-    `Auto-Composition mode' mode.  If the prefix argument is positive,
-    enable the mode, and if it is zero or negative, disable the mode.
-
-    If called from Lisp, toggle the mode if ARG is `toggle'.  Enable the
-    mode if ARG is nil, omitted, or is a positive number.  Disable the
-    mode if ARG is a negative number.
-
-    To check whether the minor mode is enabled in the current buffer,
-    evaluate `auto-composition-mode'.
-
-    The mode's hook is called both when the mode is enabled and when it is
-    disabled.
-
-    When Auto Composition mode is enabled, text characters are
-    automatically composed by functions registered in
-    `composition-function-table'.
-
-    You can use `global-auto-composition-mode' to turn on
-    Auto Composition mode in all buffers (this is the default).
-
-
-    Auto-Compression minor mode (no indicator):
-    Toggle Auto Compression mode.
-
-    This is a minor mode.  If called interactively, toggle the
-    `Auto-Compression mode' mode.  If the prefix argument is positive,
-    enable the mode, and if it is zero or negative, disable the mode.
-
-    If called from Lisp, toggle the mode if ARG is `toggle'.  Enable the
-    mode if ARG is nil, omitted, or is a positive number.  Disable the
-    mode if ARG is a negative number.
-
-    To check whether the minor mode is enabled in the current buffer,
-    evaluate `(default-value 'auto-compression-mode)'.
-
-    The mode's hook is called both when the mode is enabled and when it is
-    disabled.
-
-    Auto Compression mode is a global minor mode.  When enabled,
-    compressed files are automatically uncompressed for reading, and
-    compressed when writing.
-
-
-    Auto-Encryption minor mode (no indicator):
-    Toggle automatic file encryption/decryption (Auto Encryption mode).
-
-    This is a minor mode.  If called interactively, toggle the
-    `Auto-Encryption mode' mode.  If the prefix argument is positive,
-    enable the mode, and if it is zero or negative, disable the mode.
-
-    If called from Lisp, toggle the mode if ARG is `toggle'.  Enable the
-    mode if ARG is nil, omitted, or is a positive number.  Disable the
-    mode if ARG is a negative number.
-
-    To check whether the minor mode is enabled in the current buffer,
-    evaluate `(default-value 'auto-encryption-mode)'.
-
-    The mode's hook is called both when the mode is enabled and when it is
-    disabled.
-
-
-    Electric-Indent minor mode (no indicator):
-    Toggle on-the-fly reindentation of text lines (Electric Indent mode).
-
-    This is a minor mode.  If called interactively, toggle the
-    `Electric-Indent mode' mode.  If the prefix argument is positive,
-    enable the mode, and if it is zero or negative, disable the mode.
-
-    If called from Lisp, toggle the mode if ARG is `toggle'.  Enable the
-    mode if ARG is nil, omitted, or is a positive number.  Disable the
-    mode if ARG is a negative number.
-
-    To check whether the minor mode is enabled in the current buffer,
-    evaluate `(default-value 'electric-indent-mode)'.
-
-    The mode's hook is called both when the mode is enabled and when it is
-    disabled.
-
-    When enabled, this reindents whenever the hook `electric-indent-functions'
-    returns non-nil, or if you insert one of the "electric characters".
-    The electric characters normally include the newline, but can
-    also include other characters as needed by the major mode; see
-    `electric-indent-chars' for the actual list.
-
-    By "reindent" we mean remove any existing indentation, and then
-    indent the line according to context and rules of the major mode.
-
-    This is a global minor mode.  To toggle the mode in a single buffer,
-    use `electric-indent-local-mode'.
-
-
-    File-Name-Shadow minor mode (no indicator):
-    Toggle file-name shadowing in minibuffers (File-Name Shadow mode).
-
-    This is a minor mode.  If called interactively, toggle the
-    `File-Name-Shadow mode' mode.  If the prefix argument is positive,
-    enable the mode, and if it is zero or negative, disable the mode.
-
-    If called from Lisp, toggle the mode if ARG is `toggle'.  Enable the
-    mode if ARG is nil, omitted, or is a positive number.  Disable the
-    mode if ARG is a negative number.
-
-    To check whether the minor mode is enabled in the current buffer,
-    evaluate `(default-value 'file-name-shadow-mode)'.
-
-    The mode's hook is called both when the mode is enabled and when it is
-    disabled.
-
-    File-Name Shadow mode is a global minor mode.  When enabled, any
-    part of a filename being read in the minibuffer that would be
-    ignored (because the result is passed through
-    `substitute-in-file-name') is given the properties in
-    `file-name-shadow-properties', which can be used to make that
-    portion dim, invisible, or otherwise less visually noticeable.
-
-
-    Global-Eldoc minor mode (no indicator):
-    Toggle Eldoc mode in all buffers.
-    With prefix ARG, enable Global Eldoc mode if ARG is positive;
-    otherwise, disable it.
-
-    If called from Lisp, toggle the mode if ARG is `toggle'.
-    Enable the mode if ARG is nil, omitted, or is a positive number.
-    Disable the mode if ARG is a negative number.
-
-    Eldoc mode is enabled in all buffers where `turn-on-eldoc-mode' would
-    do it.
-
-    See `eldoc-mode' for more information on Eldoc mode.
-
-
-    Indent-Tabs minor mode (no indicator):
-    Toggle whether indentation can insert TAB characters.
-
-    This is a minor mode.  If called interactively, toggle the
-    `Indent-Tabs mode' mode.  If the prefix argument is positive, enable
-    the mode, and if it is zero or negative, disable the mode.
-
-    If called from Lisp, toggle the mode if ARG is `toggle'.  Enable the
-    mode if ARG is nil, omitted, or is a positive number.  Disable the
-    mode if ARG is a negative number.
-
-    To check whether the minor mode is enabled in the current buffer,
-    evaluate `indent-tabs-mode'.
-
-    The mode's hook is called both when the mode is enabled and when it is
-    disabled.
-
-
-    Line-Number minor mode (no indicator):
-    Toggle line number display in the mode line (Line Number mode).
-
-    This is a minor mode.  If called interactively, toggle the
-    `Line-Number mode' mode.  If the prefix argument is positive, enable
-    the mode, and if it is zero or negative, disable the mode.
-
-    If called from Lisp, toggle the mode if ARG is `toggle'.  Enable the
-    mode if ARG is nil, omitted, or is a positive number.  Disable the
-    mode if ARG is a negative number.
-
-    To check whether the minor mode is enabled in the current buffer,
-    evaluate `(default-value 'line-number-mode)'.
-
-    The mode's hook is called both when the mode is enabled and when it is
-    disabled.
-
-    Line numbers do not appear for very large buffers and buffers
-    with very long lines; see variables `line-number-display-limit'
-    and `line-number-display-limit-width'.
-
-    See `mode-line-position-line-format' for how this number is
-    presented.
-
-
-    Mouse-Wheel minor mode (no indicator):
-    Toggle mouse wheel support (Mouse Wheel mode).
-
-    This is a minor mode.  If called interactively, toggle the
-    `Mouse-Wheel mode' mode.  If the prefix argument is positive, enable
-    the mode, and if it is zero or negative, disable the mode.
-
-    If called from Lisp, toggle the mode if ARG is `toggle'.  Enable the
-    mode if ARG is nil, omitted, or is a positive number.  Disable the
-    mode if ARG is a negative number.
-
-    To check whether the minor mode is enabled in the current buffer,
-    evaluate `(default-value 'mouse-wheel-mode)'.
-
-    The mode's hook is called both when the mode is enabled and when it is
-    disabled.
-
-
-    Show-Paren minor mode (no indicator):
-    Toggle visualization of matching parens (Show Paren mode).
-
-    This is a minor mode.  If called interactively, toggle the `Show-Paren
-    mode' mode.  If the prefix argument is positive, enable the mode, and
-    if it is zero or negative, disable the mode.
-
-    If called from Lisp, toggle the mode if ARG is `toggle'.  Enable the
-    mode if ARG is nil, omitted, or is a positive number.  Disable the
-    mode if ARG is a negative number.
-
-    To check whether the minor mode is enabled in the current buffer,
-    evaluate `(default-value 'show-paren-mode)'.
-
-    The mode's hook is called both when the mode is enabled and when it is
-    disabled.
-
-    When enabled, any matching parenthesis is highlighted in `show-paren-style'
-    after `show-paren-delay' seconds of Emacs idle time.
-
-    This is a global minor mode.  To toggle the mode in a single buffer,
-    use `show-paren-local-mode'.
-
-
-    Tooltip minor mode (no indicator):
-    Toggle Tooltip mode.
-
-    This is a minor mode.  If called interactively, toggle the `Tooltip
-    mode' mode.  If the prefix argument is positive, enable the mode, and
-    if it is zero or negative, disable the mode.
-
-    If called from Lisp, toggle the mode if ARG is `toggle'.  Enable the
-    mode if ARG is nil, omitted, or is a positive number.  Disable the
-    mode if ARG is a negative number.
-
-    To check whether the minor mode is enabled in the current buffer,
-    evaluate `(default-value 'tooltip-mode)'.
-
-    The mode's hook is called both when the mode is enabled and when it is
-    disabled.
-
-    When this global minor mode is enabled, Emacs displays help
-    text (e.g. for buttons and menu items that you put the mouse on)
-    in a pop-up window.
-
-    When Tooltip mode is disabled, Emacs displays help text in the
-    echo area, instead of making a pop-up window.
-
-
-    Transient-Mark minor mode (no indicator):
-    Toggle Transient Mark mode.
-
-    This is a minor mode.  If called interactively, toggle the
-    `Transient-Mark mode' mode.  If the prefix argument is positive,
-    enable the mode, and if it is zero or negative, disable the mode.
-
-    If called from Lisp, toggle the mode if ARG is `toggle'.  Enable the
-    mode if ARG is nil, omitted, or is a positive number.  Disable the
-    mode if ARG is a negative number.
-
-    To check whether the minor mode is enabled in the current buffer,
-    evaluate `(default-value 'transient-mark-mode)'.
-
-    The mode's hook is called both when the mode is enabled and when it is
-    disabled.
-
-    Transient Mark mode is a global minor mode.  When enabled, the
-    region is highlighted with the `region' face whenever the mark
-    is active.  The mark is "deactivated" after certain non-motion
-    commands, including those that change the text in the buffer, and
-    during shift or mouse selection by any unshifted cursor motion
-    command (see Info node `Shift Selection' for more details).
-
-    You can also deactivate the mark by typing C-g or
-    M-ESC ESC.
-
-    Many commands change their behavior when Transient Mark mode is
-    in effect and the mark is active, by acting on the region instead
-    of their usual default part of the buffer's text.  Examples of
-    such commands include M-;, M-x flush-lines, M-x keep-lines,
-    M-%, C-M-%, M-x ispell, and C-x u.
-    To see the documentation of commands that are sensitive to the
-    Transient Mark mode, invoke C-h d and type "transient"
-    or "mark.*active" at the prompt. |}];
   return ()
 ;;
 
@@ -1457,7 +1170,8 @@ def
       bac
       def
       bac
-      def |}]);
+      def
+      |}]);
   return ()
 ;;
 

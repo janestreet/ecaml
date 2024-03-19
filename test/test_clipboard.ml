@@ -15,6 +15,7 @@ let%expect_test "[kill_new], [yank_at_point]" =
     [%expect {|
       foo
       bar
-      bar |}]);
+      bar
+      |}]);
   return ()
 ;;

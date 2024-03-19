@@ -54,7 +54,8 @@ let%expect_test "draw table" =
     [%expect {|
       b    1   y
       a    2   z
-      c    3   x |}];
+      c    3   x
+      |}];
     return ())
 ;;
 
@@ -64,28 +65,31 @@ let%expect_test "sort" =
     [%expect {|
       a    2   z
       b    1   y
-      c    3   x |}];
+      c    3   x
+      |}];
     let%bind () = draw_and_print ~sort_by:("s1", `Descending) entries in
     [%expect {|
       c    3   x
       b    1   y
-      a    2   z |}];
+      a    2   z
+      |}];
     let%bind () = draw_and_print ~sort_by:("s3", `Ascending) entries in
     [%expect {|
       c    3   x
       b    1   y
-      a    2   z |}];
+      a    2   z
+      |}];
     let%bind () = draw_and_print ~sort_by:("s3", `Descending) entries in
     [%expect {|
       a    2   z
       b    1   y
-      c    3   x |}];
+      c    3   x
+      |}];
     let%bind () =
       require_does_raise_async [%here] (fun () ->
         draw_and_print ~sort_by:("i2", `Ascending) entries)
     in
-    [%expect {|
-      ("Column is not sortable" i2) |}];
+    [%expect {| ("Column is not sortable" i2) |}];
     return ())
 ;;
 
@@ -95,33 +99,38 @@ let%expect_test "id at point" =
     [%expect {|
       b    1   y
       a    2   z
-      c    3   x |}];
+      c    3   x
+      |}];
     Point.goto_min ();
     print_s [%sexp (get_record_at_point_exn t : entry option)];
     [%expect {|
       ((
         (s1 b)
         (i2 1)
-        (s3 y))) |}];
+        (s3 y)))
+      |}];
     Point.forward_line 1;
     print_s [%sexp (get_record_at_point_exn t : entry option)];
     [%expect {|
       ((
         (s1 a)
         (i2 2)
-        (s3 z))) |}];
+        (s3 z)))
+      |}];
     (* Point is preserved when list is redrawn. *)
     let%bind () = draw_and_print entries in
     [%expect {|
       b    1   y
       a    2   z
-      c    3   x |}];
+      c    3   x
+      |}];
     print_s [%sexp (get_record_at_point_exn t : entry option)];
     [%expect {|
       ((
         (s1 a)
         (i2 2)
-        (s3 z))) |}];
+        (s3 z)))
+      |}];
     Point.goto_max ();
     print_s [%sexp (get_record_at_point_exn t : entry option)];
     [%expect {| () |}];
@@ -134,28 +143,32 @@ let%expect_test "move_point_to_record" =
     [%expect {|
       b    1   y
       a    2   z
-      c    3   x |}];
+      c    3   x
+      |}];
     Tabulated_list.move_point_to_record t ~f:(s1 >> String.equal "a");
     print_s [%sexp (get_record_at_point_exn t : entry option)];
     [%expect {|
       ((
         (s1 a)
         (i2 2)
-        (s3 z))) |}];
+        (s3 z)))
+      |}];
     Tabulated_list.move_point_to_record t ~f:(s1 >> String.equal "b");
     print_s [%sexp (get_record_at_point_exn t : entry option)];
     [%expect {|
       ((
         (s1 b)
         (i2 1)
-        (s3 y))) |}];
+        (s3 y)))
+      |}];
     Tabulated_list.move_point_to_record t ~f:(s1 >> String.equal "c");
     print_s [%sexp (get_record_at_point_exn t : entry option)];
     [%expect {|
       ((
         (s1 c)
         (i2 3)
-        (s3 x))) |}];
+        (s3 x)))
+      |}];
     return ())
 ;;
 
@@ -224,7 +237,8 @@ let%expect_test "generic sortable column" =
       2 file2.txt
      10 file10.txt
      11 file11.txt
-     20 file20.txt |}];
+     20 file20.txt
+    |}];
   let%bind () = compare ~sort_by:"file" in
   [%expect
     {|
@@ -242,6 +256,7 @@ let%expect_test "generic sortable column" =
       2 file2.txt
      10 file10.txt
      11 file11.txt
-     20 file20.txt |}];
+     20 file20.txt
+    |}];
   return ()
 ;;

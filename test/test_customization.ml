@@ -57,7 +57,8 @@ let%expect_test "[Boolean] with default [nil]" =
        Customization group: test-customization-group
        Standard value: nil
        Customization type: boolean
-    Groups: [Test Customization Group] |}];
+    Groups: [Test Customization Group]
+    |}];
   return ()
 ;;
 
@@ -72,7 +73,8 @@ let%expect_test "[Boolean] with default [t]" =
        Customization group: test-customization-group
        Standard value: t
        Customization type: boolean
-    Groups: [Test Customization Group] |}];
+    Groups: [Test Customization Group]
+    |}];
   return ()
 ;;
 
@@ -88,7 +90,8 @@ let%expect_test "[Const]" =
        Customization group: test-customization-group
        Standard value: 13
        Customization type: (choice (const 13))
-    Groups: [Test Customization Group] |}];
+    Groups: [Test Customization Group]
+    |}];
   return ()
 ;;
 
@@ -120,7 +123,8 @@ let%expect_test "[enum]" =
        Customization group: test-customization-group
        Standard value: A
        Customization type: (choice (const A) (const B))
-    Groups: [Test Customization Group] |}];
+    Groups: [Test Customization Group]
+    |}];
   return ()
 ;;
 
@@ -147,7 +151,8 @@ let%expect_test "[defcustom] invalid-value error message" =
         "unable to convert Elisp value to OCaml value"
         (type_ int)
         (value nil)
-        (exn (wrong-type-argument (integerp nil)))))) |}];
+        (exn (wrong-type-argument (integerp nil))))))
+    |}];
   return ()
 ;;
 

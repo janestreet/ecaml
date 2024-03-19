@@ -18,7 +18,8 @@ let%expect_test "[message_s] of a value" =
   show ();
   [%expect {|
     13
-    13 |}];
+    13
+    |}];
   return ()
 ;;
 
@@ -27,7 +28,8 @@ let%expect_test "[message]" =
   show ();
   [%expect {|
     foobar
-    foobar |}];
+    foobar
+    |}];
   return ()
 ;;
 
@@ -36,7 +38,8 @@ let%expect_test "[messagef]" =
   show ();
   [%expect {|
     13
-    13 |}];
+    13
+    |}];
   return ()
 ;;
 
@@ -45,7 +48,8 @@ let%expect_test "[message_s] of an atom" =
   show ();
   [%expect {|
     foo bar
-    foo bar |}];
+    foo bar
+    |}];
   return ()
 ;;
 
@@ -53,8 +57,9 @@ let%expect_test "[message_s]" =
   message_s [%message "foobar" ~_:(13 : int)];
   show ();
   [%expect {|
-   (foobar 13)
-   (foobar 13) |}];
+    (foobar 13)
+    (foobar 13)
+    |}];
   return ()
 ;;
 
@@ -63,7 +68,8 @@ let%expect_test "[message_text]" =
   show ();
   [%expect {|
     hello
-    hello |}];
+    hello
+    |}];
   return ()
 ;;
 
@@ -87,7 +93,7 @@ let%expect_test "[inhibit_messages] in background job" =
   Deferred.create (fun ivar ->
     Background.don't_wait_for [%here] (fun () ->
       inhibit_messages Sync (fun () -> message "hello");
-      [%expect {||}];
+      [%expect {| |}];
       show ();
       [%expect {| hello |}];
       let%bind () =
@@ -103,7 +109,8 @@ let%expect_test "[inhibit_messages] in background job" =
           ((background_job_started_at
             app/emacs/lib/ecaml/test/test_echo_area.ml:LINE:COL)
            (assertion_failed_at app/emacs/lib/ecaml/src/echo_area.ml:LINE:COL))
-          "Echo_area.inhibit_messages called asynchronously in background job")) |}];
+          "Echo_area.inhibit_messages called asynchronously in background job"))
+        |}];
       Ivar.fill_exn ivar ();
       return ()))
 ;;

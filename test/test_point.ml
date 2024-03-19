@@ -8,14 +8,14 @@ let show () = print_s [%message "" ~point:(get () : Position.t)]
 let%expect_test "[get]" =
   Current_buffer.set_temporarily_to_temp_buffer Sync (fun () ->
     show ();
-    [%expect {|
-      (point 1) |}];
+    [%expect {| (point 1) |}];
     print_s [%sexp (Current_buffer.get () : Buffer.t)];
     insert "foo";
     show ();
     [%expect {|
       "#<buffer  *temp*>"
-      (point 4) |}]);
+      (point 4)
+      |}]);
   return ()
 ;;
 
@@ -27,12 +27,14 @@ let%expect_test "[min], [max]" =
     show_min_max ();
     [%expect {|
       ((min 1)
-       (max 1)) |}];
+       (max 1))
+      |}];
     insert "abc";
     show_min_max ();
     [%expect {|
       ((min 1)
-       (max 4)) |}]);
+       (max 4))
+      |}]);
   return ()
 ;;
 
@@ -199,7 +201,8 @@ let%expect_test "[column_number], [goto_column]" =
       1
       2
       3
-      3 |}]);
+      3
+      |}]);
   return ()
 ;;
 
@@ -230,8 +233,7 @@ let%expect_test "[insert_file_contents_exn] raise" =
       print_s
         [%sexp (Current_buffer.contents () ~end_:(11 |> Position.of_int_exn) : Text.t)]));
   [%expect
-    {|
-    (raised (file-missing ("Opening input file" "No such file or directory" /zzz))) |}];
+    {| (raised (file-missing ("Opening input file" "No such file or directory" /zzz))) |}];
   return ()
 ;;
 
@@ -302,20 +304,22 @@ let%expect_test "[search_forward]_exn] and [Regexp.Last_match]" =
     insert "abcdef";
     goto_char (min ());
     show_raise (fun () -> search_forward_exn "zz" ~update_last_match:true);
-    [%expect {|
-      (raised ("string not found" (string zz))) |}];
+    [%expect {| (raised ("string not found" (string zz))) |}];
     show_last_match ();
     [%expect
       {|
       ((text  (Error "Prior [Regexp] match did not match"))
        (start (Error "Prior [Regexp] match did not match"))
-       (end_  (Error "Prior [Regexp] match did not match"))) |}];
+       (end_  (Error "Prior [Regexp] match did not match")))
+      |}];
     search_forward_exn "bc" ~update_last_match:true;
     show_last_match ();
-    [%expect {|
+    [%expect
+      {|
       ((text  (Ok bc))
        (start (Ok 2))
-       (end_  (Ok 4))) |}]);
+       (end_  (Ok 4)))
+      |}]);
   return ()
 ;;
 
@@ -380,22 +384,27 @@ let%expect_test "[search_forward_regexp] and [Regexp.Last_match]" =
       {|
       ((text  (Error "Prior [Regexp] match did not match"))
        (start (Error "Prior [Regexp] match did not match"))
-       (end_  (Error "Prior [Regexp] match did not match"))) |}];
+       (end_  (Error "Prior [Regexp] match did not match")))
+      |}];
     print_s
       [%sexp
         (search_forward_regexp ({|\(b\)|} |> Regexp.of_pattern) ~update_last_match:true
           : bool)];
     [%expect {| true |}];
     show_last_match ();
-    [%expect {|
+    [%expect
+      {|
       ((text  (Ok b))
        (start (Ok 2))
-       (end_  (Ok 3))) |}];
+       (end_  (Ok 3)))
+      |}];
     show_last_match () ~subexp:1;
-    [%expect {|
+    [%expect
+      {|
       ((text  (Ok b))
        (start (Ok 2))
-       (end_  (Ok 3))) |}]);
+       (end_  (Ok 3)))
+      |}]);
   return ()
 ;;
 
@@ -404,10 +413,12 @@ let%expect_test "[Regexp.Last_match] in wrong buffer" =
     insert "abc";
     search_backward_exn "b" ~update_last_match:true;
     show_last_match ();
-    [%expect {|
+    [%expect
+      {|
       ((text  (Ok b))
        (start (Ok 2))
-       (end_  (Ok 3))) |}]);
+       (end_  (Ok 3)))
+      |}]);
   show_last_match ();
   [%expect
     {|
@@ -417,7 +428,8 @@ let%expect_test "[Regexp.Last_match] in wrong buffer" =
          (current  "#<buffer *scratch*>")
          (expected "#<killed buffer>"))))
      (start (Ok 2))
-     (end_  (Ok 3))) |}];
+     (end_  (Ok 3)))
+    |}];
   return ()
 ;;
 
@@ -448,14 +460,15 @@ let%expect_test "[looking_at ~update_last_match:true]" =
       ((text  (Ok a))
        (start (Ok 1))
        (end_  (Ok 2)))
- |}];
+      |}];
     looking_at "b";
     [%expect
       {|
       false
       ((text  (Error "Prior [Regexp] match did not match"))
        (start (Error "Prior [Regexp] match did not match"))
-       (end_  (Error "Prior [Regexp] match did not match"))) |}]);
+       (end_  (Error "Prior [Regexp] match did not match")))
+      |}]);
   return ()
 ;;
 
@@ -532,6 +545,7 @@ let%expect_test "[Property_search.forward]" =
        (match_ ((
          (beginning      25)
          (end_           26)
-         (property_value 0))))) |}]);
+         (property_value 0)))))
+      |}]);
   return ()
 ;;

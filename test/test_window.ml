@@ -36,7 +36,8 @@ let%expect_test "accessors" =
      (height      (Ok 24))
      (is_live     (Ok true))
      (point       (Ok 1))
-     (width       (Ok 80))) |}];
+     (width       (Ok 80)))
+    |}];
   return ()
 ;;
 
@@ -57,12 +58,10 @@ let%expect_test "[delete_exn] raise" =
 let%expect_test "[delete_exn]" =
   Selected_window.split_vertically_exn ();
   show_all ();
-  [%expect {|
-    ("#<window 1 on *scratch*>" "#<window 4 on *scratch*>") |}];
+  [%expect {| ("#<window 1 on *scratch*>" "#<window 4 on *scratch*>") |}];
   delete_exn t;
   show_all ();
-  [%expect {|
-    ("#<window 4 on *scratch*>") |}];
+  [%expect {| ("#<window 4 on *scratch*>") |}];
   show t;
   [%expect
     {|
@@ -71,7 +70,8 @@ let%expect_test "[delete_exn]" =
      (height (Error (wrong-type-argument (window-valid-p "#<window 1>"))))
      (is_live (Ok false))
      (point (Error (wrong-type-argument (window-live-p "#<window 1>"))))
-     (width (Error (wrong-type-argument (window-live-p "#<window 1>"))))) |}];
+     (width (Error (wrong-type-argument (window-live-p "#<window 1>")))))
+    |}];
   return ()
 ;;
 
@@ -90,7 +90,8 @@ let%expect_test "[Tree]" =
      (height      (Ok 24))
      (is_live     (Ok true))
      (point       (Ok 2))
-     (width       (Ok 80))) |}];
+     (width       (Ok 80)))
+    |}];
   Selected_window.split_vertically_exn ();
   show ();
   [%expect
@@ -116,6 +117,7 @@ let%expect_test "[Tree]" =
      (height      (Ok 12))
      (is_live     (Ok true))
      (point       (Ok 2))
-     (width       (Ok 80))) |}];
+     (width       (Ok 80)))
+    |}];
   return ()
 ;;

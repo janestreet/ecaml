@@ -16,10 +16,12 @@ let%expect_test "[press_and_show_prompt] shows completions" =
       Find file:
 
       Contents of *Completions* buffer:
-      In this buffer, type RET to select the completion near point.
+      Type M-RET on a completion to select it.
+      Type M-<down> or M-<up> to move point between completions.
 
-      Possible completions are:
+      2 possible completions:
       foo.tmp
-      foobar.tmp |}];
+      foobar.tmp
+      |}];
     return ())
 ;;

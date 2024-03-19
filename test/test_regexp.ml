@@ -41,7 +41,8 @@ let%expect_test "[quote], [match_], [does_match]" =
     ((pattern "\\\\")
      (input   \)
      (match_ (0))
-     (does_match true)) |}];
+     (does_match true))
+    |}];
   return ()
 ;;
 
@@ -72,7 +73,8 @@ let%expect_test "[any_pattern]" =
      (does_match true))
     ((patterns (b a))
      (regexp     "b\\|a")
-     (does_match true)) |}];
+     (does_match true))
+    |}];
   return ()
 ;;
 
@@ -100,7 +102,8 @@ let%expect_test "[any_quote]" =
      (does_match false))
     ((strings (a b))
      (regexp     [ab])
-     (does_match true)) |}];
+     (does_match true))
+    |}];
   return ()
 ;;
 
@@ -114,7 +117,8 @@ let%expect_test "[Last_match] raise due to no match" =
     {|
     ((text  (Error "Prior [Regexp] match did not match"))
      (start (Error "Prior [Regexp] match did not match"))
-     (end_  (Error "Prior [Regexp] match did not match"))) |}];
+     (end_  (Error "Prior [Regexp] match did not match")))
+    |}];
   return ()
 ;;
 
@@ -136,7 +140,8 @@ let%expect_test "[Last_match] with nonexistent [subexp]" =
          (subexp 1))))
      (end_ (
        Error (
-         "[Regexp.Last_match.end_exn] got [subexp] that did not match" (subexp 1))))) |}];
+         "[Regexp.Last_match.end_exn] got [subexp] that did not match" (subexp 1)))))
+    |}];
   return ()
 ;;
 
@@ -181,7 +186,8 @@ let%expect_test "[Last_match] success" =
      (match_result (1)))
     ((text  (Ok foo))
      (start (Ok 1))
-     (end_  (Ok 4))) |}];
+     (end_  (Ok 4)))
+    |}];
   return ()
 ;;
 
@@ -197,7 +203,8 @@ let%expect_test "[Last_match ~subexp] success" =
   [%expect {|
     ((text  (Ok foo))
      (start (Ok 1))
-     (end_  (Ok 4))) |}];
+     (end_  (Ok 4)))
+    |}];
   return ()
 ;;
 
@@ -211,24 +218,24 @@ let%expect_test "[Last_match.get_exn]" =
           ("xfoox" |> Text.of_utf8_bytes)));
   let match_data = Last_match.get_exn () in
   print_s [%sexp (match_data : Last_match.t)];
-  [%expect {|
-    ((location (Text xfoox)) (positions (1 4 1 4))) |}];
+  [%expect {| ((location (Text xfoox)) (positions (1 4 1 4))) |}];
   require
     [%here]
     (is_some (match_ ~update_last_match:true ("a" |> quote) ("a" |> Text.of_utf8_bytes)));
   print_s [%sexp (Last_match.get_exn () : Last_match.t)];
   [%expect {|
     ((location  (Text a))
-     (positions (0    1))) |}];
+     (positions (0    1)))
+    |}];
   Last_match.set match_data;
   print_s [%sexp (Last_match.get_exn () : Last_match.t)];
-  [%expect {|
-    ((location (Text xfoox)) (positions (1 4 1 4))) |}];
+  [%expect {| ((location (Text xfoox)) (positions (1 4 1 4))) |}];
   show_last_match ();
   [%expect {|
     ((text  (Ok foo))
      (start (Ok 1))
-     (end_  (Ok 4))) |}];
+     (end_  (Ok 4)))
+    |}];
   return ()
 ;;
 
@@ -251,7 +258,8 @@ let%expect_test "[of_rx]" =
     ((input   -)
      (matches true))
     ((input   b)
-     (matches false)) |}];
+     (matches false))
+    |}];
   test
     [ "a"; "b"; "z"; "A"; "B"; "Z"; "."; "-" ]
     (Any_in [ Chars_in "."; Range ('a', 'z'); Range ('A', 'Z') ]);
@@ -273,7 +281,8 @@ let%expect_test "[of_rx]" =
     ((input   .)
      (matches true))
     ((input   -)
-     (matches false)) |}];
+     (matches false))
+    |}];
   test [ "a"; "b"; "z"; "."; "-" ] (Any_in [ Chars_in "-"; Range ('a', 'z') ]);
   [%expect
     {|
@@ -287,7 +296,8 @@ let%expect_test "[of_rx]" =
     ((input   .)
      (matches false))
     ((input   -)
-     (matches true)) |}];
+     (matches true))
+    |}];
   test [ "foo.*"; "foobar" ] (Exactly "foo.*");
   [%expect
     {|
@@ -295,7 +305,8 @@ let%expect_test "[of_rx]" =
     ((input   foo.*)
      (matches true))
     ((input   foobar)
-     (matches false)) |}];
+     (matches false))
+    |}];
   test [ "\nfoo"; "foo"; "barfoo" ] (Seq [ Line Start; Exactly "foo" ]);
   [%expect
     {|
@@ -305,7 +316,8 @@ let%expect_test "[of_rx]" =
     ((input   foo)
      (matches true))
     ((input   barfoo)
-     (matches false)) |}];
+     (matches false))
+    |}];
   test [ "foo\n"; "foo"; "foobar" ] (Seq [ Exactly "foo"; Line End ]);
   [%expect
     {|
@@ -315,7 +327,8 @@ let%expect_test "[of_rx]" =
     ((input   foo)
      (matches true))
     ((input   foobar)
-     (matches false)) |}];
+     (matches false))
+    |}];
   test [ "a"; "b" ] (None_in [ Chars_in "a" ]);
   [%expect
     {|
@@ -323,7 +336,8 @@ let%expect_test "[of_rx]" =
     ((input   a)
      (matches false))
     ((input   b)
-     (matches true)) |}];
+     (matches true))
+    |}];
   test [ "a"; "b"; "c" ] (Or [ Exactly "a"; Exactly "b" ]);
   [%expect
     {|
@@ -333,7 +347,8 @@ let%expect_test "[of_rx]" =
     ((input   b)
      (matches true))
     ((input   c)
-     (matches false)) |}];
+     (matches false))
+    |}];
   test [ "ab"; "pq"; "ap" ] (Or [ Exactly "ab"; Exactly "pq" ]);
   [%expect
     {|
@@ -343,7 +358,8 @@ let%expect_test "[of_rx]" =
     ((input   pq)
      (matches true))
     ((input   ap)
-     (matches false)) |}];
+     (matches false))
+    |}];
   test [ "foo"; "bar" ] (Pattern "foo.*");
   [%expect
     {|
@@ -351,7 +367,8 @@ let%expect_test "[of_rx]" =
     ((input   foo)
      (matches true))
     ((input   bar)
-     (matches false)) |}];
+     (matches false))
+    |}];
   Current_buffer.set_temporarily_to_temp_buffer Sync (fun () ->
     Point.insert "foobar";
     Point.goto_min ();
@@ -362,7 +379,8 @@ let%expect_test "[of_rx]" =
     print_s [%message (matches : bool)]);
   [%expect {|
     (matches true)
-    (matches false) |}];
+    (matches false)
+    |}];
   List.iter
     ~f:(fun (min, max) ->
       test
@@ -426,7 +444,8 @@ let%expect_test "[of_rx]" =
     ((input   cadr)
      (matches true))
     ((input   caddr)
-     (matches false)) |}];
+     (matches false))
+    |}];
   List.iter
     ~f:(fun rx ->
       let t =
@@ -484,7 +503,8 @@ let%expect_test "[of_rx]" =
      (submatch_1 ()))
     ((input   foo)
      (matches false)
-     (submatch_1 ())) |}];
+     (submatch_1 ()))
+    |}];
   List.iter
     ~f:(fun index ->
       let t =
@@ -523,7 +543,8 @@ let%expect_test "[of_rx]" =
     (t "\\(foo\\(bar\\)\\(?4:baz\\)\\(qux\\)\\)")
     ((matches true)
      (index   4)
-     (submatch (baz))) |}];
+     (submatch (baz)))
+    |}];
   [%expect {| |}];
   return ()
 ;;
@@ -564,6 +585,7 @@ let%expect_test "named char classes" =
     [[:lower:]]
     [[:space:]]
     [[:upper:]]
-    [[:word:]] |}];
+    [[:word:]]
+    |}];
   return ()
 ;;

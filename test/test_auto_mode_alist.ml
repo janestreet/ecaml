@@ -16,7 +16,8 @@ let%expect_test "[add]" =
     ((
       (filename_match          foo)
       (function_               foo-mode)
-      (delete_suffix_and_recur false))) |}];
+      (delete_suffix_and_recur false)))
+    |}];
   return ()
 ;;
 
@@ -69,6 +70,9 @@ let%expect_test "[auto_mode_alist]" =
       (delete_suffix_and_recur false))
      ((filename_match          "\\.scss\\'")
       (function_               scss-mode)
+      (delete_suffix_and_recur false))
+     ((filename_match          "\\.cs\\'")
+      (function_               csharp-mode)
       (delete_suffix_and_recur false))
      ((filename_match          "\\.awk\\'")
       (function_               awk-mode)
@@ -145,6 +149,9 @@ let%expect_test "[auto_mode_alist]" =
      ((filename_match          "\\.jpe?g\\'")
       (function_               image-mode)
       (delete_suffix_and_recur false))
+     ((filename_match          "\\.webp\\'")
+      (function_               image-mode)
+      (delete_suffix_and_recur false))
      ((filename_match          "\\.te?xt\\'")
       (function_               text-mode)
       (delete_suffix_and_recur false))
@@ -165,6 +172,9 @@ let%expect_test "[auto_mode_alist]" =
       (delete_suffix_and_recur false))
      ((filename_match "\\.dir-locals\\(?:-2\\)?\\.el\\'")
       (function_      lisp-data-mode)
+      (delete_suffix_and_recur false))
+     ((filename_match          "\\.eld\\'")
+      (function_               lisp-data-mode)
       (delete_suffix_and_recur false))
      ((filename_match          "eww-bookmarks\\'")
       (function_               lisp-data-mode)
@@ -187,8 +197,8 @@ let%expect_test "[auto_mode_alist]" =
      ((filename_match          "Project\\.ede\\'")
       (function_               emacs-lisp-mode)
       (delete_suffix_and_recur false))
-     ((filename_match "\\.\\(scm\\|stk\\|ss\\|sch\\)\\'")
-      (function_      scheme-mode)
+     ((filename_match "\\.\\(scm\\|sls\\|sld\\|stk\\|ss\\|sch\\)\\'")
+      (function_               scheme-mode)
       (delete_suffix_and_recur false))
      ((filename_match          "\\.l\\'")
       (function_               lisp-mode)
@@ -426,7 +436,7 @@ let%expect_test "[auto_mode_alist]" =
       (function_               javascript-mode)
       (delete_suffix_and_recur false))
      ((filename_match          "\\.json\\'")
-      (function_               javascript-mode)
+      (function_               js-json-mode)
       (delete_suffix_and_recur false))
      ((filename_match          "\\.[ds]?va?h?\\'")
       (function_               verilog-mode)
@@ -436,6 +446,9 @@ let%expect_test "[auto_mode_alist]" =
       (delete_suffix_and_recur false))
      ((filename_match          "\\.wy\\'")
       (function_               wisent-grammar-mode)
+      (delete_suffix_and_recur false))
+     ((filename_match          "\\.erts\\'")
+      (function_               erts-mode)
       (delete_suffix_and_recur false))
      ((filename_match "[:/\\]\\..*\\(emacs\\|gnus\\|viper\\)\\'")
       (function_               emacs-lisp-mode)
@@ -489,7 +502,7 @@ let%expect_test "[auto_mode_alist]" =
       (function_               ps-mode)
       (delete_suffix_and_recur false))
      ((filename_match
-       "\\.\\(?:PDF\\|DVI\\|OD[FGPST]\\|DOCX\\|XLSX?\\|PPTX?\\|pdf\\|djvu\\|dvi\\|od[fgpst]\\|docx\\|xlsx?\\|pptx?\\)\\'")
+       "\\.\\(?:PDF\\|EPUB\\|CBZ\\|FB2\\|O?XPS\\|DVI\\|OD[FGPST]\\|DOCX\\|XLSX?\\|PPTX?\\|pdf\\|epub\\|cbz\\|fb2\\|o?xps\\|djvu\\|dvi\\|od[fgpst]\\|docx\\|xlsx?\\|pptx?\\)\\'")
       (function_               doc-view-mode-maybe)
       (delete_suffix_and_recur false))
      ((filename_match "configure\\.\\(ac\\|in\\)\\'")
@@ -568,6 +581,9 @@ let%expect_test "[auto_mode_alist]" =
        "/\\.?\\(?:gitconfig\\|gnokiirc\\|hgrc\\|kde.*rc\\|mime\\.types\\|wgetrc\\)\\'")
       (function_               conf-mode)
       (delete_suffix_and_recur false))
+     ((filename_match          "/\\.mailmap\\'")
+      (function_               conf-unix-mode)
+      (delete_suffix_and_recur false))
      ((filename_match
        "/\\.\\(?:asound\\|enigma\\|fetchmail\\|gltron\\|gtk\\|hxplayer\\|mairix\\|mbsync\\|msmtp\\|net\\|neverball\\|nvidia-settings-\\|offlineimap\\|qt/.+\\|realplayer\\|reportbug\\|rtorrent\\.\\|screen\\|scummvm\\|sversion\\|sylpheed/.+\\|xmp\\)rc\\'")
       (function_               conf-mode)
@@ -630,6 +646,9 @@ let%expect_test "[auto_mode_alist]" =
       (function_               image-mode)
       (delete_suffix_and_recur false))
      ((filename_match          "\\.fax\\'")
+      (function_               image-mode)
+      (delete_suffix_and_recur false))
+     ((filename_match          "\\.heic\\'")
       (function_               image-mode)
       (delete_suffix_and_recur false))
      ((filename_match          "\\.hrz\\'")
@@ -739,6 +758,7 @@ let%expect_test "[auto_mode_alist]" =
       (delete_suffix_and_recur false))
      ((filename_match          "\\.tzst\\'")
       (function_               tar-mode)
-      (delete_suffix_and_recur false))) |}];
+      (delete_suffix_and_recur false)))
+    |}];
   return ()
 ;;

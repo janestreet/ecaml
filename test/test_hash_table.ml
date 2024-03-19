@@ -10,8 +10,7 @@ let data = "foo-value" |> Value.of_utf8_bytes
 let%expect_test "[create]" =
   show (create ());
   [%expect
-    {|
-   "#s(hash-table size 65 test eql rehash-size 1.5 rehash-threshold 0.8125 data ())" |}];
+    {| "#s(hash-table size 65 test eql rehash-size 1.5 rehash-threshold 0.8125 data ())" |}];
   return ()
 ;;
 
@@ -63,16 +62,19 @@ let%expect_test "hashtable tests" =
   [%expect
     {|
     ("find using physically equal key" (foo-value))
-    ("find using physically nonequal key" ()) |}];
+    ("find using physically nonequal key" ())
+    |}];
   test Eql;
   [%expect
     {|
     ("find using physically equal key" (foo-value))
-    ("find using physically nonequal key" ()) |}];
+    ("find using physically nonequal key" ())
+    |}];
   test Equal;
   [%expect
     {|
     ("find using physically equal key" (foo-value))
-    ("find using physically nonequal key" (foo-value)) |}];
+    ("find using physically nonequal key" (foo-value))
+    |}];
   return ()
 ;;

@@ -29,12 +29,10 @@ module Require_match : sig
   val default : t
 end
 
-module Collection : Ocaml_or_elisp_value.S with type ocaml = string list
-
 (** [(describe-function 'completing-read)] **)
 val read
   :  prompt:string (** typically ends with ": " *)
-  -> collection:Collection.t
+  -> collection:string list
   -> ?annotation_function:(string -> string)
   -> ?display_sort_function:(string list -> string list)
   -> ?require_match:Require_match.t (** default is [Require_match.default] *)
@@ -70,7 +68,7 @@ val read_variable_name
 (** [(describe-function 'completing-read-multiple)] **)
 val read_multiple
   :  prompt:string (** typically ends with ": " *)
-  -> collection:Collection.t
+  -> collection:string list
   -> ?require_match:Require_match.t (** default is False *)
   -> ?separator_regexp:string (** default is "[ \t]*,[ \t]*" *)
   -> ?initial_input:Initial_input.t (** default is Empty *)

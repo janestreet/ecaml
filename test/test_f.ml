@@ -33,6 +33,7 @@ let%expect_test "wrong return type" =
         "unable to convert Elisp value to OCaml value"
         (type_ string)
         (value nil)
-        (exn (wrong-type-argument (stringp nil))))))) |}];
+        (exn (wrong-type-argument (stringp nil)))))))
+    |}];
   Deferred.return ()
 ;;

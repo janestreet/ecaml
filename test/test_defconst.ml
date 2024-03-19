@@ -17,7 +17,8 @@ let%expect_test "defconst" =
     _
 
       This variable may be risky if used as a file-local variable.
-      Probably introduced at or before Emacs version 1.2. |}];
+      Probably introduced at or before Emacs version 1.2.
+    |}];
   print_endline (Current_buffer.value_exn var);
   [%expect {| foo-value |}];
   print_s [%sexp (Load_history.defining_file symbol : string option)];

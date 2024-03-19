@@ -23,24 +23,26 @@ let%expect_test "[exists], [is_*]" =
     show "/zzz";
     [%expect
       {|
-    ((exists false)
-     (is_directory  (Ok false))
-     (is_executable (Ok false))
-     (is_readable   (Ok false))
-     (is_regular    (Ok false))
-     (is_symlink    (Ok false))
-     (is_writable   (Ok false))) |}];
+      ((exists false)
+       (is_directory  (Ok false))
+       (is_executable (Ok false))
+       (is_readable   (Ok false))
+       (is_regular    (Ok false))
+       (is_symlink    (Ok false))
+       (is_writable   (Ok false)))
+      |}];
     Out_channel.write_all ~data:"" (Core.Filename.concat dir "empty-file");
     show (Core.Filename.concat dir "empty-file");
     [%expect
       {|
-    ((exists true)
-     (is_directory  (Ok false))
-     (is_executable (Ok false))
-     (is_readable   (Ok true))
-     (is_regular    (Ok true))
-     (is_symlink    (Ok false))
-     (is_writable   (Ok true))) |}];
+      ((exists true)
+       (is_directory  (Ok false))
+       (is_executable (Ok false))
+       (is_readable   (Ok true))
+       (is_regular    (Ok true))
+       (is_symlink    (Ok false))
+       (is_writable   (Ok true)))
+      |}];
     return ())
 ;;
 
@@ -121,14 +123,11 @@ let%expect_test "[locate_dominating_file]" =
             : string option)]
     in
     test ~above:"b/c";
-    [%expect {|
-      (/) |}];
+    [%expect {| (/) |}];
     test ~above:"b";
-    [%expect {|
-      (/) |}];
+    [%expect {| (/) |}];
     test ~above:"";
-    [%expect {|
-      (/) |}]);
+    [%expect {| (/) |}]);
   return ()
 ;;
 
@@ -152,7 +151,8 @@ let%expect_test "[write]" =
   let%bind () = show_contents () in
   [%expect {|
     stuff
-    more stuff |}];
+    more stuff
+    |}];
   File.delete file;
   return ()
 ;;

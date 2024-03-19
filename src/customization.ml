@@ -104,7 +104,10 @@ module Type = struct
     | Key_sequence
     | List of t list
     | Number
-    | Option of string * t
+    | Option of
+        { doc_for_none : string
+        ; t : t
+        }
     | Plist
     | Radio of t list
     | Regexp
@@ -145,10 +148,10 @@ module Type = struct
     | Key_sequence -> s Q.key_sequence
     | List ts -> composite Q.list ts
     | Number -> s Q.number
-    | Option (none, t) ->
+    | Option { doc_for_none; t } ->
       Value.list
         [ s Q.choice
-        ; Value.list [ s Q.const; s Q.K.tag; Value.of_utf8_bytes none; s Q.nil ]
+        ; Value.list [ s Q.const; s Q.K.tag; Value.of_utf8_bytes doc_for_none; s Q.nil ]
         ; v t
         ]
     | Plist -> s Q.plist

@@ -18,7 +18,8 @@ let%expect_test "[directory], [nondirectory]" =
     ((filename /) (directory (/)) (nondirectory ""))
     ((filename /a) (directory (/)) (nondirectory a))
     ((filename /a/) (directory (/a/)) (nondirectory ""))
-    ((filename /a/b) (directory (/a/)) (nondirectory b)) |}];
+    ((filename /a/b) (directory (/a/)) (nondirectory b))
+    |}];
   return ()
 ;;
 
@@ -27,7 +28,8 @@ let%expect_test "[directory_exn]" =
   [%expect
     {|
     (raised (
-      "[Filename.directory_exn] of filename that has no directory" (filename a))) |}];
+      "[Filename.directory_exn] of filename that has no directory" (filename a)))
+    |}];
   return ()
 ;;
 
@@ -48,7 +50,8 @@ let%expect_test "[extension], [sans_extension]" =
      (sans_extension (Ok foo)))
     ((filename foo.ml)
      (extension      (Ok ml))
-     (sans_extension (Ok foo))) |}];
+     (sans_extension (Ok foo)))
+    |}];
   return ()
 ;;
 
@@ -70,7 +73,8 @@ let%expect_test "[of_directory], [to_directory]" =
      (to_directory /a/))
     ((filename     /a/)
      (of_directory /a)
-     (to_directory /a/)) |}];
+     (to_directory /a/))
+    |}];
   return ()
 ;;
 
@@ -92,7 +96,8 @@ let%expect_test "[is_absolute]" =
     ((filename    a)
      (is_absolute false))
     ((filename    /a/)
-     (is_absolute true)) |}];
+     (is_absolute true))
+    |}];
   return ()
 ;;
 
@@ -119,7 +124,8 @@ let%expect_test "[make_relative]" =
      (relative    b/c))
     ((filename    /a/b/c)
      (relative_to /)
-     (relative    a/b/c)) |}];
+     (relative    a/b/c))
+    |}];
   return ()
 ;;
 
@@ -143,6 +149,7 @@ let%expect_test "[expand]" =
      (expanded /b))
     ((in_dir   /a/b)
      (filename c/../d)
-     (expanded /a/b/d)) |}];
+     (expanded /a/b/d))
+    |}];
   return ()
 ;;

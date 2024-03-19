@@ -36,8 +36,7 @@ let%expect_test "[start], [buffer], [name], [command], [pid], [status], [exit_st
   =
   let t = sleep () in
   print_s [%sexp (t : t)];
-  [%expect {|
-    "#<process sleeper>" |}];
+  [%expect {| "#<process sleeper>" |}];
   show t;
   [%expect
     {|
@@ -47,7 +46,8 @@ let%expect_test "[start], [buffer], [name], [command], [pid], [status], [exit_st
      (is_in_all_emacs_children true)
      (pid_is_positive (true))
      (status      Run)
-     (exit_status Not_exited)) |}];
+     (exit_status Not_exited))
+    |}];
   kill t;
   show t;
   [%expect
@@ -58,7 +58,8 @@ let%expect_test "[start], [buffer], [name], [command], [pid], [status], [exit_st
      (is_in_all_emacs_children false)
      (pid_is_positive (true))
      (status Signal)
-     (exit_status (Fatal_signal 9))) |}];
+     (exit_status (Fatal_signal 9)))
+    |}];
   return ()
 ;;
 
@@ -102,12 +103,14 @@ let%expect_test "[extend_sentinel]" =
   [%expect {|
     finished
 
-    "I'm another sentinel!" |}];
+    "I'm another sentinel!"
+    |}];
   let%bind () = test "false" in
   [%expect {|
     exited abnormally with code 1
 
-    "I'm another sentinel!" |}];
+    "I'm another sentinel!"
+    |}];
   return ()
 ;;
 
@@ -123,7 +126,8 @@ let%expect_test "[extend_sentinel] where the sentinel raises" =
     {|
     ("process sentinel raised"
      (sentinel_created_at app/emacs/lib/ecaml/test/test_process.ml:LINE:COL)
-     (process "#<process t>") (exn "some error message")) |}];
+     (process "#<process t>") (exn "some error message"))
+    |}];
   return ()
 ;;
 
@@ -140,7 +144,8 @@ let%expect_test "[extend_sentinel] where the sentinel raises asynchronously" =
     {|
     ("process sentinel raised"
      (sentinel_created_at app/emacs/lib/ecaml/test/test_process.ml:LINE:COL)
-     (process "#<process t>") (exn "some error message")) |}];
+     (process "#<process t>") (exn "some error message"))
+    |}];
   return ()
 ;;
 
@@ -193,14 +198,16 @@ let%expect_test "Async [extend_sentinel]" =
   in
   let%bind () = test "true" in
   [%expect {|
-      finished
+    finished
 
-      "I'm another sentinel!" |}];
+    "I'm another sentinel!"
+    |}];
   let%bind () = test "false" in
   [%expect {|
-      exited abnormally with code 1
+    exited abnormally with code 1
 
-      "I'm another sentinel!" |}];
+    "I'm another sentinel!"
+    |}];
   return ()
 ;;
 
@@ -216,8 +223,7 @@ let%expect_test "[exited]" =
   in
   let%bind () = loop () in
   print_s [%sexp (exited : Exited.t Deferred.t)];
-  [%expect {|
-      (Full (Exited 0)) |}];
+  [%expect {| (Full (Exited 0)) |}];
   return ()
 ;;
 
@@ -292,16 +298,19 @@ let%expect_test "[call_result_exn]" =
   test_call_result_exn () ~prog:"true" ~args:[];
   [%expect {|
     (result (Exit_status 0))
-    output: |}];
+    output:
+    |}];
   test_call_result_exn () ~prog:"false" ~args:[];
   [%expect {|
     (result (Exit_status 1))
-    output: |}];
+    output:
+    |}];
   test_call_result_exn () ~prog:"echo" ~args:[ "foo"; "bar" ];
   [%expect {|
     (result (Exit_status 0))
     output:
-    foo bar |}];
+    foo bar
+    |}];
   return ()
 ;;
 
@@ -309,7 +318,8 @@ let%expect_test "[Call.Input.Dev_null]" =
   test_call_result_exn () ~prog:"cat" ~args:[] ~input:Dev_null;
   [%expect {|
     (result (Exit_status 0))
-    output: |}];
+    output:
+    |}];
   return ()
 ;;
 
@@ -323,12 +333,14 @@ let%expect_test "[Call.Input.File]" =
   [%expect {|
     (result (Exit_status 0))
     output:
-    foobar |}];
+    foobar
+    |}];
   test_call_result_exn () ~prog:"cat" ~args:[] ~input:(File file);
   [%expect {|
     (result (Exit_status 0))
     output:
-    foobar |}];
+    foobar
+    |}];
   Sys_unix.remove file;
   return ()
 ;;
@@ -337,7 +349,8 @@ let%expect_test "[Call.Output.Dev_null]" =
   test_call_result_exn () ~prog:"echo" ~args:[ "foo" ] ~output:Dev_null;
   [%expect {|
     (result (Exit_status 0))
-    output: |}];
+    output:
+    |}];
   return ()
 ;;
 
@@ -346,7 +359,8 @@ let%expect_test "[Call.Output.File]" =
   test_call_result_exn () ~prog:"echo" ~args:[ "foo" ] ~output:(Overwrite_file file);
   [%expect {|
     (result (Exit_status 0))
-    output: |}];
+    output:
+    |}];
   show_file_contents file;
   [%expect {| foo |}];
   test_call_result_exn
@@ -356,7 +370,8 @@ let%expect_test "[Call.Output.File]" =
     ~output:(Overwrite_file file);
   [%expect {|
     (result (Exit_status 0))
-    output: |}];
+    output:
+    |}];
   show_file_contents file;
   [%expect {| another-foo |}];
   test_call_result_exn
@@ -366,11 +381,13 @@ let%expect_test "[Call.Output.File]" =
     ~output:(Overwrite_file file);
   [%expect {|
     (result (Exit_status 0))
-    output: |}];
+    output:
+    |}];
   show_file_contents file;
   [%expect {|
     foo
-    bar |}];
+    bar
+    |}];
   Sys_unix.remove file;
   return ()
 ;;
@@ -385,7 +402,8 @@ let%expect_test "[Call.Output.Split]" =
         (Split { stderr = Dev_null; stdout = Before_point_in (Current_buffer.get ()) });
     [%expect {|
       (result (Exit_status 0))
-      output: |}];
+      output:
+      |}];
     print_current_buffer_contents ();
     [%expect {| foo |}]);
   test_call_result_exn
@@ -396,7 +414,8 @@ let%expect_test "[Call.Output.Split]" =
   [%expect {|
     (result (Exit_status 0))
     output:
-    foo |}];
+    foo
+    |}];
   test_call_result_exn
     ()
     ~prog:"echo"
@@ -404,7 +423,8 @@ let%expect_test "[Call.Output.Split]" =
     ~output:(Split { stderr = Dev_null; stdout = Dev_null });
   [%expect {|
     (result (Exit_status 0))
-    output: |}];
+    output:
+    |}];
   let file = Stdlib.Filename.temp_file "" "" in
   test_call_result_exn
     ()
@@ -413,7 +433,8 @@ let%expect_test "[Call.Output.Split]" =
     ~output:(Split { stderr = Overwrite_file file; stdout = Dev_null });
   [%expect {|
     (result (Exit_status 0))
-    output: |}];
+    output:
+    |}];
   show_file_contents file;
   [%expect {| foo |}];
   Sys_unix.remove file;
@@ -426,7 +447,8 @@ let%expect_test "[Call.Output.Split]" =
     ~output:(Split { stderr = Overwrite_file file1; stdout = Overwrite_file file2 });
   [%expect {|
     (result (Exit_status 0))
-    output: |}];
+    output:
+    |}];
   show_file_contents file1;
   [%expect {| bar |}];
   show_file_contents file2;
@@ -447,11 +469,11 @@ let%expect_test "[call_exn] dropping stderr" =
       (args (-c "echo out-put; echo >&2 err-or; exit 1"))
       (result (Exit_status 1))
       (output out-put)
-      (stderr err-or))) |}];
+      (stderr err-or)))
+    |}];
   print_endline
     (call_exn ~stderr:`Drop_if_ok "bash" [ "-c"; "echo output; echo >&2 error" ]);
-  [%expect {|
-    output |}];
+  [%expect {| output |}];
   return ()
 ;;
 
@@ -470,7 +492,8 @@ let%expect_test "[call_exn] raise" =
       (prog false)
       (args ())
       (result (Exit_status 1))
-      (output ""))) |}];
+      (output "")))
+    |}];
   return ()
 ;;
 
@@ -489,7 +512,8 @@ let%expect_test "[shell_command_exn] raise" =
       (prog /bin/bash)
       (args   (-c          "echo -n foo; false"))
       (result (Exit_status 1))
-      (output foo))) |}];
+      (output foo)))
+    |}];
   return ()
 ;;
 
@@ -526,13 +550,15 @@ let%expect_test "[call_region_exn]" =
   [%expect {|
     (result (Exit_status 0))
     output:
-    echoecho |}];
+    echoecho
+    |}];
   Point.insert "foooooooo";
   test (call_region_exn "sed" [ "s/o/i/g" ] ~output:Before_point_in_current_buffer);
   [%expect {|
     (result (Exit_status 0))
     output:
-    foooooooofiiiiiiii |}];
+    foooooooofiiiiiiii
+    |}];
   Point.insert "foobar";
   test
     (call_region_exn
@@ -543,7 +569,8 @@ let%expect_test "[call_region_exn]" =
   [%expect {|
     (result (Exit_status 0))
     output:
-    foobarfiib |}];
+    foobarfiib
+    |}];
   Point.insert "foobar";
   test
     (call_region_exn
@@ -554,7 +581,8 @@ let%expect_test "[call_region_exn]" =
   [%expect {|
     (result (Exit_status 0))
     output:
-    arfiib |}];
+    arfiib
+    |}];
   test
     (call_region_exn
        ~input:(String "footron")
@@ -564,7 +592,8 @@ let%expect_test "[call_region_exn]" =
   [%expect {|
     (result (Exit_status 0))
     output:
-    fiitrin |}];
+    fiitrin
+    |}];
   return ()
 ;;
 
@@ -583,7 +612,8 @@ exit 1
       (prog /bin/bash)
       (args (-c "\necho '(\"foo bar\" baz)'\nexit 1\n"))
       (result (Exit_status 1))
-      (output ("foo bar"   baz)))) |}];
+      (output ("foo bar"   baz))))
+    |}];
   return ()
 ;;
 
@@ -607,7 +637,8 @@ exit 1
       (prog /bin/bash)
       (args (-c "\necho line1\necho line2\necho line3\nexit 1\n"))
       (result (Exit_status 1))
-      (output (line1 line2 line3)))) |}];
+      (output (line1 line2 line3))))
+    |}];
   return ()
 ;;
 
@@ -626,7 +657,8 @@ exit 1
       (prog /bin/bash)
       (args (-c "\necho '(\"foo bar\" baz)'\nexit 1\n"))
       (result (Exit_status 1))
-      (output ("foo bar"   baz)))) |}];
+      (output ("foo bar"   baz))))
+    |}];
   return ()
 ;;
 

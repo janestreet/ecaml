@@ -24,14 +24,14 @@ let show_in_current_buffer () =
 
 let%expect_test "[get] with no value" =
   show_in_current_buffer ();
-  [%expect {|
-    () |}];
+  [%expect {| () |}];
   require_does_raise [%here] (fun () -> Current_buffer.get_buffer_local_exn int);
   [%expect
     {|
     ("buffer has no value for variable"
       (variable (some-int (option int)))
-      (buffer "#<buffer *scratch*>")) |}];
+      (buffer "#<buffer *scratch*>"))
+    |}];
   return ()
 ;;
 
@@ -52,14 +52,16 @@ let%expect_test "[get] with strange value" =
     ("buffer has strange value for variable"
       (variable (some-int (option int)))
       (buffer "#<buffer *scratch*>")
-      (value  thirteen)) |}];
+      (value  thirteen))
+    |}];
   require_does_raise [%here] (fun () -> Current_buffer.get_buffer_local_exn int);
   [%expect
     {|
     ("buffer has strange value for variable"
       (variable (some-int (option int)))
       (buffer "#<buffer *scratch*>")
-      (value  thirteen)) |}];
+      (value  thirteen))
+    |}];
   return ()
 ;;
 
@@ -172,7 +174,8 @@ let%expect_test "[wrap_existing]" =
   [%expect
     {|
     ("[Buffer_local.wrap_existing] on an Elisp variable that is not automatically buffer local"
-     (symbol for-wrapping)) |}];
+     (symbol for-wrapping))
+    |}];
   let (_ : string t) = wrap ~make_buffer_local_always:true in
   print_s [%sexp (Var.is_buffer_local_always var : bool)];
   [%expect {| true |}];

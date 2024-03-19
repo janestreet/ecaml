@@ -19,7 +19,8 @@ let%expect_test "[create]" =
     []
     [nil]
     "[nil nil]"
-    "[nil nil nil]" |}];
+    "[nil nil nil]"
+    |}];
   return ()
 ;;
 
@@ -31,7 +32,8 @@ let%expect_test "[of_list]" =
     []
     [0]
     "[0 1]"
-    "[0 1 2]" |}];
+    "[0 1 2]"
+    |}];
   return ()
 ;;
 
@@ -45,7 +47,8 @@ let%expect_test "[get] raise" =
       "[Vector.get] got invalid subscript"
       (subscript -1)
       (length    0)
-      (vector    []))) |}];
+      (vector    [])))
+    |}];
   test 0;
   [%expect
     {|
@@ -53,7 +56,8 @@ let%expect_test "[get] raise" =
       "[Vector.get] got invalid subscript"
       (subscript 0)
       (length    0)
-      (vector    []))) |}];
+      (vector    [])))
+    |}];
   return ()
 ;;
 
@@ -66,7 +70,8 @@ let%expect_test "[get]" =
     (0)
     (0 1)
     (0 1 2)
-    (0 1 2 3) |}];
+    (0 1 2 3)
+    |}];
   return ()
 ;;
 
@@ -80,7 +85,8 @@ let%expect_test "[set] raise on empty vector" =
       "[Vector.set] got invalid subscript"
       (subscript -1)
       (length    0)
-      (vector    []))) |}];
+      (vector    [])))
+    |}];
   test 0;
   [%expect
     {|
@@ -88,7 +94,8 @@ let%expect_test "[set] raise on empty vector" =
       "[Vector.set] got invalid subscript"
       (subscript 0)
       (length    0)
-      (vector    []))) |}];
+      (vector    [])))
+    |}];
   return ()
 ;;
 
@@ -102,7 +109,8 @@ let%expect_test "[set] raise on non-empty vector" =
       "[Vector.set] got invalid subscript"
       (subscript -1)
       (length    1)
-      (vector    [13]))) |}];
+      (vector    [13])))
+    |}];
   test 1;
   [%expect
     {|
@@ -110,7 +118,8 @@ let%expect_test "[set] raise on non-empty vector" =
       "[Vector.set] got invalid subscript"
       (subscript 1)
       (length    1)
-      (vector    [13]))) |}];
+      (vector    [13])))
+    |}];
   return ()
 ;;
 
@@ -126,7 +135,8 @@ let%expect_test "[set]" =
     "[nil 13 13 13]"
     "[nil nil 13 13]"
     "[nil nil nil 13]"
-    "[nil nil nil nil]" |}];
+    "[nil nil nil nil]"
+    |}];
   return ()
 ;;
 
@@ -141,7 +151,8 @@ let%expect_test "[concat]" =
     [1]
     "[1 2 2]"
     "[1 2 2 3 3 3]"
-    "[1 2 2 3 3 3 4 4 4 4]" |}];
+    "[1 2 2 3 3 3 4 4 4 4]"
+    |}];
   return ()
 ;;
 
@@ -156,6 +167,7 @@ let%expect_test "[to_array]" =
     ()
     (0)
     (0 1)
-    (0 1 2) |}];
+    (0 1 2)
+    |}];
   return ()
 ;;

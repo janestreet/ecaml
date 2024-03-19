@@ -25,7 +25,8 @@ let%expect_test "[create_exn]" =
     (C-<f5> C-<f5>)
     (C-<right> C-<right>)
     (<mouse-2> <mouse-2>)
-    (C-<down-mouse-3> C-<down-mouse-3>) |}];
+    (C-<down-mouse-3> C-<down-mouse-3>)
+    |}];
   return ()
 ;;
 
@@ -43,7 +44,8 @@ let%expect_test "[length]" =
     (C-x 1)
     (a 1)
     (ab 2)
-    (A-C-M-S-x 1) |}];
+    (A-C-M-S-x 1)
+    |}];
   return ()
 ;;
 
@@ -55,7 +57,8 @@ let%expect_test "[get]" =
   [%expect {|
     a
     b
-    c |}];
+    c
+    |}];
   return ()
 ;;
 
@@ -120,7 +123,8 @@ let%expect_test "[to_list]" =
     ("" ())
     (a (a))
     (RET (RET))
-    ("C-c C-a" (C-c C-a)) |}];
+    ("C-c C-a" (C-c C-a))
+    |}];
   return ()
 ;;
 

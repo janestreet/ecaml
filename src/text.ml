@@ -14,6 +14,8 @@ module Q = struct
   let invisible = "invisible" |> Symbol.intern
   let mouse_face = "mouse-face" |> Symbol.intern
   let propertize = "propertize" |> Symbol.intern
+  let help_echo = "help-echo" |> Symbol.intern
+  let kbd_help = "kbd-help" |> Symbol.intern
   let string = "string" |> Symbol.intern
 end
 
@@ -263,6 +265,8 @@ module Property_name = struct
   let after_string : _ t = create_and_register Q.after_string text_type
   let before_string : _ t = create_and_register Q.before_string text_type
   let invisible : _ t = create_and_register Q.invisible Value.Type.value
+  let help_echo : _ t = create_and_register Q.help_echo Value.Type.string
+  let kbd_help : _ t = create_and_register Q.kbd_help Value.Type.string
 end
 
 module Property = struct

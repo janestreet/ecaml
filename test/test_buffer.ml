@@ -9,9 +9,7 @@ let num_live_at_start = num_live ()
 
 let%expect_test "[all_live]" =
   print_s [%sexp (all_live () : t list)];
-  [%expect
-    {|
-    ("#<buffer *scratch*>" "#<buffer  *Minibuf-0*>" "#<buffer *Messages*>") |}];
+  [%expect {| ("#<buffer *scratch*>" "#<buffer  *Minibuf-0*>" "#<buffer *Messages*>") |}];
   return ()
 ;;
 
@@ -20,12 +18,10 @@ let require_clean () = require [%here] (num_live () = num_live_at_start)
 let%expect_test "[create]" =
   let t1 = create ~name:"foo" in
   show t1;
-  [%expect {|
-    "#<buffer foo>" |}];
+  [%expect {| "#<buffer foo>" |}];
   let t2 = create ~name:"foo" in
   show t2;
-  [%expect {|
-    "#<buffer foo<2>>" |}];
+  [%expect {| "#<buffer foo<2>>" |}];
   Blocking.kill t1;
   Blocking.kill t2;
   require_clean ();
@@ -190,7 +186,8 @@ let%expect_test "[buffer_local_variables]" =
        (major-mode                   (_))
        (mark-active                  (_))
        (mode-name                    (_))
-       (point-before-scroll          (_))) |}];
+       (point-before-scroll          (_)))
+      |}];
     Current_buffer.set_value var 14;
     show_current_buffer_local_variables ();
     [%expect
@@ -214,7 +211,8 @@ let%expect_test "[buffer_local_variables]" =
        (mark-active                  (_))
        (mode-name                    (_))
        (point-before-scroll          (_))
-       (s                            (_))) |}]);
+       (s                            (_)))
+      |}]);
   return ()
 ;;
 

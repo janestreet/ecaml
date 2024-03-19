@@ -42,7 +42,8 @@ let%expect_test _ =
           (  0%       0us (boundp gc-elapsed))
           (  0%       0us (symbol-value gc-elapsed))
           (100%  10_000us (gc (gcs_done _)))))
-       ( 48% 300_000us gap)))) |}];
+       ( 48% 300_000us gap))))
+    |}];
   return ()
 ;;
 
@@ -59,7 +60,8 @@ let%expect_test "tag-frame-function" =
   [%expect
     {|
     ((rendering_took 0us)
-     (300_000us (nest "hello world") (19:00:00.000000000-05:00 1969-12-31))) |}];
+     (300_000us (nest "hello world") (19:00:00.000000000-05:00 1969-12-31)))
+    |}];
   return ()
 ;;
 
@@ -75,12 +77,14 @@ let%expect_test "[Value.sexp_of_t] respect [print_length] in profile records" =
   [%expect
     {|
     ((rendering_took 0us)
-     (0us (0 1 2 3 4 5 6 7 8 9 . ...) (19:00:00.000000000-05:00 1969-12-31))) |}];
+     (0us (0 1 2 3 4 5 6 7 8 9 . ...) (19:00:00.000000000-05:00 1969-12-31)))
+    |}];
   Customization.set_value_temporarily print_length (Some 3) ~f:(fun () -> test 10);
   [%expect
     {|
     ((rendering_took 0us)
-     (0us (0 1 2 . ...) (19:00:00.000000000-05:00 1969-12-31))) |}];
+     (0us (0 1 2 . ...) (19:00:00.000000000-05:00 1969-12-31)))
+    |}];
   return ()
 ;;
 
@@ -97,13 +101,15 @@ let%expect_test "[Value.sexp_of_t] respect [print_level] in profile records" =
   [%expect
     {|
     ((rendering_took 0us)
-     (0us (((((((nil) nil) (nil) nil) ((nil) nil) (nil) nil) (((nil) nil) (nil) nil) ((nil) nil) (nil) nil) ((((nil) nil) (nil) nil) ((nil) nil) (nil) nil) (((nil) nil) (nil) nil) ((nil) nil) (nil) nil) (((((nil) nil) (nil) nil) ((nil) nil) (nil) nil) (((nil) nil) (nil) nil) ((nil) nil) (nil) nil) ((((nil) nil) (nil) nil) ((nil) nil) (nil) nil) (((nil) nil) (nil) nil) ((nil) nil) (nil) nil) (19:00:00.000000000-05:00 1969-12-31))) |}];
+     (0us (((((((nil) nil) (nil) nil) ((nil) nil) (nil) nil) (((nil) nil) (nil) nil) ((nil) nil) (nil) nil) ((((nil) nil) (nil) nil) ((nil) nil) (nil) nil) (((nil) nil) (nil) nil) ((nil) nil) (nil) nil) (((((nil) nil) (nil) nil) ((nil) nil) (nil) nil) (((nil) nil) (nil) nil) ((nil) nil) (nil) nil) ((((nil) nil) (nil) nil) ((nil) nil) (nil) nil) (((nil) nil) (nil) nil) ((nil) nil) (nil) nil) (19:00:00.000000000-05:00 1969-12-31)))
+    |}];
   Customization.set_value_temporarily print_level (Some 3) ~f:(fun () ->
     show_in_message v7);
   [%expect
     {|
     ((rendering_took 0us)
-     (0us (((... ... ... ... ...) (... ... ... ...) (... ... ...) (... ...) (...) nil) ((... ... ... ...) (... ... ...) (... ...) (...) nil) ((... ... ...) (... ...) (...) nil) ((... ...) (...) nil) ((...) nil) (nil) nil) (19:00:00.000000000-05:00 1969-12-31))) |}];
+     (0us (((... ... ... ... ...) (... ... ... ...) (... ... ...) (... ...) (...) nil) ((... ... ... ...) (... ... ...) (... ...) (...) nil) ((... ... ...) (... ...) (...) nil) ((... ...) (...) nil) ((...) nil) (nil) nil) (19:00:00.000000000-05:00 1969-12-31)))
+    |}];
   return ()
 ;;
 

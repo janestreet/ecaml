@@ -76,7 +76,8 @@ let%expect_test "finalization of embedded ocaml values" =
       dump_embedded_values ());
     [%expect {|
       (((a V1) (b 1))
-       ((a V2) (b 2))) |}]);
+       ((a V2) (b 2)))
+      |}]);
   make_ocaml_garbage_not_keep_emacs_values_alive ();
   emacs_garbage_collect ();
   make_ocaml_garbage_not_keep_emacs_values_alive ();
@@ -94,7 +95,8 @@ let%expect_test "Emacs objects no longer referenced from OCaml can be gc'ed by E
   print_s [%sexp (Value.Stat.diff after before : Value.Stat.t)];
   [%expect {|
     ((emacs_free_performed 2)
-     (emacs_free_scheduled 2)) |}];
+     (emacs_free_scheduled 2))
+    |}];
   return ()
 ;;
 

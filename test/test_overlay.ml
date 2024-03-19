@@ -34,12 +34,14 @@ let%expect_test "[create], [delete], [end_], [start]" =
     count_overlays ();
     [%expect {|
       (at "point min" 0)
-      (in buffer 0) |}];
+      (in buffer 0)
+      |}];
     let t = create () ~buffer ~start:(Point.min ()) ~end_:(Point.max ()) in
     count_overlays ();
     [%expect {|
       (at "point min" 1)
-      (in buffer 1) |}];
+      (in buffer 1)
+      |}];
     print_s [%message (start t : Position.t) (end_ t : Position.t)];
     print_s [%message (Point.min () : Position.t) (Point.max () : Position.t)];
     [%expect
@@ -47,12 +49,14 @@ let%expect_test "[create], [delete], [end_], [start]" =
       (("start t" 1)
        ("end_ t"  148))
       (("Point.min ()" 1)
-       ("Point.max ()" 148)) |}];
+       ("Point.max ()" 148))
+      |}];
     delete t;
     count_overlays ();
     [%expect {|
       (at "point min" 0)
-      (in buffer 0) |}]);
+      (in buffer 0)
+      |}]);
   return ()
 ;;
 
@@ -68,12 +72,14 @@ let%expect_test "[move]" =
     count_overlays ();
     [%expect {|
       (in region1 1)
-      (in region2 0) |}];
+      (in region2 0)
+      |}];
     ignore (move t ~start:region2_start ~end_:region2_end : t);
     count_overlays ();
     [%expect {|
       (in region1 0)
-      (in region2 1) |}]);
+      (in region2 1)
+      |}]);
   return ()
 ;;
 

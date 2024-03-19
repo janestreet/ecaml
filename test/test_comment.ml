@@ -74,7 +74,8 @@ let%expect_test "goto_*_exn on multiline comment" =
       (raised "not in a comment")
 
       comment bounds:
-        None |}];
+        None
+      |}];
     test ~position:3 ();
     [%expect
       {|
@@ -108,7 +109,8 @@ let%expect_test "goto_*_exn on multiline comment" =
 
       █!-- this is a comment
            it spans multiple lines
-           end of the comment -->█ |}];
+           end of the comment -->█
+      |}];
     test ~position:30 ();
     [%expect
       {|
@@ -142,7 +144,8 @@ let%expect_test "goto_*_exn on multiline comment" =
 
       █!-- this is a comment
            it spans multiple lines
-           end of the comment -->█ |}];
+           end of the comment -->█
+      |}];
     test ~position:52 ();
     [%expect
       {|
@@ -176,7 +179,8 @@ let%expect_test "goto_*_exn on multiline comment" =
 
       █!-- this is a comment
            it spans multiple lines
-           end of the comment -->█ |}];
+           end of the comment -->█
+      |}];
     return ())
 ;;
 
@@ -211,7 +215,8 @@ let%expect_test "goto_end_exn on single-line comment" =
       (raised "not in a comment")
 
       comment bounds:
-        None |}];
+        None
+      |}];
     test ~position:3 ();
     [%expect
       {|
@@ -245,7 +250,8 @@ let%expect_test "goto_end_exn on single-line comment" =
 
       # █his is a comment
       # it spans multiple lines
-      # end of the comment█ |}];
+      # end of the comment█
+      |}];
     test ~position:30 ();
     [%expect
       {|
@@ -279,7 +285,8 @@ let%expect_test "goto_end_exn on single-line comment" =
 
       # █his is a comment
       # it spans multiple lines
-      # end of the comment█ |}];
+      # end of the comment█
+      |}];
     test ~position:52 ();
     [%expect
       {|
@@ -313,7 +320,8 @@ let%expect_test "goto_end_exn on single-line comment" =
 
       # █his is a comment
       # it spans multiple lines
-      # end of the comment█ |}];
+      # end of the comment█
+      |}];
     return ())
 ;;
 
@@ -361,7 +369,8 @@ def hello():
 
       def hello():
         print("Hello, world")      # █his is a comment
-        return 3                   # is this the same comment?█ |}];
+        return 3                   # is this the same comment?█
+      |}];
     return ())
 ;;
 
@@ -394,7 +403,8 @@ let%expect_test "two comments on one line" =
 
       comment bounds:
 
-      █!-- comment 1 -->█ <!-- comment 2 --> |}];
+      █!-- comment 1 -->█ <!-- comment 2 -->
+      |}];
     test ~position:21 ();
     [%expect
       {|
@@ -413,7 +423,8 @@ let%expect_test "two comments on one line" =
       (raised "not in a comment")
 
       comment bounds:
-        None |}];
+        None
+      |}];
     test ~position:35 ();
     [%expect
       {|
@@ -437,6 +448,7 @@ let%expect_test "two comments on one line" =
 
       comment bounds:
 
-      <!-- comment 1 -->  █!-- comment 2 -->█ |}];
+      <!-- comment 1 -->  █!-- comment 2 -->█
+      |}];
     return ())
 ;;

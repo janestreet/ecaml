@@ -45,12 +45,14 @@ let%expect_test "" =
     (advice (rest (1)))
     (test-function (args (0 1)))
     (advice (inner_result 13))
-    (call (result 14)) |}];
+    (call (result 14))
+    |}];
   Advice.remove t ~from_function:test_function;
   call_test_function ();
   [%expect {|
     (test-function (args (1)))
-    (call (result 13)) |}];
+    (call (result 13))
+    |}];
   Advice.add (Advice.of_function advice_name) ~to_function:test_function;
   call_test_function ();
   [%expect
@@ -58,7 +60,8 @@ let%expect_test "" =
     (advice (rest (1)))
     (test-function (args (0 1)))
     (advice (inner_result 13))
-    (call (result 14)) |}];
+    (call (result 14))
+    |}];
   return ()
 ;;
 
@@ -83,31 +86,35 @@ let%expect_test "[around_funcall ~on_parse_error]" =
   test Value.Type.int;
   [%expect {|
     "Advice got called."
-    (call (result -1)) |}];
+    (call (result -1))
+    |}];
   show_raise (fun () -> test Value.Type.string);
   [%expect
     {|
     (raised ((
       "Advice failed to parse its arguments"
-      app/emacs/lib/ecaml/test/test_advice.ml:72:8
+      app/emacs/lib/ecaml/test/test_advice.ml:75:8
       ("unable to convert Elisp value to OCaml value"
        (type_ string)
        (value 1)
-       (exn (wrong-type-argument (stringp 1))))))) |}];
+       (exn (wrong-type-argument (stringp 1)))))))
+    |}];
   show_raise (fun () -> test Value.Type.string ~on_parse_error:Allow_raise);
   [%expect
     {|
     (raised ((
       "Advice failed to parse its arguments"
-      app/emacs/lib/ecaml/test/test_advice.ml:72:8
+      app/emacs/lib/ecaml/test/test_advice.ml:75:8
       ("unable to convert Elisp value to OCaml value"
        (type_ string)
        (value 1)
-       (exn (wrong-type-argument (stringp 1))))))) |}];
+       (exn (wrong-type-argument (stringp 1)))))))
+    |}];
   test Value.Type.string ~on_parse_error:Call_inner_function;
   [%expect {|
     (test-function (args (1)))
-    (call (result 13)) |}];
+    (call (result 13))
+    |}];
   return ()
 ;;
 
@@ -135,7 +142,8 @@ let%expect_test "[around_funcall] with arity mismatch" =
   test Funcall.Wrap.(int @-> return int) (fun _ _ -> advice_body ());
   [%expect {|
     "Advice got called."
-    (call (result -1)) |}];
+    (call (result -1))
+    |}];
   (* requires more arguments than the underlying *)
   show_raise (fun () ->
     test Funcall.Wrap.(int @-> int @-> return int) (fun _ _ _ -> advice_body ()));
@@ -143,11 +151,12 @@ let%expect_test "[around_funcall] with arity mismatch" =
     {|
     (raised ((
       "Advice failed to parse its arguments"
-      app/emacs/lib/ecaml/test/test_advice.ml:127:8
+      app/emacs/lib/ecaml/test/test_advice.ml:134:8
       ("unable to convert Elisp value to OCaml value"
        (type_ int)
        (value nil)
-       (exn (wrong-type-argument (integerp nil))))))) |}];
+       (exn (wrong-type-argument (integerp nil)))))))
+    |}];
   (* permits fewer arguments than the underlying *)
   show_raise (fun () ->
     test Funcall.Wrap.(nullary @-> return int) (fun _ () -> advice_body ()));
@@ -155,8 +164,9 @@ let%expect_test "[around_funcall] with arity mismatch" =
     {|
     (raised ((
       "Advice failed to parse its arguments"
-      app/emacs/lib/ecaml/test/test_advice.ml:127:8
-      ("Extra args." ("arity t" 0) (args (1)))))) |}];
+      app/emacs/lib/ecaml/test/test_advice.ml:134:8
+      ("Extra args." ("arity t" 0) (args (1))))))
+    |}];
   return ()
 ;;
 
@@ -185,12 +195,14 @@ let%expect_test "Async advice" =
     (advice (rest (1)))
     (test-function (args (0 1)))
     (advice (inner_result 13))
-    (call (result 14)) |}];
+    (call (result 14))
+    |}];
   Advice.remove t ~from_function:test_function;
   let%bind () = call_test_function () in
   [%expect {|
     (test-function (args (1)))
-    (call (result 13)) |}];
+    (call (result 13))
+    |}];
   Advice.add (Advice.of_function advice_name) ~to_function:test_function;
   let%bind () = call_test_function () in
   [%expect
@@ -198,6 +210,7 @@ let%expect_test "Async advice" =
     (advice (rest (1)))
     (test-function (args (0 1)))
     (advice (inner_result 13))
-    (call (result 14)) |}];
+    (call (result 14))
+    |}];
   return ()
 ;;

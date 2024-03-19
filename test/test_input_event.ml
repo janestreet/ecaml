@@ -18,7 +18,8 @@ let%expect_test "[create_exn]" =
     (C-<f5> C-<f5>)
     (C-<right> C-<right>)
     (<mouse-2> <mouse-2>)
-    (C-<down-mouse-3> C-<down-mouse-3>) |}];
+    (C-<down-mouse-3> C-<down-mouse-3>)
+    |}];
   return ()
 ;;
 
@@ -29,7 +30,8 @@ let%expect_test "[create_exn] raise" =
     (raised (
       "[Input_event.create_exn] got key sequence not of length one"
       (input        abc)
-      (key_sequence "a b c"))) |}];
+      (key_sequence "a b c")))
+    |}];
   return ()
 ;;
 
@@ -54,7 +56,8 @@ let%expect_test "[basic], [modifiers]" =
     (<mouse-2> (basic (Symbol mouse-2)) (modifiers (Click)))
     (C-<down-mouse-3>
       (basic     (Symbol  mouse-3))
-      (modifiers (Control Down))) |}];
+      (modifiers (Control Down)))
+    |}];
   return ()
 ;;
 
@@ -96,7 +99,8 @@ let%expect_test "[recent_keys]" =
   print_s [%sexp (recent_commands_and_keys () : Command_or_key.t array)];
   [%expect {|
     ((Key a)
-     (Key b)) |}];
+     (Key b))
+    |}];
   let f = "add-recent-command" |> Symbol.intern in
   defun_nullary_nil
     f
@@ -111,6 +115,7 @@ let%expect_test "[recent_keys]" =
   [%expect {|
     ((Key     a)
      (Key     b)
-     (Command add-recent-command)) |}];
+     (Command add-recent-command))
+    |}];
   return ()
 ;;

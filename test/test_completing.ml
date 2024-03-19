@@ -3,7 +3,7 @@ open! Async_kernel
 open! Import
 open! Completing
 
-let collection = Collection.This [ "foo"; "bar"; "baz" ]
+let collection = [ "foo"; "bar"; "baz" ]
 let prompt = ""
 
 let%expect_test "completing_read" =

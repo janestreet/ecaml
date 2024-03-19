@@ -34,7 +34,8 @@ let%expect_test "[standard]" =
      (Symbol_constitutent &*+-/<=>_|)
      (Whitespace          " ")
      (Word_constituent
-      $%0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz)) |}];
+      $%0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz))
+    |}];
   return ()
 ;;
 
@@ -50,7 +51,8 @@ let%expect_test "[create]" =
      (Symbol_constitutent &*+-/<=>_|)
      (Whitespace          " ")
      (Word_constituent
-      $%0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz)) |}];
+      $%0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz))
+    |}];
   return ()
 ;;
 
@@ -66,7 +68,8 @@ let%expect_test "[create]" =
      (Symbol_constitutent &*+-/<=>_|)
      (Whitespace          " ")
      (Word_constituent
-      $%0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz)) |}];
+      $%0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz))
+    |}];
   return ()
 ;;
 

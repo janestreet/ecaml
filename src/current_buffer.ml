@@ -6,7 +6,6 @@ module Q = struct
 
   let add_text_properties = "add-text-properties" |> Symbol.intern
   let put_text_property = "put-text-property" |> Symbol.intern
-  let replace_buffer_contents = "replace-buffer-contents" |> Symbol.intern
   let set_text_properties = "set-text-properties" |> Symbol.intern
 end
 
@@ -34,7 +33,6 @@ let set_auto_mode =
 
 let bury = Funcall.Wrap.("bury-buffer" <: nullary @-> return nil)
 let directory = Buffer_local.Wrap.("default-directory" <: nil_or string)
-let describe_mode = Funcall.Wrap.("describe-mode" <: nullary @-> return nil)
 let set_modified = Funcall.Wrap.("set-buffer-modified-p" <: bool @-> return nil)
 let fill_column = Buffer_local.Wrap.("fill-column" <: int)
 let paragraph_start = Var.Wrap.("paragraph-start" <: Regexp.t)
@@ -369,27 +367,20 @@ let set_revert_buffer_function here returns f =
 ;;
 
 let replace_buffer_contents =
-  if not (Symbol.function_is_defined Q.replace_buffer_contents)
-  then
-    Or_error.error_s
-      [%message "function not defined" ~symbol:(Q.replace_buffer_contents : Symbol.t)]
-  else
-    Ok
-      (let replace_buffer_contents =
-         Funcall.Wrap.(
-           "replace-buffer-contents"
-           <: Buffer.t @-> nil_or float @-> nil_or int @-> return bool)
-       in
-       fun ?max_duration ?max_costs buffer ->
-         (* [replace-buffer-contents] returns true if the replacement was performed
-            non-destructively, or false if that timed out and the delete-and-insert
-            algorithm was used. *)
-         ignore
-           (replace_buffer_contents
-              buffer
-              (Option.map max_duration ~f:Time_ns.Span.to_sec)
-              max_costs
-             : bool))
+  Funcall.Wrap.(
+    "replace-buffer-contents" <: Buffer.t @-> nil_or float @-> nil_or int @-> return bool)
+;;
+
+let replace_buffer_contents ?max_duration ?max_costs buffer =
+  (* [replace-buffer-contents] returns true if the replacement was performed
+     non-destructively, or false if that timed out and the delete-and-insert
+     algorithm was used. *)
+  ignore
+    (replace_buffer_contents
+       buffer
+       (Option.map max_duration ~f:Time_ns.Span.to_sec)
+       max_costs
+      : bool)
 ;;
 
 let size = Funcall.Wrap.("buffer-size" <: nullary @-> return int)

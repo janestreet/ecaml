@@ -28,8 +28,7 @@ let%expect_test "[function_exn] raise" =
   let t = create ~name:"z" in
   show_raise (fun () -> function_exn t);
   [%expect
-    {|
-    (raised ("[Symbol.function_exn] of symbol with no function field" (symbol z))) |}];
+    {| (raised ("[Symbol.function_exn] of symbol with no function field" (symbol z))) |}];
   return ()
 ;;
 
@@ -47,12 +46,14 @@ let%expect_test "[gensym]" =
   print_s [%message (s1 : Symbol.t) (s2 : Symbol.t)];
   [%expect {|
     ((s1 g0)
-     (s2 g1)) |}];
+     (s2 g1))
+    |}];
   let s1 = gensym ~prefix:"jane-ecaml-test-" () in
   let s2 = gensym ~prefix:"jane-ecaml-test-" () in
   print_s [%message (s1 : Symbol.t) (s2 : Symbol.t)];
   [%expect {|
     ((s1 jane-ecaml-test-2)
-     (s2 jane-ecaml-test-3)) |}];
+     (s2 jane-ecaml-test-3))
+    |}];
   return ()
 ;;

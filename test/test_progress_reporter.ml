@@ -16,7 +16,8 @@ let%expect_test "spinner" =
     watering flowers... |
     watering flowers... / tulips
     watering flowers... - roses
-    watering flowers...done |}];
+    watering flowers...done
+    |}];
   return ()
 ;;
 
@@ -37,7 +38,8 @@ let%expect_test "range" =
     watering flowers...33%
     watering flowers...66% tulips
     watering flowers...100% roses
-    watering flowers...done |}];
+    watering flowers...done
+    |}];
   return ()
 ;;
 
@@ -63,6 +65,7 @@ let%expect_test "list" =
     watering flowers...80% #7
     watering flowers...90% #8
     watering flowers...100% #9
-    watering flowers...done |}];
+    watering flowers...done
+    |}];
   return ()
 ;;

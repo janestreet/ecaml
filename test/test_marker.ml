@@ -20,7 +20,8 @@ let%expect_test "[create], accessors" =
     ((marker "#<marker in no buffer>")
      (buffer ())
      (insertion_type Before_inserted_text)
-     (position ())) |}];
+     (position ()))
+    |}];
   return ()
 ;;
 
@@ -33,7 +34,8 @@ let%expect_test "[set_insertion_type]" =
     ((marker "#<marker (moves after insertion) in no buffer>")
      (buffer ())
      (insertion_type After_inserted_text)
-     (position ())) |}];
+     (position ()))
+    |}];
   set_insertion_type t Before_inserted_text;
   show t;
   [%expect
@@ -41,7 +43,8 @@ let%expect_test "[set_insertion_type]" =
     ((marker "#<marker in no buffer>")
      (buffer ())
      (insertion_type Before_inserted_text)
-     (position ())) |}];
+     (position ()))
+    |}];
   return ()
 ;;
 
@@ -56,7 +59,8 @@ let%expect_test "[set]" =
       ((marker "#<marker at 2 in  *temp*>")
        (buffer ("#<buffer  *temp*>"))
        (insertion_type Before_inserted_text)
-       (position (2))) |}];
+       (position (2)))
+      |}];
     Point.goto_char (Point.min ());
     Point.insert "bar";
     show t;
@@ -65,7 +69,8 @@ let%expect_test "[set]" =
       ((marker "#<marker at 5 in  *temp*>")
        (buffer ("#<buffer  *temp*>"))
        (insertion_type Before_inserted_text)
-       (position (5))) |}]);
+       (position (5)))
+      |}]);
   return ()
 ;;
 
@@ -80,7 +85,8 @@ let%expect_test "[copy]" =
       ((marker "#<marker in no buffer>")
        (buffer ())
        (insertion_type Before_inserted_text)
-       (position ())) |}];
+       (position ()))
+      |}];
     Current_buffer.set_marker_position t1 (2 |> Position.of_int_exn);
     show t1;
     [%expect
@@ -88,13 +94,15 @@ let%expect_test "[copy]" =
       ((marker "#<marker at 2 in  *temp*>")
        (buffer ("#<buffer  *temp*>"))
        (insertion_type Before_inserted_text)
-       (position (2))) |}];
+       (position (2)))
+      |}];
     show t2;
     [%expect
       {|
       ((marker "#<marker in no buffer>")
        (buffer ())
        (insertion_type Before_inserted_text)
-       (position ())) |}]);
+       (position ()))
+      |}]);
   return ()
 ;;

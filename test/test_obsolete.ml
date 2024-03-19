@@ -20,20 +20,20 @@ let%expect_test "obsolete functions already defined" =
 
     (foobar-2)
 
-    _ |}];
+    _
+    |}];
   Defun.define_obsolete_alias obsolete [%here] ~alias_of ~since:"now" ();
   print_endline (Help.describe_function_text obsolete);
   [%expect
     {|
     foobar-2 is an alias for `current-function'.
 
+    This function is obsolete since now; use `current-function' instead.
+
     (foobar-2)
 
     <docstring>
-
-
-      This function is obsolete since now;
-      use `current-function' instead. |}];
+    |}];
   Symbol.funcall0_i obsolete;
   [%expect {| (Called (symbol current-function)) |}];
   return ()
@@ -47,13 +47,13 @@ let%expect_test "documentation for obsolete functions" =
     {|
     foobar-2 is an alias for `current-function'.
 
+    This function is obsolete since version X.Y; use `current-function'
+    instead.
+
     (foobar-2)
 
     <docstring>
-
-
-      This function is obsolete since version X.Y;
-      use `current-function' instead. |}];
+    |}];
   Defun.define_obsolete_alias
     obsolete
     [%here]
@@ -66,12 +66,13 @@ let%expect_test "documentation for obsolete functions" =
     {|
     foobar-2 is an alias for `current-function'.
 
+    This function is obsolete since version X.Y; use `current-function'
+    instead.
+
     (foobar-2)
 
     arbitrary docstring
-
-      This function is obsolete since version X.Y;
-      use `current-function' instead. |}];
+    |}];
   Defun.define_obsolete_alias
     obsolete
     [%here]
@@ -84,12 +85,12 @@ let%expect_test "documentation for obsolete functions" =
     {|
     foobar-2 is an alias for `current-function'.
 
+    This function is obsolete since now; use `current-function' instead.
+
     (foobar-2)
 
     arbitrary docstring
-
-      This function is obsolete since now;
-      use `current-function' instead. |}];
+    |}];
   return ()
 ;;
 
@@ -101,13 +102,12 @@ let%expect_test "obsolete functions not yet defined" =
     {|
     foobar is an alias for `current-function'.
 
+    This function is obsolete since now; use `current-function' instead.
+
     (foobar)
 
     <docstring>
-
-
-      This function is obsolete since now;
-      use `current-function' instead. |}];
+    |}];
   (* Later definitions override our obsolete. *)
   defun_nullary_nil obsolete [%here] ~docstring:"_" ~interactive:No_arg (report obsolete);
   print_endline (Help.describe_function_text obsolete);
@@ -115,13 +115,12 @@ let%expect_test "obsolete functions not yet defined" =
     {|
     foobar is an interactive Lisp function.
 
+    This function is obsolete since now; use `current-function' instead.
+
     (foobar)
 
     _
-
-
-      This function is obsolete since now;
-      use `current-function' instead. |}];
+    |}];
   Symbol.funcall0_i obsolete;
   [%expect {| (Called (symbol foobar)) |}];
   return ()
@@ -144,21 +143,22 @@ let%expect_test "obsolete an undefined variable" =
 
     current1 is void as a variable.
 
-    Not documented as a variable. |}];
+    Not documented as a variable.
+    |}];
   make_variable_obsolete obsolete ~current:(Some current) ~since:"now";
   show ();
   [%expect
     {|
     obsolete1 is void as a variable.
 
-    Not documented as a variable.
+    This variable is obsolete since now; use `current1' instead.
 
-      This variable is obsolete since now;
-      use `current1' instead.
+    Not documented as a variable.
 
     current1 is void as a variable.
 
-    Not documented as a variable. |}];
+    Not documented as a variable.
+    |}];
   return ()
 ;;
 
@@ -188,21 +188,22 @@ let%expect_test "obsolete an defined variable" =
 
     current2 is void as a variable.
 
-    Not documented as a variable. |}];
+    Not documented as a variable.
+    |}];
   make_variable_obsolete obsolete ~current:(Some current) ~since:"now";
   show ();
   [%expect
     {|
     obsolete2's value is nil
 
-    an obsolete variable
+    This variable is obsolete since now; use `current2' instead.
 
-      This variable is obsolete since now;
-      use `current2' instead.
+    an obsolete variable
 
     current2 is void as a variable.
 
-    Not documented as a variable. |}];
+    Not documented as a variable.
+    |}];
   return ()
 ;;
 
@@ -224,10 +225,10 @@ let%expect_test "define an obsoleted variable" =
     {|
     obsolete3's value is nil
 
-    an obsolete variable
+    This variable is obsolete since now; use `current3' instead.
 
-      This variable is obsolete since now;
-      use `current3' instead. |}];
+    an obsolete variable
+    |}];
   return ()
 ;;
 
@@ -248,8 +249,9 @@ let%expect_test "define an obsoleted variable with no current replacement" =
     {|
     obsolete4's value is nil
 
-    an obsolete variable
+    This variable is obsolete since now.
 
-      This variable is obsolete since now. |}];
+    an obsolete variable
+    |}];
   return ()
 ;;

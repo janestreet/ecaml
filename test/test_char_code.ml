@@ -30,7 +30,8 @@ let%expect_test "[of_char_exn] raise" =
     (raised (
       "[Char_code.of_char_exn] got non-ASCII character"
       (char "\128")
-      (code 128))) |}];
+      (code 128)))
+    |}];
   return ()
 ;;
 

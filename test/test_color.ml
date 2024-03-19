@@ -87,7 +87,8 @@ let%expect_test "attributes" =
      (rgb (
        (r 65_535)
        (g 65_535)
-       (b 0)))) |}];
+       (b 0))))
+    |}];
   return ()
 ;;
 
@@ -146,6 +147,7 @@ let%expect_test "[of_rgb]" =
      (rgb (
        (r 65_535)
        (g 65_535)
-       (b 65_535)))) |}];
+       (b 65_535))))
+    |}];
   return ()
 ;;

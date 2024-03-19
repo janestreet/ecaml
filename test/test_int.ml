@@ -144,7 +144,8 @@ let%expect_test "[Value.of_int]" =
        Error (
          "validation errors" ((
            overflow-error
-           "value 4_611_686_018_427_387_903 > bound 2_305_843_009_213_693_951")))))) |}];
+           "value 4_611_686_018_427_387_903 > bound 2_305_843_009_213_693_951"))))))
+    |}];
   return ()
 ;;
 
@@ -155,6 +156,7 @@ let%expect_test "ints coming from emacs are not boxed" =
   [%expect {|
     (Value
       (v     123456)
-      (boxed false)) |}];
+      (boxed false))
+    |}];
   return ()
 ;;

@@ -18,15 +18,17 @@ let%expect_test _ =
   Current_buffer.set_value var 3;
   [%expect
     {|
-      ((local_to_buffer ()) (new_value 3) (operation Set)
-       (variable_changed watch-this-variable)) |}];
+    ((local_to_buffer ()) (new_value 3) (operation Set)
+     (variable_changed watch-this-variable))
+    |}];
   Current_buffer.set_value var 6;
   [%expect
     {|
-      ((local_to_buffer ()) (new_value 6) (operation Set)
-       (variable_changed watch-this-variable)) |}];
+    ((local_to_buffer ()) (new_value 6) (operation Set)
+     (variable_changed watch-this-variable))
+    |}];
   remove watcher;
   Current_buffer.set_value var 8;
-  [%expect {||}];
+  [%expect {| |}];
   return ()
 ;;

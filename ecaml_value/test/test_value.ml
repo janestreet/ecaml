@@ -43,12 +43,10 @@ let%expect_test "[sexp_of_t] on a hash table respects [Print.length]" =
   in
   test 1;
   [%expect
-    {|
-      "#s(hash-table size 65 test eql rehash-size 1.5 rehash-threshold 0.8125 data (1 1))" |}];
+    {| "#s(hash-table size 65 test eql rehash-size 1.5 rehash-threshold 0.8125 data (1 1))" |}];
   test 20;
   [%expect
-    {|
-    "#s(hash-table size 65 test eql rehash-size 1.5 rehash-threshold 0.8125 data (1 1 2 2 3 3 4 4 5 5 6 6 7 7 8 8 9 9 10 10 ...))" |}];
+    {| "#s(hash-table size 65 test eql rehash-size 1.5 rehash-threshold 0.8125 data (1 1 2 2 3 3 4 4 5 5 6 6 7 7 8 8 9 9 10 10 ...))" |}];
   return ()
 ;;
 
@@ -94,7 +92,8 @@ let%expect_test "[sexp_of_t] respects [print_level]" =
      ((... ...) (...) nil)
      ((...) nil)
      (nil)
-     nil) |}];
+     nil)
+    |}];
   return ()
 ;;
 
@@ -215,11 +214,13 @@ let%expect_test "[is_window_configuration]" =
 let%expect_test "[of_bool]" =
   List.iter [ true; false ] ~f:(fun bool ->
     print_s [%message (bool : bool) ~value:(bool |> of_bool : t)]);
-  [%expect {|
+  [%expect
+    {|
     ((bool  true)
      (value t))
     ((bool  false)
-     (value nil)) |}];
+     (value nil))
+    |}];
   return ()
 ;;
 
@@ -234,7 +235,8 @@ let%expect_test "[to_bool]" =
     ((value nil)
      (bool  false))
     ((value 13)
-     (bool  true)) |}];
+     (bool  true))
+    |}];
   return ()
 ;;
 
@@ -296,7 +298,8 @@ let%expect_test "[equal]" =
       (0 1 2 3 4)
       (0 1 2 3 4)
       -->
-      true) |}];
+      true)
+    |}];
   return ()
 ;;
 
@@ -420,7 +423,8 @@ let%expect_test "[funcallN_i]" =
     (args (0 1))
     (args (0 1 2))
     (args (0 1 2 3))
-    (args (0 1 2 3 4)) |}];
+    (args (0 1 2 3 4))
+    |}];
   return ()
 ;;
 
@@ -435,27 +439,33 @@ let%expect_test "[funcall{0..5}]" =
   show (funcall0 print_args);
   [%expect {|
     (args ())
-    (result nil) |}];
+    (result nil)
+    |}];
   show (funcall1 print_args v0);
   [%expect {|
     (args (0))
-    (result (0)) |}];
+    (result (0))
+    |}];
   show (funcall2 print_args v0 v1);
   [%expect {|
     (args (0 1))
-    (result (0 1)) |}];
+    (result (0 1))
+    |}];
   show (funcall3 print_args v0 v1 v2);
   [%expect {|
     (args (0 1 2))
-    (result (0 1 2)) |}];
+    (result (0 1 2))
+    |}];
   show (funcall4 print_args v0 v1 v2 v3);
   [%expect {|
     (args (0 1 2 3))
-    (result (0 1 2 3)) |}];
+    (result (0 1 2 3))
+    |}];
   show (funcall5 print_args v0 v1 v2 v3 v4);
   [%expect {|
     (args (0 1 2 3 4))
-    (result (0 1 2 3 4)) |}];
+    (result (0 1 2 3 4))
+    |}];
   return ()
 ;;
 
@@ -546,7 +556,8 @@ let%expect_test "Elisp throw translated into OCaml and back" =
     ("Outer Ecaml function caught exception" (
       Elisp_throw (
         (tag   top-level)
-        (value nil)))) |}];
+        (value nil))))
+    |}];
   return ()
 ;;
 
@@ -624,27 +635,31 @@ let%expect_test "rendering OCaml exceptions in Emacs and OCaml" =
     OCaml:
     (foo)
     Emacs:
-    foo |}];
+    foo
+    |}];
   test [%message "foo"] ~debug_on_error:true;
   [%expect
     {|
     OCaml:
     ((foo (backtrace ("<backtrace elided in test>"))))
     Emacs:
-    (foo (backtrace ("<backtrace elided in test>"))) |}];
+    (foo (backtrace ("<backtrace elided in test>")))
+    |}];
   test [%message "foo" "bar"];
   [%expect {|
     OCaml:
     ((foo bar))
     Emacs:
-    (foo bar) |}];
+    (foo bar)
+    |}];
   test [%message "foo" "bar"] ~debug_on_error:true;
   [%expect
     {|
     OCaml:
     (((foo bar) (backtrace ("<backtrace elided in test>"))))
     Emacs:
-    ((foo bar) (backtrace ("<backtrace elided in test>"))) |}];
+    ((foo bar) (backtrace ("<backtrace elided in test>")))
+    |}];
   test (List (List.init 15 ~f:(fun i -> Sexp.Atom ("foobar" ^ Int.to_string i))));
   [%expect
     {|
@@ -667,7 +682,8 @@ let%expect_test "rendering OCaml exceptions in Emacs and OCaml" =
       foobar14))
     Emacs:
     (foobar0 foobar1 foobar2 foobar3 foobar4 foobar5 foobar6 foobar7 foobar8
-     foobar9 foobar10 foobar11 foobar12 foobar13 foobar14) |}];
+     foobar9 foobar10 foobar11 foobar12 foobar13 foobar14)
+    |}];
   return ()
 ;;
 
@@ -693,55 +709,68 @@ module Type = struct
     test true bool;
     [%expect {|
       ((v1 t)
-       (v2 t)) |}];
+       (v2 t))
+      |}];
     test false bool;
     [%expect {|
       ((v1 nil)
-       (v2 nil)) |}];
+       (v2 nil))
+      |}];
     test 13 int;
     [%expect {|
       ((v1 13)
-       (v2 13)) |}];
+       (v2 13))
+      |}];
     test "foo" string;
     [%expect {|
       ((v1 foo)
-       (v2 foo)) |}];
+       (v2 foo))
+      |}];
     test None (nil_or int);
     [%expect {|
       ((v1 nil)
-       (v2 nil)) |}];
+       (v2 nil))
+      |}];
     test (Some 13) (nil_or int);
     [%expect {|
       ((v1 13)
-       (v2 13)) |}];
+       (v2 13))
+      |}];
     test None (option int);
     [%expect {|
       ((v1 nil)
-       (v2 nil)) |}];
+       (v2 nil))
+      |}];
     test (Some 13) (option int);
     [%expect {|
       ((v1 (13))
-       (v2 (13))) |}];
+       (v2 (13)))
+      |}];
     test None (option bool);
     [%expect {|
       ((v1 nil)
-       (v2 nil)) |}];
+       (v2 nil))
+      |}];
     test (Some false) (option bool);
     [%expect {|
       ((v1 (nil))
-       (v2 (nil))) |}];
+       (v2 (nil)))
+      |}];
     test [] (list int);
     [%expect {|
       ((v1 nil)
-       (v2 nil)) |}];
+       (v2 nil))
+      |}];
     test [ 13; 14 ] (list int);
     [%expect {|
       ((v1 (13 14))
-       (v2 (13 14))) |}];
+       (v2 (13 14)))
+      |}];
     test [ [ "foo" ] ] (list (list string));
     [%expect {|
       ((v1 ((foo)))
-       (v2 ((foo)))) |}];
+       (v2 ((foo))))
+      |}];
     return ()
   ;;
 end

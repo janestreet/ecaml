@@ -110,7 +110,8 @@ let%expect_test "sexpable value in a var" =
      (var (
        ((a bar)
         (b 2))
-       "#<marker (moves after insertion) at 6 in buf2>"))) |}];
+       "#<marker (moves after insertion) at 6 in buf2>")))
+    |}];
   return ()
 ;;
 
@@ -140,7 +141,8 @@ let%expect_test "caml_embed value" =
        (value nil)
        (exn (
          "[Caml_embed.ecaml_project]: tried to project something that's not a user pointer"
-         nil))))) |}];
+         nil)))))
+    |}];
   let orig : A.t = { a = "Foo"; b = 100 } in
   Current_buffer.set_value t orig;
   let from_emacs = Current_buffer.value_exn t in
@@ -151,6 +153,7 @@ let%expect_test "caml_embed value" =
     {|
     ((orig       ((a Foo) (b 100)))
      (from_emacs ((a Foo) (b 100)))
-     (phys_equal true)) |}];
+     (phys_equal true))
+    |}];
   return ()
 ;;

@@ -40,15 +40,17 @@ let%expect_test "[defun]" =
       (i 1)
       (s two)
       (s_o (three))
-      (rest (four five))) |}];
+      (rest (four five)))
+    |}];
   print_endline (Help.describe_function_text ~obscure_symbol:true symbol);
   [%expect
     {|
-<SYMBOL> is a Lisp function.
+    <SYMBOL> is a Lisp function.
 
-(<SYMBOL> INT STRING &optional STRING-OPTIONAL &rest REST)
+    (<SYMBOL> INT STRING &optional STRING-OPTIONAL &rest REST)
 
-Returns its own arguments as a sexp. |}];
+    Returns its own arguments as a sexp.
+    |}];
   return ()
 ;;
 
@@ -87,15 +89,16 @@ let%expect_test "[defun] tuple ordering" =
   print_funcallN
     symbol
     [ (2 |> Value.Type.(int |> to_value)); (1 |> Value.Type.(int |> to_value)) ];
-  [%expect {|
-    (difference 1) |}];
+  [%expect {| (difference 1) |}];
   print_endline (Help.describe_function_text ~obscure_symbol:true symbol);
-  [%expect {|
-<SYMBOL> is a Lisp function.
+  [%expect
+    {|
+    <SYMBOL> is a Lisp function.
 
-(<SYMBOL> MINUEND SUBTRAHEND)
+    (<SYMBOL> MINUEND SUBTRAHEND)
 
-<docstring> |}];
+    <docstring>
+    |}];
   return ()
 ;;
 
@@ -165,7 +168,8 @@ let%expect_test "[defun] type errors in required, optional, and rest arguments" 
       ("unable to convert Elisp value to OCaml value"
        (type_ int)
        (value foo)
-       (exn (wrong-type-argument (integerp foo)))))) |}];
+       (exn (wrong-type-argument (integerp foo))))))
+    |}];
   test Defun.optional;
   [%expect
     {|
@@ -181,7 +185,8 @@ let%expect_test "[defun] type errors in required, optional, and rest arguments" 
          "unable to convert Elisp value to OCaml value"
          (type_ int)
          (value foo)
-         (exn (wrong-type-argument (integerp foo)))))))) |}];
+         (exn (wrong-type-argument (integerp foo))))))))
+    |}];
   test Defun.rest;
   [%expect
     {|
@@ -193,7 +198,8 @@ let%expect_test "[defun] type errors in required, optional, and rest arguments" 
       ("unable to convert Elisp value to OCaml value"
        (type_ int)
        (value foo)
-       (exn (wrong-type-argument (integerp foo)))))) |}];
+       (exn (wrong-type-argument (integerp foo))))))
+    |}];
   return ()
 ;;
 
@@ -233,6 +239,6 @@ let%expect_test "[defalias]" =
     Return sum of any number of arguments, which are numbers or markers.
 
       Probably introduced at or before Emacs version 1.6.
-      This function does not change global state, including the match data. |}];
+    |}];
   return ()
 ;;

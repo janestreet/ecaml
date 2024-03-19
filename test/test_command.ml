@@ -25,8 +25,7 @@ let%expect_test "[Raw_prefix_argument]" =
            ~raw_prefix_argument:
              (arg |> Raw_prefix_argument.of_value_exn : Raw_prefix_argument.t)]);
   is_command (f |> Symbol.to_value);
-  [%expect {|
-    true |}];
+  [%expect {| true |}];
   let%bind () =
     Deferred.List.iter
       ~how:`Sequential
@@ -58,7 +57,8 @@ let%expect_test "[Raw_prefix_argument]" =
     (prefix_arg -)
     ((arg                 -)
      (for_current_command Minus)
-     (raw_prefix_argument Minus)) |}];
+     (raw_prefix_argument Minus))
+    |}];
   return ()
 ;;
 

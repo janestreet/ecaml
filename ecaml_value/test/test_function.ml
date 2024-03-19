@@ -33,7 +33,8 @@ let%expect_test "mutual recursion between Emacs and OCaml" =
     (i 3)
     (i 2)
     (i 1)
-    (result 5) |}];
+    (result 5)
+    |}];
   return ()
 ;;
 
@@ -139,7 +140,8 @@ let%expect_test "raising from OCaml to OCaml through many layers of Emacs" =
   [%expect
     {|
     (((foo bar baz) (backtrace ("<backtrace elided in test>")))
-     (backtrace "<backtrace elided in test>")) |}];
+     (backtrace "<backtrace elided in test>"))
+    |}];
   return ()
 ;;
 
@@ -179,7 +181,8 @@ let%expect_test "function descriptions" =
 
     (test-function)
 
-    Implemented at [app/emacs/lib/ecaml_value/test/test_function.ml:LINE:COL]. |}];
+    Implemented at [app/emacs/lib/ecaml_value/test/test_function.ml:LINE:COL].
+    |}];
   describe () ~args:[ x ];
   [%expect
     {|
@@ -187,7 +190,8 @@ let%expect_test "function descriptions" =
 
     (test-function X)
 
-    Implemented at [app/emacs/lib/ecaml_value/test/test_function.ml:LINE:COL]. |}];
+    Implemented at [app/emacs/lib/ecaml_value/test/test_function.ml:LINE:COL].
+    |}];
   describe () ~args:[ x; y ];
   [%expect
     {|
@@ -195,7 +199,8 @@ let%expect_test "function descriptions" =
 
     (test-function X Y)
 
-    Implemented at [app/emacs/lib/ecaml_value/test/test_function.ml:LINE:COL]. |}];
+    Implemented at [app/emacs/lib/ecaml_value/test/test_function.ml:LINE:COL].
+    |}];
   describe () ~args:[] ~rest_arg:x;
   [%expect
     {|
@@ -203,7 +208,8 @@ let%expect_test "function descriptions" =
 
     (test-function &rest X)
 
-    Implemented at [app/emacs/lib/ecaml_value/test/test_function.ml:LINE:COL]. |}];
+    Implemented at [app/emacs/lib/ecaml_value/test/test_function.ml:LINE:COL].
+    |}];
   describe () ~args:[ x ] ~rest_arg:y;
   [%expect
     {|
@@ -211,7 +217,8 @@ let%expect_test "function descriptions" =
 
     (test-function X &rest Y)
 
-    Implemented at [app/emacs/lib/ecaml_value/test/test_function.ml:LINE:COL]. |}];
+    Implemented at [app/emacs/lib/ecaml_value/test/test_function.ml:LINE:COL].
+    |}];
   describe () ~args:[] ~optional_args:[ x ];
   [%expect
     {|
@@ -219,7 +226,8 @@ let%expect_test "function descriptions" =
 
     (test-function &optional X)
 
-    Implemented at [app/emacs/lib/ecaml_value/test/test_function.ml:LINE:COL]. |}];
+    Implemented at [app/emacs/lib/ecaml_value/test/test_function.ml:LINE:COL].
+    |}];
   describe () ~args:[] ~optional_args:[ x; y ];
   [%expect
     {|
@@ -227,7 +235,8 @@ let%expect_test "function descriptions" =
 
     (test-function &optional X Y)
 
-    Implemented at [app/emacs/lib/ecaml_value/test/test_function.ml:LINE:COL]. |}];
+    Implemented at [app/emacs/lib/ecaml_value/test/test_function.ml:LINE:COL].
+    |}];
   describe () ~docstring:"custom doc" ~args:[ w ] ~optional_args:[ x; y ] ~rest_arg:z;
   [%expect
     {|
@@ -237,7 +246,8 @@ let%expect_test "function descriptions" =
 
     Custom doc
 
-    Implemented at [app/emacs/lib/ecaml_value/test/test_function.ml:LINE:COL]. |}];
+    Implemented at [app/emacs/lib/ecaml_value/test/test_function.ml:LINE:COL].
+    |}];
   return ()
 ;;
 
@@ -301,7 +311,8 @@ let%expect_test "raise in dispatch" =
     {|
     ("Ecaml callback handling raised"
      (exn "Function.Expert.raise_in_dispatch set"))
-    (raised (uncaught-ocaml-exception Fdispatch)) |}];
+    (raised (uncaught-ocaml-exception Fdispatch))
+    |}];
   return ()
 ;;
 

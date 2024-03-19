@@ -97,6 +97,14 @@ module Property_name : sig
   val after_string : text t
   val before_string : text t
   val invisible : Value.t t
+
+  (** value automatically displayed by Emacs on mouse-over *)
+  val help_echo : string t
+
+  (** value automatically displayed by Emacs when text at point has the property, if
+      [help-at-pt-display-when-idle] is enabled *)
+  val kbd_help : string t
+
   val name : _ t -> Symbol.t
   val name_as_value : _ t -> Value.t
   val to_value : 'a t -> 'a -> Value.t

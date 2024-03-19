@@ -93,7 +93,8 @@ let%expect_test "Non-async profile" =
           ( 20%   100_000us non_async_profile)
           ( 40%   200_000us gap)))
        ( 20%   200_000us bar)
-       ( 10%   100_000us gap))) |}];
+       ( 10%   100_000us gap)))
+    |}];
   return ()
 ;;
 
@@ -108,7 +109,8 @@ let%expect_test "profile_async" =
           ( 20%   100_000us non_async_profile)
           ( 40%   200_000us gap)))
        ( 20%   200_000us bar)
-       ( 10%   100_000us gap))) |}];
+       ( 10%   100_000us gap)))
+    |}];
   return ()
 ;;
 
@@ -133,7 +135,8 @@ let%expect_test "bad call to profile_async" =
     {|
     ("Nested [profile Async] exited out-of-order." (message outer)
      (pending_children 1))
-    (110_000us [1 pending child] outer "1970-01-01 00:00:02Z") |}];
+    (110_000us [1 pending child] outer "1970-01-01 00:00:02Z")
+    |}];
   (* The child exiting at this point will not lead to any output. *)
   Ivar.fill_exn child_exits ();
   let%bind () = Scheduler.yield_until_no_jobs_remain () in
@@ -149,7 +152,8 @@ let%expect_test "bad call to profile_async" =
           ( 20%   100_000us non_async_profile)
           ( 40%   200_000us gap)))
        ( 20%   200_000us bar)
-       ( 10%   100_000us gap))) |}];
+       ( 10%   100_000us gap)))
+    |}];
   return ()
 ;;
 
@@ -183,7 +187,8 @@ let%expect_test "parallel calls to profile_async" =
        ( 45% 100_000us gap)
        (  9%  20_000us inner-a)
        (  9%  20_000us inner-b)
-       ( 45% 100_000us gap))) |}];
+       ( 45% 100_000us gap)))
+    |}];
   return ()
 ;;
 
@@ -206,7 +211,8 @@ let%expect_test "inner ends after outer ends" =
     {|
     ("Nested [profile Async] exited out-of-order." (message outer)
      (pending_children 1))
-    (100_000us [1 pending child] outer "1970-01-01 00:00:03.33Z") |}];
+    (100_000us [1 pending child] outer "1970-01-01 00:00:03.33Z")
+    |}];
   return ()
 ;;
 
@@ -217,7 +223,8 @@ let%expect_test "hide_if_less_than" =
     (1_000_000us foo "1970-01-01 00:00:03.43Z" (
        ( 20%   200_000us gap)
        ( 50%   500_000us baz)
-       ( 30%   300_000us gap))) |}];
+       ( 30%   300_000us gap)))
+    |}];
   return ()
 ;;
 
@@ -228,7 +235,8 @@ let%expect_test "hide_if_less_than async" =
     (1_000_000us foo "1970-01-01 00:00:04.43Z" (
        ( 20%   200_000us gap)
        ( 50%   500_000us baz)
-       ( 30%   300_000us gap))) |}];
+       ( 30%   300_000us gap)))
+    |}];
   return ()
 ;;
 
@@ -252,7 +260,8 @@ let%expect_test "calling [profile] within [output_profile]" =
     {|
     function supplied to [profile] ran
     function supplied to [profile] ran
-    (1_000_000us context "1970-01-01 00:00:05.43Z") |}];
+    (1_000_000us context "1970-01-01 00:00:05.43Z")
+    |}];
   return ()
 ;;
 
@@ -270,7 +279,8 @@ let%expect_test "calling [profile] within the [Sexp.t Lazy.t] supplied to [profi
     outer call
     function supplied to [profile] ran
     ((rendering_took 1_000_000us)
-     (1_000_000us "outer context" "1970-01-01 00:00:07.43Z")) |}];
+     (1_000_000us "outer context" "1970-01-01 00:00:07.43Z"))
+    |}];
   return ()
 ;;
 
@@ -280,8 +290,7 @@ let%expect_test "long line" =
       Sync
       (lazy [%sexp "more than ten characters"])
       (fun () -> advance_clock_by (sec 1.)));
-  [%expect {|
-    (1_000_000us ... "1970-01-01 00:00:09.43Z") |}];
+  [%expect {| (1_000_000us ... "1970-01-01 00:00:09.43Z") |}];
   return ()
 ;;
 
@@ -296,7 +305,8 @@ let%expect_test "zero time" =
     {|
     ((rendering_took 0us)
      (0us outer "1970-01-01 00:00:10.43Z" (
-       (  _% 0us inner)))) |}];
+       (  _% 0us inner))))
+    |}];
   return ()
 ;;
 
@@ -305,7 +315,8 @@ let%expect_test "[start_location := Line_preceding_profile]" =
     profile Sync (lazy [%sexp "foo"]) (fun () -> advance_clock_by (sec 1.)));
   [%expect {|
     ("1970-01-01 00:00:10.43Z"
-     (1_000_000us foo)) |}];
+     (1_000_000us foo))
+    |}];
   return ()
 ;;
 
@@ -332,8 +343,7 @@ let%expect_test "[sexp_of_time_ns] that raises" =
       (fun _ -> raise_s [%message "raising"])
       ~f:profile_sync);
   [%expect
-    {|
-    (1_000_000us foo ("[Profile.sexp_of_time_ns] raised"(exn raising)(backtrace("<backtrace elided in test>")))) |}];
+    {| (1_000_000us foo ("[Profile.sexp_of_time_ns] raised"(exn raising)(backtrace("<backtrace elided in test>")))) |}];
   return ()
 ;;
 
@@ -346,7 +356,8 @@ let%expect_test "[output_profile] that raises" =
   [%expect
     {|
     ("[Profile.output_profile] raised" (exn raising)
-     (backtrace ("<backtrace elided in test>"))) |}];
+     (backtrace ("<backtrace elided in test>")))
+    |}];
   return ()
 ;;
 
@@ -357,8 +368,7 @@ let%expect_test "[profile] message that raises" =
       (lazy (raise_s [%message "raising"]))
       (fun () -> advance_clock_by (sec 1.)));
   [%expect
-    {|
-    (1_000_000us ("[Profile.profile] message raised" (exn raising) (backtrace ("<backtrace elided in test>"))) "1970-01-01 00:00:13.43Z") |}];
+    {| (1_000_000us ("[Profile.profile] message raised" (exn raising) (backtrace ("<backtrace elided in test>"))) "1970-01-01 00:00:13.43Z") |}];
   return ()
 ;;
 
@@ -383,12 +393,14 @@ let%expect_test "[backtrace]" =
   [%expect
     {|
     ("Backtrace from inner function" (("Inner profile" "Outer profile")))
-    ("Backtrace from outer function" (("Outer profile"))) |}];
+    ("Backtrace from outer function" (("Outer profile")))
+    |}];
   test_backtrace ~should_profile:false;
   [%expect
     {|
     ("Backtrace from inner function" ())
-    ("Backtrace from outer function" ()) |}];
+    ("Backtrace from outer function" ())
+    |}];
   return ()
 ;;
 
@@ -397,7 +409,8 @@ let%expect_test "[tag_frames_with]" =
   [%expect
     {|
     function supplied to [profile] ran
-    (1_000_000us context "1970-01-01 00:00:14.43Z") |}];
+    (1_000_000us context "1970-01-01 00:00:14.43Z")
+    |}];
   Ref.set_temporarily
     tag_frames_with
     (Some (fun _ -> Some (Atom "hello world")))
@@ -405,7 +418,8 @@ let%expect_test "[tag_frames_with]" =
   [%expect
     {|
     function supplied to [profile] ran
-    (1_000_000us (context "hello world") "1970-01-01 00:00:15.43Z") |}];
+    (1_000_000us (context "hello world") "1970-01-01 00:00:15.43Z")
+    |}];
   return ()
 ;;
 
@@ -422,8 +436,7 @@ let%expect_test "[tag_frames_with] runs before f" =
           incr some_int;
           advance_clock_by (sec 1.)));
   [%expect
-    {|
-      (1_000_000us ("Increment some_int" ((some_int 0))) "1970-01-01 00:00:16.43Z") |}];
+    {| (1_000_000us ("Increment some_int" ((some_int 0))) "1970-01-01 00:00:16.43Z") |}];
   return ()
 ;;
 
@@ -435,7 +448,8 @@ let%expect_test "[tag_frames_with] raises" =
   [%expect
     {|
     function supplied to [profile] ran
-    (1_000_000us (context ("[Profile.tag_frames_with] raised" (exn "Hello world") (backtrace ("<backtrace elided in test>")))) "1970-01-01 00:00:17.43Z") |}];
+    (1_000_000us (context ("[Profile.tag_frames_with] raised" (exn "Hello world") (backtrace ("<backtrace elided in test>")))) "1970-01-01 00:00:17.43Z")
+    |}];
   return ()
 ;;
 

@@ -11,11 +11,17 @@ let%expect_test "[of_symbol]" =
   [%expect
     {|
     (custom-group (
-      (x-dnd-test-function custom-variable)
-      (x-dnd-types-alist   custom-variable)
-      (x-dnd-known-types   custom-variable)
-      (x-gtk-stock-map     custom-variable)
-      (icon-map-list       custom-variable))) |}];
+      (lost-selection-mode        custom-variable)
+      (x-dnd-test-function        custom-variable)
+      (x-dnd-types-alist          custom-variable)
+      (x-dnd-known-types          custom-variable)
+      (x-dnd-use-offix-drop       custom-variable)
+      (x-dnd-direct-save-function custom-variable)
+      (x-dnd-copy-types           custom-variable)
+      (x-gtk-stock-map            custom-variable)
+      (icon-map-list              custom-variable)
+      (x-display-cursor-at-start-of-preedit-string custom-variable)))
+    |}];
   return ()
 ;;
 

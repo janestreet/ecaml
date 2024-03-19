@@ -20,7 +20,8 @@ let%expect_test "[global], [lookup_key_exn]" =
     (C-c (Keymap mode-specific-command-prefix))
     ("C-x C-a" Absent)
     ("C-x C-f" (Command find-file))
-    (ESC (Keymap ESC-prefix)) |}];
+    (ESC (Keymap ESC-prefix))
+    |}];
   return ()
 ;;
 
@@ -35,12 +36,10 @@ let%expect_test "[define_key]" =
   let t = create () in
   define_key t "a" (Symbol ("zzz" |> Symbol.intern));
   show t;
-  [%expect {|
-    (keymap (97 . zzz)) |}];
+  [%expect {| (keymap (97 . zzz)) |}];
   define_key t "bc" (Symbol ("yyy" |> Symbol.intern));
   show t;
-  [%expect {|
-    (keymap (98 keymap (99 . yyy)) (97 . zzz)) |}];
+  [%expect {| (keymap (98 keymap (99 . yyy)) (97 . zzz)) |}];
   define_key t "bd" Undefined;
   show t;
   [%expect
@@ -49,15 +48,14 @@ let%expect_test "[define_key]" =
       (98 keymap
         (100 . undefined)
         (99  . yyy))
-      (97 . zzz)) |}];
+      (97 . zzz))
+    |}];
   define_key t "bd" Absent;
   show t;
-  [%expect {|
-    (keymap (98 keymap (100) (99 . yyy)) (97 . zzz)) |}];
+  [%expect {| (keymap (98 keymap (100) (99 . yyy)) (97 . zzz)) |}];
   define_key t "b" Absent;
   show t;
-  [%expect {|
-    (keymap (98) (97 . zzz)) |}];
+  [%expect {| (keymap (98) (97 . zzz)) |}];
   return ()
 ;;
 
@@ -68,7 +66,8 @@ let%expect_test "[lookup_key_exn] too long" =
     (raised (
       "[Keymap.lookup_key] got too long key sequence"
       (key_sequence "a b")
-      (valid_prefix a))) |}];
+      (valid_prefix a)))
+    |}];
   return ()
 ;;
 
@@ -112,6 +111,7 @@ let%expect_test "[create ~kind:Full ()]" =
   [%expect
     {|
     (keymap
-     "#^[nil nil keymap nil nil nil nil nil nil nil nil nil nil nil nil nil nil nil nil nil nil nil nil nil nil nil nil nil nil nil nil nil nil nil nil nil nil nil nil nil nil nil nil nil nil nil nil nil nil nil nil nil nil nil nil nil nil nil nil nil nil nil nil nil nil nil nil nil]") |}];
+     "#^[nil nil keymap nil nil nil nil nil nil nil nil nil nil nil nil nil nil nil nil nil nil nil nil nil nil nil nil nil nil nil nil nil nil nil nil nil nil nil nil nil nil nil nil nil nil nil nil nil nil nil nil nil nil nil nil nil nil nil nil nil nil nil nil nil nil nil nil nil]")
+    |}];
   return ()
 ;;

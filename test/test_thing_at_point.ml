@@ -29,8 +29,7 @@ let%expect_test "[find], [bounds]" =
     test ~thing:alpha_or_bang;
     [%expect {| (This) |}];
     test ~thing:number;
-    [%expect {|
-      () |}];
+    [%expect {| () |}];
     Point.forward_char_exn 16;
     (* the "u" in "buffer" *)
     test ~thing:Word;
@@ -53,21 +52,24 @@ let%expect_test "[forward], [beginning], [beginning_exn], [end_], [end_exn]" =
     [%expect
       {|
       │This is/a test!buffer with
-      various|things to match*against |}];
+      various|things to match*against
+      |}];
     print_s [%sexp (forward Word : bool)];
     [%expect {| true |}];
     show_point ();
     [%expect
       {|
       This│ is/a test!buffer with
-      various|things to match*against |}];
+      various|things to match*against
+      |}];
     print_s [%sexp (forward ~n:2 Word : bool)];
     show_point ();
     [%expect
       {|
       true
       This is/a│ test!buffer with
-      various|things to match*against |}];
+      various|things to match*against
+      |}];
     (* Sadly, (forward-thing 'filename) is broken, at least as of GNU Emacs 25.3.1. *)
     show_raise (fun () ->
       ignore (forward alpha_or_bang : bool);
@@ -79,38 +81,44 @@ let%expect_test "[forward], [beginning], [beginning_exn], [end_], [end_exn]" =
     [%expect
       {|
       This is/a test│!buffer with
-      various|things to match*against |}];
+      various|things to match*against
+      |}];
     print_s [%sexp (end_ Word : bool)];
-    [%expect {|true|}];
+    [%expect {| true |}];
     show_point ();
     [%expect
       {|
       This is/a test│!buffer with
-      various|things to match*against |}];
+      various|things to match*against
+      |}];
     beginning_exn Word;
     show_point ();
     [%expect
       {|
       This is/a │test!buffer with
-      various|things to match*against |}];
+      various|things to match*against
+      |}];
     end_exn alpha_or_bang;
     show_point ();
     [%expect
       {|
       This is/a test!buffer│ with
-      various|things to match*against |}];
+      various|things to match*against
+      |}];
     print_s [%sexp (beginning alpha_or_bang : bool)];
-    [%expect {|true|}];
+    [%expect {| true |}];
     show_point ();
     [%expect
       {|
       This is/a │test!buffer with
-      various|things to match*against |}];
+      various|things to match*against
+      |}];
     beginning_exn alpha_or_bang;
     show_point ();
     [%expect
       {|
       This is/a │test!buffer with
-      various|things to match*against |}]);
+      various|things to match*against
+      |}]);
   return ()
 ;;

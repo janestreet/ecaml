@@ -27,28 +27,32 @@ let%expect_test "[add]" =
     {|
     ((symbol    some-hook)
      (hook_type Normal_hook)
-     (value (()))) |}];
+     (value (())))
+    |}];
   add t f1;
   show t;
   [%expect
     {|
     ((symbol    some-hook)
      (hook_type Normal_hook)
-     (value ((f1)))) |}];
+     (value ((f1))))
+    |}];
   add t f2;
   show t;
   [%expect
     {|
     ((symbol    some-hook)
      (hook_type Normal_hook)
-     (value ((f2 f1)))) |}];
+     (value ((f2 f1))))
+    |}];
   add t f3 ~where:End;
   show t;
   [%expect
     {|
     ((symbol    some-hook)
      (hook_type Normal_hook)
-     (value ((f2 f1 f3)))) |}];
+     (value ((f2 f1 f3))))
+    |}];
   clear t;
   return ()
 ;;
@@ -61,7 +65,8 @@ let%expect_test "[add] when present" =
     {|
     ((symbol    some-hook)
      (hook_type Normal_hook)
-     (value ((f1)))) |}];
+     (value ((f1))))
+    |}];
   clear t;
   return ()
 ;;
@@ -74,21 +79,24 @@ let%expect_test "[remove]" =
     {|
     ((symbol    some-hook)
      (hook_type Normal_hook)
-     (value ((f1 f2)))) |}];
+     (value ((f1 f2))))
+    |}];
   remove t f2;
   show t;
   [%expect
     {|
     ((symbol    some-hook)
      (hook_type Normal_hook)
-     (value ((f1)))) |}];
+     (value ((f1))))
+    |}];
   remove t f1;
   show t;
   [%expect
     {|
     ((symbol    some-hook)
      (hook_type Normal_hook)
-     (value (()))) |}];
+     (value (())))
+    |}];
   clear t;
   return ()
 ;;
@@ -100,21 +108,24 @@ let%expect_test "[remove] when absent" =
     {|
     ((symbol    some-hook)
      (hook_type Normal_hook)
-     (value (()))) |}];
+     (value (())))
+    |}];
   add t f2;
   show t;
   [%expect
     {|
     ((symbol    some-hook)
      (hook_type Normal_hook)
-     (value ((f2)))) |}];
+     (value ((f2))))
+    |}];
   remove t f1;
   show t;
   [%expect
     {|
     ((symbol    some-hook)
      (hook_type Normal_hook)
-     (value ((f2)))) |}];
+     (value ((f2))))
+    |}];
   clear t;
   return ()
 ;;
@@ -128,7 +139,8 @@ let%expect_test "[run]" =
   let%bind () = run t in
   [%expect {|
     f2
-    f1 |}];
+    f1
+    |}];
   return ()
 ;;
 
@@ -154,11 +166,13 @@ let%expect_test "[after_load] hooks" =
   [%expect {|
     f2
     after_load one_shot hook
-    f1 |}];
+    f1
+    |}];
   let%bind () = Load.load ~message:false file in
   [%expect {|
     f2
-    f1 |}];
+    f1
+    |}];
   remove after_load f1;
   remove after_load f2;
   return ()
@@ -203,8 +217,7 @@ let%expect_test "[after_save], [kill_buffer]" =
        (Returns Value.Type.unit)
        (fun () -> print_s [%message "after-save hook ran"]));
   print_s [%sexp (Current_buffer.is_buffer_local (var after_save) : bool)];
-  [%expect {|
-      true |}];
+  [%expect {| true |}];
   add
     kill_buffer
     ~buffer_local:true
@@ -250,6 +263,7 @@ let%expect_test "hook raise" =
   [%expect
     {|
     ("Error in hook" hook-raise1 raise1)
-    ("Error in hook" hook-raise2 raise2) |}];
+    ("Error in hook" hook-raise2 raise2)
+    |}];
   return ()
 ;;

@@ -49,8 +49,7 @@ let%expect_test "[block_on_async] with a quit" =
       Or_error.try_with Funcall.Wrap.(fname <: nullary @-> return nil))
   in
   print_s [%sexp (quit : _ Or_error.t)];
-  [%expect {|
-    (Error quit) |}];
+  [%expect {| (Error quit) |}];
   return ()
 ;;
 
@@ -67,7 +66,8 @@ let%expect_test "Nested calls to block_on_async raise" =
          (created_at _))
         ((here app/emacs/lib/ecaml/src/async_ecaml.ml:LINE:COL)
          (context    Expect_test_config.run)
-         (created_at _)))))) |}];
+         (created_at _))))))
+    |}];
   return ()
 ;;
 
@@ -91,7 +91,8 @@ let%expect_test "Nested calls to block_on_async include Nested_profile backtrace
         ((here app/emacs/lib/ecaml/src/async_ecaml.ml:LINE:COL)
          (context    Expect_test_config.run)
          (created_at _))))
-      (profile_backtrace ("Some badly-behaved function")))) |}];
+      (profile_backtrace ("Some badly-behaved function"))))
+    |}];
   return ()
 ;;
 
@@ -111,8 +112,7 @@ let%expect_test "[defun (Returns_deferred Value.Type.(deferred unit))] where bod
     Async_ecaml.Private.run_outside_async [%here] (fun () ->
       Value.funcall0_i (symbol |> Symbol.to_value))
   in
-  [%expect {|
-    ran |}];
+  [%expect {| ran |}];
   return ()
 ;;
 
@@ -131,8 +131,7 @@ let%expect_test "[defun (Returns_deferred Value.Type.(deferred unit))] where bod
       try Value.funcall0_i (symbol |> Symbol.to_value) with
       | exn -> message_s [%message "caught" (exn : exn)])
   in
-  [%expect {|
-    (caught (exn (ran))) |}];
+  [%expect {| (caught (exn (ran))) |}];
   return ()
 ;;
 
@@ -154,7 +153,8 @@ let%expect_test "defun returning non-unit deferred" =
   print_s [%sexp (output : int)];
   [%expect {|
     ran
-    23 |}];
+    23
+    |}];
   return ()
 ;;
 
@@ -179,7 +179,8 @@ let%expect_test "Nested calls to block_on_async raise, even via elisp" =
          (created_at _))
         ((here app/emacs/lib/ecaml/src/async_ecaml.ml:LINE:COL)
          (context    Expect_test_config.run)
-         (created_at _))))))) |}];
+         (created_at _)))))))
+    |}];
   return ()
 ;;
 
@@ -201,13 +202,14 @@ let%expect_test "raising to a try-with that has already returned" =
     [%expect
       {|
       ("Exception raised to [Monitor.try_with] that already returned."
-       (monitor.ml.Error raising ("<backtrace elided in test>"))) |}];
+       (monitor.ml.Error raising ("<backtrace elided in test>")))
+      |}];
     return ()
 ;;
 
 let%expect_test "assert_foreground" =
   Background.assert_foreground [%here] ~message:[%message "should not raise"];
-  [%expect {||}];
+  [%expect {| |}];
   let%bind () =
     Deferred.create (fun background_job_complete ->
       Background.don't_wait_for [%here] (fun () ->
@@ -222,7 +224,8 @@ let%expect_test "assert_foreground" =
       "Assertion failed -- running in background job"
       ((background_job_started_at app/emacs/lib/ecaml/test/test_async.ml:LINE:COL)
        (assertion_failed_at app/emacs/lib/ecaml/test/test_async.ml:LINE:COL))
-      "should raise")) |}];
+      "should raise"))
+    |}];
   return ()
 ;;
 
@@ -237,7 +240,8 @@ let%expect_test "raise in run_outside_async" =
     {|
     (Error (
       monitor.ml.Error "Hello world" (
-        "<backtrace elided in test>" "Caught by monitor try_with_or_error"))) |}];
+        "<backtrace elided in test>" "Caught by monitor try_with_or_error")))
+    |}];
   return ()
 ;;
 
@@ -261,7 +265,8 @@ let%expect_test "assert_foreground in run_outside_async" =
     ("Assertion failed -- running in background job"
      ((background_job_started_at app/emacs/lib/ecaml/test/test_async.ml:LINE:COL)
       (assertion_failed_at app/emacs/lib/ecaml/test/test_async.ml:LINE:COL))
-     "should raise") |}];
+     "should raise")
+    |}];
   return ()
 ;;
 
@@ -284,7 +289,8 @@ let%expect_test "[run_outside_async ~allowed_in_background:false]" =
     ("Assertion failed -- running in background job"
      ((background_job_started_at app/emacs/lib/ecaml/test/test_async.ml:LINE:COL)
       (assertion_failed_at app/emacs/lib/ecaml/test/test_async.ml:LINE:COL))
-     "[run_outside_async] called unsafely in background") |}];
+     "[run_outside_async] called unsafely in background")
+    |}];
   return ()
 ;;
 
@@ -302,9 +308,7 @@ let%expect_test "raise in [Background.don't_wait_for]" =
       Ivar.fill_exn ready_to_raise ();
       background_job_ran)
   in
-  [%expect
-    {|
-    ("background job raised" (job_created_at _) "something bad happened") |}];
+  [%expect {| ("background job raised" (job_created_at _) "something bad happened") |}];
   return ()
 ;;
 
@@ -332,7 +336,8 @@ module Test_enqueue_block_on_async = struct
     in
     [%expect {|
       background
-      foreground |}];
+      foreground
+      |}];
     return ()
   ;;
 
@@ -357,7 +362,8 @@ module Test_enqueue_block_on_async = struct
     [%expect {|
       background
       foreground
-      outside async |}];
+      outside async
+      |}];
     return ()
   ;;
 
@@ -380,7 +386,8 @@ module Test_enqueue_block_on_async = struct
     [%expect
       {|
       (monitor.ml.Error "Raise an exception!" (
-        "<backtrace elided in test>" "Caught by monitor test monitor")) |}];
+        "<backtrace elided in test>" "Caught by monitor test monitor"))
+      |}];
     return ()
   ;;
 end
