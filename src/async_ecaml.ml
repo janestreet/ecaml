@@ -472,7 +472,7 @@ let lock_async_during_module_initialization () =
     [%here]
     ~should_run_holding_async_lock:false
     ~f:(fun () ->
-    message_s [%message "Loaded Ecaml."];
+    if not Ppx_inline_test_lib.am_running then message_s [%message "Loaded Ecaml."];
     Scheduler.unlock t.scheduler)
 ;;
 

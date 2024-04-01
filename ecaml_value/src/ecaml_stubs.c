@@ -392,30 +392,8 @@ int emacs_module_init(struct emacs_runtime *ert) {
   assert(active_env == NULL);
   active_env = env;
 
-  emacs_value Qargv = env->intern(env, "argv");
-  emacs_value list =
-      env->funcall(env, env->intern(env, "symbol-value"), 1, &Qargv);
-  emacs_value vect = env->funcall(env, env->intern(env, "vconcat"), 1, &list);
-  int argc = env->vec_size(env, vect);
-
-  // When starting emacs normally, argv is nil, so we set argv = ("emacs")
-  // instead
-  if (argc == 0) {
-    char *argv[2] = {"emacs", NULL};
-    caml_startup(argv);
-  } else {
-    char *argv[argc + 1];
-    for (int i = 0; i < argc; i++) {
-      emacs_value arg = env->vec_get(env, vect, i);
-      ptrdiff_t size = 0;
-      env->copy_string_contents(env, arg, NULL, &size);
-      argv[i] = (char *)malloc(size * sizeof(char));
-      env->copy_string_contents(env, arg, argv[i], &size);
-    }
-    argv[argc] = NULL;
-    // [caml_startup] acquires the OCaml lock.
-    caml_startup(argv);
-  }
+  char *argv[2] = {"emacs", NULL};
+  caml_startup(argv);
 
   CAML_NAMED_CALLBACK_I(end_of_module_initialization, 1, Val_unit);
 

@@ -11,7 +11,7 @@ query='
 (if (pipe (index 0) (equals library))
     (change (seq
              (topdown (try (record (_ id) (libraries (rewrite (@X) (ecaml @X))))))
-             (topdown (try (record (_ id) (inline_tests (rewrite (@X) ((only_shared_object true) @X))))))
+             (topdown (try (record (_ id) (inline_tests (rewrite (@X) ((ecaml true) @X))))))
             ))
   this)'
 
