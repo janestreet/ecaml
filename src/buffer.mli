@@ -133,3 +133,10 @@ val chars_modified_tick : t -> Modified_tick.t
 
 (** [(describe-function 'buffer-modified-p)] *)
 val is_modified : t -> bool
+
+(** [rename_kill_existing] renames a buffer, killing any existing buffers with the same
+    name. *)
+val rename_kill_existing : t -> name:string -> unit Deferred.t
+
+(** [(describe-function 'buffer-disable-undo)] *)
+val disable_undo : t -> unit

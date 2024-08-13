@@ -90,6 +90,10 @@ module Function : sig
     -> (('a, 'b) t -> 'a -> 'r)
     -> ('a, 'b) t
 
+  (** [wrap symbol hook_type] wraps an existing function named [symbol] as a hook of
+      [hook_type].  *)
+  val wrap : Symbol.t -> hook_type:('a, 'b) Hook_type.t -> ('a, 'b) t
+
   val symbol : _ t -> Symbol.t
 end
 
@@ -140,6 +144,10 @@ val before_change_functions : (before_change, unit) t
     [(Info-goto-node "(elisp)Saving Buffers")] *)
 val before_save : (normal, unit) t
 
+(** [(describe-variable 'change-major-mode-hook)]
+    [(Info-goto-node "(elisp) Creating Buffer-Local")] *)
+val change_major_mode : (normal, unit) t
+
 (** [(describe-variable 'emacs-startup-hook)]
 
     Use this instead of [(describe-variable 'after-init-hook)], since the latter occurs
@@ -159,6 +167,10 @@ val kill_buffer : (normal, unit) t
     [(Info-goto-node "(elisp)Command Overview")] *)
 val post_command : (normal, unit) t
 
+(** [(describe-variable 'pre-command-hook)]
+    [(Info-goto-node "(elisp)Command Overview")] *)
+val pre_command : (normal, unit) t
+
 (** [(describe-variable 'server-after-make-frame-hook)] *)
 val server_after_make_frame : (normal, unit) t
 
@@ -172,3 +184,6 @@ val window_scroll_functions : (window, unit) t
 
 (** [(Info-goto-node "(elisp)Major Mode Conventions")] *)
 val major_mode_hook : Major_mode.t -> (normal, unit) t
+
+(** [(describe-variable 'project-find-functions)] *)
+val project_find_functions : (file, unit) t

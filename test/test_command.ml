@@ -21,7 +21,7 @@ let%expect_test "[Raw_prefix_argument]" =
            (arg : Value.t)
            ~for_current_command:
              (Current_buffer.value_exn Raw_prefix_argument.for_current_command
-               : Raw_prefix_argument.t)
+              : Raw_prefix_argument.t)
            ~raw_prefix_argument:
              (arg |> Raw_prefix_argument.of_value_exn : Raw_prefix_argument.t)]);
   is_command (f |> Symbol.to_value);
@@ -91,8 +91,8 @@ let%expect_test "[call_interactively] with an Async command" =
     ~interactive:No_arg
     (Returns_deferred Value.Type.unit)
     (fun () ->
-    message_s [%message "called"];
-    return ());
+       message_s [%message "called"];
+       return ());
   let%bind () = call_interactively (f |> Symbol.to_value) in
   [%expect {| called |}];
   return ()

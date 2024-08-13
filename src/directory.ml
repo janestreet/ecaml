@@ -2,6 +2,27 @@ open! Core
 open! Import
 open! Ecaml_filename
 
+let absolute_t =
+  Value.Type.(map Filename.t)
+    ~name:[%message "absolute directory path"]
+    ~of_:(fun s ->
+      if Filename.is_absolute s
+      then (
+        (* Emacs considers paths like [~/src] to be acceptable "absolute" paths, so
+           we need to expand them. *)
+        let s =
+          if String.is_prefix s ~prefix:"~"
+          then Filename.expand s ~in_dir:`Default_directory_in_current_buffer
+          else s
+        in
+        File_path.Absolute.of_string s)
+      else raise_s [%message "Not an absolute path" ~_:(s : Filename.t)])
+    ~to_:(fun path ->
+      (* Emacs expects directory paths to contain a trailing slash. *)
+      let s = File_path.Absolute.to_string path in
+      if String.equal s "/" then s else s ^ "/")
+;;
+
 let make_directory = Funcall.Wrap.("make-directory" <: Filename.t @-> bool @-> return nil)
 let create ?(parents = false) dirname = make_directory dirname parents
 

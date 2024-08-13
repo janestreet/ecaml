@@ -15,9 +15,16 @@ module Q = struct
   let with_selected_window = "with-selected-window" |> Symbol.intern
 end
 
-let save_sync save_function args f =
+let save_sync caller save_function args f =
   let r = ref None in
-  let f = Defun.lambda_nullary_nil [%here] (fun () -> r := Some (f ())) in
+  let f =
+    Defun.lambda_nullary_nil
+      [%here]
+      ~docstring:
+        [%string
+          "%{save_function |> Symbol.name} called from %{caller#Source_code_position}"]
+      (fun () -> r := Some (f ()))
+  in
   ignore
     (Form.Blocking.eval
        (Form.list
@@ -28,7 +35,7 @@ let save_sync save_function args f =
                    [ Q.funcall |> Form.symbol; f |> Function.to_value |> Form.quote ]
                ]
              ]))
-      : Value.t);
+     : Value.t);
   match !r with
   | None -> assert false
   | Some a -> a
@@ -36,6 +43,7 @@ let save_sync save_function args f =
 
 let save_
   (type a b)
+  caller
   (sync_or_async : (a, b) Sync_or_async.t)
   save_function
   args
@@ -43,7 +51,7 @@ let save_
   : b
   =
   match sync_or_async with
-  | Sync -> save_sync save_function args f
+  | Sync -> save_sync caller save_function args f
   | Async ->
     Background.assert_foreground
       [%here]
@@ -52,31 +60,44 @@ let save_
           (sprintf
              "%s called asynchronously in background job"
              (Symbol.name save_function)
-            : string)];
+           : string)];
     Value.Private.run_outside_async [%here] (fun () ->
-      save_sync save_function args (fun () -> Value.Private.block_on_async [%here] f))
+      save_sync caller save_function args (fun () ->
+        Value.Private.block_on_async [%here] f))
 ;;
 
-let save_current_buffer sync_or_async f = save_ sync_or_async Q.save_current_buffer [] f
-let save_excursion sync_or_async f = save_ sync_or_async Q.save_excursion [] f
-
-let save_mark_and_excursion sync_or_async f =
-  save_ sync_or_async Q.save_mark_and_excursion [] f
+let save_current_buffer ?(here = Stdlib.Lexing.dummy_pos) sync_or_async f =
+  save_ here sync_or_async Q.save_current_buffer [] f
 ;;
 
-let save_match_data sync_or_async f = save_ sync_or_async Q.save_match_data [] f
-let save_restriction sync_or_async f = save_ sync_or_async Q.save_restriction [] f
-
-let save_window_excursion sync_or_async f =
-  save_ sync_or_async Q.save_window_excursion [] f
+let save_excursion ?(here = Stdlib.Lexing.dummy_pos) sync_or_async f =
+  save_ here sync_or_async Q.save_excursion [] f
 ;;
 
-let save_selected_window sync_or_async f = save_ sync_or_async Q.save_selected_window [] f
-
-let with_selected_frame sync_or_async frame f =
-  save_ sync_or_async Q.with_selected_frame [ frame ] f
+let save_mark_and_excursion ?(here = Stdlib.Lexing.dummy_pos) sync_or_async f =
+  save_ here sync_or_async Q.save_mark_and_excursion [] f
 ;;
 
-let with_selected_window sync_or_async window f =
-  save_ sync_or_async Q.with_selected_window [ window ] f
+let save_match_data ?(here = Stdlib.Lexing.dummy_pos) sync_or_async f =
+  save_ here sync_or_async Q.save_match_data [] f
+;;
+
+let save_restriction ?(here = Stdlib.Lexing.dummy_pos) sync_or_async f =
+  save_ here sync_or_async Q.save_restriction [] f
+;;
+
+let save_window_excursion ?(here = Stdlib.Lexing.dummy_pos) sync_or_async f =
+  save_ here sync_or_async Q.save_window_excursion [] f
+;;
+
+let save_selected_window ?(here = Stdlib.Lexing.dummy_pos) sync_or_async f =
+  save_ here sync_or_async Q.save_selected_window [] f
+;;
+
+let with_selected_frame ?(here = Stdlib.Lexing.dummy_pos) sync_or_async frame f =
+  save_ here sync_or_async Q.with_selected_frame [ frame ] f
+;;
+
+let with_selected_window ?(here = Stdlib.Lexing.dummy_pos) sync_or_async window f =
+  save_ here sync_or_async Q.with_selected_window [ window ] f
 ;;

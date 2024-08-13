@@ -18,7 +18,11 @@ depends: [
   "core_kernel"
   "core_unix"
   "expect_test_helpers_core"
+  "file_path"
+  "ppx_expect"
   "ppx_jane"
+  "sexp_pretty"
+  "sexplib"
   "dune"                     {>= "3.11.0"}
   "uutf"                     {>= "1.0.2"}
 ]

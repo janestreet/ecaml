@@ -75,7 +75,7 @@ let%expect_test "[set_global]" =
   let saved = global () in
   let t = create () in
   set_global t;
-  require [%here] (eq t (global ()));
+  require (eq t (global ()));
   set_global saved;
   return ()
 ;;

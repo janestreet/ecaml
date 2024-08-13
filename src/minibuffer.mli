@@ -21,7 +21,7 @@ end
 module History : sig
   type t [@@deriving sexp_of]
 
-  val find_or_create : Symbol.t -> Source_code_position.t -> t
+  val find_or_create : Symbol.t -> ?docstring:string -> Source_code_position.t -> t
   val symbol : t -> Symbol.t
 end
 

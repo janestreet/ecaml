@@ -15,7 +15,8 @@ module Auto_mode = struct
 end
 
 module Name = struct
-  (** Names let us pattern-match on major modes. *)
+  (** Names let us pattern-match on major modes.  Doing so is discouraged, because it
+      breaks normal, widely-used extension mechanisms ([define-derived-mode]). *)
   type t = ..
 
   (** Dummy value for modes we don't care about matching. *)
@@ -53,8 +54,8 @@ module type Major_mode = sig
   end
 
   include module type of Intf (struct
-    type nonrec t = t
-  end)
+      type nonrec t = t
+    end)
 
   (** Accessors *)
 

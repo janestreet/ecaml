@@ -41,25 +41,25 @@ module Status = struct
   include T
 
   include Valueable.Make (struct
-    type nonrec t = t
+      type nonrec t = t
 
-    let type_ =
-      Value.Type.enum
-        [%sexp "process-status"]
-        (module T)
-        (Symbol.to_value
-         << function
-         | Closed -> Q.closed
-         | Connect -> Q.connect
-         | Exit -> Q.exit_
-         | Failed -> Q.failed
-         | Listen -> Q.listen
-         | Open -> Q.open_
-         | Run -> Q.run
-         | Signal -> Q.signal
-         | Stop -> Q.stop)
-    ;;
-  end)
+      let type_ =
+        Value.Type.enum
+          [%sexp "process-status"]
+          (module T)
+          (Symbol.to_value
+           << function
+           | Closed -> Q.closed
+           | Connect -> Q.connect
+           | Exit -> Q.exit_
+           | Failed -> Q.failed
+           | Listen -> Q.listen
+           | Open -> Q.open_
+           | Run -> Q.run
+           | Signal -> Q.signal
+           | Stop -> Q.stop)
+      ;;
+    end)
 end
 
 let is_alive = Funcall.Wrap.("process-live-p" <: t @-> return bool)
@@ -482,7 +482,7 @@ let wrap_sentinel
   | Returns _ ->
     ((try sentinel ~event with
       | exn -> log_exn exn)
-      : a)
+     : a)
   | Returns_deferred _ ->
     (match%map Monitor.try_with ~extract_exn:true (fun () -> sentinel ~event) with
      | Ok () -> ()

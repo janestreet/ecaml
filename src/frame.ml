@@ -34,9 +34,9 @@ let frame_parameters = Funcall.Wrap.("frame-parameters" <: t @-> return (list va
 let parameters t =
   frame_parameters t
   |> List.map ~f:(fun pair ->
-       if not (Value.is_cons pair)
-       then raise_s [%message "[Frame.parameters] got strange value" ~_:(pair : Value.t)];
-       Value.car_exn pair |> Symbol.of_value_exn, Value.cdr_exn pair)
+    if not (Value.is_cons pair)
+    then raise_s [%message "[Frame.parameters] got strange value" ~_:(pair : Value.t)];
+    Value.car_exn pair |> Symbol.of_value_exn, Value.cdr_exn pair)
 ;;
 
 let is_visible = Funcall.Wrap.("frame-visible-p" <: t @-> return bool)
@@ -61,9 +61,9 @@ module Include_minibuffer = struct
       [%sexp "include-minibuffer"]
       (module T)
       (function
-       | Yes -> Value.t
-       | No -> never
-       | Only_if_active -> Value.nil)
+        | Yes -> Value.t
+        | No -> never
+        | Only_if_active -> Value.nil)
   ;;
 
   let t = type_
@@ -99,4 +99,9 @@ let window_tree =
 let modify_all_frames_parameters =
   Funcall.Wrap.(
     "modify-all-frames-parameters" <: list (tuple Symbol.t value) @-> return nil)
+;;
+
+let modify_frame_parameters =
+  Funcall.Wrap.(
+    "modify-frame-parameters" <: t @-> list (tuple Symbol.t value) @-> return nil)
 ;;

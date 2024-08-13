@@ -15,7 +15,7 @@ let%expect_test "[create_exn]" =
     ; "C-<down-mouse-3>"
     ]
     ~f:(fun string ->
-    print_s [%message "" ~_:(string : string) ~_:(create_exn string : t)]);
+      print_s [%message "" ~_:(string : string) ~_:(create_exn string : t)]);
   [%expect
     {|
     ("" "")
@@ -39,7 +39,8 @@ let%expect_test "[create_exn] raise" =
 let%expect_test "[length]" =
   List.iter [ ""; "C-x"; "a"; "ab"; "A-C-M-S-x" ] ~f:(fun string ->
     print_s [%message "" ~_:string ~_:(length (create_exn string) : int)]);
-  [%expect {|
+  [%expect
+    {|
     ("" 0)
     (C-x 1)
     (a 1)
@@ -54,7 +55,8 @@ let%expect_test "[get]" =
   for i = 0 to length t - 1 do
     print_s [%sexp (get t i : Input_event.t)]
   done;
-  [%expect {|
+  [%expect
+    {|
     a
     b
     c
@@ -119,7 +121,8 @@ let%expect_test "[to_list]" =
   List.iter [ ""; "a"; "RET"; "C-c C-a" ] ~f:(fun s ->
     print_s
       [%message "" ~_:(s : string) ~_:(s |> create_exn |> to_list : Input_event.t list)]);
-  [%expect {|
+  [%expect
+    {|
     ("" ())
     (a (a))
     (RET (RET))

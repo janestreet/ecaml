@@ -51,7 +51,7 @@ let%expect_test "[is_relative]" =
             ~is_relative:(Attribute.is_relative attribute value : bool)
             ~unspecified_is_relative:
               (Attribute.is_relative attribute (Attribute.unspecified_value attribute)
-                : bool)]);
+               : bool)]);
   [%expect
     {|
     ((Background (Color red))
@@ -106,19 +106,22 @@ let%expect_test "[merge]" =
   test (Color Color.red) Unspecified;
   [%expect {| ((Color red) Unspecified (merge (Color red))) |}];
   test (Color Color.red) (Color Color.red);
-  [%expect {|
+  [%expect
+    {|
     ((Color red)
      (Color red)
      (merge (Color red)))
     |}];
   test (Color Color.red) (Color Color.black);
-  [%expect {|
+  [%expect
+    {|
     ((Color red)
      (Color black)
      (merge (Color red)))
     |}];
   test (Color Color.black) (Color Color.red);
-  [%expect {|
+  [%expect
+    {|
     ((Color black)
      (Color red)
      (merge (Color black)))

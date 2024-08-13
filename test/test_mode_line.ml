@@ -22,7 +22,8 @@ let%expect_test _ =
       mode-line-buffer-identification
       "   "
       mode-line-position
-      (vc-mode vc-mode)
+      (project-mode-line project-mode-line-format)
+      (vc-mode           vc-mode)
       "  "
       mode-line-modes
       mode-line-misc-info

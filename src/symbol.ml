@@ -114,11 +114,11 @@ module type Subtype = sig
 end
 
 module Make_subtype (Arg : sig
-  type t [@@deriving enumerate, sexp_of]
+    type t [@@deriving enumerate, sexp_of]
 
-  val module_name : string
-  val to_symbol : t -> symbol
-end) =
+    val module_name : string
+    val to_symbol : t -> symbol
+  end) =
 struct
   let to_symbol = Arg.to_symbol
 
@@ -130,8 +130,7 @@ struct
       | None ->
         raise_s
           [%message
-            (concat [ "["; Arg.module_name; ".of_symbol] got unexpected symbol" ])
-              (symbol : t)]
+            [%string "[%{Arg.module_name}.of_symbol] got unexpected symbol"] (symbol : t)]
   ;;
 
   let to_value t = t |> to_symbol |> to_value
@@ -142,7 +141,7 @@ struct
     | exception _ ->
       raise_s
         [%message
-          (concat [ "["; Arg.module_name; ".of_value_exn] got unexpected value" ])
+          [%string "[%{Arg.module_name}.of_value_exn] got unexpected value"]
             (value : Value.t)]
   ;;
 end

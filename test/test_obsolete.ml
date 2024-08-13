@@ -15,7 +15,8 @@ let%expect_test "obsolete functions already defined" =
   let obsolete = "foobar-2" |> Symbol.intern in
   defun_nullary_nil obsolete [%here] ~docstring:"_" ~interactive:No_arg (report obsolete);
   print_endline (Help.describe_function_text obsolete);
-  [%expect {|
+  [%expect
+    {|
     foobar-2 is an interactive Lisp function.
 
     (foobar-2)
@@ -173,7 +174,7 @@ let%expect_test "obsolete an defined variable" =
        ~type_:Value.Type.bool
        ~initial_value:false
        ()
-      : _ Var.t);
+     : _ Var.t);
   let show () =
     print_endline (Help.describe_variable_text obsolete);
     print_endline "";
@@ -219,7 +220,7 @@ let%expect_test "define an obsoleted variable" =
        ~type_:Value.Type.bool
        ~initial_value:false
        ()
-      : _ Var.t);
+     : _ Var.t);
   print_endline (Help.describe_variable_text obsolete);
   [%expect
     {|
@@ -243,7 +244,7 @@ let%expect_test "define an obsoleted variable with no current replacement" =
        ~type_:Value.Type.bool
        ~initial_value:false
        ()
-      : _ Var.t);
+     : _ Var.t);
   print_endline (Help.describe_variable_text obsolete);
   [%expect
     {|

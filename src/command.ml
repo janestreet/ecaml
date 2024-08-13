@@ -3,10 +3,10 @@ open! Import0
 module Current_buffer = Current_buffer0
 
 include Value.Make_subtype (struct
-  let name = "command"
-  let here = [%here]
-  let is_in_subtype = Value.is_command
-end)
+    let name = "command"
+    let here = [%here]
+    let is_in_subtype = Value.is_command
+  end)
 
 let history_var = Var.Wrap.("command-history" <: list Form.t)
 let history () = Current_buffer0.value_exn history_var

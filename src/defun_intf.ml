@@ -42,15 +42,15 @@ module type Defun = sig
 
   include
     Applicative.Let_syntax
-      with type 'a t := 'a t
-      with module Open_on_rhs_intf := Open_on_rhs_intf
+    with type 'a t := 'a t
+    with module Open_on_rhs_intf := Open_on_rhs_intf
 
   include Open_on_rhs_intf.S with type 'a t := 'a t
 
   module Interactive : sig
     type t =
       | Args of (unit -> Value.t list Deferred.t)
-          (** When a command defined with [~interactive:(Args f)] is called interactively, [f
+      (** When a command defined with [~interactive:(Args f)] is called interactively, [f
           ()] is called to compute the argument values to supply to the command.  Of
           course, the argument values should match the command's [Defun.t]
           specification. *)

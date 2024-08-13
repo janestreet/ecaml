@@ -13,6 +13,5 @@ let () =
           let%map bytes_per_second =
             Ecaml_bench.Bench_async_ecaml.benchmark_throughput ()
           in
-          print_s [%message (time_per_ping : Sexp.t) (bytes_per_second : Sexp.t)])
-       ~behave_nicely_in_pipeline:false)
+          print_s [%message (time_per_ping : Sexp.t) (bytes_per_second : Sexp.t)]))
 ;;

@@ -51,7 +51,8 @@ let draw_and_print = draw_and_print' t
 let%expect_test "draw table" =
   Current_buffer.set_temporarily_to_temp_buffer Async (fun () ->
     let%bind () = draw_and_print entries in
-    [%expect {|
+    [%expect
+      {|
       b    1   y
       a    2   z
       c    3   x
@@ -62,31 +63,35 @@ let%expect_test "draw table" =
 let%expect_test "sort" =
   Current_buffer.set_temporarily_to_temp_buffer Async (fun () ->
     let%bind () = draw_and_print ~sort_by:("s1", `Ascending) entries in
-    [%expect {|
+    [%expect
+      {|
       a    2   z
       b    1   y
       c    3   x
       |}];
     let%bind () = draw_and_print ~sort_by:("s1", `Descending) entries in
-    [%expect {|
+    [%expect
+      {|
       c    3   x
       b    1   y
       a    2   z
       |}];
     let%bind () = draw_and_print ~sort_by:("s3", `Ascending) entries in
-    [%expect {|
+    [%expect
+      {|
       c    3   x
       b    1   y
       a    2   z
       |}];
     let%bind () = draw_and_print ~sort_by:("s3", `Descending) entries in
-    [%expect {|
+    [%expect
+      {|
       a    2   z
       b    1   y
       c    3   x
       |}];
     let%bind () =
-      require_does_raise_async [%here] (fun () ->
+      require_does_raise_async (fun () ->
         draw_and_print ~sort_by:("i2", `Ascending) entries)
     in
     [%expect {| ("Column is not sortable" i2) |}];
@@ -96,14 +101,16 @@ let%expect_test "sort" =
 let%expect_test "id at point" =
   Current_buffer.set_temporarily_to_temp_buffer Async (fun () ->
     let%bind () = draw_and_print entries in
-    [%expect {|
+    [%expect
+      {|
       b    1   y
       a    2   z
       c    3   x
       |}];
     Point.goto_min ();
     print_s [%sexp (get_record_at_point_exn t : entry option)];
-    [%expect {|
+    [%expect
+      {|
       ((
         (s1 b)
         (i2 1)
@@ -111,7 +118,8 @@ let%expect_test "id at point" =
       |}];
     Point.forward_line 1;
     print_s [%sexp (get_record_at_point_exn t : entry option)];
-    [%expect {|
+    [%expect
+      {|
       ((
         (s1 a)
         (i2 2)
@@ -119,13 +127,15 @@ let%expect_test "id at point" =
       |}];
     (* Point is preserved when list is redrawn. *)
     let%bind () = draw_and_print entries in
-    [%expect {|
+    [%expect
+      {|
       b    1   y
       a    2   z
       c    3   x
       |}];
     print_s [%sexp (get_record_at_point_exn t : entry option)];
-    [%expect {|
+    [%expect
+      {|
       ((
         (s1 a)
         (i2 2)
@@ -140,14 +150,16 @@ let%expect_test "id at point" =
 let%expect_test "move_point_to_record" =
   Current_buffer.set_temporarily_to_temp_buffer Async (fun () ->
     let%bind () = draw_and_print entries in
-    [%expect {|
+    [%expect
+      {|
       b    1   y
       a    2   z
       c    3   x
       |}];
     Tabulated_list.move_point_to_record t ~f:(s1 >> String.equal "a");
     print_s [%sexp (get_record_at_point_exn t : entry option)];
-    [%expect {|
+    [%expect
+      {|
       ((
         (s1 a)
         (i2 2)
@@ -155,7 +167,8 @@ let%expect_test "move_point_to_record" =
       |}];
     Tabulated_list.move_point_to_record t ~f:(s1 >> String.equal "b");
     print_s [%sexp (get_record_at_point_exn t : entry option)];
-    [%expect {|
+    [%expect
+      {|
       ((
         (s1 b)
         (i2 1)
@@ -163,7 +176,8 @@ let%expect_test "move_point_to_record" =
       |}];
     Tabulated_list.move_point_to_record t ~f:(s1 >> String.equal "c");
     print_s [%sexp (get_record_at_point_exn t : entry option)];
-    [%expect {|
+    [%expect
+      {|
       ((
         (s1 c)
         (i2 3)

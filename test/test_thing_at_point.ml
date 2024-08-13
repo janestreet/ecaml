@@ -21,7 +21,7 @@ let%expect_test "[find], [bounds]" =
     let bounded_text =
       Option.map bounds ~f:(fun (start, end_) -> Current_buffer.contents ~start ~end_ ())
     in
-    require_does_not_raise [%here] (fun () ->
+    require_does_not_raise (fun () ->
       [%test_eq: Text.Compare_as_string.t option] found bounded_text);
     print_s [%sexp (found : Text.t option)]
   in

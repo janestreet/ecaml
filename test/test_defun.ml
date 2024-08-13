@@ -154,7 +154,7 @@ let%expect_test "[defun] type errors in required, optional, and rest arguments" 
       (let%map_open.Defun () = return ()
        and _ = make_arg "arg" int in
        assert false);
-    require_does_raise [%here] ~hide_positions:true (fun () ->
+    require_does_raise ~hide_positions:true (fun () ->
       Symbol.funcall1_i symbol ("foo" |> Value.of_utf8_bytes))
   in
   test Defun.required;

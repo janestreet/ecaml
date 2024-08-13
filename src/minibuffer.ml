@@ -21,12 +21,12 @@ module History = struct
 
   let symbol (T t) = Var.symbol t
 
-  let create symbol here =
+  let create symbol ?(docstring = "A minibuffer history list.") here =
     T
       (Defvar.defvar
          symbol
          here
-         ~docstring:"A minibuffer history list."
+         ~docstring
          ~type_:Value.Type.(list string)
          ~initial_value:[]
          ~include_in_all_defvar_symbols:false
@@ -35,9 +35,9 @@ module History = struct
 
   let all_by_symbol_name = Hashtbl.create (module String)
 
-  let find_or_create symbol here =
+  let find_or_create symbol ?docstring here =
     Hashtbl.find_or_add all_by_symbol_name (Symbol.name symbol) ~default:(fun () ->
-      create symbol here)
+      create symbol ?docstring here)
   ;;
 end
 

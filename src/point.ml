@@ -116,7 +116,7 @@ let handle_last_match ?(update_last_match = update_last_match_default) f =
   else (
     let result = f () in
     Regexp.Last_match.Private.Location.last
-      := if result then Buffer (Current_buffer.get ()) else No_match;
+    := if result then Buffer (Current_buffer.get ()) else No_match;
     result)
 ;;
 
@@ -198,10 +198,10 @@ let yank = Funcall.Wrap.("yank" <: nullary @-> return nil)
 module Property_search = struct
   module Raw_match = struct
     include Value.Make_subtype (struct
-      let here = [%here]
-      let name = "prop-match"
-      let is_in_subtype = Funcall.Wrap.("prop-match-p" <: value @-> return bool)
-    end)
+        let here = [%here]
+        let name = "prop-match"
+        let is_in_subtype = Funcall.Wrap.("prop-match-p" <: value @-> return bool)
+      end)
 
     let beginning = Funcall.Wrap.("prop-match-beginning" <: t @-> return Position.t)
     let end_ = Funcall.Wrap.("prop-match-end" <: t @-> return Position.t)

@@ -20,10 +20,10 @@ module Q = struct
 end
 
 include Value.Make_subtype (struct
-  let name = "text"
-  let here = [%here]
-  let is_in_subtype = Value.is_string
-end)
+    let name = "text"
+    let here = [%here]
+    let is_in_subtype = Value.is_string
+  end)
 
 let char_code = Funcall.Wrap.("aref" <: t @-> int @-> return Char_code.t)
 let set_char_code = Funcall.Wrap.("aset" <: t @-> int @-> Char_code.t @-> return nil)
@@ -91,9 +91,9 @@ module Face_spec = struct
              (List.rev attributes)
              ~init:[]
              ~f:(fun ac (Face.Attribute_and_value.T (attribute, value)) ->
-             (attribute |> Face.Attribute.to_symbol |> Symbol.to_value)
-             :: (value |> Face.Attribute.to_value attribute)
-             :: ac))
+               (attribute |> Face.Attribute.to_symbol |> Symbol.to_value)
+               :: (value |> Face.Attribute.to_value attribute)
+               :: ac))
       | Face face -> face |> Face.to_value
     ;;
 
@@ -140,6 +140,12 @@ module Face_spec = struct
           in
           loop value [])
     ;;
+
+    let type_ =
+      Value.Type.create [%sexp "text-face-spec-one"] [%sexp_of: t] of_value_exn to_value
+    ;;
+
+    let t = type_
   end
 
   type t = One.t list [@@deriving sexp_of]
@@ -175,6 +181,8 @@ module Face_spec = struct
   let type_ =
     Value.Type.create [%sexp "text-face-spec"] [%sexp_of: t] of_value_exn to_value
   ;;
+
+  let t = type_
 end
 
 module Display_spec = struct
@@ -315,10 +323,7 @@ let propertize t properties =
 ;;
 
 let colorize t ~color =
-  propertize
-    t
-    [ T (Property_name.face, [ Face_spec.One.Attributes [ T (Foreground, Color color) ] ])
-    ]
+  propertize t [ T (Property_name.face, [ Attributes [ T (Foreground, Color color) ] ]) ]
 ;;
 
 let get_text_property =
@@ -371,6 +376,15 @@ let add_properties ?start ?end_ t properties =
     (end_ |> get_end t)
     (properties |> Property.to_property_list)
     t
+;;
+
+let add_face_text_property =
+  Funcall.Wrap.(
+    "add-face-text-property" <: int @-> int @-> Face_spec.t @-> bool @-> t @-> return nil)
+;;
+
+let add_face_properties ?start ?end_ ?(append = false) t face =
+  add_face_text_property (start |> get_start) (end_ |> get_end t) face append t
 ;;
 
 let set_text_properties =

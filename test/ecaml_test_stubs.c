@@ -1,4 +1,7 @@
 #include <stdio.h>
 #include "caml/mlvalues.h"
 
-void ecaml_test_clearerr_stdin() { clearerr(stdin); }
+value ecaml_test_clearerr_stdin() {
+  clearerr(stdin);
+  return Val_unit;
+}

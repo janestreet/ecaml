@@ -294,7 +294,7 @@ type 'record t =
   ; entries_var : 'record list Buffer_local.t
   ; major_mode : Major_mode.t
   ; original_record : 'record Text.Property_name.t
-      (* The original record is smuggled as a text property on the ID string of line.  The IDs
+  (* The original record is smuggled as a text property on the ID string of line.  The IDs
      are compared with [equal], so including the original record as an opaque pointer in
      the normal way (e.g., in a cons) would cause the "same" IDs to always be considered
      not-equal.
@@ -375,7 +375,7 @@ let create major_mode (type a) (column_specs : a Column.t list) ~get_id =
   let entry_type =
     let open Value.Type in
     map
-      (tuple Text.t (tuple (vector Text.t) unit))
+      (tuple2_as_list Text.t (vector Text.t))
       ~name:[%message "tabulated-list-entries" ~_:(type_ : _ Value.Type.t)]
       ~of_:(fun (id, _) ->
         Text.property_value id original_record ~at:0
@@ -389,9 +389,8 @@ let create major_mode (type a) (column_specs : a Column.t list) ~get_id =
         if String.is_empty id
         then raise_s [%message "Tabulated list entry ID is not allowed to be empty"];
         ( Text.propertize (Text.of_utf8_bytes id) [ T (original_record, record) ]
-        , ( List.map column_specs ~f:(fun spec -> Column.Spec.render_field spec record)
-            |> Array.of_list
-          , () ) ))
+        , List.map column_specs ~f:(fun spec -> Column.Spec.render_field spec record)
+          |> Array.of_list ))
   in
   let columns =
     List.map column_specs ~f:(fun spec -> Column.create_internal spec entry_type)

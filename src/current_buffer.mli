@@ -29,6 +29,9 @@ val set_buffer_local_temporarily
     [(Info-goto-node "(elisp)File Name Expansion")] *)
 val directory : Filename.t option Buffer_local.t
 
+(** The same as [directory], but better-typed. *)
+val directory_abspath : File_path.Absolute.t option Buffer_local.t
+
 (** [(describe-variable 'buffer-undo-list)]
     [(Info-goto-node "(elisp)Undo")]
     [(Info-goto-node "(elisp)Maintaining Undo")] *)
@@ -50,6 +53,9 @@ val name : unit -> string
     [(Info-goto-node "(elisp)Buffer File Name")] *)
 val file_name_var : Filename.t option Buffer_local.t
 
+(** The same as [file_name_var], but better-typed. *)
+val file_name_abspath : File_path.Absolute.t option Buffer_local.t
+
 module Coding_system : sig
   type t =
     | Utf_8
@@ -69,7 +75,8 @@ val undo : int -> unit
 (** [set_temporarily_to_temp_buffer f] creates a temporary buffer and runs [f] with the
     current buffer set to the temporary buffer.  [(describe-function 'with-temp-buffer)]. *)
 val set_temporarily_to_temp_buffer
-  :  ?name:string (** passed to [generate-new-buffer] *)
+  :  ?here:Stdlib.Lexing.position
+  -> ?name:string (** passed to [generate-new-buffer] *)
   -> (_, 'a) Sync_or_async.t
   -> (unit -> 'a)
   -> 'a
@@ -99,6 +106,9 @@ val paragraph_separate : Regexp.t Var.t
 (** [(describe-variable 'buffer-read-only)]
     [(Info-goto-node "(elisp)Read-Only Buffers")] *)
 val read_only : bool Buffer_local.t
+
+(** [(describe-variable 'show-trailing-whitespace)] *)
+val show_trailing_whitespace : bool Buffer_local.t
 
 (** [(describe-variable 'transient-mark-mode)]
     [(describe-function 'transient-mark-mode)]
@@ -178,16 +188,32 @@ val kill_region : start:Position.t -> end_:Position.t -> unit
 val widen : unit -> unit
 
 (** [(describe-function 'save-current-buffer)] *)
-val save_current_buffer : (_, 'a) Sync_or_async.t -> (unit -> 'a) -> 'a
+val save_current_buffer
+  :  ?here:Stdlib.Lexing.position
+  -> (_, 'a) Sync_or_async.t
+  -> (unit -> 'a)
+  -> 'a
 
 (** [(describe-function 'save-excursion)] *)
-val save_excursion : (_, 'a) Sync_or_async.t -> (unit -> 'a) -> 'a
+val save_excursion
+  :  ?here:Stdlib.Lexing.position
+  -> (_, 'a) Sync_or_async.t
+  -> (unit -> 'a)
+  -> 'a
 
 (** [(describe-function 'save-mark-and-excursion)] *)
-val save_mark_and_excursion : (_, 'a) Sync_or_async.t -> (unit -> 'a) -> 'a
+val save_mark_and_excursion
+  :  ?here:Stdlib.Lexing.position
+  -> (_, 'a) Sync_or_async.t
+  -> (unit -> 'a)
+  -> 'a
 
 (** [(describe-function 'save-restriction)] *)
-val save_restriction : (_, 'a) Sync_or_async.t -> (unit -> 'a) -> 'a
+val save_restriction
+  :  ?here:Stdlib.Lexing.position
+  -> (_, 'a) Sync_or_async.t
+  -> (unit -> 'a)
+  -> 'a
 
 (** [(describe-function 'set-buffer-multibyte)].
     [(Info-goto-node "(elisp)Selecting a Representation")]. *)
@@ -195,11 +221,6 @@ val set_multibyte : bool -> unit
 
 (** [(describe-variable 'enable-multibyte-characters)]. *)
 val is_multibyte : unit -> bool
-
-(** [rename_exn] renames the current buffer, raising if [name] is already taken and
-    [unique = false]; with [unique = true] it generates a new name.  [(describe-function
-    'rename-buffer)]. *)
-val rename_exn : ?unique:bool -> unit -> name:string -> unit
 
 (** [(describe-function 'put-text-property)]
     [(Info-goto-node "(elisp)Changing Properties")]. *)
@@ -250,6 +271,15 @@ val add_text_properties
 val add_text_properties_staged
   :  Text.Property.t list
   -> (start:int -> end_:int -> unit) Staged.t
+
+(** [(describe-function 'add-face-text-property)]
+    [(Info-goto-node "(elisp)Changing Properties")]. *)
+val add_face_text_properties
+  :  ?start:Position.t (** default is [Point.min ()] *)
+  -> ?end_:Position.t (** default is [Point.max ()] *)
+  -> ?append:bool (** default is false *)
+  -> Text.Face_spec.t
+  -> unit
 
 (** [text_property_is_present property_name] returns [true] if any text in the region from
     [start] to [end_] uses [property_name].  [(describe-function
@@ -384,3 +414,6 @@ val position_of_line_and_column : Line_and_column.t -> Position.t
 
 (** [(describe-function 'key-binding)] *)
 val key_binding : Key_sequence.t -> Keymap.Entry.t
+
+(** [(describe-function 'derived-mode-p)] *)
+val is_derived_mode : Major_mode.t list -> bool

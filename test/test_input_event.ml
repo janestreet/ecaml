@@ -97,7 +97,8 @@ let%expect_test "[recent_keys]" =
   print_s [%sexp (recent_keys () : t array)];
   [%expect {| (a b) |}];
   print_s [%sexp (recent_commands_and_keys () : Command_or_key.t array)];
-  [%expect {|
+  [%expect
+    {|
     ((Key a)
      (Key b))
     |}];
@@ -112,7 +113,8 @@ let%expect_test "[recent_keys]" =
   let%bind () = Key_sequence.execute (Key_sequence.create_exn "c") in
   [%expect {| ran |}];
   print_s [%sexp (recent_commands_and_keys () : Command_or_key.t array)];
-  [%expect {|
+  [%expect
+    {|
     ((Key     a)
      (Key     b)
      (Command add-recent-command))

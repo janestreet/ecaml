@@ -97,7 +97,7 @@ val get_property : t -> Symbol.t -> Value.t option
 val set_property : t -> Symbol.t -> Value.t -> unit
 
 (** [(Info-goto-node "(elisp)Asynchronous Processes")]
-    [(describe-function 'start-process)] *)
+    [(describe-function 'make-process)] *)
 val create
   :  ?buffer:Buffer.t
   -> ?coding:Symbol.t

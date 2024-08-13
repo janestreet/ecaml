@@ -3,10 +3,10 @@ open! Import0
 module Frame = Frame0
 
 include Value.Make_subtype (struct
-  let name = "color"
-  let here = [%here]
-  let is_in_subtype = Value.is_string
-end)
+    let name = "color"
+    let here = [%here]
+    let is_in_subtype = Value.is_string
+  end)
 
 let to_name t = t |> to_value |> Value.to_utf8_bytes_exn
 let compare t1 t2 = String.compare (t1 |> to_name) (t2 |> to_name)
@@ -64,7 +64,7 @@ let rgb_exn ?on t : RGB.t =
 
 let of_rgb { RGB.r; g; b } =
   let p c = sprintf "%04X" (RGB.clamp c) in
-  of_name (concat [ "#"; p r; p g; p b ])
+  of_name [%string "#%{p r}%{p g}%{p b}"]
 ;;
 
 let of_rgb8 ~r ~g ~b =
@@ -72,5 +72,5 @@ let of_rgb8 ~r ~g ~b =
   let max = 255 in
   let clamp i = Int.clamp_exn i ~min ~max in
   let p c = sprintf "%02X" (clamp c) in
-  of_name (concat [ "#"; p r; p g; p b ])
+  of_name [%string "#%{p r}%{p g}%{p b}"]
 ;;

@@ -15,7 +15,8 @@ let%expect_test "[create]" =
   for len = 0 to 3 do
     show (create ~len Value.nil)
   done;
-  [%expect {|
+  [%expect
+    {|
     []
     [nil]
     "[nil nil]"
@@ -28,7 +29,8 @@ let%expect_test "[of_list]" =
   for len = 0 to 3 do
     show (of_list (List.init len ~f:Value.of_int_exn))
   done;
-  [%expect {|
+  [%expect
+    {|
     []
     [0]
     "[0 1]"
@@ -66,7 +68,8 @@ let%expect_test "[get]" =
     let t = of_list (List.init len ~f:Value.of_int_exn) in
     print_s [%sexp (List.init len ~f:(get t) : Value.t list)]
   done;
-  [%expect {|
+  [%expect
+    {|
     (0)
     (0 1)
     (0 1 2)
@@ -161,9 +164,10 @@ let%expect_test "[to_array]" =
     print_s
       [%sexp
         (List.init n ~f:Value.of_int_exn |> of_list |> to_array ~f:Value.to_int_exn
-          : int array)]
+         : int array)]
   done;
-  [%expect {|
+  [%expect
+    {|
     ()
     (0)
     (0 1)

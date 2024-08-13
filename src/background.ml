@@ -28,13 +28,13 @@ let schedule_foreground_block_on_async here ?raise_exceptions_to_monitor f =
     here
     ?raise_exceptions_to_monitor
     (fun () ->
-    Nested_profile.Profile.disown (fun () ->
-      Nested_profile.Profile.profile
-        Async
-        [%lazy_message
-          "[Background.schedule_foreground_block_on_async]"
-            (here : Source_code_position.t)]
-        (fun () -> mark_running_in_foreground ~f)))
+       Nested_profile.Profile.disown (fun () ->
+         Nested_profile.Profile.profile
+           Async
+           [%lazy_message
+             "[Background.schedule_foreground_block_on_async]"
+               (here : Source_code_position.t)]
+           (fun () -> mark_running_in_foreground ~f)))
 ;;
 
 let don't_wait_for here f =

@@ -3,8 +3,9 @@
   (language c)
   (names ecaml_test_stubs))
  (name ecaml_test)
- (libraries async core ecaml ecaml_test_helpers expect_test_helpers_async
-   expect_test_helpers_core re core_kernel.reversed_list sexp_pretty
-   core_unix.sys_unix)
+ (libraries async async_kernel core core_unix ecaml ecaml_test_helpers
+   ecaml_value expect_test_helpers_async expect_test_helpers_core
+   nested_profile re core_kernel.reversed_list sexp_pretty core_unix.sys_unix
+   core_unix.time_ns_unix core_kernel.weak_pointer)
  (preprocess
   (pps ppx_jane)))

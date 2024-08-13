@@ -34,12 +34,12 @@ let wrap_message
   ?echo
   here
   (sync_or_async : (a, b) Sync_or_async.t)
-  message
+  msg
   ~f
   =
-  let message = concat [ message; " ... " ] in
+  let msg = msg ^ " ... " in
   let returned_normally = ref false in
-  message_s ?echo [%sexp (message : string)];
+  message ?echo msg;
   let (f : unit -> b) =
     match sync_or_async with
     | Sync ->
@@ -55,8 +55,8 @@ let wrap_message
   in
   Sync_or_async.protect ?allow_in_background here sync_or_async ~f ~finally:(fun () ->
     match !returned_normally with
-    | true -> message_s ?echo [%sexp (concat [ message; "done" ] : string)]
-    | false -> message_s ?echo [%sexp (concat [ message; "raised" ] : string)])
+    | true -> message ?echo [%string "%{msg}done"]
+    | false -> message ?echo [%string "%{msg}raised"])
 ;;
 
 let clear =

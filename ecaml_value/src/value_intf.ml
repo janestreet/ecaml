@@ -79,6 +79,16 @@ module type Type = sig
   val int : int t
   val string : string t
 
+  (** Represent an absolute time as a Lisp timestamp or Lisp time value.
+
+      [(Info-goto-node "(elisp)Time of Day")] for definitions. *)
+  val time_ns : Time_ns.t t
+
+  (** Represent a span of time as a Lisp timestamp or Lisp time value.
+
+      This has the same Lisp representation as [time_ns]. *)
+  val span_ns : Time_ns.Span.t t
+
   (** [string_cached] is like [string], except it uses [of_utf8_bytes_cached]. *)
   val string_cached : string t
 
@@ -108,6 +118,15 @@ module type Type = sig
 
   (** Represent a tuple (a,b) as the elisp list '(a b) *)
   val tuple2_as_list : 'a t -> 'b t -> ('a * 'b) t
+
+  (** Represent a tuple (a,b,c) as the elisp list '(a b c) *)
+  val tuple3_as_list : 'a t -> 'b t -> 'c t -> ('a * 'b * 'c) t
+
+  (** Represent a tuple (a,b,c,d) as the elisp list '(a b c d) *)
+  val tuple4_as_list : 'a t -> 'b t -> 'c t -> 'd t -> ('a * 'b * 'c * 'd) t
+
+  (** Represent a tuple (a,b,c,d,e) as the elisp list '(a b c d e) *)
+  val tuple5_as_list : 'a t -> 'b t -> 'c t -> 'd t -> 'e t -> ('a * 'b * 'c * 'd * 'e) t
 
   (** Embed a sexpable ocaml type, so we can save values of the type in emacs, e.g. as
       buffer local variables *)
@@ -262,6 +281,8 @@ module type Value = sig
     -> t * [ `First_malformed of (int * string) option ]
 
   val to_utf8_bytes_exn : t -> string
+  val of_time_ns : Time_ns.t -> t
+  val to_time_ns_exn : t -> Time_ns.t
   val vec_get : t -> int -> t
   val vec_set : t -> int -> t -> unit
   val vec_size : t -> int
@@ -272,33 +293,33 @@ module type Value = sig
 
   (** An ['a Type.t] is an isomorphism between ['a] and a subset of [Value.t]. *)
   module Type : sig
-    type value
-    type 'a t [@@deriving sexp_of]
+      type value
+      type 'a t [@@deriving sexp_of]
 
-    module type S = Type with type value := value with type 'a t := 'a t
+      module type S = Type with type value := value with type 'a t := 'a t
 
-    include S
+      include S
 
-    val id : 'a t -> 'a Type_equal.Id.t
-    val to_value : 'a t -> 'a -> value
-    val of_value_exn : 'a t -> value -> 'a
-    val name : _ t -> Sexp.t
-    val map : 'a t -> name:Sexp.t -> of_:('a -> 'b) -> to_:('b -> 'a) -> 'b t
-    val to_sexp : 'a t -> 'a -> Sexp.t
+      val id : 'a t -> 'a Type_equal.Id.t
+      val to_value : 'a t -> 'a -> value
+      val of_value_exn : 'a t -> value -> 'a
+      val name : _ t -> Sexp.t
+      val map : 'a t -> name:Sexp.t -> of_:('a -> 'b) -> to_:('b -> 'a) -> 'b t
+      val to_sexp : 'a t -> 'a -> Sexp.t
 
-    (** [map_id type_ name] is short for [map type_ ~name ~of_:Fn.id ~to_:Fn.id].
+      (** [map_id type_ name] is short for [map type_ ~name ~of_:Fn.id ~to_:Fn.id].
         It is not interchangeable with [type_] itself. *)
-    val map_id : 'a t -> Sexp.t -> 'a t
+      val map_id : 'a t -> Sexp.t -> 'a t
 
-    val enum : Sexp.t -> (module Enum.S with type t = 'a) -> ('a -> value) -> 'a t
+      val enum : Sexp.t -> (module Enum.S with type t = 'a) -> ('a -> value) -> 'a t
 
-    (** [enum_symbol name (module M)] represents [m : M.t] as symbols named after
+      (** [enum_symbol name (module M)] represents [m : M.t] as symbols named after
         [Enum.to_string_hum (module M) m]. *)
-    val enum_symbol : Sexp.t -> (module Enum.S with type t = 'a) -> 'a t
+      val enum_symbol : Sexp.t -> (module Enum.S with type t = 'a) -> 'a t
 
-    val stringable : Sexp.t -> (module Stringable.S with type t = 'a) -> 'a t
-  end
-  with type value := t
+      val stringable : Sexp.t -> (module Stringable.S with type t = 'a) -> 'a t
+    end
+    with type value := t
 
   module type Funcall = Funcall with type value := t
   module type Make_subtype_arg = Make_subtype_arg with type value := t

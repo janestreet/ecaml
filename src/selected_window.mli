@@ -13,8 +13,8 @@ val get : unit -> Window.t
 (** [(describe-function 'select-window)] *)
 val set : ?move_to_front_of_buffer_list:bool -> Window.t -> unit
 
-(** [(describe-function 'switch-to-buffer)] *)
-val switch_to_buffer : Buffer.t -> unit Deferred.t
+(** [(describe-function 'pop-to-buffer-same-window)] *)
+val pop_to_buffer : Buffer.t -> unit Deferred.t
 
 (** [(describe-function 'switch-to-buffer-other-window)] *)
 val switch_to_buffer_other_window : Buffer.t -> unit Deferred.t
@@ -61,5 +61,5 @@ val height : unit -> int
 val width : unit -> int
 
 module Blocking : sig
-  val switch_to_buffer : Buffer.t -> unit
+  val pop_to_buffer : Buffer.t -> unit
 end

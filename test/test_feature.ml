@@ -36,8 +36,8 @@ let%expect_test "[all_provided]" =
     [%sexp
       (all_provided ()
        |> List.sort ~compare:(fun t1 t2 ->
-            String.compare (Symbol.name t1) (Symbol.name t2))
-        : Symbol.t list)];
+         String.compare (Symbol.name t1) (Symbol.name t2))
+       : Symbol.t list)];
   [%expect
     {|
     (abbrev
@@ -74,6 +74,7 @@ let%expect_test "[all_provided]" =
      electric
      elisp-mode
      emacs
+     emacs-inline-tests-runner
      emoji-zwj
      env
      epa-hook

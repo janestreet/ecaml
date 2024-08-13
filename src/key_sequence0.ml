@@ -8,10 +8,10 @@ end
 open Z
 
 include Value.Make_subtype (struct
-  let name = "key-sequence"
-  let here = [%here]
-  let is_in_subtype t = Value.is_string t || Value.is_vector t
-end)
+    let name = "key-sequence"
+    let here = [%here]
+    let is_in_subtype t = Value.is_string t || Value.is_vector t
+  end)
 
 let description = Funcall.Wrap.("key-description" <: t @-> return string)
 let sexp_of_t t = [%sexp (description t : string)]

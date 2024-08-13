@@ -156,4 +156,8 @@ val replace : t -> with_:Text.t -> in_:Text.t -> Text.t
 val replace_string : t -> with_:string -> in_:string -> string
 
 (** [(describe-function 'save-match-data)] *)
-val save_match_data : (_, 'a) Sync_or_async.t -> (unit -> 'a) -> 'a
+val save_match_data
+  :  ?here:Stdlib.Lexing.position
+  -> (_, 'a) Sync_or_async.t
+  -> (unit -> 'a)
+  -> 'a

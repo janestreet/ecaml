@@ -2,10 +2,10 @@ open! Core
 open! Import
 
 include Value.Make_subtype (struct
-  let name = "char-code"
-  let here = [%here]
-  let is_in_subtype = Funcall.Wrap.("characterp" <: value @-> return bool)
-end)
+    let name = "char-code"
+    let here = [%here]
+    let is_in_subtype = Funcall.Wrap.("characterp" <: value @-> return bool)
+  end)
 
 let equal t1 t2 = eq t1 t2
 let of_int_exn int = int |> Value.of_int_exn |> of_value_exn

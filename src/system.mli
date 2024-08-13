@@ -2,7 +2,7 @@
 
      Emacs maintains its own copy of the path and environment which is not visible to
      OCaml. Therefore, [Async.Process.create] will not give the same path and environment
-     as [Ecaml.Process.create], and [Ecaml.System.setenv ~var:"PATH"] does not affect the
+     as [Ecaml.Process.create], and [Ecaml.System.setenv ~key:"PATH"] does not affect the
      behavior of [Async.Process.create] (or [Ecaml.Process.create]!). *)
 
 open! Core
@@ -10,11 +10,11 @@ open! Import
 
 (** [(describe-function 'getenv)]
     [(Info-goto-node "(elisp)System Environment")] *)
-val getenv : var:string -> string option
+val getenv : string -> string option
 
 (** [(describe-function 'setenv)]
     [(Info-goto-node "(elisp)System Environment")] *)
-val setenv : var:string -> value:string option -> unit
+val setenv : key:string -> data:string option -> unit
 
 (** [(describe-variable 'process-environment)]
     [(Info-goto-node "(elisp)System Environment")] *)
@@ -34,8 +34,8 @@ val exec_path : string list Customization.t
 
 module Var_and_value : sig
   type t =
-    { var : string
-    ; value : string
+    { key : string
+    ; data : string
     }
   [@@deriving sexp_of]
 end

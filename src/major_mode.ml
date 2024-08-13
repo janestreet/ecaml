@@ -27,8 +27,8 @@ let compare_name t1 t2 = Symbol.compare_name t1.symbol t2.symbol
 let t_by_symbol : t String.Table.t = Hashtbl.create (module String)
 
 include Intf (struct
-  type nonrec t = t
-end)
+    type nonrec t = t
+  end)
 
 module Compare_by_name = struct
   type nonrec t = t [@@deriving sexp_of]
@@ -52,15 +52,15 @@ let add wrapped_at name symbol =
   let hook =
     let fundamental_mode = Symbol.intern "fundamental-mode" in
     match [%compare.equal: Symbol.Compare_name.t] symbol fundamental_mode with
-    | false -> Ok Hook.Wrap.(concat [ symbol |> Symbol.name; "-hook" ] <: Normal_hook)
+    | false -> Ok Hook.Wrap.([%string "%{Symbol.name symbol}-hook"] <: Normal_hook)
     | true ->
       error_s
         [%message
           {|fundamental-mode has no mode hook. [(Info-goto-node "(elisp) Major Modes")]|}]
   in
-  let keymap_var = Var.Wrap.(concat [ symbol |> Symbol.name; "-map" ] <: Keymap.t) in
+  let keymap_var = Var.Wrap.([%string "%{Symbol.name symbol}-map"] <: Keymap.t) in
   let syntax_table_var =
-    Var.Wrap.(concat [ symbol |> Symbol.name; "-syntax-table" ] <: Syntax_table.t)
+    Var.Wrap.([%string "%{Symbol.name symbol}-syntax-table"] <: Syntax_table.t)
   in
   let t = { wrapped_at; symbol; keymap_var; name; hook; syntax_table_var } in
   Hashtbl.add_exn t_by_symbol ~key:(symbol |> Symbol.name) ~data:t;
@@ -204,7 +204,7 @@ let define_derived_mode
   List.iter [ "abbrev-table"; "hook"; "map"; "syntax-table" ] ~f:(fun suffix ->
     Load_history.add_entry
       here
-      (Var (concat [ symbol |> Symbol.name; "-"; suffix ] |> Symbol.intern)));
+      (Var ([%string "%{Symbol.name symbol}-%{suffix}"] |> Symbol.intern)));
   let m = wrap_existing (symbol |> Symbol.name) here in
   let module M = (val m) in
   List.iter define_keys ~f:(fun (keys, symbol) ->
@@ -214,12 +214,8 @@ let define_derived_mode
   m
 ;;
 
-let derived_mode_p = Funcall.Wrap.("derived-mode-p" <: Symbol.t @-> return bool)
-
-let is_derived t ~from =
-  Current_buffer0.set_value_temporarily
-    Sync
-    (major_mode_var |> Buffer_local.var)
-    (symbol t)
-    ~f:(fun () -> derived_mode_p (symbol from))
+let provided_mode_derived_p =
+  Funcall.Wrap.("provided-mode-derived-p" <: Symbol.t @-> Symbol.t @-> return bool)
 ;;
+
+let is_derived t ~from = provided_mode_derived_p (symbol t) (symbol from)

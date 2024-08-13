@@ -14,8 +14,6 @@ end
 
 (** [(describe-function 'provide)] *)
 val provide : t -> unit
-  [@@deprecated
-    "[since 2018-06] Requires additional initialization.  Use [Ecaml.provide] instead."]
 
 (** [(describe-function 'featurep)] *)
 val is_provided : t -> bool

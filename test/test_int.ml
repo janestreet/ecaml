@@ -38,13 +38,12 @@ let%expect_test "[Value.of_int]" =
     ]
     ~f:(fun i ->
       let v =
-        Or_error.try_with (fun () ->
-          require_no_allocation [%here] (fun () -> Value.of_int_exn i))
+        Or_error.try_with (fun () -> require_no_allocation (fun () -> Value.of_int_exn i))
       in
       let i' =
         match v with
         | Ok v ->
-          require [%here] (Obj.is_int (Obj.repr v));
+          require (Obj.is_int (Obj.repr v));
           Or_error.try_with (fun () -> Value.to_int_exn v)
         | Error _ as x -> x
       in
@@ -52,7 +51,6 @@ let%expect_test "[Value.of_int]" =
       if most_negative_fixnum <= i && i <= most_positive_fixnum
       then
         require
-          [%here]
           (match i' with
            | Ok i' -> i = i'
            | Error _ -> false));
@@ -152,8 +150,9 @@ let%expect_test "[Value.of_int]" =
 let%expect_test "ints coming from emacs are not boxed" =
   let%bind v = Form.eval_string "123456" in
   print_s [%message "Value" (v : Value.t) ~boxed:(Obj.is_block (Obj.repr v) : bool)];
-  require [%here] (Value.to_int_exn v = 123_456);
-  [%expect {|
+  require (Value.to_int_exn v = 123_456);
+  [%expect
+    {|
     (Value
       (v     123456)
       (boxed false))

@@ -36,10 +36,10 @@ module Value = struct
 end
 
 include Value.Make_subtype (struct
-  let name = "face"
-  let here = [%here]
-  let is_in_subtype = Value.is_symbol
-end)
+    let name = "face"
+    let here = [%here]
+    let is_in_subtype = Value.is_symbol
+  end)
 
 let list_type = Value.Type.list t
 let of_name s = s |> Value.intern |> of_value_exn

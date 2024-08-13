@@ -4,6 +4,8 @@ open! Import
 include Defun_intf
 
 module Q = struct
+  include Q
+
   module A = struct
     let optional = "&optional" |> Symbol.intern
     let rest = "&rest" |> Symbol.intern
@@ -142,7 +144,7 @@ module Args = struct
             | None -> []
             | Some rest -> [ Q.A.rest; rest ])
          ]
-        : Symbol.t list)]
+       : Symbol.t list)]
   ;;
 
   let empty = { required = []; optional = []; rest = None }
@@ -265,7 +267,7 @@ module Interactive = struct
         ~to_:(function
           | Args f ->
             Form.list
-              [ "funcall" |> Symbol.intern |> Form.symbol
+              [ Q.funcall |> Form.symbol
               ; Form.quote
                   (Function.create [%here] ~args:[] (function
                      | [||] -> Value.list (Value.Private.block_on_async [%here] f)

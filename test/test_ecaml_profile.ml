@@ -154,11 +154,9 @@ let%expect_test "test Value.funcall that raises, with and without profiling" =
                      ~in_:string) )
       ]
       ~f:(fun () ->
-        require_does_raise [%here] (fun () ->
-          Value.funcall1 error arg ~should_profile:false);
+        require_does_raise (fun () -> Value.funcall1 error arg ~should_profile:false);
         [%expect {| ("dummy error message") |}];
-        require_does_raise [%here] (fun () ->
-          Value.funcall1 error arg ~should_profile:true);
+        require_does_raise (fun () -> Value.funcall1 error arg ~should_profile:true);
         [%expect {| ("dummy error message") |}]));
   return ()
 ;;

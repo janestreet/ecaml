@@ -58,8 +58,8 @@ module Require_match = struct
     | Confirm
     | Confirm_after_completion
     | False
-    | Require_match_or_null
-    | True
+    | Require_match_or_null__confirm_if_ret_completes
+    | Require_match_or_complete_or_null
 
   let type_ =
     Value.Type.map
@@ -70,17 +70,17 @@ module Require_match = struct
           [ Q.confirm, Confirm
           ; Q.confirm_after_completion, Confirm_after_completion
           ; Q.nil, False
-          ; Q.t, True
+          ; Q.t, Require_match_or_complete_or_null
           ]
           symbol
           ~equal:Symbol.equal
-        |> Option.value ~default:Require_match_or_null)
+        |> Option.value ~default:Require_match_or_null__confirm_if_ret_completes)
       ~to_:(function
         | Confirm -> Q.confirm
         | Confirm_after_completion -> Q.confirm_after_completion
         | False -> Q.nil
-        | Require_match_or_null -> Symbol.intern "other"
-        | True -> Q.t)
+        | Require_match_or_null__confirm_if_ret_completes -> Symbol.intern "other"
+        | Require_match_or_complete_or_null -> Q.t)
   ;;
 
   let t = type_
@@ -101,22 +101,22 @@ module Programmed_completion = struct
     [@@deriving sexp_of]
 
     include Valueable.Make (struct
-      type nonrec t = t
+        type nonrec t = t
 
-      let type_ =
-        let metadata_value = Symbol.intern "metadata" |> Symbol.to_value in
-        Value.Type.create
-          [%message elisp_name]
-          [%sexp_of: t]
-          (fun value ->
-            match Value.equal value metadata_value with
-            | true -> Metadata
-            | false -> Other value)
-          (function
-           | Metadata -> metadata_value
-           | Other value -> value)
-      ;;
-    end)
+        let type_ =
+          let metadata_value = Symbol.intern "metadata" |> Symbol.to_value in
+          Value.Type.create
+            [%message elisp_name]
+            [%sexp_of: t]
+            (fun value ->
+              match Value.equal value metadata_value with
+              | true -> Metadata
+              | false -> Other value)
+            (function
+              | Metadata -> metadata_value
+              | Other value -> value)
+        ;;
+      end)
   end
 
   module Metadata = struct
@@ -216,18 +216,18 @@ let completing_read =
          @-> return string)
   in
   fun ~prompt
-      ~programmed_completion
-      ?(predicate = Value.nil)
-      ?(require_match = Require_match.default)
-      ?(initial_input = Initial_input.Empty)
-      ?default
-      ~history
-      () ->
+    ~programmed_completion
+    ?(predicate = Value.nil)
+    ?(require_match = Require_match.default)
+    ?(initial_input = Initial_input.Empty)
+    ?default
+    ~history
+    () ->
     Async_ecaml.Private.run_outside_async [%here] (fun () ->
       let prompt =
         match default with
         | None -> prompt
-        | Some d -> concat [ prompt; "(default = "; d; ") " ]
+        | Some d -> [%string "%{prompt}(default = %{d}) "]
       in
       completing_read
         prompt
@@ -271,6 +271,7 @@ let read_map_key
   ?display_sort_function
   ?initial_input
   ?default
+  ?(confirm_ret_completion = false)
   ~history
   ()
   =
@@ -278,7 +279,10 @@ let read_map_key
     read
       ~prompt
       ~collection:(Map.keys collection)
-      ~require_match:True
+      ~require_match:
+        (if confirm_ret_completion
+         then Require_match_or_null__confirm_if_ret_completes
+         else Require_match_or_complete_or_null)
       ?annotation_function
       ?display_sort_function
       ?initial_input
@@ -286,7 +290,22 @@ let read_map_key
       ~history
       ()
   in
-  return (Map.find_exn collection choice)
+  match Map.find collection choice with
+  | Some data -> return data
+  | None ->
+    (match choice with
+     | "" ->
+       (* [read] can return an empty string even if [~require_match:True] is passed and
+          the empty string is not in the collection.  This happens when [default] is not
+          supplied; otherwise, pressing RET at an empty minibuffer would return the
+          default instead. *)
+       raise_s [%message "Did not enter a valid choice"]
+     | choice ->
+       raise_s
+         [%message
+           "Ecaml bug: [Completion.read_map_key] could not find key in map"
+             (choice : string)
+             ~keys:(Map.keys collection : string list)])
 ;;
 
 let crm_separator = Var.Wrap.("crm-separator" <: string)
@@ -305,33 +324,33 @@ let read_multiple =
          @-> return (list string))
   in
   fun ~prompt
-      ~collection
-      ?(require_match = Require_match.False)
-      ?(separator_regexp = "[ \t]*,[ \t]*")
-      ?(initial_input = Initial_input.Empty)
-      ?default
-      ~history
-      () ->
+    ~collection
+    ?(require_match = Require_match.False)
+    ?(separator_regexp = "[ \t]*,[ \t]*")
+    ?(initial_input = Initial_input.Empty)
+    ?default
+    ~history
+    () ->
     Async_ecaml.Private.run_outside_async [%here] (fun () ->
       let predicate = Value.nil in
       let prompt =
         match default with
         | None -> prompt
-        | Some d -> concat [ prompt; "(default = "; d; ") " ]
+        | Some d -> [%string "%{prompt}(default = %{d}) "]
       in
       Current_buffer.set_value_temporarily
         Sync
         crm_separator
         separator_regexp
         ~f:(fun () ->
-        completing_read_multiple
-          prompt
-          collection
-          predicate
-          require_match
-          initial_input
-          (Minibuffer.History.symbol history)
-          default))
+          completing_read_multiple
+            prompt
+            collection
+            predicate
+            require_match
+            initial_input
+            (Minibuffer.History.symbol history)
+            default))
 ;;
 
 let read_multiple_map_keys
@@ -347,7 +366,7 @@ let read_multiple_map_keys
     read_multiple
       ~prompt
       ~collection:(Map.keys collection)
-      ~require_match:True
+      ~require_match:Require_match_or_complete_or_null
       ?separator_regexp
       ?initial_input
       ?default
@@ -384,7 +403,7 @@ let read_function_name =
         ~prompt
         ~programmed_completion:(Symbol collection)
         ~predicate
-        ~require_match:True
+        ~require_match:Require_match_or_complete_or_null
         ?default:(Point.function_called_at () |> Option.map ~f:Symbol.name)
         ~history
         ()
@@ -413,7 +432,7 @@ let read_variable_name =
         ~prompt
         ~programmed_completion:(Symbol collection)
         ~predicate
-        ~require_match:True
+        ~require_match:Require_match_or_complete_or_null
         ?default:(Point.variable_at () |> Option.map ~f:Symbol.name)
         ~history
         ()

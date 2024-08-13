@@ -11,7 +11,12 @@ module type Current_buffer0_public = sig
 
   (** [set_temporarily t ~f] runs [f] with the current buffer set to [t].
       [(describe-function 'with-current-buffer)]. *)
-  val set_temporarily : (_, 'a) Sync_or_async.t -> Buffer0.t -> f:(unit -> 'a) -> 'a
+  val set_temporarily
+    :  ?here:Stdlib.Lexing.position
+    -> (_, 'a) Sync_or_async.t
+    -> Buffer0.t
+    -> f:(unit -> 'a)
+    -> 'a
 
   (** [(describe-function 'boundp)]
 
@@ -56,6 +61,11 @@ module type Current_buffer0_public = sig
 
   (** [(describe-function 'bound-and-true-p)] *)
   val has_non_null_value : _ Var.t -> bool
+
+  (** [rename_exn] renames the current buffer, raising if [name] is already taken and
+      [unique = false]; with [unique = true] it generates a new name.  [(describe-function
+      'rename-buffer)]. *)
+  val rename_exn : ?unique:bool -> unit -> name:string -> unit
 end
 
 module type Current_buffer0 = sig

@@ -59,3 +59,12 @@ val expand : t -> in_dir:[ `Default_directory_in_current_buffer | `This of strin
 
 (** [(describe-function 'read-file-name)] *)
 val read : prompt:string -> t Deferred.t
+
+(** An absolute file name.
+
+    The Elisp value may begin with [~/] instead of [/], so it is automatically expanded
+    on conversion. *)
+val absolute_t : File_path.Absolute.t Value.Type.t
+
+(** A relative file name. *)
+val relative_t : File_path.Relative.t Value.Type.t

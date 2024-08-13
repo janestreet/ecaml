@@ -13,11 +13,13 @@ let set ?(move_to_front_of_buffer_list = true) window =
 ;;
 
 module Blocking = struct
-  let switch_to_buffer = Funcall.Wrap.("switch-to-buffer" <: Buffer.t @-> return nil)
+  let pop_to_buffer =
+    Funcall.Wrap.("pop-to-buffer-same-window" <: Buffer.t @-> return nil)
+  ;;
 end
 
-let switch_to_buffer buffer =
-  Value.Private.run_outside_async [%here] (fun () -> Blocking.switch_to_buffer buffer)
+let pop_to_buffer buffer =
+  Value.Private.run_outside_async [%here] (fun () -> Blocking.pop_to_buffer buffer)
 ;;
 
 let switch_to_buffer_other_window =

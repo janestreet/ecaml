@@ -18,10 +18,15 @@ module Require_match : sig
   type t =
     | Confirm (** Can exit without match by confirming *)
     | Confirm_after_completion
-        (** Can exit without match by typing, or by completing and then confirming *)
+    (** Can exit without match by typing, or by completing and then confirming *)
     | False (** Can exit without match *)
-    | Require_match_or_null (** Cannot exit without match unless the input is nil *)
-    | True (** Cannot exit without match *)
+    | Require_match_or_null__confirm_if_ret_completes
+    (** Cannot exit without match unless the input is empty.  If the user presses RET and
+        the input completes to a matching candidate, pause for confirmation before
+        accepting the input. *)
+    | Require_match_or_complete_or_null
+    (** Cannot exit without match unless the input is empty.  If the user presses RET and
+        the input completes to a matching candidate, accept the completed candidate. *)
 
   include Valueable.S with type t := t
 
@@ -42,6 +47,10 @@ val read
   -> unit
   -> string Deferred.t
 
+(** If [confirm_ret_completion = false], behaves like [~require_match:True].
+
+    If [confirm_ret_completion = true], behaves like
+    [~require_match:Require_match_or_null__confirm_if_ret_completes]. *)
 val read_map_key
   :  prompt:string (** typically ends with ": " *)
   -> collection:'a String.Map.t
@@ -49,6 +58,7 @@ val read_map_key
   -> ?display_sort_function:(string list -> string list)
   -> ?initial_input:Initial_input.t (** default is Empty *)
   -> ?default:string
+  -> ?confirm_ret_completion:bool (** default is false *)
   -> history:Minibuffer.History.t
   -> unit
   -> 'a Deferred.t

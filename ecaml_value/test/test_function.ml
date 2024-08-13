@@ -18,16 +18,17 @@ let%expect_test "mutual recursion between Emacs and OCaml" =
         1 + Value.to_int_exn (Value.funcall1 v (i - 1 |> Value.of_int_exn)))
   in
   r
-    := Some
-         (Function.to_value
-            (lambda
-               [%here]
-               (Returns Value.Type.int)
-               (let%map_open.Defun () = return ()
-                and i = required "int" int in
-                loop i)));
+  := Some
+       (Function.to_value
+          (lambda
+             [%here]
+             (Returns Value.Type.int)
+             (let%map_open.Defun () = return ()
+              and i = required "int" int in
+              loop i)));
   print_s [%message "result" ~_:(loop 5 : int)];
-  [%expect {|
+  [%expect
+    {|
     (i 5)
     (i 4)
     (i 3)
@@ -122,21 +123,19 @@ let%expect_test "raising from OCaml to OCaml through many layers of Emacs" =
   (match List.mem files Test_function_file1.filename ~equal:String.( = ) with
    | true -> ()
    | false ->
-     print_cr
-       [%here]
-       [%message "Backtrace has no frames from" Test_function_file1.filename]);
+     print_cr [%message "Backtrace has no frames from" Test_function_file1.filename]);
   [%expect {| |}];
   Current_buffer.set_value_temporarily
     Sync
     (Debugger.debug_on_error |> Customization.var)
     true
     ~f:(fun () ->
-    let show_errors = false in
-    match show_errors with
-    | true ->
-      Ref.set_temporarily Backtrace.elide false ~f:(fun () ->
-        require_does_raise ~show_backtrace:true [%here] (fun () -> loop 1))
-    | false -> require_does_raise [%here] (fun () -> loop 1));
+      let show_errors = false in
+      match show_errors with
+      | true ->
+        Ref.set_temporarily Backtrace.elide false ~f:(fun () ->
+          require_does_raise ~show_backtrace:true (fun () -> loop 1))
+      | false -> require_does_raise (fun () -> loop 1));
   [%expect
     {|
     (((foo bar baz) (backtrace ("<backtrace elided in test>")))
@@ -317,7 +316,7 @@ let%expect_test "raise in dispatch" =
 ;;
 
 let%expect_test "reporting [Out_of_memory] doesn't allocate" =
-  require_no_allocation [%here] (fun () ->
+  require_no_allocation (fun () ->
     Ecaml_value.Ecaml_callback.report_exn_when_calling_callback Out_of_memory);
   [%expect {| Ecaml received Out_of_memory |}];
   return ()

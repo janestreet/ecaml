@@ -7,10 +7,10 @@ module Q = struct
 end
 
 include Value.Make_subtype (struct
-  let name = "function"
-  and here = [%here]
-  and is_in_subtype = Value.is_function
-end)
+    let name = "function"
+    and here = [%here]
+    and is_in_subtype = Value.is_function
+  end)
 
 module Fn = struct
   type t = Value.t array -> Value.t [@@deriving sexp_of]
@@ -41,15 +41,15 @@ let create =
     [%here]
     ~should_run_holding_async_lock:true
     ~f:(fun callback_id args ->
-    if !Expert.raise_in_dispatch
-    then raise_s [%message "Function.Expert.raise_in_dispatch set"];
-    try
-      let callback = Caml_embed.lookup_by_id_exn callback_id Fn.type_id in
-      callback args
-    with
-    | exn ->
-      Value.Expert.non_local_exit_signal exn;
-      Value.nil);
+      if !Expert.raise_in_dispatch
+      then raise_s [%message "Function.Expert.raise_in_dispatch set"];
+      try
+        let callback = Caml_embed.lookup_by_id_exn callback_id Fn.type_id in
+        callback args
+      with
+      | exn ->
+        Value.Expert.non_local_exit_signal exn;
+        Value.nil);
   let dispatch =
     make_dispatch_function
       ([%message "call-OCaml-function" ~implemented_at:([%here] : Source_code_position.t)]

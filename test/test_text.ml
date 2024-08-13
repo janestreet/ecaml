@@ -17,7 +17,8 @@ let%expect_test "[length]" =
   for i = 0 to 3 do
     print_s [%sexp (length (of_utf8_bytes (String.make i 'a')) : int)]
   done;
-  [%expect {|
+  [%expect
+    {|
     0
     1
     2
@@ -50,17 +51,20 @@ let%expect_test "[num_bytes]" =
     print_s [%message "" ~length:(length t : int) ~num_bytes:(num_bytes t : int)]
   in
   test ("" |> of_utf8_bytes);
-  [%expect {|
+  [%expect
+    {|
     ((length    0)
      (num_bytes 0))
     |}];
   test ("foo" |> of_utf8_bytes);
-  [%expect {|
+  [%expect
+    {|
     ((length    3)
      (num_bytes 3))
     |}];
   test utf8;
-  [%expect {|
+  [%expect
+    {|
     ((length    1)
      (num_bytes 3))
     |}];
@@ -202,7 +206,7 @@ let%expect_test "[get_property]" =
           (at : int)
           ~property:
             (Or_error.try_with (fun () -> property_value t ~at face)
-              : Face_spec.t option Or_error.t)]
+             : Face_spec.t option Or_error.t)]
   done;
   [%expect
     {|
@@ -226,7 +230,7 @@ let%expect_test "[set_property]" =
               ~text:(t : t)
               ~property:
                 (Or_error.try_with (fun () -> property_value t ~at:0 face)
-                  : Face_spec.t option Or_error.t)]
+                 : Face_spec.t option Or_error.t)]
       | exception exn -> print_s [%message "failed" ~_:(exn : exn)]
     done
   done;
@@ -277,7 +281,6 @@ let%expect_test "various [Face_spec.t] values" =
     set_property t property_name face_spec;
     let round_trip = property_value t property_name ~at:0 |> Option.value_exn in
     require
-      [%here]
       (Value.equal (face_spec |> Face_spec.to_value) (round_trip |> Face_spec.to_value))
       ~if_false_then_print_s:[%lazy_message (round_trip : Face_spec.t)]
   in
@@ -447,7 +450,7 @@ let%expect_test "[is_multibyte], [to_multibyte], [to_unibyte]" =
 ;;
 
 let%expect_test "[to_unibyte_exn] raise" =
-  require_does_raise [%here] (fun () -> to_unibyte_exn utf8);
+  require_does_raise (fun () -> to_unibyte_exn utf8);
   [%expect {| ("Cannot convert character at index 0 to unibyte") |}];
   return ()
 ;;

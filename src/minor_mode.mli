@@ -34,6 +34,10 @@ val auto_fill : t
     [(describe-function 'goto-address-mode)]*)
 val goto_address : t
 
+(** [(describe-variable 'hl-line-mode)]
+    [(describe-function 'hl-line-mode)]*)
+val hl_line : t
+
 (** [(describe-variable 'buffer-read-only)]
     [(describe-function 'read-only-mode)] *)
 val read_only : t

@@ -2,10 +2,10 @@ open! Core
 open! Import
 
 include Value.Make_subtype (struct
-  let name = "symbol"
-  let here = [%here]
-  let is_in_subtype = Value.is_symbol
-end)
+    let name = "symbol"
+    let here = [%here]
+    let is_in_subtype = Value.is_symbol
+  end)
 
 let equal t1 t2 = eq t1 t2
 let intern string = string |> Value.intern |> of_value_exn

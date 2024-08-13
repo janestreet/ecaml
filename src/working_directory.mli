@@ -5,6 +5,7 @@ type t =
   | Of_current_buffer
   | Root
   | This of string
+  | This_abspath of File_path.Absolute.t
 [@@deriving sexp_of]
 
 val to_filename : t -> string

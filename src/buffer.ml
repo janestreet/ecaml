@@ -83,9 +83,9 @@ let buffer_local_variables =
 let buffer_local_variables t =
   buffer_local_variables t
   |> List.map ~f:(fun value ->
-       if Value.is_symbol value
-       then value |> Symbol.of_value_exn, None
-       else Value.car_exn value |> Symbol.of_value_exn, Some (Value.cdr_exn value))
+    if Value.is_symbol value
+    then value |> Symbol.of_value_exn, None
+    else Value.car_exn value |> Symbol.of_value_exn, Some (Value.cdr_exn value))
 ;;
 
 let find_file_noselect =
@@ -167,3 +167,23 @@ let chars_modified_tick =
 ;;
 
 let is_modified = Funcall.Wrap.("buffer-modified-p" <: t @-> return bool)
+
+let rename_kill_existing buffer ~name:new_name =
+  match name buffer with
+  | None ->
+    (* buffer is dead, don't bother *)
+    return ()
+  | Some old_name ->
+    if not (String.equal old_name new_name)
+    then (
+      let%map () =
+        match find ~name:new_name with
+        | Some buffer -> kill buffer
+        | None -> return ()
+      in
+      Current_buffer0.set_temporarily Sync buffer ~f:(fun () ->
+        Current_buffer0.rename_exn ~name:new_name ()))
+    else return ()
+;;
+
+let disable_undo = Funcall.Wrap.("buffer-disable-undo" <: t @-> return nil)

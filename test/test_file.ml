@@ -111,23 +111,23 @@ let%expect_test "[locate_dominating_file]" =
     ~prefix:"test-locate_dominating_file"
     ~suffix:""
     ~f:(fun dir ->
-    Directory.create (concat [ dir; "/b/c" ]) ~parents:true;
-    let basename = "foo" in
-    touch (concat [ dir; "/"; basename ]);
-    let test ~above =
-      print_s
-        [%sexp
-          (locate_dominating_file ~above:(concat [ dir; "/"; above ]) ~basename
-           |> Option.map ~f:(fun x ->
-                x |> File.truename |> String.chop_prefix_exn ~prefix:dir)
-            : string option)]
-    in
-    test ~above:"b/c";
-    [%expect {| (/) |}];
-    test ~above:"b";
-    [%expect {| (/) |}];
-    test ~above:"";
-    [%expect {| (/) |}]);
+      Directory.create (concat [ dir; "/b/c" ]) ~parents:true;
+      let basename = "foo" in
+      touch (concat [ dir; "/"; basename ]);
+      let test ~above =
+        print_s
+          [%sexp
+            (locate_dominating_file ~above:(concat [ dir; "/"; above ]) ~basename
+             |> Option.map ~f:(fun x ->
+               x |> File.truename |> String.chop_prefix_exn ~prefix:dir)
+             : string option)]
+      in
+      test ~above:"b/c";
+      [%expect {| (/) |}];
+      test ~above:"b";
+      [%expect {| (/) |}];
+      test ~above:"";
+      [%expect {| (/) |}]);
   return ()
 ;;
 
@@ -149,7 +149,8 @@ let%expect_test "[write]" =
   [%expect {| stuff |}];
   write file "more stuff\n" ~append:true;
   let%bind () = show_contents () in
-  [%expect {|
+  [%expect
+    {|
     stuff
     more stuff
     |}];

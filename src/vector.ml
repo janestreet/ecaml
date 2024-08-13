@@ -8,10 +8,10 @@ module Q = struct
 end
 
 include Value.Make_subtype (struct
-  let name = "vector"
-  let here = [%here]
-  let is_in_subtype = Value.is_vector
-end)
+    let name = "vector"
+    let here = [%here]
+    let is_in_subtype = Value.is_vector
+  end)
 
 let make_vector = Funcall.Wrap.("make-vector" <: int @-> value @-> return t)
 let create ~len value = make_vector len value
@@ -23,7 +23,7 @@ let bounds_check t i name =
   then
     raise_s
       [%message
-        (concat [ "[Vector."; name; "] got invalid subscript" ])
+        [%string "[Vector.%{name}] got invalid subscript"]
           ~subscript:(i : int)
           (length : int)
           ~vector:(t : t)]

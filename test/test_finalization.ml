@@ -45,9 +45,9 @@ let%expect_test "finalization of embedded ocaml values" =
     Ecaml.debug_embedded_caml_values ()
     |> [%of_sexp: (int * Sexp.t) list]
     |> List.filter_map ~f:(fun (_, sexp) ->
-         match sexp with
-         | Atom "<fun>" -> None
-         | _ -> Some sexp)
+      match sexp with
+      | Atom "<fun>" -> None
+      | _ -> Some sexp)
     |> [%sexp_of: Sexp.t list]
     |> print_s
   in
@@ -74,7 +74,8 @@ let%expect_test "finalization of embedded ocaml values" =
       Current_buffer.set_value var v1;
       Current_buffer.set_value var v2;
       dump_embedded_values ());
-    [%expect {|
+    [%expect
+      {|
       (((a V1) (b 1))
        ((a V2) (b 2)))
       |}]);
@@ -93,51 +94,74 @@ let%expect_test "Emacs objects no longer referenced from OCaml can be gc'ed by E
   make_ocaml_garbage_not_keep_emacs_values_alive ();
   let after = Value.Stat.now () in
   print_s [%sexp (Value.Stat.diff after before : Value.Stat.t)];
-  [%expect {|
+  [%expect
+    {|
     ((emacs_free_performed 2)
      (emacs_free_scheduled 2))
     |}];
   return ()
 ;;
 
-(* let test_ocaml_gc_handles_references_from_emacs ~make_emacs_reference =
- *   let force_closure_allocation = Random.int 1232132 in
- *   let ocaml_value _ =
- *     Gc.keep_alive force_closure_allocation;
- *     Value.nil
- *   in
- *   let ocaml_value_is_alive =
- *     let w = Weak_pointer.create () in
- *     Weak_pointer.set w (Heap_block.create_exn ocaml_value);
- *     fun () -> Weak_pointer.is_some w
- *   in
- *   ignore (make_emacs_reference ~ocaml_value : Value.t);
- *   (* When built with OCaml 4.08 or later, this test becomes flaky. Sometimes, the Emacs GC
- *      doesn't garbage collect the above emacs reference, and so [alive_after = true]. We
- *      don't understand why this is, but allocating a string of length >= 16 makes the test
- *      succeed deterministically. *)
- *   ignore (Value.of_utf8_bytes "aaaaaaaaaaaaaaaa" : Value.t);
- *   let alive_before = ocaml_value_is_alive () in
- *   make_ocaml_garbage_not_keep_emacs_values_alive ();
- *   (* We now make Emacs tell us the function id is garbage, at which point we remove the
- *      OCaml function from the registration table. *)
- *   emacs_garbage_collect ();
- *   Gc.compact ();
- *   (* and get the OCaml gc to realize the function is gone *)
- *   let alive_after = ocaml_value_is_alive () in
- *   print_s [%message (alive_before : bool) (alive_after : bool)]
- * ;;
- *
- * let%expect_test "OCaml objects no longer referenced from Emacs can be gc'ed by OCaml" =
- *   test_ocaml_gc_handles_references_from_emacs ~make_emacs_reference:(fun ~ocaml_value ->
- *     Function.create [%here] ~args:[] ocaml_value |> Function.to_value);
- *   [%expect {|
- *     ((alive_before true)
- *      (alive_after  false)) |}];
- *   test_ocaml_gc_handles_references_from_emacs ~make_emacs_reference:(fun ~ocaml_value ->
- *     lambda_nullary [%here] (Returns Value.Type.value) ocaml_value |> Function.to_value);
- *   [%expect {|
- *     ((alive_before true)
- *      (alive_after  false)) |}];
- *   return ()
- * ;; *)
+let test_ocaml_gc_handles_references_from_emacs ~make_emacs_reference =
+  let force_closure_allocation = Random.int 1232132 in
+  let ocaml_value _ =
+    Gc.keep_alive force_closure_allocation;
+    Value.nil
+  in
+  let ocaml_value_is_alive =
+    let w = Weak_pointer.create () in
+    Weak_pointer.set w (Heap_block.create_exn ocaml_value);
+    fun () -> Weak_pointer.is_some w
+  in
+  ignore (make_emacs_reference ~ocaml_value : Value.t);
+  (* When built with OCaml 4.08 or later, this test becomes flaky. Sometimes, the Emacs GC
+     doesn't garbage collect the above emacs reference, and so [alive_after = true]. We
+     don't understand why this is, but allocating a string of length >= 16 makes the test
+     succeed deterministically. *)
+  ignore (Value.of_utf8_bytes "aaaaaaaaaaaaaaaa" : Value.t);
+  let alive_before = ocaml_value_is_alive () in
+  make_ocaml_garbage_not_keep_emacs_values_alive ();
+  (* We now make Emacs tell us the function id is garbage, at which point we remove the
+     OCaml function from the registration table. *)
+  emacs_garbage_collect ();
+  Gc.compact ();
+  (* and get the OCaml gc to realize the function is gone *)
+  let alive_after = ocaml_value_is_alive () in
+  print_s [%message (alive_before : bool) (alive_after : bool)]
+;;
+
+let%expect_test ("OCaml objects no longer referenced from Emacs can be gc'ed by OCaml" [@tags
+                                                                                         "disabled"])
+  =
+  test_ocaml_gc_handles_references_from_emacs ~make_emacs_reference:(fun ~ocaml_value ->
+    Function.create [%here] ~args:[] ocaml_value |> Function.to_value);
+  [%expect
+    {|
+    ((alive_before true)
+     (alive_after  false))
+    |}];
+  test_ocaml_gc_handles_references_from_emacs ~make_emacs_reference:(fun ~ocaml_value ->
+    lambda_nullary [%here] (Returns Value.Type.value) ocaml_value |> Function.to_value);
+  [%expect
+    {|
+    ((alive_before true)
+     (alive_after  false))
+    |}];
+  return ()
+;;
+
+let%expect_test ("finalization of an Emacs function" [@tags "disabled"]) =
+  let r = ref 14 in
+  let f _ =
+    r := 14;
+    Value.nil
+  in
+  Core.Gc.Expert.add_finalizer_exn f (fun _ ->
+    print_s [%message "finalized" (r : int ref)]);
+  ignore (Function.create [%here] ~args:[] f : Function.t);
+  make_ocaml_garbage_not_keep_emacs_values_alive ();
+  emacs_garbage_collect ();
+  Gc.compact ();
+  [%expect {| (finalized (r 14)) |}];
+  return ()
+;;

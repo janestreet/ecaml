@@ -24,7 +24,8 @@ let%expect_test "test generating intermediate logs from .t files" =
       ()
     >>| print_endline
   in
-  [%expect {|
+  [%expect
+    {|
     .
     # Ran 1 tests, 0 skipped, 0 failed.
     |}];
@@ -35,7 +36,8 @@ let%expect_test "test generating intermediate logs from .t files" =
       ()
     >>| print_endline
   in
-  [%expect {|
+  [%expect
+    {|
     TIMESTAMP echo hello
     TIMESTAMP echo world
     TIMESTAMP END
@@ -64,14 +66,14 @@ let%expect_test "test generating Nested_profiles from intermediate logs" =
       let%bind () = Reader.file_contents tmpfile >>| print_endline in
       [%expect
         {|
-         (1_900_000us test-hg.t "2021-11-09 16:08:17.455591583Z" (
-            ( 17%   330_000us start_test)
-            (  0%     2_000us "cat >can_load_re2.py <<EOF")
-            ( 46%   860_000us "hg --config extensions.can_load_re2=can_load_re2.py --version | grep ok")
-            (  3%    59_000us "cat $hgrc > $IRON_HGRCPATH")
-            ( 20%   380_000us "hg pull foo -e 'echo >&2 running ssh'")
-            ( 10%   190_000us "hg debuginstall | grep 'Python version'")
-            (  4%    75_000us "hg debuginstall | grep 'Python version'")))
-         |}];
+        (1_900_000us test-hg.t "2021-11-09 16:08:17.455591583Z" (
+           ( 17%   330_000us start_test)
+           (  0%     2_000us "cat >can_load_re2.py <<EOF")
+           ( 46%   860_000us "hg --config extensions.can_load_re2=can_load_re2.py --version | grep ok")
+           (  3%    59_000us "cat $hgrc > $IRON_HGRCPATH")
+           ( 20%   380_000us "hg pull foo -e 'echo >&2 running ssh'")
+           ( 10%   190_000us "hg debuginstall | grep 'Python version'")
+           (  4%    75_000us "hg debuginstall | grep 'Python version'")))
+        |}];
       return ())
 ;;

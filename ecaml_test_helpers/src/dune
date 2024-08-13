@@ -2,7 +2,6 @@
  (name ecaml_test_helpers)
  (public_name ecaml.ecaml_test_helpers)
  (library_flags -linkall)
- (libraries async async_unix core_kernel.composition_infix core ecaml
-   nested_profile)
+ (libraries async core ecaml expect_test_helpers_core)
  (preprocess
   (pps ppx_jane)))

@@ -32,13 +32,15 @@ let%expect_test "[create], [delete], [end_], [start]" =
       count_in "buffer" ~start:(Point.min ()) ~end_:(Point.max ())
     in
     count_overlays ();
-    [%expect {|
+    [%expect
+      {|
       (at "point min" 0)
       (in buffer 0)
       |}];
     let t = create () ~buffer ~start:(Point.min ()) ~end_:(Point.max ()) in
     count_overlays ();
-    [%expect {|
+    [%expect
+      {|
       (at "point min" 1)
       (in buffer 1)
       |}];
@@ -53,7 +55,8 @@ let%expect_test "[create], [delete], [end_], [start]" =
       |}];
     delete t;
     count_overlays ();
-    [%expect {|
+    [%expect
+      {|
       (at "point min" 0)
       (in buffer 0)
       |}]);
@@ -70,13 +73,15 @@ let%expect_test "[move]" =
       count_in "region2" ~start:region2_start ~end_:region2_end
     in
     count_overlays ();
-    [%expect {|
+    [%expect
+      {|
       (in region1 1)
       (in region2 0)
       |}];
     ignore (move t ~start:region2_start ~end_:region2_end : t);
     count_overlays ();
-    [%expect {|
+    [%expect
+      {|
       (in region1 0)
       (in region2 1)
       |}]);

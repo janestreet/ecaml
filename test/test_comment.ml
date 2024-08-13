@@ -187,7 +187,8 @@ let%expect_test "goto_*_exn on multiline comment" =
 let%expect_test "goto_end_exn on single-line comment" =
   Current_buffer.set_temporarily_to_temp_buffer Sync (fun () ->
     mode "org";
-    Point.insert {|
+    Point.insert
+      {|
 # this is a comment
 # it spans multiple lines
 # end of the comment
@@ -377,7 +378,8 @@ def hello():
 let%expect_test "two comments on one line" =
   Current_buffer.set_temporarily_to_temp_buffer Sync (fun () ->
     mode "html";
-    Point.insert {|
+    Point.insert
+      {|
 <!-- comment 1 -->  <!-- comment 2 -->
 |};
     test ~position:5 ();

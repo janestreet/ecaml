@@ -71,9 +71,9 @@ and output a Nested_profile representation.
        Profile.hide_top_level_if_less_than := Time_ns.Span.zero;
        Profile.never_show_rendering_took := true;
        (Profile.output_profile
-          := fun str ->
-               Out_channel.with_file output_file ~f:(fun ch ->
-                 Out_channel.output_string ch str));
+        := fun str ->
+             Out_channel.with_file output_file ~f:(fun ch ->
+               Out_channel.output_string ch str));
        Reader.file_lines file >>| process_lines ~test_name)
     ~behave_nicely_in_pipeline:false
 ;;

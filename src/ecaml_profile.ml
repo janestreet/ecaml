@@ -38,21 +38,24 @@ let profile_kill_buffer_query_function =
   Hook.Function.create
     ("ecaml-profile-kill-buffer-query-function" |> Symbol.intern)
     [%here]
-    ~docstring:{|
+    ~docstring:
+      {|
 Prompt the user before killing the *profile* buffer and losing data.
 |}
     ~hook_type:Query_function
     (Returns_deferred Value.Type.bool)
     (fun () ->
-    Minibuffer.yes_or_no
-      ~prompt:
-        (Documentation.substitute_command_keys
-           [%string
-             {|Killing the profile buffer loses data, and is probably not what you meant.
+       Minibuffer.yes_or_no
+         ~prompt:
+           (Documentation.O.(
+              substitute_command_keys
+                [%string
+                  {|Killing the profile buffer loses data, and is probably not what you meant.
 
 Consider pressing \[quit-window] instead.
 
-Kill the profile buffer? |}]))
+Kill the profile buffer? |}])
+            |> Text.to_utf8_bytes))
 ;;
 
 include
@@ -63,18 +66,11 @@ include
            {|
 The major mode for the *profile* buffer, which holds a log of Ecaml profile output.
 |}
-         ~define_keys:
-           [ "SPC", "scroll-up" |> Symbol.intern
-           ; "DEL", "scroll-down" |> Symbol.intern
-           ; "<", "beginning-of-buffer" |> Symbol.intern
-           ; ">", "end-of-buffer" |> Symbol.intern
-           ; "q", "quit-window" |> Symbol.intern
-           ]
+         ~parent:Major_mode.Special.major_mode
          ~mode_line:"ecaml-profile"
          ~initialize:
            ( Returns Value.Type.unit
            , fun () ->
-               Minor_mode.enable Minor_mode.read_only;
                Hook.add
                  ~buffer_local:true
                  Buffer.kill_buffer_query_functions
@@ -86,16 +82,9 @@ let () = Keymap.suppress_keymap keymap ~suppress_digits:true
 module Start_location = struct
   include Profile.Start_location
 
-  let to_string t =
-    [%sexp (t : t)]
-    |> Sexp.to_string
-    |> String.lowercase
-    |> String.tr ~target:'_' ~replacement:'-'
-  ;;
-
-  let to_symbol t = t |> to_string |> Symbol.intern
-
-  let docstring = function
+  let docstring =
+    Option.some
+    << function
     | End_of_profile_first_line -> "put the time at the end of the profile's first line"
     | Line_preceding_profile -> "put the time on its own line, before the profile"
   ;;
@@ -212,33 +201,36 @@ let () =
     (* We start initializing the profile buffer, so that it exists when we need it. *)
     ignore (Profile_buffer.profile_buffer () : Buffer.t option);
   (Profile.Private.on_async_out_of_order
-     := fun (lazy sexp) -> Echo_area.inhibit_messages Sync (fun () -> message_s sexp));
+   := fun (lazy sexp) -> Echo_area.inhibit_messages Sync (fun () -> message_s sexp));
   (Profile.sexp_of_time_ns
-     := fun time_ns ->
-          match [%sexp (time_ns : Time_ns_unix.t)] with
-          | List [ date; ofday ] -> List [ ofday; date ]
-          | sexp -> sexp);
+   := fun time_ns ->
+        match [%sexp (time_ns : Time_ns_unix.t)] with
+        | List [ date; ofday ] -> List [ ofday; date ]
+        | sexp -> sexp);
   (Profile.output_profile
-     := fun string ->
-          (* If [output_profile] raises, then Nested_profile use [eprint_s] to print the
+   := fun string ->
+        (* If [output_profile] raises, then Nested_profile use [eprint_s] to print the
         exception, which doesn't work well in Emacs.  So we do our own exception
         handling. *)
-          try
-            match Profile_buffer.profile_buffer () with
-            | None -> ()
-            | Some buffer ->
-              Current_buffer.set_temporarily Sync buffer ~f:(fun () ->
-                Current_buffer.inhibit_read_only Sync (fun () ->
-                  Current_buffer.append_to string))
-          with
-          | exn -> message_s [%message "unable to output profile" ~_:(exn : exn)]);
+        try
+          match Profile_buffer.profile_buffer () with
+          | None -> ()
+          | Some buffer ->
+            Current_buffer.set_temporarily Sync buffer ~f:(fun () ->
+              Current_buffer.inhibit_read_only Sync (fun () ->
+                Current_buffer.append_to string))
+        with
+        | exn -> message_s [%message "unable to output profile" ~_:(exn : exn)]);
   Profile.tag_frames_with
-    := Some
-         (fun () ->
-           match Current_buffer.value_exn tag_function with
-           | None -> None
-           | Some f ->
-             Some (f |> Function.to_value |> Value.funcall0 |> [%sexp_of: Value.t]));
+  := Some
+       (T
+          { capture =
+              (fun () ->
+                match Current_buffer.value_exn tag_function with
+                | None -> None
+                | Some f -> Some (f |> Function.to_value |> Value.funcall0))
+          ; render = Option.return << [%sexp_of: Value.t]
+          });
   Hook.add
     Elisp_gc.post_gc_hook
     (Hook.Function.create
@@ -283,7 +275,7 @@ Called by `post-gc-hook' to add Elisp GC information to the Ecaml profiler.
   let set_should_profile bool =
     Customization.set_value should_profile bool;
     let verb = if !Profile.should_profile then "enabled" else "disabled" in
-    message (String.concat [ "You just "; verb; " ecaml profiling" ])
+    message [%string "You just %{verb} ecaml profiling"]
   in
   Defun.defun_nullary_nil
     ("ecaml-toggle-profiling" |> Symbol.intern)
@@ -350,12 +342,12 @@ Tell the Ecaml profiler about calls to an Elisp function.
           ~should_profile:false
           Sync
           (fun f args ->
-          profile
-            Sync
-            [%lazy_sexp ((fn |> Symbol.to_value) :: args : Value.t list)]
-            (fun () -> f args)));
+             profile
+               Sync
+               [%lazy_sexp ((fn |> Symbol.to_value) :: args : Value.t list)]
+               (fun () -> f args)));
      Hash_set.add profiled_elisp_functions (Symbol.name fn);
-     message (concat [ "You just added Ecaml profiling of ["; fn |> Symbol.name; "]" ]));
+     message [%string "You just added Ecaml profiling of [%{Symbol.name fn}]"]);
   Defun.defun
     ("ecaml-unprofile-elisp-function" |> Symbol.intern)
     [%here]
@@ -374,7 +366,7 @@ Tell the Ecaml profiler about calls to an Elisp function.
                ~prompt:"Unprofile function: "
                ~history
                ~collection:(Hash_set.to_list profiled_elisp_functions)
-               ~require_match:True
+               ~require_match:Require_match_or_complete_or_null
            in
            return [ function_name |> Value.intern ]))
     (Returns Value.Type.unit)
@@ -382,7 +374,7 @@ Tell the Ecaml profiler about calls to an Elisp function.
      and fn = required "function" Symbol.t in
      Advice.remove (Advice.of_function (elisp_function_wrapper_name fn)) ~from_function:fn;
      Hash_set.remove profiled_elisp_functions (Symbol.name fn);
-     message (concat [ "You just removed Ecaml profiling of ["; fn |> Symbol.name; "]" ]));
+     message [%string "You just removed Ecaml profiling of [%{Symbol.name fn}]"]);
   Defun.defun_nullary
     ("ecaml-profile-test-parallel-profile" |> Symbol.intern)
     [%here]
@@ -394,15 +386,15 @@ Test how the Ecaml profiler handles two Async jobs running in parallel.
 |}
     (Returns_deferred Value.Type.unit)
     (fun () ->
-    profile Async [%lazy_sexp "The whole thing"] (fun () ->
-      let%bind () =
-        profile Async [%lazy_sexp "branch1"] (fun () ->
-          Async.Clock.after (Time_float.Span.of_sec 1.))
-      and () =
-        profile Async [%lazy_sexp "branch2"] (fun () ->
-          Async.Clock.after (Time_float.Span.of_sec 0.8))
-      in
-      return ()))
+       profile Async [%lazy_sexp "The whole thing"] (fun () ->
+         let%bind () =
+           profile Async [%lazy_sexp "branch1"] (fun () ->
+             Async.Clock.after (Time_float.Span.of_sec 1.))
+         and () =
+           profile Async [%lazy_sexp "branch2"] (fun () ->
+             Async.Clock.after (Time_float.Span.of_sec 0.8))
+         in
+         return ()))
 ;;
 
 [@@@warning "-unused-module"]

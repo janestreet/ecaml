@@ -9,6 +9,7 @@ module Q = struct
   let buffer_read_only = "buffer-read-only" |> Symbol.intern
   let define_minor_mode = "define-minor-mode" |> Symbol.intern
   let goto_address_mode = "goto-address-mode" |> Symbol.intern
+  let hl_line_mode = "hl-line-mode" |> Symbol.intern
   let read_only_mode = "read-only-mode" |> Symbol.intern
   let url_handler_mode = "url-handler-mode" |> Symbol.intern
   let view_mode = "view-mode" |> Symbol.intern
@@ -33,6 +34,7 @@ let goto_address =
   { function_name = Q.goto_address_mode; variable_name = Q.goto_address_mode }
 ;;
 
+let hl_line = { function_name = Q.hl_line_mode; variable_name = Q.hl_line_mode }
 let read_only = { function_name = Q.read_only_mode; variable_name = Q.buffer_read_only }
 let view = { function_name = Q.view_mode; variable_name = Q.view_mode }
 
@@ -84,7 +86,11 @@ let define_minor_mode
   List.iter define_keys ~f:(fun (keys, symbol) ->
     Keymap.define_key keymap (Key_sequence.create_exn keys) (Symbol symbol));
   let docstring =
-    concat [ docstring; "\n\n"; Documentation.Special_sequence.keymap keymap_var.symbol ]
+    concat
+      [ docstring
+      ; "\n\n"
+      ; Documentation.Special_sequence.describe_keymap keymap_var.symbol
+      ]
   in
   let t = { function_name = name; variable_name = name } in
   Form.Blocking.eval_i

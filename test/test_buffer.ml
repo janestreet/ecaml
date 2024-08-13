@@ -13,7 +13,7 @@ let%expect_test "[all_live]" =
   return ()
 ;;
 
-let require_clean () = require [%here] (num_live () = num_live_at_start)
+let require_clean () = require (num_live () = num_live_at_start)
 
 let%expect_test "[create]" =
   let t1 = create ~name:"foo" in
@@ -40,8 +40,8 @@ let%expect_test "[Blocking.kill]" =
 let%expect_test "[equal]" =
   let t1 = create ~name:"1" in
   let t2 = create ~name:"2" in
-  require [%here] (equal t1 t1);
-  require [%here] (not (equal t1 t2));
+  require (equal t1 t1);
+  require (not (equal t1 t2));
   Blocking.kill t1;
   Blocking.kill t2;
   require_clean ();
@@ -103,7 +103,7 @@ let%expect_test "[find_exn]" =
   print_s [%sexp (find_exn ~name:"foo" : t)];
   [%expect {| "#<buffer foo>" |}];
   let%bind () = kill t in
-  require_does_raise [%here] (fun () -> find_exn ~name:"foo");
+  require_does_raise (fun () -> find_exn ~name:"foo");
   [%expect {| ("no buffer named" foo) |}];
   require_clean ();
   return ()
@@ -114,7 +114,7 @@ let%expect_test "[find_or_create]" =
   let t = f () in
   show t;
   [%expect {| "#<buffer test-buffer>" |}];
-  require [%here] (equal t (f ()));
+  require (equal t (f ()));
   Blocking.kill t;
   require_clean ();
   return ()
@@ -126,7 +126,7 @@ let%expect_test "[displayed_in]" =
     let show_displayed_in () = print_s [%sexp (displayed_in t : Window.t list)] in
     show_displayed_in ();
     [%expect {| () |}];
-    Selected_window.Blocking.switch_to_buffer t;
+    Selected_window.Blocking.pop_to_buffer t;
     show_displayed_in ();
     [%expect {| ("#<window 1 on  *temp*>") |}];
     Selected_window.split_vertically_exn ();
@@ -269,7 +269,7 @@ let%expect_test "[revert]" =
     let%bind () = Selected_window.find_file (concat [ dir; "/file" ]) in
     ignore
       (Process.shell_command_exn "echo foo >file" ~working_directory:Of_current_buffer
-        : string);
+       : string);
     print_s [%sexp (Current_buffer.contents () : Text.t)];
     [%expect {| "" |}];
     let%bind () = revert (Current_buffer.get ()) in
@@ -288,15 +288,15 @@ let%expect_test "[modified_tick], [chars_modified_tick]" =
     Point.insert "a";
     let tick2 = modified_tick t in
     let chars_tick2 = chars_modified_tick t in
-    require [%here] (Modified_tick.( > ) tick2 tick1);
-    require [%here] (Modified_tick.( > ) chars_tick2 chars_tick1);
-    require [%here] (Modified_tick.( = ) chars_tick2 tick2);
+    require (Modified_tick.( > ) tick2 tick1);
+    require (Modified_tick.( > ) chars_tick2 chars_tick1);
+    require (Modified_tick.( = ) chars_tick2 tick2);
     (* Changing a property updates [modified_tick] but not [chars_modified_tick]. *)
     Current_buffer.set_text_property Text.Property_name.face [];
     let tick3 = modified_tick t in
     let chars_tick3 = chars_modified_tick t in
-    require [%here] (Modified_tick.( > ) tick3 tick2);
-    require [%here] (Modified_tick.( = ) chars_tick3 chars_tick2));
+    require (Modified_tick.( > ) tick3 tick2);
+    require (Modified_tick.( = ) chars_tick3 chars_tick2));
   [%expect {| |}];
   return ()
 ;;

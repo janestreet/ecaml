@@ -32,6 +32,21 @@ module Sync_or_async : sig
   [@@deriving sexp_of]
 end
 
+(** A [Frame_tagger.t] consists of two functions.
+
+    The first is called unconditionally (before the profiled function) when creating a
+    profile frame, and the second is called only if [capture] returned [Some _] and the
+    profile frame will actually be rendered (depending on the value of
+    {!hide_if_less_than} and so on). *)
+module Frame_tagger : sig
+  type t =
+    | T :
+        { capture : unit -> 'a option
+        ; render : 'a -> Sexp.t option
+        }
+        -> t
+end
+
 (** [profile sync_or_async message f] measures the time taken to run [f], and outputs the
     result.  Nested calls to profile are displayed as a tree.  Use [Async] to profile
     Async code.  It is safe to nest calls to [profile] inside calls to [profile Async].
@@ -56,7 +71,7 @@ val hide_if_less_than : Time_ns.Span.t ref
 val hide_top_level_if_less_than : Time_ns.Span.t ref
 val never_show_rendering_took : bool ref
 val sexp_of_time_ns : (Time_ns.t -> Sexp.t) ref
-val tag_frames_with : (unit -> Sexp.t option) option ref
+val tag_frames_with : Frame_tagger.t option ref
 
 (** [profile] calls [output_profile] to display the profile to the user.  It is
     [print_string] by default. *)

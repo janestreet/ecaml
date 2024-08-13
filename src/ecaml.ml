@@ -24,6 +24,7 @@ module Current_buffer = Current_buffer
 module Customization = Customization
 module Debugger = Debugger
 module Defconst = Defconst
+module Defstruct = Defstruct
 module Defun = Defun
 module Defvar = Defvar
 module Directory = Directory
@@ -31,10 +32,10 @@ module Display = Display
 module Display_property = Display_property
 module Documentation = Documentation
 module Ecaml_profile = Ecaml_profile
+module Ecaml_sexp = Ecaml_sexp
 module Echo_area = Echo_area
 module Ediff = Ediff
 module Elisp_gc = Elisp_gc
-module Elisp_time = Elisp_time
 module Emacs_backtrace = Emacs_backtrace
 module Emacs_version = Emacs_version
 module Eval = Eval
@@ -96,6 +97,7 @@ module Valueable = Ecaml_value.Valueable
 module Var = Var
 module Variable_watcher = Variable_watcher
 module Vector = Vector
+module Warning = Warning
 module Window = Window
 module Working_directory = Working_directory
 open! Core
@@ -111,6 +113,7 @@ let defconst = Defconst.defconst
 let defconst_i = Defconst.defconst_i
 let defcustom = Customization.defcustom
 let defcustom_enum = Customization.defcustom_enum
+let defcustom_enum_with_to_symbol = Customization.defcustom_enum_with_to_symbol
 let defgroup = Customization.Group.defgroup
 let define_derived_mode = Major_mode.define_derived_mode
 let define_minor_mode = Minor_mode.define_minor_mode
@@ -130,11 +133,12 @@ let message_text = Echo_area.message_text
 let print_s = print_s
 let raise_string = raise_string
 let sec_ns = sec_ns
+let warn = Warning.display ~level:Warning
 let wrap_message = Echo_area.wrap_message
 
 module Returns = Defun.Returns
 
-let provide = (Feature.provide [@warning "-3"])
+let provide = Feature.provide
 let inhibit_read_only = Current_buffer.inhibit_read_only
 
 let () =
@@ -157,7 +161,7 @@ let () =
                 (should_reopen_stdin : bool ref)
                 ~recent_keys:
                   (Input_event.recent_commands_and_keys ()
-                    : Input_event.Command_or_key.t array)]))
+                   : Input_event.Command_or_key.t array)]))
 ;;
 
 let () =
@@ -205,11 +209,11 @@ Test [Process.set_sentinel] on a sentinel that raises.
 |}
     ~interactive:No_arg
     (fun () ->
-    Process.set_sentinel
-      [%here]
-      (Process.create "true" [] ~name:"true" ())
-      (Returns Value.Type.unit)
-      ~sentinel:(fun ~event:_ -> failwith "some error message"));
+       Process.set_sentinel
+         [%here]
+         (Process.create "true" [] ~name:"true" ())
+         (Returns Value.Type.unit)
+         ~sentinel:(fun ~event:_ -> failwith "some error message"));
   (* Replace [false] with [true] to define a function for testing
      [Minibuffer.read_from]. *)
   if false
@@ -217,7 +221,8 @@ Test [Process.set_sentinel] on a sentinel that raises.
     defun_nullary
       ("ecaml-test-minibuffer-y-or-n-with-timeout" |> Symbol.intern)
       [%here]
-      ~docstring:{|
+      ~docstring:
+        {|
 For testing Ecaml.
 
 Test [Minibuffer.y_or_n_with_timeout].
@@ -225,15 +230,18 @@ Test [Minibuffer.y_or_n_with_timeout].
       ~interactive:No_arg
       (Returns_deferred Value.Type.unit)
       (fun () ->
-      let%bind int =
-        Minibuffer.y_or_n_with_timeout ~prompt:"prompt" ~timeout:(Time_ns.Span.second, 13)
-      in
-      message_s [%message (int : int Minibuffer.Y_or_n_with_timeout.t)];
-      return ());
+         let%bind int =
+           Minibuffer.y_or_n_with_timeout
+             ~prompt:"prompt"
+             ~timeout:(Time_ns.Span.second, 13)
+         in
+         message_s [%message (int : int Minibuffer.Y_or_n_with_timeout.t)];
+         return ());
     defun_nullary
       ("ecaml-test-minibuffer" |> Symbol.intern)
       [%here]
-      ~docstring:{|
+      ~docstring:
+        {|
 For testing Ecaml.
 
 Test [Minibuffer.read_from].
@@ -241,36 +249,36 @@ Test [Minibuffer.read_from].
       ~interactive:No_arg
       (Returns_deferred Value.Type.unit)
       (fun () ->
-      let test
-        ?default_value
-        ?(history = Minibuffer.history)
-        ?history_pos
-        ?initial_contents
-        ()
-        ~prompt
-        =
-        let%bind result =
-          Minibuffer.read_from
-            ~prompt:(concat [ prompt; ": " ])
-            ?initial_contents
-            ?default_value
-            ~history
-            ?history_pos
-            ()
-        in
-        message (concat [ "result: "; result ]);
-        return ()
-      in
-      let%bind () = test () ~prompt:"test 1" in
-      let%bind () = test () ~prompt:"test 2" ~default_value:"some-default" in
-      let%bind () = test () ~prompt:"test 3" ~initial_contents:"some-contents" in
-      test
-        ()
-        ~prompt:"test 4"
-        ~history:
-          (Minibuffer.History.find_or_create
-             ("some-history-list" |> Symbol.intern)
-             [%here])))
+         let test
+           ?default_value
+           ?(history = Minibuffer.history)
+           ?history_pos
+           ?initial_contents
+           ()
+           ~prompt
+           =
+           let%bind result =
+             Minibuffer.read_from
+               ~prompt:[%string "%{prompt}: "]
+               ?initial_contents
+               ?default_value
+               ~history
+               ?history_pos
+               ()
+           in
+           message [%string "result: %{result}"];
+           return ()
+         in
+         let%bind () = test () ~prompt:"test 1" in
+         let%bind () = test () ~prompt:"test 2" ~default_value:"some-default" in
+         let%bind () = test () ~prompt:"test 3" ~initial_contents:"some-contents" in
+         test
+           ()
+           ~prompt:"test 4"
+           ~history:
+             (Minibuffer.History.find_or_create
+                ("some-history-list" |> Symbol.intern)
+                [%here])))
 ;;
 
 let () =
@@ -285,9 +293,9 @@ Show the result of `recent-keys' rendered as Ecaml values.
 |}
     ~interactive:No_arg
     (fun () ->
-    message_s
-      [%sexp
-        (Input_event.recent_commands_and_keys () : Input_event.Command_or_key.t array)])
+       message_s
+         [%sexp
+           (Input_event.recent_commands_and_keys () : Input_event.Command_or_key.t array)])
 ;;
 
 (* Ppx_inline_test_lib runs inline tests immediately when the module defining
@@ -323,6 +331,33 @@ This is an internal function of no use to most people.
 If we've initialized Ppx_inline_test_lib, then we should call this
 after loading the test modules, to print the results and exit.|}
     Ppx_inline_test_lib.exit
+;;
+
+let () =
+  defun
+    ("ecaml--ppx-inline-test-lib-init" |> Symbol.intern)
+    [%here]
+    ~docstring:
+      {|Initialize the inline tests runner with ARGS.
+
+This is an internal function of no use to most people.|}
+    (Returns Value.Type.unit)
+    (let open Defun.Let_syntax in
+     let%map_open args = required "args" (list string) in
+     match Ppx_inline_test_lib.init args |> Result.ok_or_failwith with
+     | Some help -> message help
+     | None -> ())
+;;
+
+let () =
+  defun
+    ("ecaml-dynlink-loadfile" |> Symbol.intern)
+    [%here]
+    ~docstring:{|Using Dynlink.loadfile, load .cmxs FILE|}
+    (Returns Value.Type.unit)
+    (let open Defun.Let_syntax in
+     let%map_open file = required "file" string in
+     Dynlink.loadfile file)
 ;;
 
 let debug_embedded_caml_values () = Caml_embed.debug_sexp ()

@@ -5,12 +5,22 @@ type t =
   | Of_current_buffer
   | Root
   | This of string
-[@@deriving sexp_of]
+  | This_abspath of File_path.Absolute.t
 
 let to_filename = function
   | Of_current_buffer -> Current_buffer.(get_buffer_local_exn directory)
   | Root -> "/"
-  | This s -> s
+  | This s -> Ecaml_filename.Filename.to_directory s
+  | This_abspath path -> File_path.Absolute.to_string path ^ "/"
+;;
+
+let sexp_of_t = function
+  | Of_current_buffer -> [%sexp "Of_current_buffer"]
+  | Root -> [%sexp "Root"]
+  | This s ->
+    Sexp.List [ Sexp.Atom "This"; Sexp.Atom (Ecaml_filename.Filename.to_directory s) ]
+  | This_abspath path ->
+    Sexp.List [ Sexp.Atom "This"; Sexp.Atom (File_path.Absolute.to_string path ^ "/") ]
 ;;
 
 let within t sync_or_async ~f =

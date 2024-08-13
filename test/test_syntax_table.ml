@@ -85,7 +85,6 @@ let%expect_test "[set_char]" =
         set_char t char class_ [];
         let round_trip = Current_buffer.syntax_class (char |> Char_code.of_char_exn) in
         require
-          [%here]
           (Class.equal class_ round_trip)
           ~if_false_then_print_s:
             [%lazy_message "" (class_ : Class.t) (round_trip : Class.t)]));

@@ -56,7 +56,7 @@ let defvar
         ]
         |> Value.list
         |> Form.of_value_exn)
-      : Value.t);
+     : Value.t);
   if include_in_all_defvar_symbols then add_to_load_history symbol here;
   Var.create symbol type_
 ;;

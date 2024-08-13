@@ -27,30 +27,30 @@ defined in Ecaml.
 |}
        Async
        (fun inner values ->
-       let buffer_and_position =
-         match values with
-         | [ symbol; type_; library ] ->
-           let do_it () =
-             let library = Value.to_utf8_bytes_exn library in
-             if not (String.is_suffix library ~suffix:".ml")
-             then return None
-             else (
-               (* [find-function-search-for-symbol] is used by both [find-function] and
+          let buffer_and_position =
+            match values with
+            | [ symbol; type_; library ] ->
+              let do_it () =
+                let library = Value.to_utf8_bytes_exn library in
+                if not (String.is_suffix library ~suffix:".ml")
+                then return None
+                else (
+                  (* [find-function-search-for-symbol] is used by both [find-function] and
                      [find-variable], so [symbol] can be a function or a variable. *)
-               let symbol = Symbol.of_value_exn symbol in
-               let type_ = Load_history.Type.of_value_exn type_ in
-               let%map result = find_ocaml ~library ~symbol ~type_ in
-               let type_ = Value.Type.(tuple Buffer.t (nil_or Position.t)) in
-               Some (Value.Type.to_value type_ result))
-           in
-           (match%map Monitor.try_with do_it with
-            | Ok result -> result
-            | Error _ -> None)
-         | _ -> return None
-       in
-       match%map buffer_and_position with
-       | None -> inner values
-       | Some x -> x))
+                  let symbol = Symbol.of_value_exn symbol in
+                  let type_ = Load_history.Type.of_value_exn type_ in
+                  let%map result = find_ocaml ~library ~symbol ~type_ in
+                  let type_ = Value.Type.(tuple Buffer.t (nil_or Position.t)) in
+                  Some (Value.Type.to_value type_ result))
+              in
+              (match%map Monitor.try_with do_it with
+               | Ok result -> result
+               | Error _ -> None)
+            | _ -> return None
+          in
+          match%map buffer_and_position with
+          | None -> inner values
+          | Some x -> x))
 ;;
 
 let () = advise_for_ocaml ()

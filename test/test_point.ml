@@ -12,7 +12,8 @@ let%expect_test "[get]" =
     print_s [%sexp (Current_buffer.get () : Buffer.t)];
     insert "foo";
     show ();
-    [%expect {|
+    [%expect
+      {|
       "#<buffer  *temp*>"
       (point 4)
       |}]);
@@ -25,13 +26,15 @@ let%expect_test "[min], [max]" =
   in
   Current_buffer.set_temporarily_to_temp_buffer Sync (fun () ->
     show_min_max ();
-    [%expect {|
+    [%expect
+      {|
       ((min 1)
        (max 1))
       |}];
     insert "abc";
     show_min_max ();
-    [%expect {|
+    [%expect
+      {|
       ((min 1)
        (max 4))
       |}]);
@@ -196,7 +199,8 @@ let%expect_test "[column_number], [goto_column]" =
       goto_column i;
       print_s [%sexp (column_number () : int)]
     done;
-    [%expect {|
+    [%expect
+      {|
       0
       1
       2
@@ -389,7 +393,7 @@ let%expect_test "[search_forward_regexp] and [Regexp.Last_match]" =
     print_s
       [%sexp
         (search_forward_regexp ({|\(b\)|} |> Regexp.of_pattern) ~update_last_match:true
-          : bool)];
+         : bool)];
     [%expect {| true |}];
     show_last_match ();
     [%expect
@@ -474,7 +478,8 @@ let%expect_test "[looking_at ~update_last_match:true]" =
 
 let%expect_test "[goto_line]" =
   Current_buffer.set_temporarily_to_temp_buffer Sync (fun () ->
-    insert {|
+    insert
+      {|
 a
 bc
 def
@@ -522,7 +527,7 @@ let%expect_test "[Property_search.forward]" =
       [%all: int Property_search.Which.t]
     in
     List.iter all_search_targets ~f:(fun which ->
-      require_does_not_raise [%here] (fun () -> test which));
+      require_does_not_raise (fun () -> test which));
     [%expect
       {|
       ((which (First_equal_to 0))

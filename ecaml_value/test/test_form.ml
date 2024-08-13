@@ -7,8 +7,8 @@ let%expect_test "[eval]" =
   List.iter
     [ "13"; "(+ 1 4)"; "((lambda (x) (+ x 1)) 13)"; "(+ \"foo\")" ]
     ~f:(fun (string : string) ->
-    let value = Or_error.try_with (fun () -> Blocking.eval_string string) in
-    print_s [%message "" ~_:(string : string) "-->" ~_:(value : Value.t Or_error.t)]);
+      let value = Or_error.try_with (fun () -> Blocking.eval_string string) in
+      print_s [%message "" ~_:(string : string) "-->" ~_:(value : Value.t Or_error.t)]);
   [%expect
     {|
     (13 --> (Ok 13))
@@ -38,7 +38,7 @@ let%expect_test "[read]" =
 ;;
 
 let%expect_test "[read] with invalid syntax" =
-  require_does_raise [%here] (fun () -> test_read ")");
+  require_does_raise (fun () -> test_read ")");
   [%expect {| (invalid-read-syntax (")")) |}];
   return ()
 ;;
@@ -50,7 +50,7 @@ let%expect_test "[read] with trailing unclosed delimiter" =
 ;;
 
 let%expect_test "[read] with trailing garbage" =
-  require_does_raise [%here] (fun () -> test_read "(+ 1 2) a");
+  require_does_raise (fun () -> test_read "(+ 1 2) a");
   [%expect
     {|
     ("Trailing data in string"
@@ -61,7 +61,7 @@ let%expect_test "[read] with trailing garbage" =
 ;;
 
 let%expect_test "[read] with trailing invalid syntax" =
-  require_does_raise [%here] (fun () -> test_read "(+ 1 2)))");
+  require_does_raise (fun () -> test_read "(+ 1 2)))");
   [%expect
     {|
     ("Raised while scanning for trailing data"

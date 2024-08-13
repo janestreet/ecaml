@@ -41,8 +41,8 @@ let%expect_test "[block_on_async] with a quit" =
       ~docstring:"<docstring>"
       (Returns_deferred Value.Type.unit)
       (fun () ->
-      Clock.run_after (sec 0.01) Ecaml.Command.Private.request_quit ();
-      Deferred.never ())
+         Clock.run_after (sec 0.01) Ecaml.Command.Private.request_quit ();
+         Deferred.never ())
   in
   let%bind quit =
     Async_ecaml.Private.run_outside_async [%here] (fun () ->
@@ -151,7 +151,8 @@ let%expect_test "defun returning non-unit deferred" =
       Value.funcall0 (symbol |> Symbol.to_value) |> Value.Type.(of_value_exn int))
   in
   print_s [%sexp (output : int)];
-  [%expect {|
+  [%expect
+    {|
     ran
     23
     |}];
@@ -254,8 +255,8 @@ let%expect_test "assert_foreground in run_outside_async" =
             [%here]
             ~allowed_in_background:true
             (fun () ->
-            require_does_raise [%here] ~hide_positions:true (fun () ->
-              Background.assert_foreground [%here] ~message:[%message "should raise"]))
+               require_does_raise ~hide_positions:true (fun () ->
+                 Background.assert_foreground [%here] ~message:[%message "should raise"]))
         in
         Ivar.fill_exn background_job_complete ();
         return ()))
@@ -275,7 +276,7 @@ let%expect_test "[run_outside_async ~allowed_in_background:false]" =
     Deferred.create (fun background_job_complete ->
       Background.don't_wait_for [%here] (fun () ->
         let%bind () =
-          require_does_raise_async [%here] ~hide_positions:true (fun () ->
+          require_does_raise_async ~hide_positions:true (fun () ->
             Async_ecaml.Private.run_outside_async
               [%here]
               ~allowed_in_background:false
@@ -296,7 +297,7 @@ let%expect_test "[run_outside_async ~allowed_in_background:false]" =
 
 let%expect_test "raise in [Background.don't_wait_for]" =
   let%bind () =
-    require_does_not_raise_async [%here] (fun () ->
+    require_does_not_raise_async (fun () ->
       let ready_to_raise = Ivar.create () in
       let background_job_ran =
         Deferred.create (fun background_job_ran ->
@@ -312,82 +313,84 @@ let%expect_test "raise in [Background.don't_wait_for]" =
   return ()
 ;;
 
-[@@@warning "-unused-module"]
-
-module Test_enqueue_block_on_async = struct
-  (* We need to allow nested [block_on_async] because [let%expect_test] uses
+let%test_module "Test_enqueue_block_on_async" =
+  (module struct
+    (* We need to allow nested [block_on_async] because [let%expect_test] uses
      [block_on_async], and inside a [let%expect_test] we want to test
      [schedule_foreground_block_on_async], which is implemented via [block_on_async], *)
-  module Expect_test_config =
-    Async_ecaml.Expect_test_config_allowing_nested_block_on_async
+    module Expect_test_config =
+      Async_ecaml.Expect_test_config_allowing_nested_block_on_async
 
-  let%expect_test "[schedule_foreground_block_on_async]" =
-    let%bind () =
-      Deferred.create (fun test_finished ->
-        Background.don't_wait_for [%here] (fun () ->
-          print_endline "background";
-          require [%here] (Background.am_running_in_background ());
-          Background.schedule_foreground_block_on_async [%here] (fun () ->
-            print_endline "foreground";
-            require [%here] (Background.am_running_in_foreground ());
-            Ivar.fill_exn test_finished ();
-            return ());
-          return ()))
-    in
-    [%expect {|
-      background
-      foreground
-      |}];
-    return ()
-  ;;
+    let%expect_test "[schedule_foreground_block_on_async]" =
+      let%bind () =
+        Deferred.create (fun test_finished ->
+          Background.don't_wait_for [%here] (fun () ->
+            print_endline "background";
+            require (Background.am_running_in_background ());
+            Background.schedule_foreground_block_on_async [%here] (fun () ->
+              print_endline "foreground";
+              require (Background.am_running_in_foreground ());
+              Ivar.fill_exn test_finished ();
+              return ());
+            return ()))
+      in
+      [%expect
+        {|
+        background
+        foreground
+        |}];
+      return ()
+    ;;
 
-  let%expect_test "[schedule_foreground_block_on_async] and [run_outside_async]" =
-    let%bind () =
-      Deferred.create (fun test_finished ->
-        Background.don't_wait_for [%here] (fun () ->
-          print_endline "background";
-          require [%here] (Background.am_running_in_background ());
-          Background.schedule_foreground_block_on_async [%here] (fun () ->
-            print_endline "foreground";
-            require [%here] (Background.am_running_in_foreground ());
-            let%bind () =
-              Async_ecaml.Private.run_outside_async [%here] (fun () ->
-                print_endline "outside async";
-                require [%here] (Background.am_running_in_foreground ()))
-            in
-            Ivar.fill_exn test_finished ();
-            return ());
-          return ()))
-    in
-    [%expect {|
-      background
-      foreground
-      outside async
-      |}];
-    return ()
-  ;;
+    let%expect_test "[schedule_foreground_block_on_async] and [run_outside_async]" =
+      let%bind () =
+        Deferred.create (fun test_finished ->
+          Background.don't_wait_for [%here] (fun () ->
+            print_endline "background";
+            require (Background.am_running_in_background ());
+            Background.schedule_foreground_block_on_async [%here] (fun () ->
+              print_endline "foreground";
+              require (Background.am_running_in_foreground ());
+              let%bind () =
+                Async_ecaml.Private.run_outside_async [%here] (fun () ->
+                  print_endline "outside async";
+                  require (Background.am_running_in_foreground ()))
+              in
+              Ivar.fill_exn test_finished ();
+              return ());
+            return ()))
+      in
+      [%expect
+        {|
+        background
+        foreground
+        outside async
+        |}];
+      return ()
+    ;;
 
-  let%expect_test "raise in [schedule_foreground_block_on_async]" =
-    let%bind () =
-      Deferred.create (fun test_finished ->
-        let monitor = Monitor.create ~name:"test monitor" () in
-        Monitor.detach_and_iter_errors monitor ~f:(fun exn ->
-          print_s [%sexp (exn : exn)];
-          Ivar.fill_exn test_finished ());
-        Background.don't_wait_for [%here] (fun () ->
-          Background.Private.schedule_foreground_block_on_async
-            [%here]
-            ~raise_exceptions_to_monitor:monitor
-            (fun () ->
-            require [%here] (Background.am_running_in_foreground ());
-            raise_s [%message "Raise an exception!"]);
-          return ()))
-    in
-    [%expect
-      {|
-      (monitor.ml.Error "Raise an exception!" (
-        "<backtrace elided in test>" "Caught by monitor test monitor"))
-      |}];
-    return ()
-  ;;
-end
+    let%expect_test "raise in [schedule_foreground_block_on_async]" =
+      let%bind () =
+        Deferred.create (fun test_finished ->
+          let monitor = Monitor.create ~name:"test monitor" () in
+          Monitor.detach_and_iter_errors monitor ~f:(fun exn ->
+            print_s [%sexp (exn : exn)];
+            Ivar.fill_exn test_finished ());
+          Background.don't_wait_for [%here] (fun () ->
+            Background.Private.schedule_foreground_block_on_async
+              [%here]
+              ~raise_exceptions_to_monitor:monitor
+              (fun () ->
+                 require (Background.am_running_in_foreground ());
+                 raise_s [%message "Raise an exception!"]);
+            return ()))
+      in
+      [%expect
+        {|
+        (monitor.ml.Error "Raise an exception!" (
+          "<backtrace elided in test>" "Caught by monitor test monitor"))
+        |}];
+      return ()
+    ;;
+  end)
+;;

@@ -19,11 +19,11 @@ module Operation = struct
       [%message "variable-change-operation"]
       (module T)
       ((function
-        | Set -> "set"
-        | Let -> "let"
-        | Unlet -> "unlet"
-        | Makunbound -> "makunbound"
-        | Defvaralias -> "defvaralias")
+         | Set -> "set"
+         | Let -> "let"
+         | Unlet -> "unlet"
+         | Makunbound -> "makunbound"
+         | Defvaralias -> "defvaralias")
        >> Symbol.intern
        >> Symbol.to_value)
   ;;

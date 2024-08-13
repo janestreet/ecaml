@@ -19,7 +19,10 @@ module Ping_pong = struct
 
     let serve () =
       let implementations =
-        Rpc.Implementations.create_exn ~implementations:[ impl ] ~on_unknown_rpc:`Raise
+        Rpc.Implementations.create_exn
+          ~implementations:[ impl ]
+          ~on_unknown_rpc:`Raise
+          ~on_exception:Log_on_background_exn
       in
       Rpc.Connection.serve
         ~implementations
@@ -79,7 +82,10 @@ module Throughput = struct
 
     let serve () =
       let implementations =
-        Rpc.Implementations.create_exn ~implementations:[ impl ] ~on_unknown_rpc:`Raise
+        Rpc.Implementations.create_exn
+          ~implementations:[ impl ]
+          ~on_unknown_rpc:`Raise
+          ~on_exception:Log_on_background_exn
       in
       Rpc.Connection.serve
         ~implementations

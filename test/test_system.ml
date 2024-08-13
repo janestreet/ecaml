@@ -4,9 +4,9 @@ open! Import
 open! System
 
 let%expect_test "[setenv], [getenv], [setenv_temporarily]" =
-  let var = "ZZZ" in
-  let setenv value = setenv ~var ~value:(Some value) in
-  let getenv () = print_s [%sexp (getenv ~var : string option)] in
+  let key = "ZZZ" in
+  let setenv value = setenv ~key ~data:(Some value) in
+  let getenv () = print_s [%sexp (getenv key : string option)] in
   setenv "a";
   getenv ();
   [%expect {| (a) |}];
@@ -15,7 +15,7 @@ let%expect_test "[setenv], [getenv], [setenv_temporarily]" =
   [%expect {| (b) |}];
   setenv_temporarily
     Sync
-    [ { var; value = "c" } ]
+    [ { key; data = "c" } ]
     ~f:(fun () ->
       getenv ();
       [%expect {| (c) |}];

@@ -10,13 +10,13 @@ type t =
   | Line
   | List
   | Number
-      (** Any other "thing" supported by [thing-at-point]. Use [defthing] to register a new
+  (** Any other "thing" supported by [thing-at-point]. Use [defthing] to register a new
       thing type. *)
   | Other of Symbol.t
   | Page
   | Sentence
   | Sexp
-      (** Any string containing only characters in [chars], which is a regexp character
+  (** Any string containing only characters in [chars], which is a regexp character
       alternative (i.e. a string that would go between square brackets in a regexp). *)
   | String_of of { chars : string }
   | Symbol

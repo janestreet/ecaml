@@ -2,10 +2,10 @@ open! Core
 open! Import
 
 include Value.Make_subtype (struct
-  let name = "syntax-table"
-  let here = [%here]
-  let is_in_subtype = Value.is_syntax_table
-end)
+    let name = "syntax-table"
+    let here = [%here]
+    let is_in_subtype = Value.is_syntax_table
+  end)
 
 let equal = eq
 let standard = Funcall.Wrap.("standard-syntax-table" <: nullary @-> return t) ()

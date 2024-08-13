@@ -80,28 +80,28 @@ let defun_around_funcall
     ?should_profile
     Sync
     (fun inner rest ->
-    Funcall.Private.apply
-      funcall
-      (f (Funcall.Private.wrap_unrolled funcall inner))
-      rest
-      ~on_parse_error:
-        (match (on_parse_error : On_parse_error.t) with
-         | Allow_raise ->
-           fun exn ->
-             raise_s
-               [%message
-                 "Advice failed to parse its arguments"
-                   ~_:(here : Source_code_position.t)
-                   ~_:(exn : exn)]
-         | Call_inner_function ->
-           fun exn ->
-             Echo_area.inhibit_messages Sync (fun () ->
-               message_s
-                 [%message
-                   "Ignoring advice that failed to parse its arguments"
-                     ~_:(here : Source_code_position.t)
-                     ~_:(exn : exn)]);
-             Value.funcallN inner rest))
+       Funcall.Private.apply
+         funcall
+         (f (Funcall.Private.wrap_unrolled funcall inner))
+         rest
+         ~on_parse_error:
+           (match (on_parse_error : On_parse_error.t) with
+            | Allow_raise ->
+              fun exn ->
+                raise_s
+                  [%message
+                    "Advice failed to parse its arguments"
+                      ~_:(here : Source_code_position.t)
+                      ~_:(exn : exn)]
+            | Call_inner_function ->
+              fun exn ->
+                Echo_area.inhibit_messages Sync (fun () ->
+                  message_s
+                    [%message
+                      "Ignoring advice that failed to parse its arguments"
+                        ~_:(here : Source_code_position.t)
+                        ~_:(exn : exn)]);
+                Value.funcallN inner rest))
 ;;
 
 let remove =

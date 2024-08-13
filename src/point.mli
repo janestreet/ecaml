@@ -173,9 +173,10 @@ val scroll_up : int -> unit
     - indicate success/failure by returning a boolean or raising on failure
 
     Searching backward sets point to the start of the match.  Searching forward sets point
-    to the end of the match.  With [~bound], when searching backward, the match must start
-    before [bound]; when searching forward, the match must end before [bound].  With
-    [~update_last_match:true], searching updates [Regexp.Last_match].
+    to the end of the match.  If the match fails, point is not moved.  With [~bound], when
+    searching backward, the match must start before [bound]; when searching forward, the
+    match must end before [bound].  With [~update_last_match:true], searching updates
+    [Regexp.Last_match].
 
     [(Info-goto-node "(elisp)String Search")]
     [(describe-function 'search-backward)]

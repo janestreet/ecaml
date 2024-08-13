@@ -38,11 +38,11 @@ let q value = Value.list [ Symbol.to_value Q.quote; value ]
 module Group = struct
   include (
     Symbol :
-      sig
-        type t = Symbol.t [@@deriving sexp_of]
+    sig
+      type t = Symbol.t [@@deriving sexp_of]
 
-        include Valueable.S with type t := t
-      end)
+      include Valueable.S with type t := t
+    end)
 
   let all_defgroups = ref []
 
@@ -55,11 +55,13 @@ module Group = struct
     in
     let docstring =
       let here = here |> Source_code_position.to_string in
-      [%string {|
+      [%string
+        {|
 %{docstring}
 
 Defined at %{here}
-|}] |> String.strip
+|}]
+      |> String.strip
     in
     Form.(
       Blocking.eval_i
@@ -116,7 +118,7 @@ module Type = struct
     | Sexp
     | String
     | Symbol
-    | Tagged_string of string
+    | Tag of string * t
     | Variable
     | Vector of t list
   [@@deriving sexp_of]
@@ -148,12 +150,7 @@ module Type = struct
     | Key_sequence -> s Q.key_sequence
     | List ts -> composite Q.list ts
     | Number -> s Q.number
-    | Option { doc_for_none; t } ->
-      Value.list
-        [ s Q.choice
-        ; Value.list [ s Q.const; s Q.K.tag; Value.of_utf8_bytes doc_for_none; s Q.nil ]
-        ; v t
-        ]
+    | Option { doc_for_none; t } -> v (Choice [ Tag (doc_for_none, Const (s Q.nil)); t ])
     | Plist -> s Q.plist
     | Radio ts -> composite Q.radio ts
     | Regexp -> s Q.regexp
@@ -162,7 +159,17 @@ module Type = struct
     | Sexp -> s Q.sexp
     | String -> s Q.string
     | Symbol -> s Q.symbol
-    | Tagged_string tag -> Value.list [ v String; s Q.K.tag; Value.of_utf8_bytes tag ]
+    | Tag (tag, t) ->
+      let v = v t in
+      if Value.is_cons v
+      then
+        (* Insert [:tag TAG] immediately after constructor, for a compound type. *)
+        Value.cons
+          (Value.car_exn v)
+          (Value.cons
+             (s Q.K.tag)
+             (Value.cons (Value.of_utf8_bytes tag) (Value.cdr_exn v)))
+      else Value.list [ v; s Q.K.tag; Value.of_utf8_bytes tag ]
     | Variable -> s Q.variable
     | Vector ts -> composite Q.vector ts
   ;;
@@ -191,7 +198,10 @@ let custom_set_variables = Funcall.Wrap.("custom-set-variables" <: value @-> ret
 
 let set_value t a =
   custom_set_variables
-    (Value.list [ Var.symbol t |> Symbol.to_value; a |> Value.Type.to_value t.type_ ])
+    (Value.list
+       [ Var.symbol t |> Symbol.to_value
+       ; a |> Value.Type.to_value t.type_ |> Form.quote |> Form.to_value
+       ])
 ;;
 
 let set_value_temporarily t a ~f =
@@ -200,7 +210,13 @@ let set_value_temporarily t a ~f =
   protect ~f ~finally:(fun () -> set_value t old)
 ;;
 
-let standard_value = Var.default_value_exn
+let custom__standard_value =
+  Funcall.Wrap.("custom--standard-value" <: Symbol.t @-> return value)
+;;
+
+let standard_value t =
+  custom__standard_value (symbol t) |> Value.Type.of_value_exn (var t : _ Var.t).type_
+;;
 
 module Wrap = Var.Wrap
 
@@ -311,6 +327,54 @@ let defcustom
   Var.create symbol type_
 ;;
 
+let defcustom_enum_internal
+  symbol
+  here
+  type_
+  all
+  t_docstring
+  ~docstring
+  ~group
+  ~standard_value
+  ?on_set
+  ()
+  =
+  let docstring = docstring |> String.strip in
+  require_nonempty_docstring here ~docstring;
+  let docstring =
+    concat
+      ~sep:"\n"
+      (docstring
+       :: ""
+       :: List.map all ~f:(fun t ->
+         let docstring =
+           match t_docstring t with
+           | None -> []
+           | Some docstring -> [ ": "; docstring ]
+         in
+         concat
+           ("  - "
+            :: (t |> Value.Type.to_value type_ |> Value.prin1_to_string)
+            :: docstring)))
+  in
+  defcustom
+    symbol
+    here
+    ~docstring
+    ~group
+    ~type_
+    ~customization_type:
+      (Choice
+         (List.map all ~f:(fun t ->
+            let const = Type.Const (Value.Type.to_value type_ t) in
+            match t_docstring t with
+            | None -> const
+            | Some tag -> Type.Tag (tag, const))))
+    ~standard_value
+    ?on_set
+    ()
+;;
+
 let defcustom_enum
   (type t)
   symbol
@@ -322,34 +386,41 @@ let defcustom_enum
   ?on_set
   ()
   =
-  let docstring = docstring |> String.strip in
-  require_nonempty_docstring here ~docstring;
-  let type_ =
-    Value.Type.enum
-      [%sexp (Symbol.name symbol : string)]
-      (module T)
-      (T.to_symbol >> Symbol.to_value)
-  in
-  let docstring =
-    concat
-      ~sep:"\n"
-      (docstring
-       :: ""
-       :: List.map T.all ~f:(fun t ->
-            let docstring =
-              match T.docstring t with
-              | "" -> []
-              | docstring -> [ ": "; docstring ]
-            in
-            concat ("  - " :: (t |> T.to_symbol |> Symbol.name) :: docstring)))
-  in
-  defcustom
+  defcustom_enum_internal
     symbol
     here
+    (Value.Type.enum_symbol [%sexp (Symbol.name symbol : string)] (module T))
+    T.all
+    T.docstring
     ~docstring
     ~group
-    ~type_
-    ~customization_type:(Type.enum T.all (Value.Type.to_value type_))
+    ~standard_value
+    ?on_set
+    ()
+;;
+
+let defcustom_enum_with_to_symbol
+  (type t)
+  symbol
+  here
+  (module T : Enum_arg_to_symbol with type t = t)
+  ~docstring
+  ~group
+  ~standard_value
+  ?on_set
+  ()
+  =
+  defcustom_enum_internal
+    symbol
+    here
+    (Value.Type.enum
+       [%sexp (Symbol.name symbol : string)]
+       (module T)
+       (T.to_symbol >> Symbol.to_value))
+    T.all
+    T.docstring
+    ~docstring
+    ~group
     ~standard_value
     ?on_set
     ()

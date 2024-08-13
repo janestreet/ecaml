@@ -13,6 +13,8 @@ module Q = struct
   let line_end = "line-end" |> Symbol.intern
   let line_start = "line-start" |> Symbol.intern
   let lower = "lower" |> Symbol.intern
+  let minimal_match = "minimal-match" |> Symbol.intern
+  let maximal_match = "maximal-match" |> Symbol.intern
   let not_ = "not" |> Symbol.intern
   let one_or_more = "one-or-more" |> Symbol.intern
   let or_ = "or" |> Symbol.intern
@@ -102,6 +104,8 @@ and to_form t =
   | Exactly string -> Form.string string
   | Line End -> Form.symbol Q.line_end
   | Line Start -> Form.symbol Q.line_start
+  | Minimal_match t -> label Q.minimal_match [ to_form t ]
+  | Maximal_match t -> label Q.maximal_match [ to_form t ]
   | None_in char_classes -> label Q.not_ [ to_form (Any_in char_classes) ]
   | One_or_more t -> to_form (Repeat { min = 1; max = None; t })
   | Or ts -> label Q.or_ (to_forms ts)

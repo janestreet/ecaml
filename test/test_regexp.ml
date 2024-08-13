@@ -109,7 +109,6 @@ let%expect_test "[any_quote]" =
 
 let%expect_test "[Last_match] raise due to no match" =
   require
-    [%here]
     (is_none
        (match_ ~update_last_match:true ("foo" |> quote) ("xxx" |> Text.of_utf8_bytes)));
   show_last_match ();
@@ -124,7 +123,6 @@ let%expect_test "[Last_match] raise due to no match" =
 
 let%expect_test "[Last_match] with nonexistent [subexp]" =
   require
-    [%here]
     (is_some
        (match_ ~update_last_match:true ("foo" |> quote) ("xfoox" |> Text.of_utf8_bytes)));
   show_last_match () ~subexp:1;
@@ -193,14 +191,14 @@ let%expect_test "[Last_match] success" =
 
 let%expect_test "[Last_match ~subexp] success" =
   require
-    [%here]
     (is_some
        (match_
           ~update_last_match:true
           ({|\(foo\)|} |> of_pattern)
           ("xfoox" |> Text.of_utf8_bytes)));
   show_last_match () ~subexp:1;
-  [%expect {|
+  [%expect
+    {|
     ((text  (Ok foo))
      (start (Ok 1))
      (end_  (Ok 4)))
@@ -210,7 +208,6 @@ let%expect_test "[Last_match ~subexp] success" =
 
 let%expect_test "[Last_match.get_exn]" =
   require
-    [%here]
     (is_some
        (match_
           ~update_last_match:true
@@ -220,10 +217,10 @@ let%expect_test "[Last_match.get_exn]" =
   print_s [%sexp (match_data : Last_match.t)];
   [%expect {| ((location (Text xfoox)) (positions (1 4 1 4))) |}];
   require
-    [%here]
     (is_some (match_ ~update_last_match:true ("a" |> quote) ("a" |> Text.of_utf8_bytes)));
   print_s [%sexp (Last_match.get_exn () : Last_match.t)];
-  [%expect {|
+  [%expect
+    {|
     ((location  (Text a))
      (positions (0    1)))
     |}];
@@ -231,7 +228,8 @@ let%expect_test "[Last_match.get_exn]" =
   print_s [%sexp (Last_match.get_exn () : Last_match.t)];
   [%expect {| ((location (Text xfoox)) (positions (1 4 1 4))) |}];
   show_last_match ();
-  [%expect {|
+  [%expect
+    {|
     ((text  (Ok foo))
      (start (Ok 1))
      (end_  (Ok 4)))
@@ -377,7 +375,8 @@ let%expect_test "[of_rx]" =
     Point.goto_min ();
     let matches = Point.search_forward_regexp (of_rx (Seq [ Exactly "foobar"; Point ])) in
     print_s [%message (matches : bool)]);
-  [%expect {|
+  [%expect
+    {|
     (matches true)
     (matches false)
     |}];
@@ -553,9 +552,8 @@ let%expect_test "named char classes" =
   let test_tf class_ ~member ~not_member =
     let regexp = Regexp.of_rx (Any_in [ Named class_ ]) in
     print_endline (Regexp.to_pattern regexp);
-    require [%here] (Regexp.does_match regexp (Text.of_utf8_bytes (String.make 1 member)));
+    require (Regexp.does_match regexp (Text.of_utf8_bytes (String.make 1 member)));
     require
-      [%here]
       (not (Regexp.does_match regexp (Text.of_utf8_bytes (String.make 1 not_member))))
   in
   Current_buffer.set_buffer_local_temporarily
@@ -563,19 +561,19 @@ let%expect_test "named char classes" =
     Point.case_fold_search
     false
     ~f:(fun () ->
-    List.iter [%all: Rx.Named_char_class.t] ~f:(fun named_char_class ->
-      let member, not_member =
-        match named_char_class with
-        | Alphabetic -> 'a', '_'
-        | Alphanumeric -> '0', '^'
-        | Digit -> '5', 'a'
-        | Hex_digit -> 'f', 'g'
-        | Lower -> 'a', 'Z'
-        | Space -> '\t', '_'
-        | Upper -> 'A', 'b'
-        | Word -> 'z', '/'
-      in
-      test_tf named_char_class ~member ~not_member));
+      List.iter [%all: Rx.Named_char_class.t] ~f:(fun named_char_class ->
+        let member, not_member =
+          match named_char_class with
+          | Alphabetic -> 'a', '_'
+          | Alphanumeric -> '0', '^'
+          | Digit -> '5', 'a'
+          | Hex_digit -> 'f', 'g'
+          | Lower -> 'a', 'Z'
+          | Space -> '\t', '_'
+          | Upper -> 'A', 'b'
+          | Word -> 'z', '/'
+        in
+        test_tf named_char_class ~member ~not_member));
   [%expect
     {|
     [[:alpha:]]
@@ -586,6 +584,84 @@ let%expect_test "named char classes" =
     [[:space:]]
     [[:upper:]]
     [[:word:]]
+    |}];
+  return ()
+;;
+
+let%expect_test "minimal-/maximal-match" =
+  let test inputs rx =
+    (* Pattern should have one capture group *)
+    let regexp = Regexp.of_rx rx in
+    print_endline (Regexp.to_pattern regexp);
+    List.iter inputs ~f:(fun input ->
+      let does_match =
+        Regexp.does_match regexp (Text.of_utf8_bytes input) ~update_last_match:true
+      in
+      let submatch =
+        if does_match then Some (Regexp.Last_match.text_exn ~subexp:1 ()) else None
+      in
+      print_s [%message (does_match : bool) (submatch : (Text.t option[@sexp.option]))])
+  in
+  let make_rx (f : Rx.t -> Rx.t) : Rx.t =
+    Seq
+      [ Exactly "a"
+      ; Submatch (f (Zero_or_more (Any_in [ Named Alphabetic ])))
+      ; Exactly "x"
+      ]
+  in
+  (* default is greedy *)
+  test [ "abcdxxx"; "abcdx"; "abcd"; "ax" ] (make_rx Fn.id);
+  [%expect
+    {|
+    \(?:a\([[:alpha:]]*\)x\)
+    ((does_match true)
+     (submatch   bcdxx))
+    ((does_match true)
+     (submatch   bcd))
+    (does_match false)
+    ((does_match true)
+     (submatch   ""))
+    |}];
+  (* non-greedy *)
+  test [ "abcdxxx"; "abcdx"; "abcd"; "ax" ] (make_rx (fun t -> Minimal_match t));
+  [%expect
+    {|
+    \(?:a\([[:alpha:]]*?\)x\)
+    ((does_match true)
+     (submatch   bcd))
+    ((does_match true)
+     (submatch   bcd))
+    (does_match false)
+    ((does_match true)
+     (submatch   ""))
+    |}];
+  (* explicitly greedy *)
+  test [ "abcdxxx"; "abcdx"; "abcd"; "ax" ] (make_rx (fun t -> Maximal_match t));
+  [%expect
+    {|
+    \(?:a\([[:alpha:]]*\)x\)
+    ((does_match true)
+     (submatch   bcdxx))
+    ((does_match true)
+     (submatch   bcd))
+    (does_match false)
+    ((does_match true)
+     (submatch   ""))
+    |}];
+  (* innermost constructor governs *)
+  test
+    [ "abcdxxx"; "abcdx"; "abcd"; "ax" ]
+    (make_rx (fun t -> Maximal_match (Minimal_match t)));
+  [%expect
+    {|
+    \(?:a\([[:alpha:]]*?\)x\)
+    ((does_match true)
+     (submatch   bcd))
+    ((does_match true)
+     (submatch   bcd))
+    (does_match false)
+    ((does_match true)
+     (submatch   ""))
     |}];
   return ()
 ;;

@@ -78,3 +78,6 @@ val window_tree : t -> Window0.Tree.t
 
 (** [(describe-function 'modify-all-frames-parameters)] *)
 val modify_all_frames_parameters : (Symbol.t * Value.t) list -> unit
+
+(** [(describe-function 'modify-frame-parameters)] *)
+val modify_frame_parameters : t -> (Symbol.t * Value.t) list -> unit

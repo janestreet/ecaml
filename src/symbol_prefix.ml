@@ -9,7 +9,7 @@ module type S = S with type t := t
 let create elisp_name =
   (module struct
     let elisp_name = elisp_name
-    let symbol_prefix = concat [ elisp_name; "-" ]
+    let symbol_prefix = elisp_name ^ "-"
 
     let all_commands =
       Lazy.from_fun (fun () ->
@@ -26,7 +26,7 @@ let create elisp_name =
     let prefixed_symbol_name suffix =
       match suffix with
       | "" -> elisp_name
-      | _ -> concat [ symbol_prefix; suffix ]
+      | _ -> symbol_prefix ^ suffix
     ;;
 
     let symbol suffix =
@@ -37,4 +37,4 @@ let create elisp_name =
   end : S)
 ;;
 
-let extend t suffix = create (concat [ t; suffix ])
+let extend t suffix = create (t ^ suffix)

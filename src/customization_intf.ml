@@ -4,9 +4,16 @@ open! Core
 open! Import
 
 module type Enum_arg = sig
-  type t [@@deriving compare, enumerate, sexp_of]
+  type t
 
-  val docstring : t -> string
+  include Enum.S with type t := t
+
+  val docstring : t -> string option
+end
+
+module type Enum_arg_to_symbol = sig
+  include Enum_arg
+
   val to_symbol : t -> Symbol.t
 end
 
@@ -72,12 +79,13 @@ module type Customization = sig
       | Sexp
       | String
       | Symbol
-      | Tagged_string of string
+      | Tag of string * t
       | Variable
       | Vector of t list
     [@@deriving sexp_of]
 
     val enum : 'a list -> ('a -> Value.t) -> t
+    [@@deprecated "[since 2024-07] Use [defcustom_enum] instead."]
   end
 
   type 'a t [@@deriving sexp_of]
@@ -122,11 +130,25 @@ module type Customization = sig
   val customize_group : Group.t -> unit
 
   module type Enum_arg = Enum_arg
+  module type Enum_arg_to_symbol = Enum_arg_to_symbol
 
   val defcustom_enum
     :  Symbol.t
     -> Source_code_position.t
     -> (module Enum_arg with type t = 'a)
+    -> docstring:string
+    -> group:Group.t
+    -> standard_value:'a
+    -> ?on_set:('a -> unit)
+    -> unit
+    -> 'a t
+
+  (** Like [defcustom_enum], but allows the caller to specify a custom [to_symbol]
+      function. *)
+  val defcustom_enum_with_to_symbol
+    :  Symbol.t
+    -> Source_code_position.t
+    -> (module Enum_arg_to_symbol with type t = 'a)
     -> docstring:string
     -> group:Group.t
     -> standard_value:'a

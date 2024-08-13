@@ -33,10 +33,10 @@ let%expect_test "" =
       ~docstring:"<docstring>"
       Sync
       (fun inner rest ->
-      print_s [%message "advice" (rest : Value.t list)];
-      let inner_result = inner ((0 |> Value.of_int_exn) :: rest) in
-      print_s [%message "advice" (inner_result : Value.t)];
-      Value.Type.(int |> to_value) (1 + (inner_result |> Value.to_int_exn)))
+         print_s [%message "advice" (rest : Value.t list)];
+         let inner_result = inner ((0 |> Value.of_int_exn) :: rest) in
+         print_s [%message "advice" (inner_result : Value.t)];
+         Value.Type.(int |> to_value) (1 + (inner_result |> Value.to_int_exn)))
   in
   Advice.add t ~to_function:test_function;
   call_test_function ();
@@ -49,7 +49,8 @@ let%expect_test "" =
     |}];
   Advice.remove t ~from_function:test_function;
   call_test_function ();
-  [%expect {|
+  [%expect
+    {|
     (test-function (args (1)))
     (call (result 13))
     |}];
@@ -84,7 +85,8 @@ let%expect_test "[around_funcall ~on_parse_error]" =
     Advice.remove t ~from_function:test_function
   in
   test Value.Type.int;
-  [%expect {|
+  [%expect
+    {|
     "Advice got called."
     (call (result -1))
     |}];
@@ -111,7 +113,8 @@ let%expect_test "[around_funcall ~on_parse_error]" =
        (exn (wrong-type-argument (stringp 1)))))))
     |}];
   test Value.Type.string ~on_parse_error:Call_inner_function;
-  [%expect {|
+  [%expect
+    {|
     (test-function (args (1)))
     (call (result 13))
     |}];
@@ -140,7 +143,8 @@ let%expect_test "[around_funcall] with arity mismatch" =
   in
   (* correct arity *)
   test Funcall.Wrap.(int @-> return int) (fun _ _ -> advice_body ());
-  [%expect {|
+  [%expect
+    {|
     "Advice got called."
     (call (result -1))
     |}];
@@ -179,11 +183,11 @@ let%expect_test "Async advice" =
       ~docstring:"<docstring>"
       Async
       (fun inner rest ->
-      let%map () = Clock.after (sec 0.001) in
-      print_s [%message "advice" (rest : Value.t list)];
-      let inner_result = inner ((0 |> Value.of_int_exn) :: rest) in
-      print_s [%message "advice" (inner_result : Value.t)];
-      Value.Type.(int |> to_value) (1 + (inner_result |> Value.to_int_exn)))
+         let%map () = Clock.after (sec 0.001) in
+         print_s [%message "advice" (rest : Value.t list)];
+         let inner_result = inner ((0 |> Value.of_int_exn) :: rest) in
+         print_s [%message "advice" (inner_result : Value.t)];
+         Value.Type.(int |> to_value) (1 + (inner_result |> Value.to_int_exn)))
   in
   Advice.add t ~to_function:test_function;
   let call_test_function () =
@@ -199,7 +203,8 @@ let%expect_test "Async advice" =
     |}];
   Advice.remove t ~from_function:test_function;
   let%bind () = call_test_function () in
-  [%expect {|
+  [%expect
+    {|
     (test-function (args (1)))
     (call (result 13))
     |}];

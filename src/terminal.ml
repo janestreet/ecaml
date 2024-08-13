@@ -11,10 +11,10 @@ end
 let is_terminal = Funcall.Wrap.("terminal-live-p" <: value @-> return bool)
 
 include Value.Make_subtype (struct
-  let name = "terminal"
-  let here = [%here]
-  let is_in_subtype = is_terminal
-end)
+    let name = "terminal"
+    let here = [%here]
+    let is_in_subtype = is_terminal
+  end)
 
 module Type = struct
   module T = struct
@@ -34,11 +34,11 @@ module Type = struct
       [%message "terminal-type"]
       (module T)
       (function
-       | Text -> Value.t
-       | X11 -> Q.x |> Symbol.to_value
-       | Windows -> Q.w32 |> Symbol.to_value
-       | Mac_os -> Q.ns |> Symbol.to_value
-       | Ms_dos -> Q.pc |> Symbol.to_value)
+        | Text -> Value.t
+        | X11 -> Q.x |> Symbol.to_value
+        | Windows -> Q.w32 |> Symbol.to_value
+        | Mac_os -> Q.ns |> Symbol.to_value
+        | Ms_dos -> Q.pc |> Symbol.to_value)
   ;;
 
   let t = type_

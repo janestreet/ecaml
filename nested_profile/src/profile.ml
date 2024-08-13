@@ -10,6 +10,15 @@ module Start_location = struct
   let default = End_of_profile_first_line
 end
 
+module Frame_tagger = struct
+  type t =
+    | T :
+        { capture : unit -> 'a option
+        ; render : 'a -> Sexp.t option
+        }
+        -> t
+end
+
 let start_location = ref Start_location.default
 let concat = String.concat
 let approximate_line_length_limit = ref 1_000
@@ -19,7 +28,7 @@ let hide_top_level_if_less_than = ref (Time_ns.Span.of_int_ms 10)
 let never_show_rendering_took = ref false
 let output_profile = ref print_string
 let sexp_of_time_ns = ref [%sexp_of: Time_ns.Alternate_sexp.t]
-let tag_frames_with = ref None
+let tag_frames_with : Frame_tagger.t option ref = ref None
 
 module Time_ns = struct
   include Time_ns
@@ -101,14 +110,14 @@ module Record = struct
 
   let rec sexp_of_t
     ({ start = _; stop = _; message; children; had_parallel_children; pending_children }
-    as t)
+     as t)
     =
     [%sexp
       (took t |> Time_ns.Span.to_string_hum : string)
       , (if had_parallel_children then Some `parallel else None
-          : ([ `parallel ] option[@sexp.option]))
+         : ([ `parallel ] option[@sexp.option]))
       , (if pending_children <> 0 then Some (`pending_children pending_children) else None
-          : ([ `pending_children of int ] option[@sexp.option]))
+         : ([ `pending_children of int ] option[@sexp.option]))
       , (Message.force message : Sexp.t)
       , (children : (t list[@sexp.omit_nil]))]
   ;;
@@ -212,9 +221,9 @@ module Record = struct
           t.children
           ~init:(t.start, [])
           ~f:(fun (last_stop, rev_children) child ->
-          ( child.stop
-          , insert_gap_frames child
-            :: maybe_add_gap rev_children ~start:last_stop ~stop:child.start ))
+            ( child.stop
+            , insert_gap_frames child
+              :: maybe_add_gap rev_children ~start:last_stop ~stop:child.start ))
       in
       let rev_children = maybe_add_gap rev_children ~start:last_stop ~stop:t.stop in
       { t with children = List.rev rev_children })
@@ -326,6 +335,7 @@ module Frame = struct
     ; parent : t option
     ; mutable pending_children : int
     ; mutable max_pending_children : int
+    ; mutable exited : bool
     }
   [@@deriving sexp_of]
 
@@ -336,11 +346,20 @@ module Frame = struct
     ; parent
     ; pending_children = 0
     ; max_pending_children = 0
+    ; exited = false
     }
   ;;
 
   let record t ~stop : Record.t =
-    let { message; start; children; parent = _; pending_children; max_pending_children } =
+    let { message
+        ; start
+        ; children
+        ; parent = _
+        ; pending_children
+        ; max_pending_children
+        ; exited = _
+        }
+      =
       t
     in
     { start
@@ -402,12 +421,14 @@ let record_profile ?hide_if_less_than (frame : Frame.t) =
        expression being evaluated later, where there might be an intervening write to
        [frame.pending_children]. *)
     let pending_children = frame.pending_children in
-    !on_async_out_of_order
-      (lazy
-        [%message
-          "Nested [profile Async] exited out-of-order."
-            ~message:(Message.force frame.message : Sexp.t)
-            (pending_children : int)]));
+    with_profiling_disallowed (fun () ->
+      !on_async_out_of_order
+        (lazy
+          [%message
+            "Nested [profile Async] exited out-of-order."
+              ~message:(Message.force frame.message : Sexp.t)
+              (pending_children : int)])));
+  frame.exited <- true;
   maybe_record_frame ?hide_if_less_than frame ~stop:(now ())
 ;;
 
@@ -439,19 +460,41 @@ let profile
   if not (!profiling_is_allowed && !should_profile)
   then f ()
   else (
-    let tag =
-      with_profiling_disallowed (fun () ->
-        try Option.bind !tag_frames_with ~f:(fun f -> f ()) with
-        | exn ->
-          let backtrace = Backtrace.Exn.most_recent () in
-          Some
-            [%message
-              "[Profile.tag_frames_with] raised" (exn : exn) (backtrace : Backtrace.t)])
+    let tag_thunk =
+      match !tag_frames_with with
+      | None -> None
+      | Some (T { capture; render }) ->
+        (match with_profiling_disallowed capture with
+         | exception exn ->
+           let backtrace = Backtrace.Exn.most_recent () in
+           Some
+             (fun () ->
+               Some
+                 [%message
+                   "[Profile.tag_frames_with] raised while capturing context"
+                     (exn : exn)
+                     (backtrace : Backtrace.t)])
+         | None -> None
+         | Some context -> Some (fun () -> render context))
     in
     let message =
-      match tag with
+      match tag_thunk with
       | None -> message
-      | Some tag -> lazy (List [ force message; tag ])
+      | Some tag_thunk ->
+        lazy
+          (match
+             with_profiling_disallowed (fun () ->
+               try tag_thunk () with
+               | exn ->
+                 let backtrace = Backtrace.Exn.most_recent () in
+                 Some
+                   [%message
+                     "[Profile.tag_frames_with] raised while rendering"
+                       (exn : exn)
+                       (backtrace : Backtrace.t)])
+           with
+           | None -> force message
+           | Some tag -> List [ force message; tag ])
     in
     let parent = current_profile_context () in
     let frame = Frame.create ~message ~parent in
@@ -459,10 +502,20 @@ let profile
       match parent with
       | None -> fun ~by:_ -> ()
       | Some parent ->
+        (* {[
+             if parent.exited
+             then
+               with_profiling_disallowed (fun () ->
+                 !on_async_out_of_order
+                   [%lazy_message
+                     "[Profile.profile] created frame with parent that already exited"
+                       ~parent:(Message.force parent.message : Sexp.t)
+                       ~frame:(Message.force frame.message : Sexp.t)]);
+           ]} *)
         fun ~by ->
-          parent.pending_children <- parent.pending_children + by;
-          parent.max_pending_children
-            <- Int.max parent.max_pending_children parent.pending_children
+        parent.pending_children <- parent.pending_children + by;
+        parent.max_pending_children
+        <- Int.max parent.max_pending_children parent.pending_children
     in
     incr_pending_children ~by:1;
     let f () = with_profile_context (Some frame) ~f in
@@ -472,7 +525,7 @@ let profile
         record_profile ?hide_if_less_than frame;
         incr_pending_children ~by:(-1))
     | Async ->
-      Monitor.protect ~run:`Schedule ~rest:`Log f ~finally:(fun () ->
+      Monitor.protect ~rest:`Log f ~finally:(fun () ->
         record_profile ?hide_if_less_than frame;
         incr_pending_children ~by:(-1);
         return ()))
@@ -506,6 +559,7 @@ module Private = struct
         ; parent = current_profile_context ()
         ; pending_children = 0
         ; max_pending_children = 0
+        ; exited = true
         }
         ~stop
   ;;

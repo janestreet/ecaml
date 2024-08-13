@@ -9,10 +9,10 @@ let get_text_of_help ~invoke_help =
     |> Text.to_utf8_bytes
     |> String.split_lines
     |> List.filter_map ~f:(fun line ->
-         if (am_running_test && String.is_prefix line ~prefix:"Implemented at")
-            || String.( = ) "[back]" (String.strip line)
-         then None
-         else Some line)
+      if (am_running_test && String.is_prefix line ~prefix:"Implemented at")
+         || String.( = ) "[back]" (String.strip line)
+      then None
+      else Some line)
     |> concat ~sep:"\n"
     |> String.strip)
 ;;

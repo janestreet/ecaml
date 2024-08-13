@@ -2,6 +2,14 @@ open! Core
 open! Import
 open! Ecaml_filename
 
+(** An absolute path to a directory.
+
+    The Elisp value may begin with [~/] instead of [/], so it is automatically expanded
+    on conversion.
+
+    The Elisp value must end with [/], so it is automatically added on conversion. *)
+val absolute_t : File_path.Absolute.t Value.Type.t
+
 (** [(describe-function 'make-directory)]
     [(Info-goto-node "(elisp)Create/Delete Dirs")] *)
 val create : ?parents:bool (** default is [false] *) -> Filename.t -> unit

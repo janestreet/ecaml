@@ -25,7 +25,7 @@ let show_in_current_buffer () =
 let%expect_test "[get] with no value" =
   show_in_current_buffer ();
   [%expect {| () |}];
-  require_does_raise [%here] (fun () -> Current_buffer.get_buffer_local_exn int);
+  require_does_raise (fun () -> Current_buffer.get_buffer_local_exn int);
   [%expect
     {|
     ("buffer has no value for variable"
@@ -46,7 +46,7 @@ let%expect_test "[get] with some value" =
 
 let%expect_test "[get] with strange value" =
   Current_buffer.set_value (Var.create (symbol int) Value.Type.string) "thirteen";
-  require_does_raise [%here] (fun () -> Current_buffer.get_buffer_local int);
+  require_does_raise (fun () -> Current_buffer.get_buffer_local int);
   [%expect
     {|
     ("buffer has strange value for variable"
@@ -54,7 +54,7 @@ let%expect_test "[get] with strange value" =
       (buffer "#<buffer *scratch*>")
       (value  thirteen))
     |}];
-  require_does_raise [%here] (fun () -> Current_buffer.get_buffer_local_exn int);
+  require_does_raise (fun () -> Current_buffer.get_buffer_local_exn int);
   [%expect
     {|
     ("buffer has strange value for variable"
@@ -170,7 +170,7 @@ let%expect_test "[wrap_existing]" =
   in
   print_s [%sexp (Var.is_buffer_local_always var : bool)];
   [%expect {| false |}];
-  require_does_raise [%here] (fun () -> wrap ~make_buffer_local_always:false);
+  require_does_raise (fun () -> wrap ~make_buffer_local_always:false);
   [%expect
     {|
     ("[Buffer_local.wrap_existing] on an Elisp variable that is not automatically buffer local"

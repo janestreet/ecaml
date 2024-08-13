@@ -123,6 +123,8 @@ module Must_check_exit = struct
   external multibyte_of_string : string -> t = "ecaml_multibyte_of_string"
   external unibyte_of_string : string -> t = "ecaml_unibyte_of_string"
   external to_utf8_bytes_exn : t -> string = "ecaml_to_string"
+  external of_time_ns : Time_ns.t -> t = "ecaml_of_time_ns"
+  external to_time_ns_exn : t -> Time_ns.t = "ecaml_to_time_ns"
   external vec_get : t -> int -> t = "ecaml_vec_get"
   external vec_set : t -> int -> t -> unit = "ecaml_vec_set"
   external vec_size : t -> int = "ecaml_vec_size"
@@ -195,6 +197,8 @@ module Have_checked_exit = struct
   let multibyte_of_string = wrap_raise1 multibyte_of_string
   let unibyte_of_string = wrap_raise1 unibyte_of_string
   let to_utf8_bytes_exn = wrap_raise1 to_utf8_bytes_exn
+  let of_time_ns = wrap_raise1 of_time_ns
+  let to_time_ns_exn = wrap_raise1 to_time_ns_exn
   let vec_get = wrap_raise2 vec_get
   let vec_set = wrap_raise3 vec_set
   let vec_size = wrap_raise1 vec_size
@@ -777,6 +781,8 @@ module Type = struct
     create [%message "string"] [%sexp_of: string] to_utf8_bytes_exn of_utf8_bytes_cached
   ;;
 
+  let time_ns = create [%message "time"] [%sexp_of: Time_ns.t] to_time_ns_exn of_time_ns
+
   let unit =
     create
       [%message "unit"]
@@ -837,6 +843,66 @@ module Type = struct
       (fun (a1, a2) -> cons (to_value t1 a1) (cons (to_value t2 a2) nil))
   ;;
 
+  let tuple3_as_list t1 t2 t3 =
+    create
+      [%sexp (name t1 : Sexp.t), (name t2 : Sexp.t), (name t3 : Sexp.t)]
+      (fun (v1, v2, v3) -> Sexp.List [ to_sexp t1 v1; to_sexp t2 v2; to_sexp t3 v3 ])
+      (fun cons ->
+        let v1, cons = of_value_exn t1 (car_exn cons), cdr_exn cons in
+        let v2, cons = of_value_exn t2 (car_exn cons), cdr_exn cons in
+        let v3, _ons = of_value_exn t3 (car_exn cons), cdr_exn cons in
+        v1, v2, v3)
+      (fun (a1, a2, a3) ->
+        nil |> cons (to_value t3 a3) |> cons (to_value t2 a2) |> cons (to_value t1 a1))
+  ;;
+
+  let tuple4_as_list t1 t2 t3 t4 =
+    create
+      [%sexp
+        (name t1 : Sexp.t), (name t2 : Sexp.t), (name t3 : Sexp.t), (name t4 : Sexp.t)]
+      (fun (v1, v2, v3, v4) ->
+        Sexp.List [ to_sexp t1 v1; to_sexp t2 v2; to_sexp t3 v3; to_sexp t4 v4 ])
+      (fun cons ->
+        let v1, cons = of_value_exn t1 (car_exn cons), cdr_exn cons in
+        let v2, cons = of_value_exn t2 (car_exn cons), cdr_exn cons in
+        let v3, cons = of_value_exn t3 (car_exn cons), cdr_exn cons in
+        let v4, _ons = of_value_exn t4 (car_exn cons), cdr_exn cons in
+        v1, v2, v3, v4)
+      (fun (a1, a2, a3, a4) ->
+        nil
+        |> cons (to_value t4 a4)
+        |> cons (to_value t3 a3)
+        |> cons (to_value t2 a2)
+        |> cons (to_value t1 a1))
+  ;;
+
+  let tuple5_as_list t1 t2 t3 t4 t5 =
+    create
+      [%sexp
+        (name t1 : Sexp.t)
+        , (name t2 : Sexp.t)
+        , (name t3 : Sexp.t)
+        , (name t4 : Sexp.t)
+        , (name t5 : Sexp.t)]
+      (fun (v1, v2, v3, v4, v5) ->
+        Sexp.List
+          [ to_sexp t1 v1; to_sexp t2 v2; to_sexp t3 v3; to_sexp t4 v4; to_sexp t5 v5 ])
+      (fun cons ->
+        let v1, cons = of_value_exn t1 (car_exn cons), cdr_exn cons in
+        let v2, cons = of_value_exn t2 (car_exn cons), cdr_exn cons in
+        let v3, cons = of_value_exn t3 (car_exn cons), cdr_exn cons in
+        let v4, cons = of_value_exn t4 (car_exn cons), cdr_exn cons in
+        let v5, _ons = of_value_exn t5 (car_exn cons), cdr_exn cons in
+        v1, v2, v3, v4, v5)
+      (fun (a1, a2, a3, a4, a5) ->
+        nil
+        |> cons (to_value t5 a5)
+        |> cons (to_value t4 a4)
+        |> cons (to_value t3 a3)
+        |> cons (to_value t2 a2)
+        |> cons (to_value t1 a1))
+  ;;
+
   let map t ~name ~of_ ~to_ =
     create
       name
@@ -851,12 +917,12 @@ module Type = struct
     create
       [%message "nil_or" ~_:(name t : Sexp.t)]
       (function
-       | None -> Atom "nil"
-       | Some v -> to_sexp t v)
+        | None -> Atom "nil"
+        | Some v -> to_sexp t v)
       (fun v -> if is_nil v then None else Some (v |> of_value_exn t))
       (function
-       | None -> nil
-       | Some v -> (to_value t) v)
+        | None -> nil
+        | Some v -> (to_value t) v)
   ;;
 
   let option t =
@@ -865,8 +931,8 @@ module Type = struct
       (sexp_of_option (to_sexp t))
       (fun v -> if is_nil v then None else Some (car_exn v |> of_value_exn t))
       (function
-       | None -> nil
-       | Some v -> cons (to_value t v) nil)
+        | None -> nil
+        | Some v -> cons (to_value t v) nil)
   ;;
 
   let stringable (type a) name (module M : Stringable.S with type t = a) =
@@ -889,6 +955,14 @@ module Type = struct
       ~of_:(Option.value ~default:".")
       ~to_:Option.return
     |> list
+  ;;
+
+  let span_ns =
+    map
+      time_ns
+      ~name:[%message "time_span"]
+      ~of_:Time_ns.to_span_since_epoch
+      ~to_:Time_ns.of_span_since_epoch
   ;;
 end
 

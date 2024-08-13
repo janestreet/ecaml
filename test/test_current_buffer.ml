@@ -152,7 +152,8 @@ let%expect_test "[set_value_temporarily] with a buffer-local and changed buffer"
     print_s [%message "" ~b1:(value_in b1 : int option) ~b2:(value_in b2 : int option)]
   in
   show_values ();
-  [%expect {|
+  [%expect
+    {|
     ((b1 ())
      (b2 ()))
     |}];
@@ -230,7 +231,7 @@ let%expect_test "[contents]" =
     print_s
       [%sexp
         (contents () ~start:(1 |> Position.of_int_exn) ~end_:(2 |> Position.of_int_exn)
-          : Text.t)];
+         : Text.t)];
     [%expect {| f |}]);
   return ()
 ;;
@@ -253,7 +254,7 @@ let%expect_test "[contents_text ~text_properties:true], [insert_text]" =
            ~start:(1 |> Position.of_int_exn)
            ~end_:(2 |> Position.of_int_exn)
            ~text_properties:true
-          : Text.t)];
+         : Text.t)];
     [%expect {| (f 0 1 (face (:background red))) |}]);
   return ()
 ;;
@@ -291,7 +292,8 @@ let%expect_test "[save_excursion] preserves point" =
       Point.insert "foo";
       show_point ());
     show_point ());
-  [%expect {|
+  [%expect
+    {|
     (point 1)
     (point 4)
     (point 1)
@@ -305,7 +307,8 @@ let%expect_test "[save_excursion] preserves current buffer" =
     set t;
     show ());
   show ();
-  [%expect {|
+  [%expect
+    {|
     "#<buffer zzz>"
     "#<buffer *scratch*>"
     |}];
@@ -338,7 +341,7 @@ let%expect_test "[rename_exn]" =
 let%expect_test "[rename_exn] raise" =
   let t1 = Buffer.create ~name:"foo" in
   let t2 = Buffer.create ~name:"bar" in
-  require_does_raise [%here] (fun () ->
+  require_does_raise (fun () ->
     set_temporarily Sync t1 ~f:(fun () ->
       rename_exn () ~name:(Buffer.name t2 |> Option.value_exn)));
   [%expect {| ("Buffer name `bar' is in use") |}];
@@ -521,13 +524,15 @@ let%expect_test "[undo], [add_undo_boundary]" =
         [%message "" ~contents:(contents () : Text.t) ~undo_list:(undo_list () : Value.t)]
     in
     show ();
-    [%expect {|
+    [%expect
+      {|
       ((contents  "")
        (undo_list nil))
       |}];
     add_undo_boundary ();
     show ();
-    [%expect {|
+    [%expect
+      {|
       ((contents  "")
        (undo_list nil))
       |}];
@@ -620,11 +625,11 @@ let%expect_test "[mark_is_active], [deactivate_mark]" =
     show ();
     [%expect {| false |}];
     set_mark (1 |> Position.of_int_exn);
-    require [%here] (mark_is_active ());
+    require (mark_is_active ());
     show ();
     [%expect {| true |}];
     deactivate_mark ();
-    require [%here] (not (mark_is_active ()));
+    require (not (mark_is_active ()));
     show ();
     [%expect {| false |}]);
   return ()
@@ -778,17 +783,20 @@ let%expect_test "[minor_mode_keymaps]" =
 
 let%expect_test "[delete_duplicate_lines]" =
   set_temporarily_to_temp_buffer Sync (fun () ->
-    Point.insert ({|
+    Point.insert
+      ({|
 a
 a
 b
 b
 c
 a
-|} |> String.strip);
+|}
+       |> String.strip);
     delete_duplicate_lines ();
     print_string (contents () |> Text.to_utf8_bytes);
-    [%expect {|
+    [%expect
+      {|
       a
       b
       c
@@ -798,17 +806,20 @@ a
 
 let%expect_test "[delete_lines_matching]" =
   set_temporarily_to_temp_buffer Sync (fun () ->
-    Point.insert ({|
+    Point.insert
+      ({|
 a
 a
 b
 b
 c
 a
-|} |> String.strip);
+|}
+       |> String.strip);
     delete_lines_matching ("b" |> Regexp.quote);
     print_string (contents () |> Text.to_utf8_bytes);
-    [%expect {|
+    [%expect
+      {|
       a
       a
       c
@@ -819,15 +830,18 @@ a
 
 let%expect_test "[sort_lines]" =
   set_temporarily_to_temp_buffer Sync (fun () ->
-    Point.insert ({|
+    Point.insert
+      ({|
 a
 d
 b
 c
-|} |> String.strip);
+|}
+       |> String.strip);
     sort_lines ();
     print_string (contents () |> Text.to_utf8_bytes);
-    [%expect {|
+    [%expect
+      {|
       a
       b
       c
@@ -848,15 +862,18 @@ let%expect_test "[delete_region]" =
 let%expect_test "[indent_region]" =
   set_temporarily_to_temp_buffer Sync (fun () ->
     Funcall.Wrap.("c-mode" <: nullary @-> return nil) ();
-    Point.insert ({|
+    Point.insert
+      ({|
 void f () {
       foo;
       bar;
       }
-|} |> String.strip);
+|}
+       |> String.strip);
     indent_region ();
     print_string (contents () |> Text.to_utf8_bytes);
-    [%expect {|
+    [%expect
+      {|
       void f () {
         foo;
         bar;
@@ -1088,9 +1105,9 @@ let%expect_test "[kill] with deferred kill hook" =
        ~hook_type:Normal_hook
        (Returns_deferred Value.Type.unit)
        (fun () ->
-       let%bind () = Clock.after (sec 0.001) in
-       print_s [%sexp "deferred hook ran"];
-       return ()));
+          let%bind () = Clock.after (sec 0.001) in
+          print_s [%sexp "deferred hook ran"];
+          return ()));
   let%bind () = kill () in
   [%expect {| "deferred hook ran" |}];
   return ()
@@ -1151,14 +1168,15 @@ let%expect_test "[chars_modified_tick]" =
     let old = Current_buffer.chars_modified_tick () in
     Point.insert "foo";
     let new_ = Current_buffer.chars_modified_tick () in
-    require_not_equal [%here] (module Modified_tick) old new_;
+    require_not_equal (module Modified_tick) old new_;
     [%expect {| |}]);
   return ()
 ;;
 
 let%expect_test "[replace_string]" =
   set_temporarily_to_temp_buffer Sync (fun () ->
-    Point.insert {|
+    Point.insert
+      {|
 abc
 def
 abc
@@ -1166,7 +1184,8 @@ def
 |};
     replace_string ~from:"ab" ~to_:"ba" ();
     print_endline (contents () |> Text.to_utf8_bytes);
-    [%expect {|
+    [%expect
+      {|
       bac
       def
       bac

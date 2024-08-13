@@ -7,10 +7,10 @@ let () =
 ;;
 
 include Value.Make_subtype (struct
-  let name = "hash-table"
-  let here = [%here]
-  let is_in_subtype = Value.is_hash_table
-end)
+    let name = "hash-table"
+    let here = [%here]
+    let is_in_subtype = Value.is_hash_table
+  end)
 
 module Test = struct
   type t =

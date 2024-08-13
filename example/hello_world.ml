@@ -13,7 +13,8 @@ let () =
   defun
     ("say-hello" |> Symbol.intern)
     [%here]
-    ~docstring:{|
+    ~docstring:
+      {|
 Takes one argument NAME and says "Hello, NAME"
 |}
     (Returns Value.Type.unit)

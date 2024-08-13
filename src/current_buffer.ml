@@ -7,6 +7,7 @@ module Q = struct
   let add_text_properties = "add-text-properties" |> Symbol.intern
   let put_text_property = "put-text-property" |> Symbol.intern
   let set_text_properties = "set-text-properties" |> Symbol.intern
+  let derived_mode_p = "derived-mode-p" |> Symbol.intern
 end
 
 include Current_buffer0
@@ -16,9 +17,10 @@ let get_buffer_local_exn = Buffer_local.Private.get_in_current_buffer_exn
 let set_buffer_local = Buffer_local.Private.set_in_current_buffer
 let set_buffer_local_temporarily = Buffer_local.Private.set_temporarily_in_current_buffer
 
-let set_temporarily_to_temp_buffer ?name sync_or_async f =
+let set_temporarily_to_temp_buffer ?(here = Stdlib.Lexing.dummy_pos) ?name sync_or_async f
+  =
   Buffer.with_temp_buffer ?name sync_or_async (fun t ->
-    set_temporarily sync_or_async t ~f)
+    set_temporarily ~here sync_or_async t ~f)
 ;;
 
 let major_mode () =
@@ -33,13 +35,23 @@ let set_auto_mode =
 
 let bury = Funcall.Wrap.("bury-buffer" <: nullary @-> return nil)
 let directory = Buffer_local.Wrap.("default-directory" <: nil_or string)
+
+let directory_abspath =
+  Buffer_local.Wrap.("default-directory" <: nil_or Directory.absolute_t)
+;;
+
 let set_modified = Funcall.Wrap.("set-buffer-modified-p" <: bool @-> return nil)
 let fill_column = Buffer_local.Wrap.("fill-column" <: int)
 let paragraph_start = Var.Wrap.("paragraph-start" <: Regexp.t)
 let paragraph_separate = Var.Wrap.("paragraph-separate" <: Regexp.t)
 let read_only = Buffer_local.Wrap.("buffer-read-only" <: bool)
+let show_trailing_whitespace = Buffer_local.Wrap.("show-trailing-whitespace" <: bool)
 let is_modified () = Buffer.is_modified (get ())
 let file_name () = Buffer.file_name (get ())
+
+let file_name_abspath =
+  Buffer_local.Wrap.("buffer-file-name" <: nil_or Ecaml_filename.Filename.absolute_t)
+;;
 
 let file_name_exn () =
   match file_name () with
@@ -70,8 +82,8 @@ module Coding_system = struct
       [%sexp "buffer-file-coding-system"]
       (module T)
       (function
-       | Utf_8 -> "utf-8" |> Value.intern
-       | Utf_8_unix -> "utf-8-unix" |> Value.intern)
+        | Utf_8 -> "utf-8" |> Value.intern
+        | Utf_8_unix -> "utf-8-unix" |> Value.intern)
   ;;
 
   let t = type_
@@ -149,10 +161,10 @@ let delete_region ~start ~end_ = delete_region start end_
 let kill_region = Funcall.Wrap.("kill-region" <: Position.t @-> Position.t @-> return nil)
 let kill_region ~start ~end_ = kill_region start end_
 let widen = Funcall.Wrap.("widen" <: nullary @-> return nil)
-let save_current_buffer f = Save_wrappers.save_current_buffer f
-let save_excursion f = Save_wrappers.save_excursion f
-let save_mark_and_excursion f = Save_wrappers.save_mark_and_excursion f
-let save_restriction f = Save_wrappers.save_restriction f
+let save_current_buffer = Save_wrappers.save_current_buffer
+let save_excursion = Save_wrappers.save_excursion
+let save_mark_and_excursion = Save_wrappers.save_mark_and_excursion
+let save_restriction = Save_wrappers.save_restriction
 let set_multibyte = Funcall.Wrap.("set-buffer-multibyte" <: bool @-> return nil)
 
 let enable_multibyte_characters =
@@ -160,8 +172,6 @@ let enable_multibyte_characters =
 ;;
 
 let is_multibyte () = get_buffer_local enable_multibyte_characters
-let rename_buffer = Funcall.Wrap.("rename-buffer" <: string @-> bool @-> return nil)
-let rename_exn ?(unique = false) () ~name = rename_buffer name unique
 
 let put_text_property =
   Funcall.Wrap.(
@@ -235,6 +245,16 @@ let add_text_properties_staged properties =
     Symbol.funcall_int_int_value_unit Q.add_text_properties start end_ properties)
 ;;
 
+let add_face_text_property =
+  Funcall.Wrap.(
+    "add-face-text-property"
+    <: Position.t @-> Position.t @-> Text.Face_spec.t @-> bool @-> return nil)
+;;
+
+let add_face_text_properties ?start ?end_ ?(append = false) face =
+  add_face_text_property (or_point_min start) (or_point_max end_) face append
+;;
+
 let text_property_not_all =
   Funcall.Wrap.(
     "text-property-not-all"
@@ -290,9 +310,9 @@ let buffer_local_variables =
 let buffer_local_variables () =
   buffer_local_variables ()
   |> List.map ~f:(fun value ->
-       if Value.is_symbol value
-       then value |> Symbol.of_value_exn, None
-       else Value.car_exn value |> Symbol.of_value_exn, Some (Value.cdr_exn value))
+    if Value.is_symbol value
+    then value |> Symbol.of_value_exn, None
+    else Value.car_exn value |> Symbol.of_value_exn, Some (Value.cdr_exn value))
 ;;
 
 let kill_local_variable = Funcall.Wrap.("kill-local-variable" <: Symbol.t @-> return nil)
@@ -380,7 +400,7 @@ let replace_buffer_contents ?max_duration ?max_costs buffer =
        buffer
        (Option.map max_duration ~f:Time_ns.Span.to_sec)
        max_costs
-      : bool)
+     : bool)
 ;;
 
 let size = Funcall.Wrap.("buffer-size" <: nullary @-> return int)
@@ -432,3 +452,9 @@ let replace_string ?start ?end_ ~from ~to_ () =
 ;;
 
 let key_binding = Funcall.Wrap.("key-binding" <: Key_sequence.t @-> return Keymap.Entry.t)
+
+let is_derived_mode ts =
+  let args = List.map ts ~f:(fun mode -> Major_mode.symbol mode |> Symbol.to_value) in
+  let ret = Symbol.funcallN Q.derived_mode_p args in
+  Value.to_bool ret
+;;

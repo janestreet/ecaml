@@ -16,7 +16,8 @@ let show () =
 let%expect_test "[message_s] of a value" =
   message_s [%sexp (13 |> Value.of_int_exn : Value.t)];
   show ();
-  [%expect {|
+  [%expect
+    {|
     13
     13
     |}];
@@ -26,7 +27,8 @@ let%expect_test "[message_s] of a value" =
 let%expect_test "[message]" =
   message "foobar";
   show ();
-  [%expect {|
+  [%expect
+    {|
     foobar
     foobar
     |}];
@@ -36,7 +38,8 @@ let%expect_test "[message]" =
 let%expect_test "[messagef]" =
   messagef "%d" 13;
   show ();
-  [%expect {|
+  [%expect
+    {|
     13
     13
     |}];
@@ -46,7 +49,8 @@ let%expect_test "[messagef]" =
 let%expect_test "[message_s] of an atom" =
   message_s [%message "foo bar"];
   show ();
-  [%expect {|
+  [%expect
+    {|
     foo bar
     foo bar
     |}];
@@ -56,7 +60,8 @@ let%expect_test "[message_s] of an atom" =
 let%expect_test "[message_s]" =
   message_s [%message "foobar" ~_:(13 : int)];
   show ();
-  [%expect {|
+  [%expect
+    {|
     (foobar 13)
     (foobar 13)
     |}];
@@ -66,7 +71,8 @@ let%expect_test "[message_s]" =
 let%expect_test "[message_text]" =
   message_text (Text.colorize (Text.of_utf8_bytes "hello") ~color:Color.red);
   show ();
-  [%expect {|
+  [%expect
+    {|
     hello
     hello
     |}];

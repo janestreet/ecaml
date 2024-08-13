@@ -93,7 +93,7 @@ let%expect_test "attributes" =
 ;;
 
 let%expect_test "[rgb_exn] raise" =
-  require_does_raise [%here] (fun () -> rgb_exn ("zzz" |> of_name));
+  require_does_raise (fun () -> rgb_exn ("zzz" |> of_name));
   [%expect {| ("[Color.rgb_exn] got non-displayable color" (color zzz)) |}];
   return ()
 ;;

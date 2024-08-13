@@ -6,10 +6,10 @@ module Buffer = Buffer0
 let get = Funcall.Wrap.("current-buffer" <: nullary @-> return Buffer.t)
 let set = Funcall.Wrap.("set-buffer" <: Buffer.t @-> return nil)
 
-let set_temporarily sync_or_async buffer ~f =
+let set_temporarily ?(here = Stdlib.Lexing.dummy_pos) sync_or_async buffer ~f =
   let old = get () in
   set buffer;
-  Sync_or_async.protect [%here] sync_or_async ~f ~finally:(fun () ->
+  Sync_or_async.protect here sync_or_async ~f ~finally:(fun () ->
     if Buffer.is_live old then set old)
 ;;
 
@@ -79,3 +79,6 @@ let has_non_null_value var =
   | None -> false
   | Some b -> b
 ;;
+
+let rename_buffer = Funcall.Wrap.("rename-buffer" <: string @-> bool @-> return nil)
+let rename_exn ?(unique = false) () ~name = rename_buffer name unique

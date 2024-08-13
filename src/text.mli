@@ -54,14 +54,12 @@ module Face_spec : sig
       | Face of Face.t
     [@@deriving sexp_of]
 
-    val of_value_exn : Value.t -> t
-    val to_value : t -> Value.t
+    include Valueable.S with type t := t
   end
 
   type t = One.t list [@@deriving sexp_of]
 
-  val of_value_exn : Value.t -> t
-  val to_value : t -> Value.t
+  include Valueable.S with type t := t
 
   (** [normalize] sorts [t]; it is used to get consistent ordering when comparing
       [Ansi_color] to Elisp's [ansi-color] functionality. *)
@@ -177,6 +175,16 @@ val add_properties
   -> ?end_:int (** default is end of [t] *)
   -> t
   -> Property.t list
+  -> unit
+
+(** [(describe-function 'add-face-text-property)]
+    [(Info-goto-node "(elisp)Changing Properties")] *)
+val add_face_properties
+  :  ?start:int (** default is start of [t] *)
+  -> ?end_:int (** default is end of [t] *)
+  -> ?append:bool (** default is false *)
+  -> t
+  -> Face_spec.t
   -> unit
 
 (** [(describe-function 'remove-list-of-text-properties)]

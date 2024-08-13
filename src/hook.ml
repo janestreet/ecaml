@@ -108,6 +108,8 @@ module Function = struct
     self
   ;;
 
+  let wrap symbol ~hook_type = { symbol; hook_type }
+
   let funcall (type a b) ({ symbol; hook_type } : (a, b) t) (x : a) : b =
     let elisp_name = symbol |> Symbol.name in
     let open Funcall.Wrap in
@@ -206,8 +208,8 @@ let add
         ~hook_type:function_.hook_type
         (Returns type_)
         (fun x ->
-        remove t (Option.value_exn !hook_function_ref);
-        Function.funcall function_ x)
+           remove t (Option.value_exn !hook_function_ref);
+           Function.funcall function_ x)
     in
     hook_function_ref := Some hook_function;
     add hook_function
@@ -228,13 +230,16 @@ let after_revert = Wrap.("after-revert-hook" <: Normal_hook)
 let after_save = Wrap.("after-save-hook" <: Normal_hook)
 let before_change_functions = Wrap.("before-change-functions" <: Before_change_hook)
 let before_save = Wrap.("before-save-hook" <: Normal_hook)
+let change_major_mode = Wrap.("change-major-mode-hook" <: Normal_hook)
 let emacs_startup = Wrap.("emacs-startup-hook" <: Normal_hook)
 let kill_buffer = Wrap.("kill-buffer-hook" <: Normal_hook)
 let focus_in = Wrap.("focus-in-hook" <: Normal_hook)
 let window_configuration_change = Wrap.("window-configuration-change-hook" <: Normal_hook)
 let window_scroll_functions = Wrap.("window-scroll-functions" <: Window_hook)
 let post_command = Wrap.("post-command-hook" <: Normal_hook)
+let pre_command = Wrap.("pre-command-hook" <: Normal_hook)
 let server_after_make_frame = Wrap.("server-after-make-frame-hook" <: Normal_hook)
+let project_find_functions = Wrap.("project-find-functions" <: File_hook)
 
 let major_mode_hook major_mode =
   let mode_name = major_mode |> Major_mode.symbol |> Symbol.name in

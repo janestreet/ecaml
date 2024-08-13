@@ -18,7 +18,7 @@ module Export : sig
       -> Time_float.Span.t
       -> (unit -> unit Deferred.t)
       -> unit
-      [@@deprecated "[since 2019-05] Use [Background.Clock.every']"]
+    [@@deprecated "[since 2019-05] Use [Background.Clock.every']"]
 
     val every
       :  ?start:unit Deferred.t
@@ -27,7 +27,7 @@ module Export : sig
       -> Time_float.Span.t
       -> (unit -> unit)
       -> unit
-      [@@deprecated "[since 2019-05] Use [Background.Clock.every]"]
+    [@@deprecated "[since 2019-05] Use [Background.Clock.every]"]
   end
 
   (** [Async.Process] is shadowed by [Ecaml.Process], so we make it available as
@@ -42,7 +42,7 @@ module Export : sig
   [@@deprecated "[since 2019-05] open Async_kernel before opening Import."]
 
   val don't_wait_for : unit Deferred.t -> unit
-    [@@deprecated "[since 2019-05] Use [Background.don't_wait_for]"]
+  [@@deprecated "[since 2019-05] Use [Background.don't_wait_for]"]
 end
 
 module Private : sig

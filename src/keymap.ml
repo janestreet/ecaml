@@ -8,10 +8,10 @@ module Q = struct
 end
 
 include Value.Make_subtype (struct
-  let name = "keymap"
-  let here = [%here]
-  let is_in_subtype = Value.is_keymap
-end)
+    let name = "keymap"
+    let here = [%here]
+    let is_in_subtype = Value.is_keymap
+  end)
 
 type keymap = t [@@deriving sexp_of]
 

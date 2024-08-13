@@ -9,7 +9,6 @@ let%expect_test "[emacs-module.h] is up to date" =
   let expected_contents = In_channel.read_all expected_file in
   let actual_contents = In_channel.read_all "../src/emacs-module.h" in
   require
-    [%here]
     (String.equal expected_contents actual_contents)
     ~if_false_then_print_s:
       [%lazy_sexp

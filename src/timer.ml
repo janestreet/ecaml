@@ -2,10 +2,10 @@ open! Core
 open! Import
 
 include Value.Make_subtype (struct
-  let name = "timer"
-  let here = [%here]
-  let is_in_subtype = Value.is_timer
-end)
+    let name = "timer"
+    let here = [%here]
+    let is_in_subtype = Value.is_timer
+  end)
 
 let timer_list = Var.Wrap.("timer-list" <: list t)
 let timer_list_as_value = Var.Wrap.("timer-list" <: value)

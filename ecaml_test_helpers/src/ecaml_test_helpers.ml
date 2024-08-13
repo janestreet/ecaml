@@ -22,8 +22,8 @@ let () =
       ~docstring:"For testing."
       Sync
       (fun f args ->
-      incr read_event_depth;
-      Exn.protect ~f:(fun () -> f args) ~finally:(fun () -> decr read_event_depth))
+         incr read_event_depth;
+         Exn.protect ~f:(fun () -> f args) ~finally:(fun () -> decr read_event_depth))
   in
   let commands_that_call_read_event_manually =
     (* Add advice around any functions that explicitly call [read-event] or
@@ -129,30 +129,29 @@ let () =
      match Minibuffer.active_window () with
      | None ->
        print_endline "Minibuffer not open";
-       require [%here] false
+       require false
      | Some _ ->
        show_minibuffer ~show_contents;
        show_completions ())
 ;;
 
 let press_and_show_minibuffer ?(show_contents = true) key_sequence =
+  let%bind () =
+    (* Ensure we do not display a stale completions buffer, only one that was created
+       during the execution of [key_sequence]. *)
+    match Buffer.find ~name:"*Completions*" with
+    | None -> return ()
+    | Some buffer -> Buffer.kill buffer
+  in
   match%map
     try_with (fun () ->
       execute_keys [ key_sequence; show_minibuffer_key_sequence ~show_contents; "C-]" ])
   with
   | Error _ -> ()
-  | Ok () -> require [%here] false
+  | Ok () -> require false
 ;;
 
 let eval string =
   let%map value = Form.eval_string string in
   print_s [%sexp (value : Value.t)]
-;;
-
-let print_files_that_loaded_cl () =
-  eval {|
-(progn
-  (require 'loadhist)
-  (file-dependents (feature-file 'cl)))
-|}
 ;;

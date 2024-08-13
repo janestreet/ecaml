@@ -3,20 +3,10 @@ open! Async_kernel
 open! Import
 open! Customization
 
-let counter = ref 0
-
-let next_counter () =
-  incr counter;
-  !counter
-;;
-
 let group = Group.of_string "test-customization-group"
 
 let test ?show_form type_ customization_type standard_value =
-  let variable =
-    concat [ "test-customization-symbol-"; next_counter () |> Int.to_string ]
-    |> Symbol.intern
-  in
+  let variable = Symbol.create ~name:"test-customization-symbol" in
   ignore
     (defcustom
        variable
@@ -28,7 +18,7 @@ let test ?show_form type_ customization_type standard_value =
        ~standard_value
        ?show_form
        ()
-      : _ Customization.t);
+     : _ Customization.t);
   ignoring_stderr (fun () -> customize_variable variable);
   Current_buffer.contents ()
   |> Text.to_utf8_bytes
@@ -42,7 +32,7 @@ let%expect_test "[Boolean] with default [nil]" =
   test Value.Type.bool Boolean false ~show_form:true;
   [%expect
     {|
-    (defcustom test-customization-symbol-1 (quote nil)
+    (defcustom test-customization-symbol (quote nil)
       "<docstring>\
      \n\
      \nCustomization group: test-customization-group\
@@ -50,7 +40,7 @@ let%expect_test "[Boolean] with default [nil]" =
      \nCustomization type: boolean" :group (quote test-customization-group) :type
      (quote boolean))
 
-    Hide Test Customization Symbol 1: Boolean: [Toggle]  off (nil)
+    Hide Test Customization Symbol: Boolean: [Toggle]  off (nil)
        [ State ]: STANDARD.
        <docstring> Hide
 
@@ -66,7 +56,7 @@ let%expect_test "[Boolean] with default [t]" =
   test Value.Type.bool Boolean true;
   [%expect
     {|
-    Hide Test Customization Symbol 2: Boolean: [Toggle]  on (non-nil)
+    Hide Test Customization Symbol: Boolean: [Toggle]  on (non-nil)
        [ State ]: STANDARD.
        <docstring> Hide
 
@@ -83,13 +73,55 @@ let%expect_test "[Const]" =
   test Value.Type.int (Choice [ Const (Value.Type.(to_value int) 13) ]) 13;
   [%expect
     {|
-    Hide Test Customization Symbol 3: Choice: [Value Menu] 13
+    Hide Test Customization Symbol: Choice: [Value Menu] 13
        [ State ]: STANDARD.
        <docstring> Hide
 
        Customization group: test-customization-group
        Standard value: 13
        Customization type: (choice (const 13))
+    Groups: [Test Customization Group]
+    |}];
+  return ()
+;;
+
+let%expect_test "[Tag]" =
+  test
+    Value.Type.int
+    (Choice
+       [ Tag ("the loneliest number", Const (Value.Type.(to_value int) 1))
+         (* compound customization type *)
+       ; Tag ("the second-loneliest number", Const (Value.Type.(to_value int) 2))
+       ; Tag ("some other number", Integer) (* atomic customization type *)
+       ])
+    2;
+  [%expect
+    {|
+    Hide Test Customization Symbol: Choice: [Value Menu] the second-loneliest number
+       [ State ]: STANDARD.
+       <docstring> Hide
+
+       Customization group: test-customization-group
+       Standard value: 2
+       Customization type: (choice (const :tag "the loneliest number" 1) (const :tag "the second-loneliest number" 2) (integer :tag "some other number"))
+    Groups: [Test Customization Group]
+    |}];
+  return ()
+;;
+
+let%expect_test "nested [Tag]" =
+  (* Emacs just picks one of the tags when there are multiple; in this case, the outermost
+     one. *)
+  test Value.Type.bool (Choice [ Tag ("a", Tag ("b", Tag ("c", Const Value.nil))) ]) false;
+  [%expect
+    {|
+    Hide Test Customization Symbol: Choice: [Value Menu] a
+       [ State ]: STANDARD.
+       <docstring> Hide
+
+       Customization group: test-customization-group
+       Standard value: nil
+       Customization type: (choice (const :tag "a" :tag "b" :tag "c" nil))
     Groups: [Test Customization Group]
     |}];
   return ()
@@ -113,10 +145,10 @@ let%expect_test "[enum]" =
     let t = type_
   end
   in
-  test M.t (Type.enum M.all M.to_value) A;
+  test M.t ((Type.enum [@alert "-deprecated"]) M.all M.to_value) A;
   [%expect
     {|
-    Hide Test Customization Symbol 4: Choice: [Value Menu] A
+    Hide Test Customization Symbol: Choice: [Value Menu] A
        [ State ]: STANDARD.
        <docstring> Hide
 
@@ -134,7 +166,7 @@ let%expect_test "[defcustom] invalid-value error message" =
       ("zzz" |> Symbol.intern)
       [%here]
       ~docstring:"<docstring>"
-      ~group:("test-customization-group" |> Group.of_string)
+      ~group
       ~type_:Value.Type.int
       ~customization_type:Integer
       ~standard_value:13
@@ -183,5 +215,61 @@ let%expect_test "[defcustom ~on_set]" =
   [%expect {| Error setting foo: (error can't set it to a negative) |}];
   show ();
   [%expect {| 15 |}];
+  return ()
+;;
+
+let%expect_test "[set_value] for compound values" =
+  let t =
+    defcustom
+      ("list-of-ints" |> Symbol.intern)
+      [%here]
+      ~docstring:"<docstring>"
+      ~group
+      ~type_:Value.Type.(list int)
+      ~standard_value:[ 1; 2; 3 ]
+      ~customization_type:(Repeat Integer)
+      ~on_set:(fun value -> print_s [%message "Setting var" (value : int list)])
+      ()
+  in
+  [%expect {| ("Setting var" (value (1 2 3))) |}];
+  set_value t [ 4; 5; 6 ];
+  [%expect {| ("Setting var" (value (4 5 6))) |}];
+  print_s (Customization.value t |> [%sexp_of: int list]);
+  [%expect {| (4 5 6) |}];
+  return ()
+;;
+
+let%expect_test "[standard_value]" =
+  let t =
+    defcustom
+      ("my-favorite-symbol" |> Symbol.intern)
+      [%here]
+      ~docstring:"<docstring>"
+      ~group
+      ~type_:Symbol.t
+      ~standard_value:("aaaaa" |> Symbol.intern)
+      ~customization_type:Symbol
+      ()
+  in
+  let show () =
+    print_s
+      [%sexp
+        { value = (Customization.value t : Symbol.t)
+        ; standard_value = (Customization.standard_value t : Symbol.t)
+        }]
+  in
+  show ();
+  [%expect
+    {|
+    ((value          aaaaa)
+     (standard_value aaaaa))
+    |}];
+  Customization.set_value t ("bbbbb" |> Symbol.intern);
+  show ();
+  [%expect
+    {|
+    ((value          bbbbb)
+     (standard_value aaaaa))
+    |}];
   return ()
 ;;

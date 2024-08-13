@@ -15,12 +15,12 @@ module M =
          ())
 
 let%expect_test "[wrap_existing] failure" =
-  require_does_raise [%here] (fun () -> Major_mode.wrap_existing "org-mode" [%here]);
+  require_does_raise (fun () -> Major_mode.wrap_existing "org-mode" [%here]);
   [%expect
     {|
     ("Major mode's keymap doesn't exist"
       (name org-mode)
-      (wrapped_at app/emacs/lib/ecaml/test/test_major_mode.ml:18:76)
+      (wrapped_at app/emacs/lib/ecaml/test/test_major_mode.ml:18:68)
       (exn (
         "[Current_buffer.value_exn] of undefined variable" (org-mode-map keymap))))
     |}];

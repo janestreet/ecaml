@@ -12,7 +12,8 @@ let%expect_test "[kill_new], [yank_at_point]" =
     yank_at_point ();
     [%expect {| Mark set |}];
     print_endline (Current_buffer.contents () |> Text.to_utf8_bytes);
-    [%expect {|
+    [%expect
+      {|
       foo
       bar
       bar
