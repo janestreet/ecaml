@@ -4,6 +4,7 @@ module Time_ns = Time_ns_unix
 include Expect_test_helpers_core
 include Expect_test_helpers_async
 include Ecaml
+include File_path.Operators
 
 let concat = String.concat
 

@@ -104,6 +104,10 @@ let get t buffer =
   Value.Type.of_value_exn (var t).type_ (buffer_local_value (symbol t) buffer)
 ;;
 
+let get_var var buffer =
+  Value.Type.of_value_exn (Var.type_ var) (buffer_local_value (Var.symbol var) buffer)
+;;
+
 let raise_buffer_has_no_value_for_variable t ~buffer =
   raise_s
     [%message

@@ -75,7 +75,7 @@ val undo : int -> unit
 (** [set_temporarily_to_temp_buffer f] creates a temporary buffer and runs [f] with the
     current buffer set to the temporary buffer.  [(describe-function 'with-temp-buffer)]. *)
 val set_temporarily_to_temp_buffer
-  :  ?here:Stdlib.Lexing.position
+  :  here:[%call_pos]
   -> ?name:string (** passed to [generate-new-buffer] *)
   -> (_, 'a) Sync_or_async.t
   -> (unit -> 'a)
@@ -189,31 +189,23 @@ val widen : unit -> unit
 
 (** [(describe-function 'save-current-buffer)] *)
 val save_current_buffer
-  :  ?here:Stdlib.Lexing.position
+  :  here:[%call_pos]
   -> (_, 'a) Sync_or_async.t
   -> (unit -> 'a)
   -> 'a
 
 (** [(describe-function 'save-excursion)] *)
-val save_excursion
-  :  ?here:Stdlib.Lexing.position
-  -> (_, 'a) Sync_or_async.t
-  -> (unit -> 'a)
-  -> 'a
+val save_excursion : here:[%call_pos] -> (_, 'a) Sync_or_async.t -> (unit -> 'a) -> 'a
 
 (** [(describe-function 'save-mark-and-excursion)] *)
 val save_mark_and_excursion
-  :  ?here:Stdlib.Lexing.position
+  :  here:[%call_pos]
   -> (_, 'a) Sync_or_async.t
   -> (unit -> 'a)
   -> 'a
 
 (** [(describe-function 'save-restriction)] *)
-val save_restriction
-  :  ?here:Stdlib.Lexing.position
-  -> (_, 'a) Sync_or_async.t
-  -> (unit -> 'a)
-  -> 'a
+val save_restriction : here:[%call_pos] -> (_, 'a) Sync_or_async.t -> (unit -> 'a) -> 'a
 
 (** [(describe-function 'set-buffer-multibyte)].
     [(Info-goto-node "(elisp)Selecting a Representation")]. *)

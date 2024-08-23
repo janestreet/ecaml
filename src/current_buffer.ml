@@ -17,8 +17,7 @@ let get_buffer_local_exn = Buffer_local.Private.get_in_current_buffer_exn
 let set_buffer_local = Buffer_local.Private.set_in_current_buffer
 let set_buffer_local_temporarily = Buffer_local.Private.set_temporarily_in_current_buffer
 
-let set_temporarily_to_temp_buffer ?(here = Stdlib.Lexing.dummy_pos) ?name sync_or_async f
-  =
+let set_temporarily_to_temp_buffer ~(here : [%call_pos]) ?name sync_or_async f =
   Buffer.with_temp_buffer ?name sync_or_async (fun t ->
     set_temporarily ~here sync_or_async t ~f)
 ;;

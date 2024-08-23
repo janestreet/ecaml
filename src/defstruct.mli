@@ -47,12 +47,7 @@ end
 type 'a t
 
 (** Define a cl-defstruct with the specified fields. *)
-val defstruct
-  :  ?here:Stdlib.Lexing.position
-  -> name:string
-  -> doc:string
-  -> 'a Field.t list
-  -> 'a t
+val defstruct : here:[%call_pos] -> name:string -> doc:string -> 'a Field.t list -> 'a t
 
 (** Construct an instance of the structure type. *)
 val make : 'a t -> 'a -> Value.t

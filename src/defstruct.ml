@@ -59,7 +59,7 @@ module For_testing = struct
 end
 
 let defstruct
-  ?(here = Stdlib.Lexing.dummy_pos)
+  ~(here : [%call_pos])
   ~(name : string)
   ~(doc : string)
   (fields : 'a Field.t list)

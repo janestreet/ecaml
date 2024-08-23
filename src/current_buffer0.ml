@@ -6,7 +6,7 @@ module Buffer = Buffer0
 let get = Funcall.Wrap.("current-buffer" <: nullary @-> return Buffer.t)
 let set = Funcall.Wrap.("set-buffer" <: Buffer.t @-> return nil)
 
-let set_temporarily ?(here = Stdlib.Lexing.dummy_pos) sync_or_async buffer ~f =
+let set_temporarily ~(here : [%call_pos]) sync_or_async buffer ~f =
   let old = get () in
   set buffer;
   Sync_or_async.protect here sync_or_async ~f ~finally:(fun () ->

@@ -66,38 +66,38 @@ let save_
         Value.Private.block_on_async [%here] f))
 ;;
 
-let save_current_buffer ?(here = Stdlib.Lexing.dummy_pos) sync_or_async f =
+let save_current_buffer ~(here : [%call_pos]) sync_or_async f =
   save_ here sync_or_async Q.save_current_buffer [] f
 ;;
 
-let save_excursion ?(here = Stdlib.Lexing.dummy_pos) sync_or_async f =
+let save_excursion ~(here : [%call_pos]) sync_or_async f =
   save_ here sync_or_async Q.save_excursion [] f
 ;;
 
-let save_mark_and_excursion ?(here = Stdlib.Lexing.dummy_pos) sync_or_async f =
+let save_mark_and_excursion ~(here : [%call_pos]) sync_or_async f =
   save_ here sync_or_async Q.save_mark_and_excursion [] f
 ;;
 
-let save_match_data ?(here = Stdlib.Lexing.dummy_pos) sync_or_async f =
+let save_match_data ~(here : [%call_pos]) sync_or_async f =
   save_ here sync_or_async Q.save_match_data [] f
 ;;
 
-let save_restriction ?(here = Stdlib.Lexing.dummy_pos) sync_or_async f =
+let save_restriction ~(here : [%call_pos]) sync_or_async f =
   save_ here sync_or_async Q.save_restriction [] f
 ;;
 
-let save_window_excursion ?(here = Stdlib.Lexing.dummy_pos) sync_or_async f =
+let save_window_excursion ~(here : [%call_pos]) sync_or_async f =
   save_ here sync_or_async Q.save_window_excursion [] f
 ;;
 
-let save_selected_window ?(here = Stdlib.Lexing.dummy_pos) sync_or_async f =
+let save_selected_window ~(here : [%call_pos]) sync_or_async f =
   save_ here sync_or_async Q.save_selected_window [] f
 ;;
 
-let with_selected_frame ?(here = Stdlib.Lexing.dummy_pos) sync_or_async frame f =
+let with_selected_frame ~(here : [%call_pos]) sync_or_async frame f =
   save_ here sync_or_async Q.with_selected_frame [ frame ] f
 ;;
 
-let with_selected_window ?(here = Stdlib.Lexing.dummy_pos) sync_or_async window f =
+let with_selected_window ~(here : [%call_pos]) sync_or_async window f =
   save_ here sync_or_async Q.with_selected_window [ window ] f
 ;;
