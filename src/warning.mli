@@ -13,3 +13,4 @@ module Level : sig
 end
 
 val display : string -> type_:Symbol.t Nonempty_list.t -> level:Level.t -> unit
+val display_text : Text.t -> type_:Symbol.t Nonempty_list.t -> level:Level.t -> unit

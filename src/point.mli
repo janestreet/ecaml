@@ -158,11 +158,17 @@ val marker_at_min : unit -> Marker.t
 (** [(describe-function 'point-max-marker)]. *)
 val marker_at_max : unit -> Marker.t
 
-(** [(describe-function 'next-line)]. *)
-val next_line : unit -> unit
+(** [(describe-function 'next-line)].
 
-(** [(describe-function 'previous-line)]. *)
+    This function is for interactive use only. *)
+val next_line : unit -> unit
+[@@alert interactive_only "You probably want [forward_line] instead."]
+
+(** [(describe-function 'previous-line)].
+
+    This function is for interactive use only. *)
 val previous_line : unit -> unit
+[@@alert interactive_only "You probably want [backward_line] instead."]
 
 val scroll_up : int -> unit
 

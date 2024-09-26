@@ -5,62 +5,81 @@ open! Minibuffer
 
 let%expect_test "[y_or_n]" =
   let test input =
-    with_input input (fun () ->
+    with_input_macro input (fun () ->
       let%bind bool = y_or_n ~prompt:"" in
       print_s [%sexp (bool : bool)];
       return ())
   in
-  let%bind () = test "y" in
-  [%expect {| (y or n) true |}];
-  let%bind () = test "n" in
-  [%expect {| (y or n) false |}];
-  let%bind () = show_raise_async (fun () -> test "z") in
+  let%bind () = test "y RET" in
+  [%expect {| true |}];
+  let%bind () = test "n RET" in
+  [%expect {| false |}];
+  let%bind () = show_raise_async (fun () -> test "z RET") in
   [%expect
-    {| (y or n) Please answer y or n.  (y or n) (raised (end-of-file ("Error reading from stdin"))) |}];
+    {|
+    ("[with_input_macro] provided full input but function is still running"
+     (input "z RET") (minibuffer_prompt "Please answer y or n.  (y or n) ")
+     (minibuffer_contents ""))
+    (raised ("Ecaml_value__Value.Elisp_throw(_, _)"))
+    |}];
   return ()
 ;;
 
 let%expect_test "[y_or_n_with_timeout]" =
   let test input =
-    with_input input (fun () ->
+    with_input_macro input (fun () ->
       let%bind response =
         y_or_n_with_timeout ~prompt:"" ~timeout:(Time_ns.Span.microsecond, 13)
       in
       print_s [%sexp (response : int Y_or_n_with_timeout.t)];
       return ())
   in
-  let%bind () = test "y" in
-  [%expect {| (y or n) Y |}];
-  let%bind () = test "n" in
-  [%expect {| (y or n) N |}];
-  let%bind () = show_raise_async (fun () -> test "z") in
+  let%bind () = test "y RET" in
+  [%expect {| Y |}];
+  let%bind () = test "n RET" in
+  [%expect {| N |}];
+  let%bind () = show_raise_async (fun () -> test "z RET") in
   [%expect
-    {| (y or n) Please answer y or n.  (y or n) (raised (end-of-file ("Error reading from stdin"))) |}];
+    {|
+    ("[with_input_macro] provided full input but function is still running"
+     (input "z RET") (minibuffer_prompt "Please answer y or n.  (y or n) ")
+     (minibuffer_contents ""))
+    (raised ("Ecaml_value__Value.Elisp_throw(_, _)"))
+    |}];
   return ()
 ;;
 
 let%expect_test "[yes_or_no]" =
   let test input =
-    with_input input (fun () ->
+    with_input_macro input (fun () ->
       let%bind response = yes_or_no ~prompt:"" in
       print_s [%sexp (response : bool)];
       return ())
   in
-  let%bind () = test "yes\n" in
-  [%expect {| (yes or no) true |}];
-  let%bind () = test "no\n" in
-  [%expect {| (yes or no) false |}];
+  let%bind () = test "yes RET" in
+  [%expect {| true |}];
+  let%bind () = test "no RET" in
+  [%expect {| false |}];
   return ()
 ;;
 
 let%expect_test "[read_from]" =
-  let%bind () =
-    with_input "foo" (fun () ->
-      let%bind response = read_from ~prompt:"" ~history:Minibuffer.history () in
+  let read_from_insert_foo initial_contents =
+    with_input_macro "foo RET" (fun () ->
+      let%bind response =
+        read_from ~initial_contents ~prompt:"" ~history:Minibuffer.history ()
+      in
       print_s [%sexp (response : string)];
       return ())
   in
+  let%bind () = read_from_insert_foo Empty in
   [%expect {| foo |}];
+  let%bind () = read_from_insert_foo (Point_at_end "contents") in
+  [%expect {| contentsfoo |}];
+  let%bind () = read_from_insert_foo (Point_at_pos ("contents", 0)) in
+  [%expect {| foocontents |}];
+  let%bind () = read_from_insert_foo (Point_at_pos ("contents", 5)) in
+  [%expect {| contefoonts |}];
   return ()
 ;;
 
@@ -90,9 +109,7 @@ let%expect_test "[setup_hook]" =
   return ()
 ;;
 
-let%expect_test "[setup_hook] [exit_hook] don't run in batch mode" =
-  (* These hooks do work in an interactive Emacs.  But in batch mode, they appear to be
-     ignored. *)
+let%expect_test "[setup_hook] [exit_hook]" =
   Hook.add
     setup_hook
     (Hook.Function.create
@@ -101,7 +118,12 @@ let%expect_test "[setup_hook] [exit_hook] don't run in batch mode" =
        ~docstring:"<docstring>"
        ~hook_type:Normal_hook
        (Returns Value.Type.unit)
-       (fun () -> print_s [%message "running setup hook"]));
+       (fun () ->
+          print_s
+            [%message
+              "running setup hook"
+                (Minibuffer.prompt () : string option)
+                (Minibuffer.contents () : string)]));
   Hook.add
     exit_hook
     (Hook.Function.create
@@ -110,13 +132,27 @@ let%expect_test "[setup_hook] [exit_hook] don't run in batch mode" =
        ~docstring:"<docstring>"
        ~hook_type:Normal_hook
        (Returns Value.Type.unit)
-       (fun () -> print_s [%message "running exit hook"]));
+       (fun () ->
+          print_s
+            [%message
+              "running exit hook"
+                (Minibuffer.prompt () : string option)
+                (Minibuffer.contents () : string)]));
   let%bind () =
-    with_input "foo" (fun () ->
-      let%bind response = read_from ~prompt:"" ~history:Minibuffer.history () in
+    with_input_macro "foo RET" (fun () ->
+      let%bind response = read_from ~prompt:"prompt: " ~history:Minibuffer.history () in
       print_s [%sexp (response : string)];
       return ())
   in
-  [%expect {| foo |}];
+  [%expect
+    {|
+    ("running setup hook"
+      ("Minibuffer.prompt ()" ("prompt: "))
+      ("Minibuffer.contents ()" ""))
+    ("running exit hook"
+      ("Minibuffer.prompt ()" ("prompt: "))
+      ("Minibuffer.contents ()" foo))
+    foo
+    |}];
   return ()
 ;;

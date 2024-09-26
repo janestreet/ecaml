@@ -150,15 +150,16 @@ let%expect_test ("OCaml objects no longer referenced from Emacs can be gc'ed by 
   return ()
 ;;
 
-let%expect_test ("finalization of an Emacs function" [@tags "disabled"]) =
-  let r = ref 14 in
-  let f _ =
-    r := 14;
-    Value.nil
-  in
-  Core.Gc.Expert.add_finalizer_exn f (fun _ ->
-    print_s [%message "finalized" (r : int ref)]);
-  ignore (Function.create [%here] ~args:[] f : Function.t);
+let%expect_test "finalization of an Emacs function" =
+  run_in_a_different_environment (fun () ->
+    let r = ref 14 in
+    let f _ =
+      r := 14;
+      Value.nil
+    in
+    Core.Gc.Expert.add_finalizer_exn f (fun _ ->
+      print_s [%message "finalized" (r : int ref)]);
+    ignore (Function.create [%here] ~args:[] f : Function.t));
   make_ocaml_garbage_not_keep_emacs_values_alive ();
   emacs_garbage_collect ();
   Gc.compact ();

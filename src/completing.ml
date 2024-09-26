@@ -11,46 +11,9 @@ module Q = struct
 end
 
 module Initial_input = struct
-  type t =
-    | Empty
-    | Point_at_end of string
-    | Point_at_pos of string * int
-  [@@deriving sexp_of]
+  include Minibuffer.Initial_input
 
-  let to_value = function
-    | Empty -> Symbol.to_value Q.nil
-    | Point_at_end s -> Value.of_utf8_bytes s
-    | Point_at_pos (s, i) -> Value.cons (Value.of_utf8_bytes s) (Value.of_int_exn i)
-  ;;
-
-  let of_value_exn value =
-    List.find_map_exn
-      ~f:(fun f -> f value)
-      [ (fun value ->
-          match Symbol.equal (Symbol.of_value_exn value) Q.nil with
-          | true -> Some Empty
-          | false -> None
-          | exception _ -> None)
-      ; (fun value ->
-          match Value.to_utf8_bytes_exn value with
-          | s -> Some (Point_at_end s)
-          | exception _ -> None)
-      ; (fun value ->
-          match Value.Type.(tuple string int |> of_value_exn) value with
-          | s, i -> Some (Point_at_pos (s, i))
-          | exception _ -> None)
-      ]
-  ;;
-
-  let type_ =
-    Value.Type.create
-      [%sexp "completing", "initial-input"]
-      [%sexp_of: t]
-      of_value_exn
-      to_value
-  ;;
-
-  let t = type_
+  let t = completing_t
 end
 
 module Require_match = struct
@@ -131,13 +94,13 @@ module Programmed_completion = struct
     let to_value =
       let metadatum_type = Value.Type.(tuple Symbol.t Function.t) in
       let f ~arg ~returns field _t f =
-        let%map.Option f = f in
+        let%map.Option f in
         let name = Enum.Single.to_string_hum (module String) (Field.name field) in
         let function_ =
           Defun.lambda
             [%here]
             (Returns returns)
-            (let%map_open.Defun arg = arg in
+            (let%map_open.Defun arg in
              f arg)
         in
         Value.Type.to_value metadatum_type (Symbol.intern name, function_)

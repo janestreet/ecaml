@@ -4,6 +4,7 @@ module Time_ns = Time_ns_unix
 include Expect_test_helpers_core
 include Expect_test_helpers_async
 include Ecaml
+include File_path.Operators
 
 let concat = String.concat
 
@@ -79,62 +80,84 @@ let show_current_buffer_local_variables () =
 ;;
 
 (* [with_input_macro keystrokes f] simulates typing [keystrokes] into [f] by defining a
-   keyboard macro that invokes [f] and then replays [keystrokes]. *)
+   keyboard macro that invokes [f] and then replays [keystrokes].
+
+   It then sends some additional keystrokes that invoke a command to assert that [f] is
+   not still running (to avoid timing out reading from a minibuffer, in tests). *)
 let with_input_macro string f =
   let start_sequence = "C-c e" in
+  let raise_if_still_running_sequence = "C-M-H-e" in
   let keyseq =
-    String.concat ~sep:" " [ start_sequence; string ] |> Key_sequence.create_exn
+    String.concat ~sep:" " [ start_sequence; string; raise_if_still_running_sequence ]
+    |> Key_sequence.create_exn
   in
+  let f_is_running = ref false in
   let keymap = Keymap.create () in
   Keymap.define_key
     keymap
     (Key_sequence.create_exn start_sequence)
     (Value
-       (lambda_nullary [%here] ~interactive:No_arg (Returns_deferred Value.Type.unit) f
+       (lambda_nullary
+          [%here]
+          ~interactive:No_arg
+          (Returns_deferred Value.Type.unit)
+          (fun () ->
+             Monitor.protect
+               (fun () ->
+                 f_is_running := true;
+                 f ())
+               ~finally:(fun () ->
+                 f_is_running := false;
+                 return ()))
+        |> Function.to_value));
+  Keymap.define_key
+    (Keymap.global ())
+    (Key_sequence.create_exn raise_if_still_running_sequence)
+    (Value
+       (lambda_nullary [%here] ~interactive:No_arg (Returns Value.Type.unit) (fun () ->
+          match !f_is_running with
+          | false -> ()
+          | true ->
+            let minibuffer_prompt = Minibuffer.prompt () in
+            let minibuffer_contents =
+              if Minibuffer.depth () > 0 then Some (Minibuffer.contents ()) else None
+            in
+            (* If the [f] is stuck inside [read-from-minibuffer], any exceptions raised
+               here will be caught and not propagated past [read-from-minibuffer].
+               Instead, message and call [top-level] (which does a [throw] instead of
+               [signal]). *)
+            message_s
+              [%message
+                "[with_input_macro] provided full input but function is still running"
+                  ~input:(string : string)
+                  (minibuffer_prompt : (string option[@sexp.option]))
+                  (minibuffer_contents : (string option[@sexp.option]))];
+            Funcall.Wrap.("top-level" <: nullary @-> return ignored) ())
         |> Function.to_value));
   Keymap.set_transient keymap;
   Key_sequence.execute keyseq
 ;;
 
-external clearerr_on_stdin : unit -> unit = "ecaml_test_clearerr_stdin" [@@noalloc]
-
-let with_input (type a) string (f : unit -> a Deferred.t) : a Deferred.t =
-  let module Out_channel = Core.Out_channel in
-  let module Unix = Core_unix in
-  let r, w = Unix.pipe () in
-  let () = Unix.set_nonblock w in
-  let out = Unix.out_channel_of_descr w in
-  let stdin_to_restore = Unix.dup Unix.stdin in
-  (try
-     Out_channel.output_string out string;
-     Out_channel.close out
-   with
-   | Sys_blocked_io ->
-     (* The channel is in a state where it cannot be flushed.
-        Close the channel explicitly instead of waiting for the
-        finalizer as it would attempt to flush. *)
-     Out_channel.close_no_err out;
-     raise_s
-       [%message
-         "[with_input] doesn't support strings this long" ~_:(String.length string : int)]);
-  Unix.dup2 ~src:r ~dst:Unix.stdin ();
-  Unix.close r;
-  Monitor.protect f ~finally:(fun () ->
-    Unix.dup2 ~src:stdin_to_restore ~dst:Unix.stdin ();
-    (* Emacs reads the minibuffer noninteractively by calling [getchar()], which sets an
-       EOF flag on the stdin stream (i.e., the [FILE *], not the raw fd) when it reaches
-       the end of input.  After calling [dup2], there is more input available on the
-       stream, but we need to explicitly clear the EOF flag by calling [clearerr()].
-
-       See more at https://sourceware.org/bugzilla/show_bug.cgi?id=23636.  Glibc 2.28
-       introduced the sticky EOF pointer to fix a POSIX noncompliance. *)
-    clearerr_on_stdin ();
-    return ())
-;;
-
-let%expect_test "[with_input] with too long string" =
-  show_raise (fun () -> with_input (String.make 100_000 '\000') (fun () -> assert false));
-  [%expect {| (raised ("[with_input] doesn't support strings this long" 100_000)) |}];
+let%expect_test "[with_input_macro] raises if [f] is still running after receiving \
+                 keystrokes"
+  =
+  let test () =
+    with_input_macro "zzz" (fun () ->
+      let%bind input =
+        Minibuffer.read_from ~prompt:"input: " ~history:Minibuffer.history ()
+      in
+      (* This test is specifically trying to exercise the condition that the full input,
+         so don't let the test "pass" the [require_does_raise_async] by raising here. *)
+      print_cr [%message "Should not reach this point" (input : string)];
+      return ())
+  in
+  let%bind () = require_does_raise_async test in
+  [%expect
+    {|
+    ("[with_input_macro] provided full input but function is still running"
+     (input zzz) (minibuffer_prompt "input: ") (minibuffer_contents zzz))
+    ("Ecaml_value__Value.Elisp_throw(_, _)")
+    |}];
   return ()
 ;;
 

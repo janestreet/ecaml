@@ -28,9 +28,16 @@ end
 
 let display_warning =
   Funcall.Wrap.(
-    "display-warning" <: list Symbol.t @-> string @-> Symbol.t @-> return ignored)
+    "display-warning" <: list Symbol.t @-> Text.t @-> Symbol.t @-> return ignored)
 ;;
 
 let display message ~type_ ~level =
+  display_warning
+    (Nonempty_list.to_list type_)
+    (Text.of_utf8_bytes message)
+    (Level.to_symbol level)
+;;
+
+let display_text message ~type_ ~level =
   display_warning (Nonempty_list.to_list type_) message (Level.to_symbol level)
 ;;

@@ -101,7 +101,7 @@ module Warning = Warning
 module Window = Window
 module Working_directory = Working_directory
 open! Core
-open! Async_kernel
+open! Async
 open! Import
 module Q = Q
 include Async_ecaml.Export
@@ -209,11 +209,34 @@ Test [Process.set_sentinel] on a sentinel that raises.
 |}
     ~interactive:No_arg
     (fun () ->
-       Process.set_sentinel
+       Ecaml_process.Process.set_sentinel
          [%here]
-         (Process.create "true" [] ~name:"true" ())
+         (Ecaml_process.Process.create "true" [] ~name:"true" ())
          (Returns Value.Type.unit)
          ~sentinel:(fun ~event:_ -> failwith "some error message"));
+  defun
+    ("ecaml-test-async-signal-handlers" |> Symbol.intern)
+    [%here]
+    ~docstring:
+      {|
+For testing Ecaml.
+
+List the Unix signals that are managed by the Async OCaml library in the running Emacs
+process.
+|}
+    ~interactive:(Args (fun () -> return [ Value.t ]))
+    (Returns Ecaml_sexp.t)
+    (let%map_open.Defun interactive = optional_with_nil "interactive" bool in
+     let sexp =
+       (* Linux defines "real-time" signals starting at number 32. *)
+       List.range 1 32
+       |> List.filter_map ~f:(fun signal_number ->
+         let signal = Signal_unix.of_system_int signal_number in
+         if Signal.is_managed_by_async signal then Some signal else None)
+       |> [%sexp_of: Signal.t list]
+     in
+     if interactive then message_s sexp;
+     sexp);
   (* Replace [false] with [true] to define a function for testing
      [Minibuffer.read_from]. *)
   if false
@@ -271,10 +294,15 @@ Test [Minibuffer.read_from].
          in
          let%bind () = test () ~prompt:"test 1" in
          let%bind () = test () ~prompt:"test 2" ~default_value:"some-default" in
-         let%bind () = test () ~prompt:"test 3" ~initial_contents:"some-contents" in
+         let%bind () =
+           test () ~prompt:"test 3" ~initial_contents:(Point_at_end "some-contents")
+         in
+         let%bind () =
+           test () ~prompt:"test 4" ~initial_contents:(Point_at_pos ("some-contents", 3))
+         in
          test
            ()
-           ~prompt:"test 4"
+           ~prompt:"test 5"
            ~history:
              (Minibuffer.History.find_or_create
                 ("some-history-list" |> Symbol.intern)

@@ -18,6 +18,20 @@ module Y_or_n_with_timeout : sig
   [@@deriving sexp_of]
 end
 
+module Initial_input : sig
+  type t =
+    | Empty
+    | Point_at_end of string
+    (* 0-indexed position in the string. *)
+    | Point_at_pos of string * int
+
+  (* completing-read takes 0-indexed positions, read-from-minibuffer takes (weirdly)
+     1-indexed positions, so they have different Elisp-side types so Initial_input.t is
+     serialized differently.  *)
+  val completing_t : t Value.Type.t
+  val minibuffer_t : t Value.Type.t
+end
+
 module History : sig
   type t [@@deriving sexp_of]
 
@@ -42,7 +56,7 @@ val history_length : History_length.t Customization.t
     [(Info-goto-node "(elisp)Text from Minibuffer")] *)
 val read_from
   :  prompt:string
-  -> ?initial_contents:string
+  -> ?initial_contents:Initial_input.t
   -> ?default_value:string
   -> history:History.t
   -> ?history_pos:int

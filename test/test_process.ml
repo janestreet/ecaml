@@ -540,7 +540,7 @@ let%expect_test "[shell_command_exn] raise" =
 let%expect_test "[shell_command_exn ~working_directory]" =
   print_endline (shell_command_exn "pwd" ~working_directory:Root);
   [%expect {| / |}];
-  print_endline (shell_command_exn "pwd" ~working_directory:(This "/bin"));
+  print_endline (shell_command_exn "pwd" ~working_directory:(This_abspath !/"/bin"));
   [%expect {| /bin |}];
   require_equal
     (module String)
