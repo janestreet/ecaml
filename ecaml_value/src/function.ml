@@ -3,7 +3,14 @@ open! Import
 
 module Q = struct
   let apply = "apply" |> Symbol.intern
-  let nil = "nil" |> Symbol.intern
+  let interactive = "interactive" |> Symbol.intern
+  let lambda = "lambda" |> Symbol.intern
+  let list = "list" |> Symbol.intern
+
+  module A = struct
+    let optional = "&optional" |> Symbol.intern
+    let rest = "&rest" |> Symbol.intern
+  end
 end
 
 include Value.Make_subtype (struct
@@ -23,7 +30,8 @@ module Expert = struct
   let raise_in_dispatch = ref false
 end
 
-let create =
+(** Returns a form which applies [callback] to [args] and [rest_arg]. *)
+let call_ecaml_form =
   let module M = struct
     (** [make_dispatch_function docstring] returns a primitive Emacs function whose
         documentation is [docstring] and that, when called from Emacs with arguments
@@ -55,42 +63,97 @@ let create =
       ([%message "call-OCaml-function" ~implemented_at:([%here] : Source_code_position.t)]
        |> Sexp.to_string)
   in
-  fun here ?docstring ?interactive ~args ?optional_args ?rest_arg callback ->
-    let docstring = Option.map docstring ~f:String.capitalize in
+  fun (callback : Fn.t) (args : Form.t list) (rest_arg : Form.t option) ->
     let callback = Value.Type.to_value Fn.ecaml_type callback in
-    (* We wrap [callback] with a lambda expression that, when called, calls [dispatch]
-       with the [callback] and the same arguments. This way, lambda expression holds on to
-       the [callback] so [callback] is alive as long there is a reference to the lambda
-       expression.
+    Form.list
+      ([ Form.symbol Q.apply; Form.of_value_exn dispatch; Form.of_value_exn callback ]
+       @ args
+       @ [ Option.value rest_arg ~default:Form.nil ])
+;;
 
-       This is a simple way to ensure that [callback] is alive as long as it can be called
-       by emacs. Creating a primitive function object (like we do for dispatch) would be
-       more efficient but there is no way to attach a reference or a finalizer to that
-       kind of object so we use lambda here.
+module Interactive = struct
+  type t =
+    | Args of (unit -> Value.t list Async_kernel.Deferred.t)
+    | Form of Form.t
+    | Function_name of { prompt : string }
+    | Ignored
+    | No_arg
+    | Prompt of string
+    | Raw_prefix
+    | Prefix
+    | Region
 
-       We do not need to hold on to the lambda expression from OCaml, because Emacs will
-       hold on to it. In particular, if the OCaml finalizer for the lambda-expression
-       OCaml value runs, that will decrement the Emacs refcount, but will still leave it
-       to Emacs to run [callback]'s finalizer once the lambda is not referenced anymore. *)
-    let module F = Form in
-    F.lambda
-      ?docstring
-      ?interactive
-      ?optional_args
-      ?rest_arg
-      here
-      ~args
-      ~body:
-        F.(
-          list
-            ([ symbol Q.apply; of_value_exn dispatch; of_value_exn callback ]
-             @ List.map
-                 ~f:symbol
-                 (args
-                  @ (optional_args |> Option.value ~default:[])
-                  @ [ rest_arg |> Option.value ~default:Q.nil ])))
-    |> F.Blocking.eval
-    |> of_value_exn
+  let to_form = function
+    | Args f ->
+      call_ecaml_form
+        (function
+          | [||] -> Value.list (Value.Private.block_on_async [%here] f)
+          | _ -> assert false)
+        []
+        None
+    | Form form -> form
+    | Function_name { prompt } -> sprintf "a%s" prompt |> Form.string
+    | Ignored -> "i" |> Form.string
+    | No_arg -> "" |> Form.string
+    | Prompt prompt -> sprintf "s%s" prompt |> Form.string
+    | Raw_prefix -> "P" |> Form.string
+    | Prefix -> "p" |> Form.string
+    | Region -> "r" |> Form.string
+  ;;
+
+  let list vals = Form (Form.apply Q.list (List.map ~f:Form.quote vals))
+end
+
+let create here ?docstring ?interactive ~args ?(optional_args = []) ?rest_arg callback =
+  (* We wrap [callback] with a lambda expression that, when called, calls [dispatch]
+     with the [callback] and the same arguments. This way, lambda expression holds on to
+     the [callback] so [callback] is alive as long there is a reference to the lambda
+     expression.
+
+     This is a simple way to ensure that [callback] is alive as long as it can be called
+     by emacs. Creating a primitive function object (like we do for dispatch) would be
+     more efficient but there is no way to attach a reference or a finalizer to that
+     kind of object so we use lambda here.
+
+     We do not need to hold on to the lambda expression from OCaml, because Emacs will
+     hold on to it. In particular, if the OCaml finalizer for the lambda-expression
+     OCaml value runs, that will decrement the Emacs refcount, but will still leave it
+     to Emacs to run [callback]'s finalizer once the lambda is not referenced anymore. *)
+  let docstring =
+    let here =
+      concat [ "Implemented at ["; here |> Source_code_position.to_string; "]." ]
+    in
+    match docstring with
+    | None -> here
+    | Some s ->
+      if String.mem s '\000'
+      then raise_s [%message "docstring contains a NUL byte" (s : string)];
+      let s = String.capitalize s |> String.strip in
+      concat [ (if String.is_empty s then "" else concat [ s; "\n\n" ]); here ]
+  in
+  [ Form.symbol Q.lambda
+  ; Form.list
+      (List.map
+         ~f:Form.symbol
+         (args
+          @ (match optional_args with
+             | [] -> []
+             | optional_args -> Q.A.optional :: optional_args)
+          @ Option.value_map rest_arg ~default:[] ~f:(fun rest_arg ->
+            [ Q.A.rest; rest_arg ])))
+  ; Form.string docstring
+  ]
+  @ (Option.map interactive ~f:(fun interactive ->
+       Form.list [ Form.symbol Q.interactive; Interactive.to_form interactive ])
+     |> Option.to_list)
+  @ [ call_ecaml_form
+        callback
+        (List.map ~f:Form.symbol (args @ optional_args))
+        (Option.map ~f:Form.symbol rest_arg)
+    ]
+  |> Form.list
+  |> Form.Blocking.eval
+  |> of_value_exn
 ;;
 
 let create_nullary here ?docstring ?interactive f =

@@ -47,24 +47,6 @@ module type Defun = sig
 
   include Open_on_rhs_intf.S with type 'a t := 'a t
 
-  module Interactive : sig
-    type t =
-      | Args of (unit -> Value.t list Deferred.t)
-      (** When a command defined with [~interactive:(Args f)] is called interactively, [f
-          ()] is called to compute the argument values to supply to the command.  Of
-          course, the argument values should match the command's [Defun.t]
-          specification. *)
-      | Function_name of { prompt : string }
-      | Ignored
-      | No_arg
-      | Prompt of string
-      | Raw_prefix
-      | Prefix
-      | Region
-
-    include Valueable.S with type t := t
-  end
-
   module For_testing : sig
     val all_defun_symbols : unit -> Symbol.t list
   end
@@ -90,7 +72,7 @@ module type Defun = sig
     -> ?define_keys:(Keymap.t * string) list
     -> ?obsoletes:Obsoletes.t
     -> ?should_profile:bool
-    -> ?interactive:Interactive.t
+    -> ?interactive:Function.Interactive.t
     -> ?disabled:Symbol.Disabled.t (** See {!Symbol.Property.function_disabled}  *)
     -> ?evil_config:Evil.Config.t
     -> 'a
@@ -124,7 +106,7 @@ module type Defun = sig
   val lambda
     :  Source_code_position.t
     -> ?docstring:string
-    -> ?interactive:Interactive.t
+    -> ?interactive:Function.Interactive.t
     -> (_, 'a) Returns.t
     -> 'a t
     -> Function.t
@@ -132,7 +114,7 @@ module type Defun = sig
   val lambda_nullary
     :  Source_code_position.t
     -> ?docstring:string
-    -> ?interactive:Interactive.t
+    -> ?interactive:Function.Interactive.t
     -> (_, 'a) Returns.t
     -> (unit -> 'a)
     -> Function.t
@@ -140,7 +122,7 @@ module type Defun = sig
   val lambda_nullary_nil
     :  Source_code_position.t
     -> ?docstring:string
-    -> ?interactive:Interactive.t
+    -> ?interactive:Function.Interactive.t
     -> (unit -> unit)
     -> Function.t
 

@@ -4,16 +4,9 @@ open! Import
 module Q = struct
   let end_of_file = "end-of-file" |> Symbol.intern
   let eval = "eval" |> Symbol.intern
-  let interactive = "interactive" |> Symbol.intern
-  let lambda = "lambda" |> Symbol.intern
   let let_ = "let" |> Symbol.intern
   let progn = "progn" |> Symbol.intern
   let quote = "quote" |> Symbol.intern
-
-  module A = struct
-    let optional = "&optional" |> Symbol.intern
-    let rest = "&rest" |> Symbol.intern
-  end
 end
 
 include Value.Make_subtype (struct
@@ -90,45 +83,4 @@ let let_ bindings body =
   |> of_value_exn
 ;;
 
-let lambda =
-  let some = Option.some in
-  fun ?docstring ?interactive ?optional_args ?rest_arg here ~args ~body ->
-    (match docstring with
-     | None -> ()
-     | Some docstring ->
-       if String.mem docstring '\000'
-       then raise_s [%message "docstring contains a NUL byte" (docstring : string)]);
-    let args =
-      [ args
-      ; (match optional_args with
-         | None | Some [] -> []
-         | Some optional_args -> Q.A.optional :: optional_args)
-      ; rest_arg
-        |> Option.value_map ~default:[] ~f:(fun rest_arg -> [ Q.A.rest; rest_arg ])
-      ]
-      |> List.concat
-      |> (fun x -> (x : Symbol.t list :> Value.t list))
-      |> Value.list
-    in
-    let here =
-      concat [ "Implemented at ["; here |> Source_code_position.to_string; "]." ]
-    in
-    let docstring =
-      match docstring with
-      | None -> here
-      | Some s ->
-        let s = String.strip s in
-        concat [ (if String.is_empty s then "" else concat [ s; "\n\n" ]); here ]
-    in
-    [ Q.lambda |> Symbol.to_value |> some
-    ; args |> some
-    ; docstring |> Value.of_utf8_bytes |> some
-    ; interactive
-      |> Option.map ~f:(fun interactive ->
-        Value.list [ Q.interactive |> Symbol.to_value; interactive ])
-    ; body |> to_value |> some
-    ]
-    |> List.filter_opt
-    |> Value.list
-    |> of_value_exn
-;;
+let apply fn args = list (symbol fn :: args)

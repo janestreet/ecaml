@@ -25,19 +25,12 @@ val quote : Value.t -> t
 val progn : t list -> t
 val let_ : (Symbol.t * t) list -> t -> t
 
-val lambda
-  :  ?docstring:string
-  -> ?interactive:Value.t
-  -> ?optional_args:Symbol.t list
-  -> ?rest_arg:Symbol.t
-  -> Source_code_position.t
-  -> args:Symbol.t list
-  -> body:t
-  -> t
-
 (** A function call, macro application, or special form.
     [(Info-goto-node "(elisp)Classifying Lists")]. *)
 val list : t list -> t
+
+(** For [sym] and [args], return (sym . args). *)
+val apply : Symbol.t -> t list -> t
 
 module Blocking : sig
   val eval : t -> Value.t

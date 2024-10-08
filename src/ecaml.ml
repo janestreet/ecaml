@@ -224,7 +224,7 @@ For testing Ecaml.
 List the Unix signals that are managed by the Async OCaml library in the running Emacs
 process.
 |}
-    ~interactive:(Args (fun () -> return [ Value.t ]))
+    ~interactive:(Function.Interactive.list [ Value.t ])
     (Returns Ecaml_sexp.t)
     (let%map_open.Defun interactive = optional_with_nil "interactive" bool in
      let sexp =

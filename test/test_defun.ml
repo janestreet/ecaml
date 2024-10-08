@@ -54,6 +54,8 @@ let%expect_test "[defun]" =
   return ()
 ;;
 
+let call_interactively = Funcall.Wrap.("call-interactively" <: Symbol.t @-> return nil)
+
 let%expect_test "[defun ~interactive:(Args _)]" =
   let symbol = "test-interactive" |> Symbol.intern in
   defun
@@ -67,8 +69,32 @@ let%expect_test "[defun ~interactive:(Args _)]" =
      print_s [%sexp (arg : int)]);
   Symbol.funcall1_i symbol (15 |> Value.of_int_exn);
   [%expect {| 15 |}];
-  let%bind () = Command.call_interactively (symbol |> Symbol.to_value) in
+  let%bind () =
+    Value.Private.run_outside_async [%here] (fun () -> call_interactively symbol)
+  in
   [%expect {| 13 |}];
+  return ()
+;;
+
+let%expect_test "[defun ~interactive:(Form _)]" =
+  let symbol = "test-interactive" |> Symbol.intern in
+  defun
+    symbol
+    [%here]
+    ~docstring:"<docstring>"
+      (* Deliberately using a symbol to check that Interactive.list quotes it rather than
+         evaluating it. *)
+    ~interactive:(Function.Interactive.list [ Value.intern "interactive" ])
+    (Returns Value.Type.unit)
+    (let%map_open.Defun () = return ()
+     and arg = required "arg" Symbol.t in
+     print_s [%sexp (arg : Symbol.t)]);
+  Symbol.funcall1_i symbol (Value.intern "non-interactive");
+  [%expect {| non-interactive |}];
+  let%bind () =
+    Value.Private.run_outside_async [%here] (fun () -> call_interactively symbol)
+  in
+  [%expect {| interactive |}];
   return ()
 ;;
 
