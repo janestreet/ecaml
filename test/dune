@@ -1,7 +1,4 @@
 (library
- (foreign_stubs
-  (language c)
-  (names ecaml_test_stubs))
  (name ecaml_test)
  (libraries async async_kernel core core_unix ecaml ecaml_test_helpers
    ecaml_value expect_test_helpers_async expect_test_helpers_core file_path

@@ -4,7 +4,6 @@ open! Import
 type t =
   | Of_current_buffer
   | Root
-  | This of string [@deprecated "[since 2024-08] Use [This_abspath] instead."]
   | This_abspath of File_path.Absolute.t
 [@@deriving sexp_of]
 

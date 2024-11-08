@@ -16,6 +16,59 @@ module Y_or_n_with_timeout = struct
   [@@deriving sexp_of]
 end
 
+module Initial_input = struct
+  type t =
+    | Empty
+    | Point_at_end of string
+    | Point_at_pos of string * int
+  [@@deriving sexp_of]
+
+  let to_value ~one_indexed = function
+    | Empty -> Symbol.to_value Q.nil
+    | Point_at_end s -> Value.of_utf8_bytes s
+    | Point_at_pos (s, i) ->
+      let i = if one_indexed then i + 1 else i in
+      Value.cons (Value.of_utf8_bytes s) (Value.of_int_exn i)
+  ;;
+
+  let of_value_exn ~one_indexed value =
+    List.find_map_exn
+      ~f:(fun f -> f value)
+      [ (fun value ->
+          match Symbol.equal (Symbol.of_value_exn value) Q.nil with
+          | true -> Some Empty
+          | false -> None
+          | exception _ -> None)
+      ; (fun value ->
+          match Value.to_utf8_bytes_exn value with
+          | s -> Some (Point_at_end s)
+          | exception _ -> None)
+      ; (fun value ->
+          match Value.Type.(tuple string int |> of_value_exn) value with
+          | s, i ->
+            let i = if one_indexed then i - 1 else i in
+            Some (Point_at_pos (s, i))
+          | exception _ -> None)
+      ]
+  ;;
+
+  let completing_t =
+    Value.Type.create
+      [%sexp "completing", "initial-input"]
+      [%sexp_of: t]
+      (of_value_exn ~one_indexed:false)
+      (to_value ~one_indexed:false)
+  ;;
+
+  let minibuffer_t =
+    Value.Type.create
+      [%sexp "minibuffer", "initial-input"]
+      [%sexp_of: t]
+      (of_value_exn ~one_indexed:true)
+      (to_value ~one_indexed:true)
+  ;;
+end
+
 module History = struct
   type t = T of string list Var.t [@@deriving sexp_of]
 
@@ -105,14 +158,19 @@ let read_from =
     Funcall.Wrap.(
       "read-from-minibuffer"
       <: string
-         @-> nil_or string
+         @-> Initial_input.minibuffer_t
          @-> nil_or Keymap.t
          @-> bool
          @-> value
          @-> nil_or string
          @-> return string)
   in
-  fun ~prompt ?initial_contents ?default_value ~history ?history_pos () ->
+  fun ~prompt
+    ?(initial_contents = Initial_input.Empty)
+    ?default_value
+    ~history
+    ?history_pos
+    () ->
     Async_ecaml.Private.run_outside_async [%here] (fun () ->
       let history = History.symbol history |> Symbol.to_value in
       read_from_minibuffer

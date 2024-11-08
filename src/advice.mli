@@ -29,7 +29,7 @@ val defun_around_values
   -> Source_code_position.t
   -> (Value.t, 'a) Sync_or_async.t
   -> docstring:string
-  -> ?interactive:Defun.Interactive.t
+  -> ?interactive:Function.Interactive.t
   -> ?should_profile:bool
   -> ((Value.t list -> Value.t) -> Value.t list -> 'a)
   -> t
@@ -47,7 +47,7 @@ val defun_around_funcall
   :  Symbol.t
   -> Source_code_position.t
   -> docstring:string
-  -> ?interactive:Defun.Interactive.t
+  -> ?interactive:Function.Interactive.t
   -> ?on_parse_error:On_parse_error.t
   -> ?should_profile:bool
   -> 'a Funcall.t

@@ -5,12 +5,10 @@ open! Import
 open! Async
 
 module Initial_input : sig
-  type t =
-    | Empty
-    | Point_at_end of string
-    | Point_at_pos of string * int
+  include module type of Minibuffer.Initial_input
 
-  include Valueable.S with type t := t
+  (* This is Minibuffer.Initial_input.completing_t *)
+  val t : t Value.Type.t
 end
 
 module Require_match : sig
@@ -41,7 +39,7 @@ val read
   -> ?annotation_function:(string -> string)
   -> ?display_sort_function:(string list -> string list)
   -> ?require_match:Require_match.t (** default is [Require_match.default] *)
-  -> ?initial_input:Initial_input.t (** default is Empty *)
+  -> ?initial_input:Minibuffer.Initial_input.t (** default is Empty *)
   -> ?default:string
   -> history:Minibuffer.History.t
   -> unit
@@ -56,7 +54,7 @@ val read_map_key
   -> collection:'a String.Map.t
   -> ?annotation_function:(string -> string)
   -> ?display_sort_function:(string list -> string list)
-  -> ?initial_input:Initial_input.t (** default is Empty *)
+  -> ?initial_input:Minibuffer.Initial_input.t (** default is Empty *)
   -> ?default:string
   -> ?confirm_ret_completion:bool (** default is false *)
   -> history:Minibuffer.History.t
@@ -81,7 +79,7 @@ val read_multiple
   -> collection:string list
   -> ?require_match:Require_match.t (** default is False *)
   -> ?separator_regexp:string (** default is "[ \t]*,[ \t]*" *)
-  -> ?initial_input:Initial_input.t (** default is Empty *)
+  -> ?initial_input:Minibuffer.Initial_input.t (** default is Empty *)
   -> ?default:string
   -> history:Minibuffer.History.t
   -> unit
@@ -91,7 +89,7 @@ val read_multiple_map_keys
   :  prompt:string (** typically ends with ": " *)
   -> collection:'a String.Map.t
   -> ?separator_regexp:string (** default is "[ \t]*,[ \t]*" *)
-  -> ?initial_input:Initial_input.t (** default is Empty *)
+  -> ?initial_input:Minibuffer.Initial_input.t (** default is Empty *)
   -> ?default:string
   -> history:Minibuffer.History.t
   -> unit

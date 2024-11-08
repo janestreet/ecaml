@@ -222,73 +222,6 @@ let call
   if should_profile then profile Sync context doit else doit ()
 ;;
 
-module Interactive = struct
-  type t =
-    | Args of (unit -> Value.t list Deferred.t)
-    | Function_name of { prompt : string }
-    | Ignored
-    | No_arg
-    | Prompt of string
-    | Raw_prefix
-    | Prefix
-    | Region
-
-  let type_ =
-    Value.Type.(
-      map
-        value
-        ~name:[%message "interactive-code"]
-        ~of_:(fun value ->
-          if not (Value.is_string value)
-          then (
-            let form = Form.of_value_exn value in
-            Args
-              (fun () ->
-                Deferred.return (Form.Blocking.eval form |> Value.to_list_exn ~f:Fn.id)))
-          else (
-            match value |> Value.to_utf8_bytes_exn with
-            | "i" -> Ignored
-            | "" -> No_arg
-            | "P" -> Raw_prefix
-            | "p" -> Prefix
-            | "r" -> Region
-            | s ->
-              let prefixes =
-                [ ("s", fun prompt -> Prompt prompt)
-                ; ("a", fun prompt -> Function_name { prompt })
-                ]
-              in
-              (match
-                 List.find_map prefixes ~f:(fun (prefix, f) ->
-                   Option.map (String.chop_prefix s ~prefix) ~f)
-               with
-               | Some result -> result
-               | None -> raise_s [%sexp "Unimplemented interactive code", (s : string)])))
-        ~to_:(function
-          | Args f ->
-            Form.list
-              [ Q.funcall |> Form.symbol
-              ; Form.quote
-                  (Function.create [%here] ~args:[] (function
-                     | [||] -> Value.list (Value.Private.block_on_async [%here] f)
-                     | _ -> assert false)
-                   |> Function.to_value)
-              ]
-            |> Form.to_value
-          | Function_name { prompt } -> sprintf "a%s" prompt |> Value.of_utf8_bytes
-          | Ignored -> "i" |> Value.of_utf8_bytes
-          | No_arg -> "" |> Value.of_utf8_bytes
-          | Prompt prompt -> sprintf "s%s" prompt |> Value.of_utf8_bytes
-          | Raw_prefix -> "P" |> Value.of_utf8_bytes
-          | Prefix -> "p" |> Value.of_utf8_bytes
-          | Region -> "r" |> Value.of_utf8_bytes))
-  ;;
-
-  let t = type_
-  let of_value_exn = Value.Type.of_value_exn type_
-  let to_value = Value.Type.to_value type_
-end
-
 module For_testing = struct
   let defun_symbols = ref []
   let all_defun_symbols () = !defun_symbols |> List.sort ~compare:Symbol.compare_name
@@ -360,7 +293,7 @@ let defun_internal
     symbol
     here
     ~docstring
-    ?interactive:(Option.map interactive ~f:Interactive.to_value)
+    ?interactive
     ~args:args.required
     ~optional_args:args.optional
     ?rest_arg:args.rest
@@ -463,7 +396,7 @@ let lambda here ?docstring ?interactive returns t =
   Function.create
     here
     ?docstring
-    ?interactive:(Option.map interactive ~f:Interactive.to_value)
+    ?interactive
     ~optional_args:args.optional
     ?rest_arg:args.rest
     ~args:args.required

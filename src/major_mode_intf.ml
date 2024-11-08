@@ -86,6 +86,10 @@ module type Major_mode = sig
 
   val change_to : t -> in_:Buffer.t -> unit Deferred.t
 
+  module Blocking : sig
+    val change_to : t -> in_:Buffer.t -> unit
+  end
+
   (** [(describe-function 'fundamental-mode)]
       [(Info-goto-node "(elisp)Major Modes")] *)
   module Fundamental : S_with_lazy_keymap

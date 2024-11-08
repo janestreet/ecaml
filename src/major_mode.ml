@@ -42,10 +42,16 @@ end
 
 let major_mode_var = Buffer_local.Wrap.("major-mode" <: Symbol.t)
 
-let change_to t ~in_:buffer =
-  Value.Private.run_outside_async [%here] ~allowed_in_background:true (fun () ->
+module Blocking = struct
+  let change_to t ~in_:buffer =
     Current_buffer.set_temporarily Sync buffer ~f:(fun () ->
-      Funcall.Wrap.(symbol t |> Symbol.name <: nullary @-> return nil) ()))
+      Funcall.Wrap.(symbol t |> Symbol.name <: nullary @-> return nil) ())
+  ;;
+end
+
+let change_to t ~in_ =
+  Value.Private.run_outside_async [%here] ~allowed_in_background:true (fun () ->
+    Blocking.change_to t ~in_)
 ;;
 
 let add wrapped_at name symbol =

@@ -124,6 +124,7 @@ let%expect_test "[all_provided]" =
      multi-tty
      mwheel
      nadvice
+     native-compile
      newcomment
      obarray
      oclosure

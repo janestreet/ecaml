@@ -29,18 +29,6 @@ module Raw_prefix_argument : sig
   val numeric_value : t -> int
 end
 
-(** [(describe-variable 'command-history)]
-    [(Info-goto-node "(elisp)Command History")] *)
-val history : unit -> Form.t list
-
-(** [(describe-function 'call-interactively)]
-    [(Info-goto-node "(elisp)Interactive Call")] *)
-val call_interactively
-  :  ?raw_prefix_argument:Raw_prefix_argument.t (** default is [Absent] *)
-  -> ?record:bool (** default is [false] *)
-  -> Value.t
-  -> unit Deferred.t
-
 (** [(describe-variable 'inhibit-quit)]
     [(Info-goto-node "(elisp)Quitting")] *)
 val inhibit_quit : bool Var.t

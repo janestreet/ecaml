@@ -656,6 +656,14 @@ module Private = struct
   ;;
 end
 
+module Known_rev = struct
+  type t =
+    { rev40 : string
+    ; stable_name : string
+    }
+  [@@deriving sexp]
+end
+
 module Expect_test_config = struct
   include Async.Expect_test_config
 
@@ -665,6 +673,23 @@ module Expect_test_config = struct
       ~context:[%lazy_message "Expect_test_config.run"]
       f
   ;;
+
+  let sanitize_revs s =
+    (try
+       Sexp.load_sexp (Sys.getenv_exn "TMPDIR" ^ "/known_revs.sexp")
+       |> List.t_of_sexp Known_rev.t_of_sexp
+     with
+     | _ -> [])
+    |> List.fold ~init:s ~f:(fun s (kr : Known_rev.t) ->
+      let stable_name40 = String.pad_right ~len:40 ~char:'0' (kr.stable_name ^ ":") in
+      let rev12 = String.prefix kr.rev40 12 in
+      let stable_name12 = String.pad_right ~len:12 ~char:'0' (kr.stable_name ^ ":") in
+      s
+      |> String.substr_replace_all ~pattern:kr.rev40 ~with_:stable_name40
+      |> String.substr_replace_all ~pattern:rev12 ~with_:stable_name12)
+  ;;
+
+  let sanitize = sanitize >> sanitize_revs
 end
 
 module Expect_test_config_allowing_nested_block_on_async = struct

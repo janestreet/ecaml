@@ -352,53 +352,51 @@ let%expect_test "[to_utf8_bytes_exn] raise" =
   return ()
 ;;
 
-let%test_module "Make_subtype" =
-  (module struct
-    module Non_nil = Make_subtype (struct
-        let name = "non-nil"
-        let here = [%here]
-        let is_in_subtype = is_not_nil
-      end)
+module%test Make_subtype = struct
+  module Non_nil = Make_subtype (struct
+      let name = "non-nil"
+      let here = [%here]
+      let is_in_subtype = is_not_nil
+    end)
 
-    open Non_nil
+  open Non_nil
 
-    let%expect_test "[of_value_exn] success" =
-      let t = of_value_exn (13 |> of_int_exn) in
-      print_s [%sexp (t : t)];
-      [%expect {| 13 |}];
-      return ()
-    ;;
+  let%expect_test "[of_value_exn] success" =
+    let t = of_value_exn (13 |> of_int_exn) in
+    print_s [%sexp (t : t)];
+    [%expect {| 13 |}];
+    return ()
+  ;;
 
-    let%expect_test "[of_value_exn] failure" =
-      require_does_raise ~hide_positions:true (fun () -> of_value_exn nil);
-      [%expect {| ("[non-nil]'s [of_value_exn] got value not in subtype" nil) |}];
-      return ()
-    ;;
+  let%expect_test "[of_value_exn] failure" =
+    require_does_raise ~hide_positions:true (fun () -> of_value_exn nil);
+    [%expect {| ("[non-nil]'s [of_value_exn] got value not in subtype" nil) |}];
+    return ()
+  ;;
 
-    let%expect_test "[to_value]" =
-      let v1 = 13 |> of_int_exn in
-      let t = v1 |> of_value_exn in
-      let v2 = t |> to_value in
-      require (Value.eq v1 v2 : bool);
-      return ()
-    ;;
+  let%expect_test "[to_value]" =
+    let v1 = 13 |> of_int_exn in
+    let t = v1 |> of_value_exn in
+    let v2 = t |> to_value in
+    require (Value.eq v1 v2 : bool);
+    return ()
+  ;;
 
-    let%expect_test "[eq] false" =
-      let t13 = 13 |> of_int_exn |> of_value_exn in
-      let t14 = 14 |> of_int_exn |> of_value_exn in
-      require (not (eq t13 t14));
-      return ()
-    ;;
+  let%expect_test "[eq] false" =
+    let t13 = 13 |> of_int_exn |> of_value_exn in
+    let t14 = 14 |> of_int_exn |> of_value_exn in
+    require (not (eq t13 t14));
+    return ()
+  ;;
 
-    let%expect_test "[eq] true" =
-      let v = 13 |> of_int_exn in
-      let t1 = v |> of_value_exn in
-      let t2 = v |> of_value_exn in
-      require (eq t1 t2 : bool);
-      return ()
-    ;;
-  end)
-;;
+  let%expect_test "[eq] true" =
+    let v = 13 |> of_int_exn in
+    let t1 = v |> of_value_exn in
+    let t2 = v |> of_value_exn in
+    require (eq t1 t2 : bool);
+    return ()
+  ;;
+end
 
 let print_args =
   lambda
@@ -695,123 +693,121 @@ let%expect_test "rendering OCaml exceptions in Emacs and OCaml" =
   return ()
 ;;
 
-let%test_module "Type" =
-  (module struct
-    open Type
+module%test Type = struct
+  open Type
 
-    let%expect_test "[sexp_of_t]" =
-      print_s [%sexp (int : _ t)];
-      [%expect {| int |}];
-      print_s [%sexp (list int : _ t)];
-      [%expect {| (list int) |}];
-      return ()
-    ;;
+  let%expect_test "[sexp_of_t]" =
+    print_s [%sexp (int : _ t)];
+    [%expect {| int |}];
+    print_s [%sexp (list int : _ t)];
+    [%expect {| (list int) |}];
+    return ()
+  ;;
 
-    let%expect_test "round trip" =
-      let test a t =
-        let v1 = a |> Value.Type.to_value t in
-        let a2 = v1 |> Value.Type.of_value_exn t in
-        let v2 = a2 |> Value.Type.to_value t in
-        require (Value.equal v1 v2);
-        print_s [%message (v1 : Value.t) (v2 : Value.t)]
-      in
-      test true bool;
-      [%expect
-        {|
-        ((v1 t)
-         (v2 t))
-        |}];
-      test false bool;
-      [%expect
-        {|
-        ((v1 nil)
-         (v2 nil))
-        |}];
-      test 13 int;
-      [%expect
-        {|
-        ((v1 13)
-         (v2 13))
-        |}];
-      test "foo" string;
-      [%expect
-        {|
-        ((v1 foo)
-         (v2 foo))
-        |}];
-      test None (nil_or int);
-      [%expect
-        {|
-        ((v1 nil)
-         (v2 nil))
-        |}];
-      test (Some 13) (nil_or int);
-      [%expect
-        {|
-        ((v1 13)
-         (v2 13))
-        |}];
-      test None (option int);
-      [%expect
-        {|
-        ((v1 nil)
-         (v2 nil))
-        |}];
-      test (Some 13) (option int);
-      [%expect
-        {|
-        ((v1 (13))
-         (v2 (13)))
-        |}];
-      test None (option bool);
-      [%expect
-        {|
-        ((v1 nil)
-         (v2 nil))
-        |}];
-      test (Some false) (option bool);
-      [%expect
-        {|
-        ((v1 (nil))
-         (v2 (nil)))
-        |}];
-      test [] (list int);
-      [%expect
-        {|
-        ((v1 nil)
-         (v2 nil))
-        |}];
-      test [ 13; 14 ] (list int);
-      [%expect
-        {|
-        ((v1 (13 14))
-         (v2 (13 14)))
-        |}];
-      test [ [ "foo" ] ] (list (list string));
-      [%expect
-        {|
-        ((v1 ((foo)))
-         (v2 ((foo))))
-        |}];
-      test Time_ns.min_value_representable time_ns;
-      [%expect
-        {|
-        ((v1 (-4611686018427387904 . 1000000000))
-         (v2 (-4611686018427387904 . 1000000000)))
-        |}];
-      test Time_ns.max_value_representable time_ns;
-      [%expect
-        {|
-        ((v1 (4611686018427387903 . 1000000000))
-         (v2 (4611686018427387903 . 1000000000)))
-        |}];
-      test Time_ns.epoch time_ns;
-      [%expect
-        {|
-        ((v1 (0 . 1000000000))
-         (v2 (0 . 1000000000)))
-        |}];
-      return ()
-    ;;
-  end)
-;;
+  let%expect_test "round trip" =
+    let test a t =
+      let v1 = a |> Value.Type.to_value t in
+      let a2 = v1 |> Value.Type.of_value_exn t in
+      let v2 = a2 |> Value.Type.to_value t in
+      require (Value.equal v1 v2);
+      print_s [%message (v1 : Value.t) (v2 : Value.t)]
+    in
+    test true bool;
+    [%expect
+      {|
+      ((v1 t)
+       (v2 t))
+      |}];
+    test false bool;
+    [%expect
+      {|
+      ((v1 nil)
+       (v2 nil))
+      |}];
+    test 13 int;
+    [%expect
+      {|
+      ((v1 13)
+       (v2 13))
+      |}];
+    test "foo" string;
+    [%expect
+      {|
+      ((v1 foo)
+       (v2 foo))
+      |}];
+    test None (nil_or int);
+    [%expect
+      {|
+      ((v1 nil)
+       (v2 nil))
+      |}];
+    test (Some 13) (nil_or int);
+    [%expect
+      {|
+      ((v1 13)
+       (v2 13))
+      |}];
+    test None (option int);
+    [%expect
+      {|
+      ((v1 nil)
+       (v2 nil))
+      |}];
+    test (Some 13) (option int);
+    [%expect
+      {|
+      ((v1 (13))
+       (v2 (13)))
+      |}];
+    test None (option bool);
+    [%expect
+      {|
+      ((v1 nil)
+       (v2 nil))
+      |}];
+    test (Some false) (option bool);
+    [%expect
+      {|
+      ((v1 (nil))
+       (v2 (nil)))
+      |}];
+    test [] (list int);
+    [%expect
+      {|
+      ((v1 nil)
+       (v2 nil))
+      |}];
+    test [ 13; 14 ] (list int);
+    [%expect
+      {|
+      ((v1 (13 14))
+       (v2 (13 14)))
+      |}];
+    test [ [ "foo" ] ] (list (list string));
+    [%expect
+      {|
+      ((v1 ((foo)))
+       (v2 ((foo))))
+      |}];
+    test Time_ns.min_value_representable time_ns;
+    [%expect
+      {|
+      ((v1 (-4611686018427387904 . 1000000000))
+       (v2 (-4611686018427387904 . 1000000000)))
+      |}];
+    test Time_ns.max_value_representable time_ns;
+    [%expect
+      {|
+      ((v1 (4611686018427387903 . 1000000000))
+       (v2 (4611686018427387903 . 1000000000)))
+      |}];
+    test Time_ns.epoch time_ns;
+    [%expect
+      {|
+      ((v1 (0 . 1000000000))
+       (v2 (0 . 1000000000)))
+      |}];
+    return ()
+  ;;
+end
