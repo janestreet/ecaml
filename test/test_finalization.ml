@@ -157,7 +157,7 @@ let%expect_test "finalization of an Emacs function" =
       r := 14;
       Value.nil
     in
-    Core.Gc.Expert.add_finalizer_exn f (fun _ ->
+    Core.Gc.Expert.add_finalizer_ignore f (fun _ ->
       print_s [%message "finalized" (r : int ref)]);
     ignore (Function.create [%here] ~args:[] f : Function.t));
   make_ocaml_garbage_not_keep_emacs_values_alive ();

@@ -46,10 +46,16 @@ end
     The constructor for this structure type expects an ['a] as input. *)
 type 'a t
 
-(** Define a cl-defstruct with the specified fields. *)
+(** Define a cl-defstruct with the specified fields.
+
+    If [defined_by_feature] is passed, we won't actually call cl-defstruct; instead, when
+    [Defstruct.make] is called we will automatically require that feature, which should
+    define a compatible struct.  If the field names don't match up exactly,
+    [Defstruct.make] will error. *)
 val defstruct
   :  ?here:Stdlib.Lexing.position
   -> name:string
+  -> ?defined_by_feature:Feature.t
   -> doc:string
   -> 'a Field.t list
   -> 'a t

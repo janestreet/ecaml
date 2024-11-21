@@ -33,9 +33,11 @@ let build_form ~name ~doc fields =
 type 'a t =
   { maker : Symbol.t
   ; args : (Symbol.t * ('a -> Value.t)) list
+  ; defined_by_feature : Feature.t option
   }
 
 let make t a =
+  Option.iter ~f:Feature.require t.defined_by_feature;
   Symbol.funcallN
     t.maker
     (List.concat_map
@@ -61,25 +63,29 @@ end
 let defstruct
   ?(here = Stdlib.Lexing.dummy_pos)
   ~(name : string)
+  ?defined_by_feature
   ~(doc : string)
   (fields : 'a Field.t list)
   =
-  Form.Blocking.eval_i (build_form ~name ~doc fields);
   let t =
     { maker = Symbol.intern ("make-" ^ name)
     ; args =
         List.map ~f:(fun field -> Symbol.intern (":" ^ field.name), field.to_value) fields
+    ; defined_by_feature
     }
   in
-  (* This defstruct wrapper doesn't support customizing the predicate or constructor
-     names, or anything like that, so we can predict all of the names [cl-defstruct] will
-     define. *)
-  List.iter
-    (List.concat
-       [ [ [%string "make-%{name}"]; [%string "copy-%{name}"]; [%string "%{name}-p"] ]
-       ; List.map fields ~f:(fun field -> [%string "%{name}-%{field.name}"])
-       ])
-    ~f:(fun symbol -> Load_history.add_entry here (Fun (Symbol.intern symbol)));
-  For_testing.defstructs := T (name, t) :: !For_testing.defstructs;
+  if Option.is_none defined_by_feature
+  then (
+    Form.Blocking.eval_i (build_form ~name ~doc fields);
+    (* This defstruct wrapper doesn't support customizing the predicate or constructor
+       names, or anything like that, so we can predict all of the names [cl-defstruct] will
+       define. *)
+    List.iter
+      (List.concat
+         [ [ [%string "make-%{name}"]; [%string "copy-%{name}"]; [%string "%{name}-p"] ]
+         ; List.map fields ~f:(fun field -> [%string "%{name}-%{field.name}"])
+         ])
+      ~f:(fun symbol -> Load_history.add_entry here (Fun (Symbol.intern symbol)));
+    For_testing.defstructs := T (name, t) :: !For_testing.defstructs);
   t
 ;;
