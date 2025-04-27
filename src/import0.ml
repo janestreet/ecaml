@@ -15,7 +15,7 @@ include Composition_infix
 
 let () =
   Printexc.record_backtrace true;
-  Sexp.of_int_style := `Underscores
+  Dynamic.set_root Sexp.of_int_style `Underscores
 ;;
 
 let concat = String.concat

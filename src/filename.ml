@@ -60,7 +60,7 @@ let expand t ~in_dir =
 
 let read =
   let read_file_name = Funcall.Wrap.("read-file-name" <: string @-> return t) in
-  fun ~prompt -> Value.Private.run_outside_async [%here] (fun () -> read_file_name prompt)
+  fun ~prompt -> Value.Private.run_outside_async (fun () -> read_file_name prompt)
 ;;
 
 let absolute_t =

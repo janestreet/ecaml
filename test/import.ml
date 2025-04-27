@@ -144,7 +144,7 @@ let%expect_test "[with_input_macro] raises if [f] is still running after receivi
   let test () =
     with_input_macro "zzz" (fun () ->
       let%bind input =
-        Minibuffer.read_from ~prompt:"input: " ~history:Minibuffer.history ()
+        Minibuffer.read_string ~prompt_no_colon:"input" ~history:Minibuffer.history ()
       in
       (* This test is specifically trying to exercise the condition that the full input,
          so don't let the test "pass" the [require_does_raise_async] by raising here. *)

@@ -18,7 +18,7 @@ let evil_declare_ignore_repeat =
 ;;
 
 let declare_ignore_repeat command =
-  Eval.after_load [%here] Q.evil ~f:(fun () -> evil_declare_ignore_repeat command)
+  Eval.after_load Q.evil ~f:(fun () -> evil_declare_ignore_repeat command)
 ;;
 
 module Config = struct
@@ -73,4 +73,14 @@ let define_key =
   Funcall.Wrap.(
     "evil-define-key*"
     <: list State.t @-> Keymap.t @-> Key_sequence.t @-> Keymap.Entry.t @-> return nil)
+;;
+
+let evil_visual_refresh =
+  Funcall.Wrap.("evil-visual-refresh" <: nullary @-> return ignored)
+;;
+
+let evil_visual_state_p = Funcall.Wrap.("evil-visual-state-p" <: nullary @-> return bool)
+
+let visual_refresh_if_necessary () =
+  if is_in_use () && evil_visual_state_p () then evil_visual_refresh ()
 ;;

@@ -6,17 +6,21 @@ let background_job_key =
   Univ_map.Key.create ~name:"Background Async job" [%sexp_of: Source_code_position.t]
 ;;
 
-let mark_running_in_background here ~f =
+let mark_running_in_background ~(here : [%call_pos]) f =
   Nested_profile.Profile.disown (fun () ->
     Scheduler.with_local background_job_key (Some here) ~f)
 ;;
 
-let mark_running_in_foreground ~f = Scheduler.with_local background_job_key None ~f
+let mark_running_in_foreground f = Scheduler.with_local background_job_key None ~f
 let currently_running_in_background () = Scheduler.find_local background_job_key
 let am_running_in_background () = is_some (currently_running_in_background ())
 let am_running_in_foreground () = is_none (currently_running_in_background ())
 
-let schedule_foreground_block_on_async here ?raise_exceptions_to_monitor f =
+let schedule_foreground_block_on_async
+  ~(here : [%call_pos])
+  ?raise_exceptions_to_monitor
+  f
+  =
   if am_running_in_foreground ()
   then
     raise_s
@@ -25,7 +29,7 @@ let schedule_foreground_block_on_async here ?raise_exceptions_to_monitor f =
          foreground job"
         , (here : Source_code_position.t)];
   Value.Private.enqueue_foreground_block_on_async
-    here
+    ~here
     ?raise_exceptions_to_monitor
     (fun () ->
        Nested_profile.Profile.disown (fun () ->
@@ -34,11 +38,11 @@ let schedule_foreground_block_on_async here ?raise_exceptions_to_monitor f =
            [%lazy_message
              "[Background.schedule_foreground_block_on_async]"
                (here : Source_code_position.t)]
-           (fun () -> mark_running_in_foreground ~f)))
+           (fun () -> mark_running_in_foreground f)))
 ;;
 
-let don't_wait_for here f =
-  mark_running_in_background here ~f:(fun () ->
+let don't_wait_for ~(here : [%call_pos]) f =
+  mark_running_in_background ~here (fun () ->
     let monitor = Monitor.create ~here:[%here] ~name:"background_monitor" () in
     Monitor.detach_and_iter_errors monitor ~f:(fun exn ->
       message_s
@@ -50,18 +54,18 @@ let don't_wait_for here f =
 ;;
 
 module Clock = struct
-  let every' ?start ?stop ?continue_on_error ?finished here interval f =
-    mark_running_in_background here ~f:(fun () ->
-      Clock.every' ?start ?stop ?continue_on_error ?finished interval (fun () ->
+  let every' ?start ?stop ?continue_on_error ?finished ~(here : [%call_pos]) interval f =
+    mark_running_in_background ~here (fun () ->
+      Clock_ns.every' ?start ?stop ?continue_on_error ?finished interval (fun () ->
         Nested_profile.Profile.profile
           Async
           [%lazy_message "[Background.Clock.every']" (here : Source_code_position.t)]
           f))
   ;;
 
-  let every ?start ?stop ?continue_on_error here interval f =
-    mark_running_in_background here ~f:(fun () ->
-      Clock.every ?start ?stop ?continue_on_error interval (fun () ->
+  let every ?start ?stop ?continue_on_error ~(here : [%call_pos]) interval f =
+    mark_running_in_background ~here (fun () ->
+      Clock_ns.every ?start ?stop ?continue_on_error interval (fun () ->
         Nested_profile.Profile.profile
           Sync
           [%lazy_message "[Background.clock.every]" (here : Source_code_position.t)]
@@ -69,7 +73,7 @@ module Clock = struct
   ;;
 end
 
-let assert_foreground ?message assertion_failed_at =
+let assert_foreground ?message ~here:(assertion_failed_at : [%call_pos]) () =
   match currently_running_in_background () with
   | None -> ()
   | Some background_job_started_at ->

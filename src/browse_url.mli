@@ -1,4 +1,4 @@
-(** Pass a URL to a WWW browser.  Ecaml bindings for [browse-url.el] *)
+(** Pass a URL to a WWW browser. Ecaml bindings for [browse-url.el] *)
 
 open! Core
 open! Async_kernel

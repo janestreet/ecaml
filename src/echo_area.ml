@@ -10,9 +10,9 @@ let inhibit_messages (type a b) (sync_or_async : (a, b) Sync_or_async.t) (f : un
    | Sync -> ()
    | Async ->
      Background.assert_foreground
-       [%here]
        ~message:
-         [%sexp "Echo_area.inhibit_messages called asynchronously in background job"]);
+         [%sexp "Echo_area.inhibit_messages called asynchronously in background job"]
+       ());
   Current_buffer.set_value_temporarily sync_or_async inhibit_message true ~f
 ;;
 
@@ -32,7 +32,7 @@ let wrap_message
   (type a b)
   ?allow_in_background
   ?echo
-  here
+  ~(here : [%call_pos])
   (sync_or_async : (a, b) Sync_or_async.t)
   msg
   ~f
@@ -53,7 +53,7 @@ let wrap_message
         returned_normally := true;
         result
   in
-  Sync_or_async.protect ?allow_in_background here sync_or_async ~f ~finally:(fun () ->
+  Sync_or_async.protect ?allow_in_background ~here sync_or_async ~f ~finally:(fun () ->
     match !returned_normally with
     | true -> message ?echo [%string "%{msg}done"]
     | false -> message ?echo [%string "%{msg}raised"])

@@ -66,7 +66,7 @@ let%expect_test "[defvaralias]" =
       Probably introduced at or before Emacs version 1.4.
     |}];
   let y1 = "y1" |> Symbol.intern in
-  defvaralias y1 [%here] ~alias_of:x ();
+  defvaralias y1 ~alias_of:x ();
   print_endline (Help.describe_variable_text y1);
   [%expect
     {|
@@ -77,7 +77,7 @@ let%expect_test "[defvaralias]" =
       This variable is an alias for `x'.
     |}];
   let y2 = "y2" |> Symbol.intern in
-  defvaralias y2 [%here] ~alias_of:x ~docstring:"some other text" ();
+  defvaralias y2 ~alias_of:x ~docstring:"some other text" ();
   print_endline (Help.describe_variable_text y2);
   [%expect
     {|
@@ -94,7 +94,6 @@ let%expect_test "[define_obsolete_alias]" =
   let x = "x" |> Symbol.intern in
   define_obsolete_alias
     x
-    [%here]
     ~docstring:"some docs"
     ~alias_of:("y" |> Symbol.intern)
     ~since:"then"

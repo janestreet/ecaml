@@ -4,7 +4,7 @@ open! Import
 open! Value
 open! For_testing
 
-let () = Backtrace.elide := true
+let () = Dynamic.set_root Backtrace.elide true
 let show t = print_s [%sexp (t : t)]
 let test_predicate f t = print_s [%sexp (f t : bool)]
 
@@ -42,11 +42,9 @@ let%expect_test "[sexp_of_t] on a hash table respects [Print.length]" =
       show (htbl |> Hash_table.to_value))
   in
   test 1;
-  [%expect
-    {| "#s(hash-table size 65 test eql rehash-size 1.5 rehash-threshold 0.8125 data (1 1))" |}];
+  [%expect {| "#s(hash-table data (1 1))" |}];
   test 20;
-  [%expect
-    {| "#s(hash-table size 65 test eql rehash-size 1.5 rehash-threshold 0.8125 data (1 1 2 2 3 3 4 4 5 5 6 6 7 7 8 8 9 9 10 10 ...))" |}];
+  [%expect {| "#s(hash-table data (1 1 2 2 3 3 4 4 5 5 6 6 7 7 8 8 9 9 10 10 ...))" |}];
   return ()
 ;;
 

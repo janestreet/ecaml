@@ -12,7 +12,7 @@ val with_buffer_and_point
 
 val show_buffer : block_out:Position.t list -> unit
 
-(** Print buffer contents with the point shown as a solid block.  *)
+(** Print buffer contents with the point shown as a solid block. *)
 val show_point : unit -> unit
 
 module Region : sig
@@ -37,9 +37,9 @@ val with_buffer_and_active_region
 val show_active_region : unit -> unit
 
 (** Print buffer contents with the [before-string] and [after-string] properties from any
-    overlays rendered as though they were present in the buffer.  Also, mark any text
-    specified as [invisible] through overlays (but not through text properties).  This
-    does not reflect the actual contents of the buffer, but rather how the contents would
+    overlays rendered as though they were present in the buffer. Also, mark any text
+    specified as [invisible] through overlays (but not through text properties). This does
+    not reflect the actual contents of the buffer, but rather how the contents would
     appear to the user. *)
 val show_with_overlay_text : unit -> unit
 

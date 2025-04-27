@@ -31,11 +31,11 @@ val process : t -> Process0.t option
 
 val process_exn : t -> Process0.t
 
-(** [all_live] returns a list of all live buffers.  [(describe-function 'buffer-list)]. *)
+(** [all_live] returns a list of all live buffers. [(describe-function 'buffer-list)]. *)
 val all_live : unit -> t list
 
 (** [create ~name] creates a new buffer with name [name], adjusting the name if necessary
-    to make the buffer's name unique.  [(describe-function 'generate-new-buffer)]. *)
+    to make the buffer's name unique. [(describe-function 'generate-new-buffer)]. *)
 val create : name:string -> t
 
 (** [find ~name] returns the live buffer whose name is [name], if any.
@@ -47,28 +47,27 @@ val find_by : f:(t -> bool) -> t option
 
 val find_exn : name:string -> t
 
-(** [(describe-function 'get-file-buffer)].
-    [(Info-goto-node "(elisp)Buffer File Name")] *)
+(** [(describe-function 'get-file-buffer)]. [(Info-goto-node "(elisp)Buffer File Name")] *)
 val find_visiting : file:Filename.t -> t option
 
 (** [find ~name] returns the live buffer whose name is [name], and if there is no such
-    buffer, creates it.  [(describe-function 'get-buffer-create)]. *)
+    buffer, creates it. [(describe-function 'get-buffer-create)]. *)
 val find_or_create : name:string -> t
 
-(** [kill t] kills [t], so that [not (is_live t)].  [(describe-function 'kill-buffer)]. *)
+(** [kill t] kills [t], so that [not (is_live t)]. [(describe-function 'kill-buffer)]. *)
 val kill : t -> unit Deferred.t
 
 module Blocking : sig
   val kill : t -> unit
 end
 
-(** Return a list of all windows on the current terminal that are displaying the given buffer.
+(** Return a list of all windows on the current terminal that are displaying the given
+    buffer.
 
     [(describe-function 'get-buffer-window-list)] *)
 val displayed_in : ?current_frame_only:bool -> t -> Window0.t list
 
-(** [(Info-goto-node "(elisp)Choosing Window")]
-    [(describe-function 'display-buffer)] *)
+(** [(Info-goto-node "(elisp)Choosing Window")] [(describe-function 'display-buffer)] *)
 val display : t -> Window0.t option
 
 (** Like [display], but ignores the result. *)
@@ -104,8 +103,7 @@ module Which_buffers : sig
   [@@deriving sexp_of]
 end
 
-(** [(describe-function 'save-some-buffers)]
-    [(Info-goto-node "(elisp)Saving Buffers")] *)
+(** [(describe-function 'save-some-buffers)] [(Info-goto-node "(elisp)Saving Buffers")] *)
 val save_some
   :  ?query:bool (** default is [true] *)
   -> ?which_buffers:Which_buffers.t (** default is [File_visiting] *)
@@ -118,8 +116,7 @@ val with_temp_buffer
   -> (t -> 'a)
   -> 'a
 
-(** [(describe-function 'revert-buffer)]
-    [(Info-goto-node "(elisp)Reverting")] *)
+(** [(describe-function 'revert-buffer)] [(Info-goto-node "(elisp)Reverting")] *)
 val revert : ?confirm:bool (** default is [false] *) -> t -> unit Deferred.t
 
 (** [(describe-variable 'kill-buffer-query-functions)] *)

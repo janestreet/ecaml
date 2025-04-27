@@ -26,7 +26,7 @@ val of_function : Symbol.t -> t
     value of the advised function. *)
 val defun_around_values
   :  Symbol.t
-  -> Source_code_position.t
+  -> here:[%call_pos]
   -> (Value.t, 'a) Sync_or_async.t
   -> docstring:string
   -> ?interactive:Function.Interactive.t
@@ -45,7 +45,7 @@ end
     the advised function. *)
 val defun_around_funcall
   :  Symbol.t
-  -> Source_code_position.t
+  -> here:[%call_pos]
   -> docstring:string
   -> ?interactive:Function.Interactive.t
   -> ?on_parse_error:On_parse_error.t

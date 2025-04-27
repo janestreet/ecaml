@@ -119,6 +119,7 @@ let%expect_test "[defstruct]" =
        stuff that [cl-defstruct] defines.  *)
     String.is_substring sym ~substring:(Symbol.name base_symbol)
     && (not (String.equal sym (Symbol.name base_symbol)))
+    && (not (String.is_prefix sym ~prefix:"--cl-block-"))
     && (not (String.is_suffix sym ~suffix:"--cmacro"))
     && not (String.is_suffix sym ~suffix:"-struct-tags"));
   [%expect

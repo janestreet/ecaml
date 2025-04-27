@@ -14,12 +14,10 @@ module Compare_as_string : sig
   include Sexpable.S with type t := t
 end
 
-(** [(describe-function 'aref)]
-    [(Info-goto-node "(elisp)String Basics")] *)
+(** [(describe-function 'aref)] [(Info-goto-node "(elisp)String Basics")] *)
 val char_code : t -> int -> Char_code.t
 
-(** [(describe-function 'aset)]
-    [(Info-goto-node "(elisp)String Basics")] *)
+(** [(describe-function 'aset)] [(Info-goto-node "(elisp)String Basics")] *)
 val set_char_code : t -> int -> Char_code.t -> unit
 
 val of_utf8_bytes : string -> t
@@ -34,8 +32,7 @@ val to_utf8_bytes : t -> string
 val length : t -> int
 
 (** [num_bytes t] returns the number of bytes in the representation of [t], which, if
-    [is_multibyte t], can be greater than [length t].
-    [(describe-function 'string-bytes)] *)
+    [is_multibyte t], can be greater than [length t]. [(describe-function 'string-bytes)] *)
 val num_bytes : t -> int
 
 (** [(describe-function 'concat)] *)
@@ -69,8 +66,7 @@ end
 module Display_spec : sig
   (** Display specs apply a property, like [margin], to a text. In Elisp, one would write,
       e.g., [(propertize " " 'display `((margin left-margin) ,str))] where [str] is a
-      text. A display spec is therefore a pair of a property and the text it's applied
-      to. *)
+      text. A display spec is therefore a pair of a property and the text it's applied to. *)
   type nonrec t =
     { property : Display_property.t
     ; text : t
@@ -109,12 +105,12 @@ module Property_name : sig
   val of_value_exn : 'a t -> Value.t -> 'a
 
   (** [(<:)] creates a new property name and makes it available for automatic typeful
-      conversion of elisp property lists.  Idiomatic usage looks like this: {[
-
+      conversion of elisp property lists. Idiomatic usage looks like this:
+      {[
         Text.Property_name.Create.(name <: type_)
-
-      ]} We keep [Create] clear of other values to avoid polluting the namespace inside
-      that local open. *)
+      ]}
+      We keep [Create] clear of other values to avoid polluting the namespace inside that
+      local open. *)
   module Create : sig
     val ( <: ) : string -> 'a Value.Type.t -> 'a t
   end
@@ -133,14 +129,13 @@ module Property : sig
   val to_property_list : t list -> Value.t list
 end
 
-(** [(describe-function 'propertize)]
-    [(Info-goto-node "(elisp)Changing Properties")] *)
+(** [(describe-function 'propertize)] [(Info-goto-node "(elisp)Changing Properties")] *)
 val propertize : t -> Property.t list -> t
 
 val colorize : t -> color:Color.t -> t
 
 (** [property_value t ~at property_name] returns the value of [property_name] for the
-    character after [at].  [at] is a zero-based index into [t]; [property_value] raises
+    character after [at]. [at] is a zero-based index into [t]; [property_value] raises
     unless [0 <= at <= length t] (allowing [length] is different than OCaml).
     [(describe-function 'get-text-property)]
     [(Info-goto-node "(elisp)Examining Properties")] *)
@@ -184,8 +179,8 @@ val add_face_properties
   -> ?end_:int (** default is end of [t] *)
   -> ?append:bool (** default is false *)
   -> t
-  -> Face_spec.t
-  -> unit
+  -> spec:Face_spec.t
+  -> t
 
 (** [(describe-function 'remove-list-of-text-properties)]
     [(Info-goto-node "(elisp)Changing Properties")] *)

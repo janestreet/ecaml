@@ -16,8 +16,7 @@ module Blocking = struct
 end
 
 let kill t =
-  Value.Private.run_outside_async [%here] ~allowed_in_background:true (fun () ->
-    Blocking.kill t)
+  Value.Private.run_outside_async ~allowed_in_background:true (fun () -> Blocking.kill t)
 ;;
 
 let is_live = Funcall.Wrap.("buffer-live-p" <: t @-> return bool)

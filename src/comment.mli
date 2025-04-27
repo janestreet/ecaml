@@ -3,16 +3,14 @@
 (** Note: these are functions rather than [Var.t]s because per-buffer initialization is
     required before these variables are known to be correct. *)
 
-(** [(describe-variable 'comment-start)]
-    [(Info-goto-node "(emacs)Options for Comments")] *)
+(** [(describe-variable 'comment-start)] [(Info-goto-node "(emacs)Options for Comments")] *)
 val start : unit -> string
 
 (** [(describe-variable 'comment-start-skip)]
     [(Info-goto-node "(emacs)Options for Comments")] *)
 val start_regexp : unit -> Regexp.t
 
-(** [(describe-variable 'comment-end)]
-    [(Info-goto-node "(emacs)Options for Comments")] *)
+(** [(describe-variable 'comment-end)] [(Info-goto-node "(emacs)Options for Comments")] *)
 val end_ : unit -> string
 
 (** [(describe-variable 'comment-end-skip)]

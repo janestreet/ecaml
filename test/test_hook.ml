@@ -191,7 +191,7 @@ let%expect_test "Blocking async hook" =
         ~hook_type:File_hook
         (Returns_deferred Value.Type.unit)
         (fun _ ->
-           let%map () = Clock.after pause in
+           let%map () = Clock_ns.after pause in
            print_s [%message "f1"])
     in
     add after_load f1;
@@ -201,7 +201,7 @@ let%expect_test "Blocking async hook" =
     remove after_load f1;
     return ()
   in
-  let%bind () = test ~pause:(sec 0.01) in
+  let%bind () = test ~pause:(sec_ns 0.01) in
   [%expect {| f1 |}];
   return ()
 ;;

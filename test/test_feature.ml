@@ -45,6 +45,9 @@ let%expect_test "[all_provided]" =
      base64
      bookmark
      button
+     byte-compile
+     byte-opt
+     bytecomp
      cairo
      case-table
      cconv
@@ -94,6 +97,7 @@ let%expect_test "[all_provided]" =
      fringe
      georgian
      greek
+     gv
      hashtable-print-readable
      hebrew
      help
@@ -120,6 +124,7 @@ let%expect_test "[all_provided]" =
      minibuffer
      misc-lang
      mouse
+     move-toolbar
      mule
      multi-tty
      mwheel
@@ -165,6 +170,7 @@ let%expect_test "[all_provided]" =
      timer
      tool-bar
      tooltip
+     touch-screen
      uniquify
      utf-8-lang
      vc-hooks

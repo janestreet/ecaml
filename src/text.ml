@@ -383,8 +383,9 @@ let add_face_text_property =
     "add-face-text-property" <: int @-> int @-> Face_spec.t @-> bool @-> t @-> return nil)
 ;;
 
-let add_face_properties ?start ?end_ ?(append = false) t face =
-  add_face_text_property (start |> get_start) (end_ |> get_end t) face append t
+let add_face_properties ?start ?end_ ?(append = false) t ~spec =
+  add_face_text_property (start |> get_start) (end_ |> get_end t) spec append t;
+  t
 ;;
 
 let set_text_properties =

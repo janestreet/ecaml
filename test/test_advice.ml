@@ -29,7 +29,6 @@ let%expect_test "" =
   let t =
     Advice.defun_around_values
       advice_name
-      [%here]
       ~docstring:"<docstring>"
       Sync
       (fun inner rest ->
@@ -72,7 +71,6 @@ let%expect_test "[around_funcall ~on_parse_error]" =
     let t =
       Advice.defun_around_funcall
         advice_name
-        [%here]
         ~docstring:"<docstring>"
         Funcall.Wrap.(arg_type @-> return int)
         ?on_parse_error
@@ -95,7 +93,7 @@ let%expect_test "[around_funcall ~on_parse_error]" =
     {|
     (raised ((
       "Advice failed to parse its arguments"
-      app/emacs/lib/ecaml/test/test_advice.ml:75:8
+      app/emacs/lib/ecaml/test/test_advice.ml:72:6
       ("unable to convert Elisp value to OCaml value"
        (type_ string)
        (value 1)
@@ -106,7 +104,7 @@ let%expect_test "[around_funcall ~on_parse_error]" =
     {|
     (raised ((
       "Advice failed to parse its arguments"
-      app/emacs/lib/ecaml/test/test_advice.ml:75:8
+      app/emacs/lib/ecaml/test/test_advice.ml:72:6
       ("unable to convert Elisp value to OCaml value"
        (type_ string)
        (value 1)
@@ -131,7 +129,6 @@ let%expect_test "[around_funcall] with arity mismatch" =
     let t =
       Advice.defun_around_funcall
         advice_name
-        [%here]
         ~docstring:"<docstring>"
         funcall
         ?on_parse_error
@@ -155,7 +152,7 @@ let%expect_test "[around_funcall] with arity mismatch" =
     {|
     (raised ((
       "Advice failed to parse its arguments"
-      app/emacs/lib/ecaml/test/test_advice.ml:134:8
+      app/emacs/lib/ecaml/test/test_advice.ml:130:6
       ("unable to convert Elisp value to OCaml value"
        (type_ int)
        (value nil)
@@ -168,7 +165,7 @@ let%expect_test "[around_funcall] with arity mismatch" =
     {|
     (raised ((
       "Advice failed to parse its arguments"
-      app/emacs/lib/ecaml/test/test_advice.ml:134:8
+      app/emacs/lib/ecaml/test/test_advice.ml:130:6
       ("Extra args." ("arity t" 0) (args (1))))))
     |}];
   return ()
@@ -179,20 +176,17 @@ let%expect_test "Async advice" =
   let t =
     Advice.defun_around_values
       advice_name
-      [%here]
       ~docstring:"<docstring>"
       Async
       (fun inner rest ->
-         let%map () = Clock.after (sec 0.001) in
+         let%map () = Clock_ns.after (sec_ns 0.001) in
          print_s [%message "advice" (rest : Value.t list)];
          let inner_result = inner ((0 |> Value.of_int_exn) :: rest) in
          print_s [%message "advice" (inner_result : Value.t)];
          Value.Type.(int |> to_value) (1 + (inner_result |> Value.to_int_exn)))
   in
   Advice.add t ~to_function:test_function;
-  let call_test_function () =
-    Async_ecaml.Private.run_outside_async [%here] call_test_function
-  in
+  let call_test_function () = Async_ecaml.Private.run_outside_async call_test_function in
   let%bind () = call_test_function () in
   [%expect
     {|

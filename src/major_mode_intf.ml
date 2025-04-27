@@ -1,4 +1,4 @@
-(** Major modes specialize Emacs for editing particular kinds of text.  Each buffer has
+(** Major modes specialize Emacs for editing particular kinds of text. Each buffer has
     only one major mode at a time.
 
     [(Info-goto-node "(elisp)Major Modes")] *)
@@ -15,7 +15,7 @@ module Auto_mode = struct
 end
 
 module Name = struct
-  (** Names let us pattern-match on major modes.  Doing so is discouraged, because it
+  (** Names let us pattern-match on major modes. Doing so is discouraged, because it
       breaks normal, widely-used extension mechanisms ([define-derived-mode]). *)
   type t = ..
 
@@ -67,22 +67,22 @@ module type Major_mode = sig
   val syntax_table : t -> Syntax_table.t
 
   (** [wrap_existing mode_name] wraps the existing Emacs major mode named [mode_name], and
-      stores it in the table of all major modes indexed by symbol.  [wrap_existing] raises
+      stores it in the table of all major modes indexed by symbol. [wrap_existing] raises
       if a major mode associated with this symbol was already wrapped. *)
-  val wrap_existing : string -> Source_code_position.t -> (module S)
+  val wrap_existing : here:[%call_pos] -> string -> (module S)
 
   (** [wrap_existing_with_lazy_keymap] is like [wrap_existing], except the resulting
-      module's [keymap] value has type [Keymap.t Lazy.t] rather than [Keymap.t].  This is
+      module's [keymap] value has type [Keymap.t Lazy.t] rather than [Keymap.t]. This is
       needed if the keymap value isn't defined at the point that the major mode is
       wrapped. *)
   val wrap_existing_with_lazy_keymap
-    :  string
-    -> Source_code_position.t
+    :  here:[%call_pos]
+    -> string
     -> (module S_with_lazy_keymap)
 
   (** [find_or_wrap_existing] looks up the major mode associated with this symbol by a
       previous call to [wrap_existing] or creates one with the [Undistinguished] name. *)
-  val find_or_wrap_existing : Source_code_position.t -> Symbol.t -> t
+  val find_or_wrap_existing : here:[%call_pos] -> Symbol.t -> t
 
   val change_to : t -> in_:Buffer.t -> unit Deferred.t
 
@@ -90,24 +90,17 @@ module type Major_mode = sig
     val change_to : t -> in_:Buffer.t -> unit
   end
 
-  (** [(describe-function 'fundamental-mode)]
-      [(Info-goto-node "(elisp)Major Modes")] *)
+  (** [(describe-function 'fundamental-mode)] [(Info-goto-node "(elisp)Major Modes")] *)
   module Fundamental : S_with_lazy_keymap
 
-  (** [(describe-function 'prog-mode)]
-      [(Info-goto-node "(elisp)Basic Major Modes")] *)
+  (** [(describe-function 'prog-mode)] [(Info-goto-node "(elisp)Basic Major Modes")] *)
   module Prog : S
 
-  (** [(describe-function 'special-mode)]
-      [(Info-goto-node "(elisp)Basic Major Modes")] *)
+  (** [(describe-function 'special-mode)] [(Info-goto-node "(elisp)Basic Major Modes")] *)
   module Special : S
 
-  (** [(describe-function 'text-mode)]
-      [(Info-goto-node "(elisp)Basic Major Modes")] *)
+  (** [(describe-function 'text-mode)] [(Info-goto-node "(elisp)Basic Major Modes")] *)
   module Text : S
-
-  (** [(describe-function 'dired-mode)] *)
-  module Dired : S_with_lazy_keymap
 
   (** [(describe-function 'tuareg-mode)] *)
   module Tuareg : S_with_lazy_keymap
@@ -130,8 +123,7 @@ module type Major_mode = sig
   (** [(describe-function 'python-mode)] *)
   module Python : S_with_lazy_keymap
 
-  (** [(describe-function 'define-derived-mode)]
-      [(Info-goto-node "(elisp)Derived Modes")]
+  (** [(describe-function 'define-derived-mode)] [(Info-goto-node "(elisp)Derived Modes")]
 
       Additionally, each [key_sequence, symbol] in [define_keys] is added to the new major
       mode's keymap. *)

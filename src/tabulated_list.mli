@@ -49,9 +49,9 @@ type 'record t
 
 (** Raises unless the major mode derives from [Tabulated_list_mode.major_mode].
 
-    [get_id] is used to extract an ID value from each row.  This ID is used to, among
-    other things, preserve the position of point on a given row when the list is
-    redrawn.  The ID string must not be empty, due to implementation constraints. *)
+    [get_id] is used to extract an ID value from each row. This ID is used to, among other
+    things, preserve the position of point on a given row when the list is redrawn. The ID
+    string must not be empty, due to implementation constraints. *)
 val create
   :  Major_mode.t
   -> 'record Column.t list
@@ -73,8 +73,6 @@ val get_record_at_point_exn : 'record t -> 'record option
 
 (** [move_point_to_record] moves the point to the first record stisfying the predicate [f] *)
 val move_point_to_record : 'record t -> f:('record -> bool) -> unit
-
-val current_buffer_has_entries : unit -> bool
 
 (** [(describe-variable 'tabulated-list-revert-hook)] *)
 val revert_hook : (Hook.normal, unit) Hook.t

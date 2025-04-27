@@ -46,7 +46,6 @@ let call_ecaml_form =
   (* [dispatch_function] is registered and emacs [dispatch] function is created before any
      callback is created and can be called *)
   Ecaml_callback.(register dispatch_function)
-    [%here]
     ~should_run_holding_async_lock:true
     ~f:(fun callback_id args ->
       if !Expert.raise_in_dispatch
@@ -87,7 +86,7 @@ module Interactive = struct
     | Args f ->
       call_ecaml_form
         (function
-          | [||] -> Value.list (Value.Private.block_on_async [%here] f)
+          | [||] -> Value.list (Value.Private.block_on_async f)
           | _ -> assert false)
         []
         None

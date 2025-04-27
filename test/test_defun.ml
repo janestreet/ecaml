@@ -45,7 +45,7 @@ let%expect_test "[defun]" =
   print_endline (Help.describe_function_text ~obscure_symbol:true symbol);
   [%expect
     {|
-    <SYMBOL> is a Lisp function.
+    <SYMBOL> is a interpreted-function.
 
     (<SYMBOL> INT STRING &optional STRING-OPTIONAL &rest REST)
 
@@ -69,9 +69,7 @@ let%expect_test "[defun ~interactive:(Args _)]" =
      print_s [%sexp (arg : int)]);
   Symbol.funcall1_i symbol (15 |> Value.of_int_exn);
   [%expect {| 15 |}];
-  let%bind () =
-    Value.Private.run_outside_async [%here] (fun () -> call_interactively symbol)
-  in
+  let%bind () = Value.Private.run_outside_async (fun () -> call_interactively symbol) in
   [%expect {| 13 |}];
   return ()
 ;;
@@ -91,9 +89,7 @@ let%expect_test "[defun ~interactive:(Form _)]" =
      print_s [%sexp (arg : Symbol.t)]);
   Symbol.funcall1_i symbol (Value.intern "non-interactive");
   [%expect {| non-interactive |}];
-  let%bind () =
-    Value.Private.run_outside_async [%here] (fun () -> call_interactively symbol)
-  in
+  let%bind () = Value.Private.run_outside_async (fun () -> call_interactively symbol) in
   [%expect {| interactive |}];
   return ()
 ;;
@@ -119,7 +115,7 @@ let%expect_test "[defun] tuple ordering" =
   print_endline (Help.describe_function_text ~obscure_symbol:true symbol);
   [%expect
     {|
-    <SYMBOL> is a Lisp function.
+    <SYMBOL> is a interpreted-function.
 
     (<SYMBOL> MINUEND SUBTRAHEND)
 
@@ -254,7 +250,7 @@ let%expect_test "[lambda]" =
 
 let%expect_test "[defalias]" =
   let f = "f" |> Symbol.intern in
-  defalias f [%here] ~alias_of:("+" |> Value.intern) ();
+  defalias f ~alias_of:("+" |> Value.intern) ();
   print_endline (Help.describe_function_text f);
   [%expect
     {|
@@ -265,6 +261,11 @@ let%expect_test "[defalias]" =
     Return sum of any number of arguments, which are numbers or markers.
 
       Probably introduced at or before Emacs version 1.6.
+      This function does not change global state, including the match
+        data.
+      This function has a `byte-compile' property
+        `byte-compile-variadic-numeric' and a byte-code optimizer
+        `byte-optimize-plus'.  See the manual for details.
     |}];
   return ()
 ;;

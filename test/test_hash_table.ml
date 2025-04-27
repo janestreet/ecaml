@@ -9,8 +9,7 @@ let data = "foo-value" |> Value.of_utf8_bytes
 
 let%expect_test "[create]" =
   show (create ());
-  [%expect
-    {| "#s(hash-table size 65 test eql rehash-size 1.5 rehash-threshold 0.8125 data ())" |}];
+  [%expect {| "#s(hash-table)" |}];
   return ()
 ;;
 

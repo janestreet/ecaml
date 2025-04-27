@@ -10,7 +10,14 @@ type t [@@deriving sexp_of]
 include Valueable.S with type t := t
 
 (** [(describe-function 'make-overlay)] *)
-val create : ?buffer:Buffer.t -> unit -> start:Position.t -> end_:Position.t -> t
+val create
+  :  ?buffer:Buffer.t
+  -> ?front_advance:bool
+  -> ?rear_advance:bool
+  -> unit
+  -> start:Position.t
+  -> end_:Position.t
+  -> t
 
 (** [(describe-function 'overlay-buffer)] *)
 val buffer : t -> Buffer.t
@@ -33,15 +40,14 @@ val get_property : t -> 'a Text.Property_name.t -> 'a
 (** [(describe-function 'overlay-put)] *)
 val put_property : t -> 'a Text.Property_name.t -> 'a -> unit
 
-(** Delete the property from the overlay.  This actually sets the property to nil, because
+(** Delete the property from the overlay. This actually sets the property to nil, because
     Emacs doesn't expose a way to actually remove the property from the list. *)
 val delete_property : t -> Symbol.t -> unit
 
 (** [(describe-function 'overlays-at)] *)
 val at : Position.t -> t list
 
-(** [(describe-function 'remove-overlays)].
-    [(Info-goto-node "(elisp)Managing Overlays")] *)
+(** [(describe-function 'remove-overlays)]. [(Info-goto-node "(elisp)Managing Overlays")] *)
 val remove_overlays
   :  ?start:Position.t
   -> ?end_:Position.t

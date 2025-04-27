@@ -265,9 +265,7 @@ end
 
 module Block_on_async = struct
   type t =
-    { f :
-        'a.
-        Source_code_position.t -> ?context:Sexp.t Lazy.t -> (unit -> 'a Deferred.t) -> 'a
+    { f : 'a. here:[%call_pos] -> ?context:Sexp.t Lazy.t -> (unit -> 'a Deferred.t) -> 'a
     }
 
   let set_once : t Set_once.t = Set_once.create ()
@@ -276,7 +274,7 @@ end
 module Enqueue_foreground_block_on_async = struct
   type t =
     { f :
-        Source_code_position.t
+        here:[%call_pos]
         -> ?context:Sexp.t Lazy.t
         -> ?raise_exceptions_to_monitor:Monitor.t
         -> (unit -> unit Deferred.t)
@@ -290,10 +288,7 @@ module Run_outside_async = struct
   type t =
     { f :
         'a.
-        Source_code_position.t
-        -> ?allowed_in_background:bool
-        -> (unit -> 'a)
-        -> 'a Deferred.t
+        here:[%call_pos] -> ?allowed_in_background:bool -> (unit -> 'a) -> 'a Deferred.t
     }
 
   let set_once : t Set_once.t = Set_once.create ()
@@ -578,8 +573,7 @@ let vector arr = funcallN_array Q.vector arr
 let non_local_exit_signal exn =
   let module M = struct
     (** [non_local_exit_signal] sets a [pending_error] flag in the Emacs environment that
-        causes it to, after our C code returns to it, signal instead of returning a
-        value. *)
+        causes it to, after our C code returns to it, signal instead of returning a value. *)
     external non_local_exit_signal : t -> t -> unit = "ecaml_non_local_exit_signal"
 
     (** [non_local_exit_throw] works like [non_local_exit_signal], except that it throws
@@ -800,6 +794,18 @@ module Type = struct
       (to_list_exn ~f:(fun cons_cell ->
          of_value_exn t1 (car_exn cons_cell), of_value_exn t2 (cdr_exn cons_cell)))
       (fun l -> list (List.map l ~f:(fun (a, b) -> cons (to_value t1 a) (to_value t2 b))))
+  ;;
+
+  let list_or_singleton t =
+    create
+      [%message "list_or_singleton" ~_:(name t : Sexp.t)]
+      (sexp_of_list (to_sexp t))
+      (fun v ->
+        try to_list_exn ~f:(of_value_exn t) v with
+        | _ -> of_value_exn t v |> List.singleton)
+      (function
+        | [ elem ] -> to_value t elem
+        | l -> list (List.map l ~f:(to_value t)))
   ;;
 
   let list t =
@@ -1047,20 +1053,25 @@ module Private = struct
   module Enqueue_foreground_block_on_async = Enqueue_foreground_block_on_async
   module Run_outside_async = Run_outside_async
 
-  let block_on_async here ?context f =
-    (Set_once.get_exn Block_on_async.set_once here).f here ?context f
+  let block_on_async ~(here : [%call_pos]) ?context f =
+    (Set_once.get_exn Block_on_async.set_once ~here).f ~here ?context f
   ;;
 
-  let enqueue_foreground_block_on_async here ?context ?raise_exceptions_to_monitor f =
-    (Set_once.get_exn Enqueue_foreground_block_on_async.set_once here).f
-      here
+  let enqueue_foreground_block_on_async
+    ~(here : [%call_pos])
+    ?context
+    ?raise_exceptions_to_monitor
+    f
+    =
+    (Set_once.get_exn Enqueue_foreground_block_on_async.set_once ~here).f
+      ~here
       ?context
       ?raise_exceptions_to_monitor
       f
   ;;
 
-  let run_outside_async here ?allowed_in_background f =
-    (Set_once.get_exn Run_outside_async.set_once here).f here ?allowed_in_background f
+  let run_outside_async ~(here : [%call_pos]) ?allowed_in_background f =
+    (Set_once.get_exn Run_outside_async.set_once ~here).f ~here ?allowed_in_background f
   ;;
 
   let ecaml_profile_print_length = ecaml_profile_print_length

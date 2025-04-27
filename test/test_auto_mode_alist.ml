@@ -22,6 +22,8 @@ let%expect_test "[add]" =
 ;;
 
 let%expect_test "[auto_mode_alist]" =
+  (* Prevent [Expect_test_config.sanitize] from replace /tmp with TMPDIR. *)
+  Core_unix.putenv ~key:"TMPDIR" ~data:"/nonexistent";
   print_s [%sexp (Current_buffer.value_exn auto_mode_alist : t)];
   [%expect
     {|
@@ -53,11 +55,14 @@ let%expect_test "[auto_mode_alist]" =
       (function_               vera-mode)
       (delete_suffix_and_recur false))
      ((filename_match
-       "\\(?:\\.\\(?:rbw?\\|ru\\|rake\\|thor\\|jbuilder\\|rabl\\|gemspec\\|podspec\\)\\|/\\(?:Gem\\|Rake\\|Cap\\|Thor\\|Puppet\\|Berks\\|Brew\\|Vagrant\\|Guard\\|Pod\\)file\\)\\'")
+       "\\(?:\\.\\(?:rbw?\\|ru\\|rake\\|thor\\|axlsx\\|jbuilder\\|rabl\\|gemspec\\|podspec\\)\\|/\\(?:Gem\\|Rake\\|Cap\\|Thor\\|Puppet\\|Berks\\|Brew\\|Fast\\|Vagrant\\|Guard\\|Pod\\)file\\)\\'")
       (function_               ruby-mode)
       (delete_suffix_and_recur false))
      ((filename_match          "\\.re?st\\'")
       (function_               rst-mode)
+      (delete_suffix_and_recur false))
+     ((filename_match "/\\(?:Pipfile\\|\\.?flake8\\)\\'")
+      (function_      conf-mode)
       (delete_suffix_and_recur false))
      ((filename_match          "\\.py[iw]?\\'")
       (function_               python-mode)
@@ -67,6 +72,9 @@ let%expect_test "[auto_mode_alist]" =
       (delete_suffix_and_recur false))
      ((filename_match          "\\.less\\'")
       (function_               less-css-mode)
+      (delete_suffix_and_recur false))
+     ((filename_match          "\\.editorconfig\\'")
+      (function_               editorconfig-conf-mode)
       (delete_suffix_and_recur false))
      ((filename_match          "\\.scss\\'")
       (function_               scss-mode)
@@ -197,7 +205,8 @@ let%expect_test "[auto_mode_alist]" =
      ((filename_match          "Project\\.ede\\'")
       (function_               emacs-lisp-mode)
       (delete_suffix_and_recur false))
-     ((filename_match "\\.\\(scm\\|sls\\|sld\\|stk\\|ss\\|sch\\)\\'")
+     ((filename_match
+       "\\(?:\\.\\(?:scm\\|sls\\|sld\\|stk\\|ss\\|sch\\)\\|/\\.guile\\)\\'")
       (function_               scheme-mode)
       (delete_suffix_and_recur false))
      ((filename_match          "\\.l\\'")
@@ -538,7 +547,7 @@ let%expect_test "[auto_mode_alist]" =
      ((filename_match "/config\\.\\(?:bat\\|log\\)\\'")
       (function_      fundamental-mode)
       (delete_suffix_and_recur false))
-     ((filename_match "/\\.\\(authinfo\\|netrc\\)\\'")
+     ((filename_match "/\\.?\\(authinfo\\|netrc\\)\\'")
       (function_      authinfo-mode)
       (delete_suffix_and_recur false))
      ((filename_match

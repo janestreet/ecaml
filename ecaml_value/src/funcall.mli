@@ -1,11 +1,11 @@
-(** A typeful interface for calling Elisp, as [external] does for C.  *)
+(** A typeful interface for calling Elisp, as [external] does for C. *)
 
 open! Core
 open! Import
 
 type 'a t
 
-(** [Wrap] wraps an Elisp function as an OCaml function.  Idiomatic use looks like:
+(** [Wrap] wraps an Elisp function as an OCaml function. Idiomatic use looks like:
 
     {[
       let not = Funcall.Wrap.("not" <: bool @-> return bool)

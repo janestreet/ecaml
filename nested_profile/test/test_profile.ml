@@ -6,7 +6,7 @@ open! Nested_profile.Profile.Private
 open! Expect_test_helpers_core
 open! Expect_test_helpers_async
 
-let () = Backtrace.elide := true
+let () = Dynamic.set_root Backtrace.elide true
 let () = Profile.should_profile := true
 let sec = Time_ns.Span.of_sec
 

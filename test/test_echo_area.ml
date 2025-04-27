@@ -97,7 +97,7 @@ let%expect_test "[inhibit_messages]" =
 
 let%expect_test "[inhibit_messages] in background job" =
   Deferred.create (fun ivar ->
-    Background.don't_wait_for [%here] (fun () ->
+    Background.don't_wait_for (fun () ->
       inhibit_messages Sync (fun () -> message "hello");
       [%expect {| |}];
       show ();

@@ -56,12 +56,8 @@ let beginning =
 ;;
 
 let find_start_of_single_line_comment_at_point () =
-  let eol =
-    Point.end_of_line ();
-    Point.get ()
-  in
-  Point.beginning_of_line ();
-  Point.search_forward_regexp ~bound:eol (Current_buffer.value_exn Vars.start_regexp)
+  Point.end_of_line ();
+  Option.is_some (beginning ())
 ;;
 
 let am_in_single_line_comment () =

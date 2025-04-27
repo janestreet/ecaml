@@ -41,8 +41,8 @@ module Tree : sig
 
   include Valueable.S with type t := t
 
-  (** [parent_exn t window] returns the [Combination] node that is the parent of [Window
-      window] in [t]. If [t = Window window], it returns [t]. Raises if [window] is not in
-      [t]. *)
+  (** [parent_exn t window] returns the [Combination] node that is the parent of
+      [Window window] in [t]. If [t = Window window], it returns [t]. Raises if [window]
+      is not in [t]. *)
   val parent_exn : t -> window -> t
 end

@@ -1,32 +1,33 @@
-(** Wrapper for [cl-defstruct].  See [(Info-goto-node "(cl) Structures")].
+(** Wrapper for [cl-defstruct]. See [(Info-goto-node "(cl) Structures")].
 
     This module's interface is geared towards constructing structured Lisp values from
-    closely-corresponding OCaml values.  In particular, all fields of a need to decide
+    closely-corresponding OCaml values. In particular, all fields of a need to decide
     ahead-of-time how to extract the Lisp value for a given slot from some OCaml value.
 
     For example,
 
     {[
-      type person = { name : string; age : int }
+      type person =
+        { name : string
+        ; age : int
+        }
 
       let person_struct =
         defstruct
           ~name:"person"
           ~doc:"A person with a name and age."
-          Field.(
-            [ field "name" (fun x -> x.name) string
-            ; field "age"  (fun x -> x.age)  int
-            ])
+          Field.
+            [ field "name" (fun x -> x.name) string; field "age" (fun x -> x.age) int ]
       ;;
     ]}
 
     For now, this module only supports defining such types and constructing instances
-    thereof.  It does not yet support extracting values from structure slots. *)
+    thereof. It does not yet support extracting values from structure slots. *)
 
 open! Core
 open! Import
 
-(** Idiomatic usage of this module is to locally open it around a list of fields.  See the
+(** Idiomatic usage of this module is to locally open it around a list of fields. See the
     module documentation of [Defstruct] for an example. *)
 module Field : sig
   type 'a t
@@ -50,7 +51,7 @@ type 'a t
 
     If [defined_by_feature] is passed, we won't actually call cl-defstruct; instead, when
     [Defstruct.make] is called we will automatically require that feature, which should
-    define a compatible struct.  If the field names don't match up exactly,
+    define a compatible struct. If the field names don't match up exactly,
     [Defstruct.make] will error. *)
 val defstruct
   :  here:[%call_pos]

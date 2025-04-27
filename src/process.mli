@@ -1,12 +1,12 @@
 (** [Process] is used to create "subprocesses" or "child processes" of the Emacs process,
-    which is their "parent process".  A subprocess of Emacs may be "synchronous" or
-    "asynchronous", depending on how it is created.  When you create a synchronous
+    which is their "parent process". A subprocess of Emacs may be "synchronous" or
+    "asynchronous", depending on how it is created. When you create a synchronous
     subprocess, the program waits for the subprocess to terminate before continuing
-    execution.  When you create an asynchronous subprocess, it can run in parallel with
-    Emacs.  This kind of subprocess is represented within Emacs by a [Process.t].
-    Programs can use this object to communicate with the subprocess or to control it.  For
-    example, you can send signals, obtain status information, receive output from the
-    process, or send input to it.
+    execution. When you create an asynchronous subprocess, it can run in parallel with
+    Emacs. This kind of subprocess is represented within Emacs by a [Process.t]. Programs
+    can use this object to communicate with the subprocess or to control it. For example,
+    you can send signals, obtain status information, receive output from the process, or
+    send input to it.
 
     [(Info-goto-node "(elisp)Processes")]. *)
 
@@ -75,7 +75,7 @@ module Exited : sig
   val successfully : t -> bool
 end
 
-val exited : t -> Exited.t Deferred.t
+val exited : here:[%call_pos] -> t -> Exited.t Deferred.t
 
 (** [(describe-function 'process-live-p)] *)
 val is_alive : t -> bool
@@ -84,7 +84,9 @@ val is_alive : t -> bool
 val mark : t -> Marker.t
 
 (** [set_query_on_exit t] specifies whether Emacs should query the user about killing [t]
-    when it exits.  [(describe-function 'set-process-query-on-exit-flag)]. *)
+    when it exits.
+
+    [(describe-function 'set-process-query-on-exit-flag)] *)
 val set_query_on_exit : t -> bool -> unit
 
 (** [(describe-function 'process-list)] *)
@@ -96,8 +98,8 @@ val get_property : t -> Symbol.t -> Value.t option
 (** [(describe-function 'process-put)] *)
 val set_property : t -> Symbol.t -> Value.t -> unit
 
-(** [(Info-goto-node "(elisp)Asynchronous Processes")]
-    [(describe-function 'make-process)] *)
+(** - [(Info-goto-node "(elisp)Asynchronous Processes")]
+    - [(describe-function 'make-process)] *)
 val create
   :  ?buffer:Buffer.t
   -> ?coding:Symbol.t
@@ -109,8 +111,8 @@ val create
   -> unit
   -> t
 
-(** [(describe-function 'get-process)]
-    [(Info-goto-node "(elisp)Process Information")] *)
+(** - [(describe-function 'get-process)]
+    - [(Info-goto-node "(elisp)Process Information")] *)
 val find_by_name : string -> t option
 
 module Call : sig
@@ -169,8 +171,8 @@ module Call : sig
   end
 end
 
-(** [(Info-goto-node "(elisp)Synchronous Processes")]
-    [(describe-function 'call-process)] *)
+(** - [(Info-goto-node "(elisp)Synchronous Processes")]
+    - [(describe-function 'call-process)] *)
 val call_result_exn
   :  ?input:Call.Input.t (** default is [Dev_null] *)
   -> ?output:Call.Output.t (** default is [Dev_null] *)
@@ -180,8 +182,8 @@ val call_result_exn
   -> string list
   -> Call.Result.t
 
-(** [(Info-goto-node "(elisp)Synchronous Processes")]
-    [(describe-function 'call-process-region)] *)
+(** - [(Info-goto-node "(elisp)Synchronous Processes")]
+    - [(describe-function 'call-process-region)] *)
 val call_region_exn
   :  ?input:Call.Region_input.t
        (** default is [Region { start = Point.min (); end_ = Point.max ()}] *)
@@ -193,8 +195,8 @@ val call_region_exn
   -> Call.Result.t
 
 (** [call_exn] runs [call_result_exn], strips whitespace from stdout+stderr if
-    [strip_whitespace] is [true], and returns the resulting string, raising on
-    nonzero exit. *)
+    [strip_whitespace] is [true], and returns the resulting string, raising on nonzero
+    exit. *)
 val call_exn
   :  ?input:Call.Input.t (** default is [Dev_null] *)
   -> ?working_directory:Working_directory.t (** default is [Root] *)
@@ -241,37 +243,43 @@ val shell_command_expect_no_output_exn
   -> string
   -> unit
 
-(** [(Info-goto-node "(elisp)Network Servers")]
-    [(describe-function 'make-network-process)]
+(** - [(Info-goto-node "(elisp)Network Servers")]
+    - [(describe-function 'make-network-process)]
 
     The [t] returned by [create_unix_network_process] represents listening on the socket.
     The [t] passed to [filter] represents a specific connection accepted on the socket. *)
 val create_unix_network_process
-  :  unit
+  :  ?coding:[ `Decoding of Coding_system.t ] * [ `Encoding of Coding_system.t ]
+  -> here:[%call_pos]
+  -> unit
   -> filter:(t -> Text.t -> unit)
   -> name:string
   -> socket_path:string
   -> t
 
-(** [(Info-goto-node "(elisp)Deleting Processes")]
-    [(describe-function 'delete-process)]. *)
+(** - [(Info-goto-node "(elisp)Deleting Processes")]
+    - [(describe-function 'delete-process)] *)
+val delete : t -> unit
+
+(** [(describe-function 'kill-process)] *)
 val kill : t -> unit
 
 (** [(Info-goto-node "(elisp)Sentinels")]
 
-    Register [sentinel] as a process sentinel for the specified process.
-    [sentinel] runs after any other processes sentinels set for that process. *)
+    Register [sentinel] as a process sentinel for the specified process. [sentinel] runs
+    after any other processes sentinels set for that process. *)
 val extend_sentinel
-  :  Source_code_position.t
+  :  here:[%call_pos]
   -> t
   -> (unit, 'a) Defun.Returns.t
   -> sentinel:(event:string -> 'a)
   -> unit
 
 (** Prefer [extend_sentinel], which doesn't clobber existing sentinels.
+
     [(describe-function 'set-process-sentinel)] *)
 val set_sentinel
-  :  Source_code_position.t
+  :  here:[%call_pos]
   -> t
   -> (unit, 'a) Defun.Returns.t
   -> sentinel:(event:string -> 'a)

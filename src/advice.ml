@@ -14,7 +14,7 @@ let of_function symbol = symbol
 
 let defun_internal
   advice_name
-  here
+  ~here
   ~docstring
   ?interactive
   ?should_profile
@@ -38,7 +38,7 @@ let defun_internal
 
 let defun_around_values
   advice_name
-  here
+  ~(here : [%call_pos])
   sync_or_async
   ~docstring
   ?interactive
@@ -47,7 +47,7 @@ let defun_around_values
   =
   defun_internal
     advice_name
-    here
+    ~here
     ~docstring
     ?interactive
     ?should_profile
@@ -64,7 +64,7 @@ end
 
 let defun_around_funcall
   advice_name
-  here
+  ~(here : [%call_pos])
   ~docstring
   ?interactive
   ?(on_parse_error = On_parse_error.Allow_raise)
@@ -74,7 +74,7 @@ let defun_around_funcall
   =
   defun_internal
     advice_name
-    here
+    ~here
     ~docstring
     ?interactive
     ?should_profile

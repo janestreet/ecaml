@@ -8,8 +8,7 @@ open! Core
 open! Import
 include Major_mode.S_with_lazy_keymap
 
-(** [(describe-function 'grep)]
-    [(Info-goto-node "(emacs)Grep Searching")] *)
+(** [(describe-function 'grep)] [(Info-goto-node "(emacs)Grep Searching")] *)
 val grep : command:string -> unit
 
 module Save_buffers : sig

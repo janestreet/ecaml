@@ -6,7 +6,6 @@ open! Buffer_local
 let int =
   defvar
     ("some-int" |> Symbol.intern)
-    [%here]
     ~type_:Value.Type.(option int)
     ~default_value:None
     ()
@@ -81,7 +80,6 @@ let%expect_test "[get] with value represented as [nil]" =
   let bool =
     defvar
       ("some-bool" |> Symbol.intern)
-      [%here]
       ~type_:Value.Type.(option bool)
       ~default_value:None
       ()
@@ -101,7 +99,6 @@ let%expect_test "[defvar_embedded]" =
   let t =
     defvar_embedded
       ("x" |> Symbol.intern)
-      [%here]
       (module struct
         type t = int ref [@@deriving sexp_of]
       end)
@@ -123,7 +120,6 @@ let%expect_test "[defvar ~wrapped:false]" =
   let t =
     defvar
       ("unwrapped" |> Symbol.intern)
-      [%here]
       ~type_:Value.Type.(nil_or int)
       ~default_value:None
       ()
@@ -139,12 +135,7 @@ let%expect_test "[defvar ~wrapped:false]" =
 
 let%expect_test "non-nil default value" =
   let t =
-    defvar
-      ("non-nil-default" |> Symbol.intern)
-      [%here]
-      ~type_:Value.Type.int
-      ~default_value:13
-      ()
+    defvar ("non-nil-default" |> Symbol.intern) ~type_:Value.Type.int ~default_value:13 ()
   in
   let show () = print_s [%sexp (Current_buffer.get_buffer_local t : int)] in
   show ();

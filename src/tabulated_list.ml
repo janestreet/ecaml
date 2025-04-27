@@ -356,7 +356,7 @@ let draw ?sort_by t rows =
   tabulated_list_print true false
 ;;
 
-module Tabulated_list_mode = (val Major_mode.wrap_existing "tabulated-list-mode" [%here])
+module Tabulated_list_mode = (val Major_mode.wrap_existing "tabulated-list-mode")
 
 let create major_mode (type a) (column_specs : a Column.t list) ~get_id =
   if not (Major_mode.is_derived major_mode ~from:Tabulated_list_mode.major_mode)
@@ -379,9 +379,7 @@ let create major_mode (type a) (column_specs : a Column.t list) ~get_id =
       ~name:[%message "tabulated-list-entries" ~_:(type_ : _ Value.Type.t)]
       ~of_:(fun (id, _) ->
         Text.property_value id original_record ~at:0
-        |> Option.value_exn
-             ~here:[%here]
-             ~message:"Tabulated list entry ID missing original record")
+        |> Option.value_exn ~message:"Tabulated list entry ID missing original record")
       ~to_:(fun record ->
         let id = get_id record in
         (* If the ID were empty, the text property would not be applied to any
@@ -423,13 +421,6 @@ let move_point_to_record t ~f =
        | true -> ())
   in
   loop ()
-;;
-
-let current_buffer_has_entries () =
-  not
-    (Value.is_nil
-       (Current_buffer.get_buffer_local
-          Buffer_local.Wrap.("tabulated-list-entries" <: value)))
 ;;
 
 let revert_hook = Hook.Wrap.("tabulated-list-revert-hook" <: Normal_hook)

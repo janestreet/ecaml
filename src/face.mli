@@ -1,11 +1,11 @@
 (** A "face" is a collection of graphical attributes for displaying text: font family,
-    foreground color, background color, optional underlining, and so on.  Faces control
-    how buffer text is displayed, and how some parts of the frame, such as the mode-line,
-    are displayed.
+    foreground color, background color, optional underlining, and so on. Faces control how
+    buffer text is displayed, and how some parts of the frame, such as the mode-line, are
+    displayed.
 
-    For most purposes, you refer to a face in Lisp programs using its "face name".  Each
+    For most purposes, you refer to a face in Lisp programs using its "face name". Each
     face name is meaningful for all frames, and by default it has the same meaning in all
-    frames.  But you can arrange to give a particular face name a special meaning in one
+    frames. But you can arrange to give a particular face name a special meaning in one
     frame if you wish.
 
     [(Info-goto-node "(elisp)Faces")] *)
@@ -53,8 +53,8 @@ module Font_family : sig
 end
 
 (** The name of the "font foundry" in which the font family attribute is located; the
-    wild-card characters `*' and `?' are allowed.  [(Info-goto-node "(elisp)Face
-    Attributes")] *)
+    wild-card characters `*' and `?' are allowed.
+    [(Info-goto-node "(elisp)Face Attributes")] *)
 module Font_foundry : sig
   type t =
     | Name of string
@@ -213,9 +213,9 @@ module Attribute : sig
   end
 
   (** A relative value is one that doesn’t entirely override whatever is inherited from
-      another face.  For most attributes, the only relative value is [Unspecified].
-      [Height.Scale_underlying_face] values are also relative.  [(describe-function
-      'face-attribute-relative-p)]. *)
+      another face. For most attributes, the only relative value is [Unspecified].
+      [Height.Scale_underlying_face] values are also relative.
+      [(describe-function 'face-attribute-relative-p)]. *)
   val is_relative : 'a t -> 'a -> bool
 
   (** [(describe-function 'merge-face-attribute)] *)

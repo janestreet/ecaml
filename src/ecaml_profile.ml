@@ -104,7 +104,7 @@ end = struct
   let initialize_profile_buffer () =
     profile_buffer := Initializing;
     let buffer = Buffer.create ~name:"*profile*" in
-    Background.don't_wait_for [%here] (fun () ->
+    Background.don't_wait_for (fun () ->
       let%bind () = Major_mode.change_to major_mode ~in_:buffer in
       Buffer_local.set Current_buffer.truncate_lines true buffer;
       profile_buffer := This buffer;
@@ -137,13 +137,6 @@ frame.  The output is added to the profile frame. |}
     ~type_:(Value.Type.nil_or Function.type_)
     ~initial_value:None
     ()
-;;
-
-(* Store as strings because we only need them as strings for completion anyway. *)
-let profiled_elisp_functions = Hash_set.create (module String)
-
-let elisp_function_wrapper_name fn =
-  "ecaml-profile-wrapper-for-" ^ Symbol.name fn |> Symbol.intern
 ;;
 
 let () =
@@ -300,81 +293,26 @@ Called by `post-gc-hook' to add Elisp GC information to the Ecaml profiler.
     ~interactive:No_arg
     (fun () -> set_should_profile false);
   Defun.defun
-    ("ecaml-profile-inner" |> Symbol.intern)
+    ("ecaml-profile--inner" |> Symbol.intern)
     [%here]
-    ~docstring:"profile an elisp function using Nested_profile"
+    ~docstring:
+      {|
+Call FUNCTION with ARGS inside a call to [Nested_profile.profile].
+
+FUNCTION-NAME should be the name of the function, to be used when rendering the profile.
+This is passed separately because advice combinators receive the function definition and
+not its name as input.
+|}
     ~should_profile:false
     (Returns Value.Type.value)
     (let%map_open.Defun () = return ()
-     and description = required "description" string
-     and f = required "function" value in
-     profile Sync [%lazy_message description] (fun () -> Value.funcall0 f));
-  Defun.defun
-    ("ecaml-profile-elisp-function" |> Symbol.intern)
-    [%here]
-    ~docstring:"Wrap the given function in a call to [Nested_profile.profile]."
-    ~interactive:
-      (let history =
-         Minibuffer.History.find_or_create
-           ("ecaml-profile-elisp-function-history" |> Symbol.intern)
-           [%here]
-       in
-       Args
-         (fun () ->
-           let%bind function_name =
-             Completing.read_function_name ~prompt:"Profile function: " ~history
-           in
-           return [ function_name |> Value.intern ]))
-    (Returns Value.Type.unit)
-    (let%map_open.Defun () = return ()
-     and fn = required "function" Symbol.t in
-     Advice.add
-       ~to_function:fn
-       (Advice.defun_around_values
-          (elisp_function_wrapper_name fn)
-          [%here]
-          ~docstring:
-            {|
-Internal to the Ecaml profiler.
-
-Tell the Ecaml profiler about calls to an Elisp function.
-|}
-          ~should_profile:false
-          Sync
-          (fun f args ->
-             profile
-               Sync
-               [%lazy_sexp ((fn |> Symbol.to_value) :: args : Value.t list)]
-               (fun () -> f args)));
-     Hash_set.add profiled_elisp_functions (Symbol.name fn);
-     message [%string "You just added Ecaml profiling of [%{Symbol.name fn}]"]);
-  Defun.defun
-    ("ecaml-unprofile-elisp-function" |> Symbol.intern)
-    [%here]
-    ~docstring:"Remove the profiling wrapper from the given function."
-    ~interactive:
-      (let history =
-         Minibuffer.History.find_or_create
-           ("ecaml-unprofile-elisp-function-history" |> Symbol.intern)
-           [%here]
-       in
-       Args
-         (fun () ->
-           let%bind function_name =
-             Completing.read
-               ()
-               ~prompt:"Unprofile function: "
-               ~history
-               ~collection:(Hash_set.to_list profiled_elisp_functions)
-               ~require_match:Require_match_or_complete_or_null
-           in
-           return [ function_name |> Value.intern ]))
-    (Returns Value.Type.unit)
-    (let%map_open.Defun () = return ()
-     and fn = required "function" Symbol.t in
-     Advice.remove (Advice.of_function (elisp_function_wrapper_name fn)) ~from_function:fn;
-     Hash_set.remove profiled_elisp_functions (Symbol.name fn);
-     message [%string "You just removed Ecaml profiling of [%{Symbol.name fn}]"]);
+     and function_name = required "function-name" Symbol.t
+     and f = required "function" value
+     and args = rest "args" value in
+     profile
+       Sync
+       [%lazy_sexp (Symbol.to_value function_name :: args : Value.t list)]
+       (fun () -> Value.funcallN ~should_profile:false f args));
   Defun.defun_nullary
     ("ecaml-profile-test-parallel-profile" |> Symbol.intern)
     [%here]
@@ -389,10 +327,10 @@ Test how the Ecaml profiler handles two Async jobs running in parallel.
        profile Async [%lazy_sexp "The whole thing"] (fun () ->
          let%bind () =
            profile Async [%lazy_sexp "branch1"] (fun () ->
-             Async.Clock.after (Time_float.Span.of_sec 1.))
+             Clock_ns.after (Time_ns.Span.of_sec 1.))
          and () =
            profile Async [%lazy_sexp "branch2"] (fun () ->
-             Async.Clock.after (Time_float.Span.of_sec 0.8))
+             Clock_ns.after (Time_ns.Span.of_sec 0.8))
          in
          return ()))
 ;;

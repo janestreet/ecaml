@@ -44,7 +44,12 @@ module Raw_prefix_argument = struct
   ;;
 
   let t = type_
-  let for_current_command = Var.Wrap.("current-prefix-arg" <: t)
+
+  let for_current_command =
+    let current_prefix_arg = Var.Wrap.("current-prefix-arg" <: t) in
+    fun () -> Current_buffer.value_exn current_prefix_arg
+  ;;
+
   let numeric_value = Funcall.Wrap.("prefix-numeric-value" <: t @-> return int)
 end
 

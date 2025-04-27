@@ -1,6 +1,10 @@
 open! Core
 open! Import
 
+module Q = struct
+  let propertize = ":propertize" |> Symbol.intern
+end
+
 module Format = struct
   include Value.Make_subtype (struct
       let name = "mode-line-format"
@@ -18,6 +22,18 @@ module Format = struct
       let quoted = String.Search_pattern.replace_all pattern ~in_:string ~with_:"%%" in
       Value.of_utf8_bytes quoted |> of_value_exn
   ;;
+
+  let propertize t properties =
+    Value.list
+      ([ Q.propertize |> Symbol.to_value; to_value t ]
+       @ Text.Property.to_property_list properties)
+    |> of_value_exn
+  ;;
 end
+
+let force_update =
+  let f = Funcall.Wrap.("force-mode-line-update" <: bool @-> return ignored) in
+  fun ?(all = false) () -> f all
+;;
 
 let text = Funcall.Wrap.("format-mode-line" <: Format.t @-> return Text.t)

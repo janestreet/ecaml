@@ -1,5 +1,5 @@
-(** For jumping from an Elisp function name to the code that defines it, even when
-    that code is Ecaml. *)
+(** For jumping from an Elisp function name to the code that defines it, even when that
+    code is Ecaml. *)
 
 open! Core
 open! Async_kernel

@@ -8,6 +8,6 @@ let%expect_test "[iter], [standard]" =
   iter standard ~f:(fun s -> all := Symbol.name s :: !all);
   (* We ignore the last three digits of the length to reduce noise. *)
   print_s [%sexp (List.length !all / 1000 * 1000 : int)];
-  [%expect {| 18_000 |}];
+  [%expect {| 19_000 |}];
   return ()
 ;;

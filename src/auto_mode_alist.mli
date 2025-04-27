@@ -1,5 +1,4 @@
-(** [(describe-variable 'auto-mode-alist)]
-    [(Info-goto-node "(elisp)Auto Major Mode")] *)
+(** [(describe-variable 'auto-mode-alist)] [(Info-goto-node "(elisp)Auto Major Mode")] *)
 
 open! Core
 open! Import

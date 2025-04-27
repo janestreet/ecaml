@@ -28,6 +28,7 @@ module Defstruct = Defstruct
 module Defun = Defun
 module Defvar = Defvar
 module Directory = Directory
+module Dired = Dired
 module Display = Display
 module Display_property = Display_property
 module Documentation = Documentation
@@ -146,7 +147,7 @@ let () =
   then
     let module Unix = Core_unix in
     let should_reopen_stdin = ref true in
-    Background.Clock.every [%here] Time_float.Span.second (fun () ->
+    Background.Clock.every Time_ns.Span.second (fun () ->
       match Unix.fstat Unix.stdin with
       | _ -> ()
       | exception _ ->
@@ -210,7 +211,6 @@ Test [Process.set_sentinel] on a sentinel that raises.
     ~interactive:No_arg
     (fun () ->
        Ecaml_process.Process.set_sentinel
-         [%here]
          (Ecaml_process.Process.create "true" [] ~name:"true" ())
          (Returns Value.Type.unit)
          ~sentinel:(fun ~event:_ -> failwith "some error message"));
@@ -278,11 +278,11 @@ Test [Minibuffer.read_from].
            ?history_pos
            ?initial_contents
            ()
-           ~prompt
+           ~prompt_no_colon
            =
            let%bind result =
-             Minibuffer.read_from
-               ~prompt:[%string "%{prompt}: "]
+             Minibuffer.read_string
+               ~prompt_no_colon
                ?initial_contents
                ?default_value
                ~history
@@ -292,21 +292,25 @@ Test [Minibuffer.read_from].
            message [%string "result: %{result}"];
            return ()
          in
-         let%bind () = test () ~prompt:"test 1" in
-         let%bind () = test () ~prompt:"test 2" ~default_value:"some-default" in
+         let%bind () = test () ~prompt_no_colon:"test 1" in
+         let%bind () = test () ~prompt_no_colon:"test 2" ~default_value:"some-default" in
          let%bind () =
-           test () ~prompt:"test 3" ~initial_contents:(Point_at_end "some-contents")
+           test
+             ()
+             ~prompt_no_colon:"test 3"
+             ~initial_contents:(Point_at_end "some-contents")
          in
          let%bind () =
-           test () ~prompt:"test 4" ~initial_contents:(Point_at_pos ("some-contents", 3))
+           test
+             ()
+             ~prompt_no_colon:"test 4"
+             ~initial_contents:(Point_at_pos ("some-contents", 3))
          in
          test
            ()
-           ~prompt:"test 5"
+           ~prompt_no_colon:"test 5"
            ~history:
-             (Minibuffer.History.find_or_create
-                ("some-history-list" |> Symbol.intern)
-                [%here])))
+             (Minibuffer.History.find_or_create ("some-history-list" |> Symbol.intern))))
 ;;
 
 let () =
@@ -347,6 +351,8 @@ let () =
   | None -> ()
 ;;
 
+let kill_emacs = Funcall.Wrap.("kill-emacs" <: int @-> return ignored)
+
 let () =
   defun_nullary_nil
     ("ecaml--ppx-inline-tests-exit" |> Symbol.intern)
@@ -358,7 +364,9 @@ This is an internal function of no use to most people.
 
 If we've initialized Ppx_inline_test_lib, then we should call this
 after loading the test modules, to print the results and exit.|}
-    Ppx_inline_test_lib.exit
+    (fun () ->
+       let exit_code = Ppx_inline_test_lib.evaluate_exit_status () in
+       kill_emacs exit_code)
 ;;
 
 let () =

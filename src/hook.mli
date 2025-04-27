@@ -1,5 +1,5 @@
 (** A hook is a variable where you can store a function or functions to be called on a
-    particular occasion by an existing program.  Emacs provides hooks for the sake of
+    particular occasion by an existing program. Emacs provides hooks for the sake of
     customization.
 
     Hooks installed through Ecaml are wrapped in an exception handler that prints the
@@ -64,8 +64,8 @@ end
 module Function : sig
   type ('a, 'b) t [@@deriving sexp_of]
 
-  (** [create here return_type symbol f] defines an emacs function named [symbol]
-      that runs [f] when called. It returns an ['a t] usable for modifying hooks. *)
+  (** [create here return_type symbol f] defines an emacs function named [symbol] that
+      runs [f] when called. It returns an ['a t] usable for modifying hooks. *)
   val create
     :  Symbol.t
     -> Source_code_position.t
@@ -91,14 +91,14 @@ module Function : sig
     -> ('a, 'b) t
 
   (** [wrap symbol hook_type] wraps an existing function named [symbol] as a hook of
-      [hook_type].  *)
+      [hook_type]. *)
   val wrap : Symbol.t -> hook_type:('a, 'b) Hook_type.t -> ('a, 'b) t
 
   val symbol : _ t -> Symbol.t
 end
 
-(** [(describe-function 'add-hook)]
-    [(Info-goto-node "(elisp)Setting Hooks")]
+(** - [(describe-function 'add-hook)]
+    - [(Info-goto-node "(elisp)Setting Hooks")]
 
     If [one_shot] is [true], the hook will be removed after the first time it runs. *)
 val add
@@ -109,43 +109,43 @@ val add
   -> ('a, 'b) Function.t
   -> unit
 
-(** [(describe-function 'remove-hook)]
-    [(Info-goto-node "(elisp)Setting Hooks")] *)
+(** - [(describe-function 'remove-hook)]
+    - [(Info-goto-node "(elisp)Setting Hooks")] *)
 val remove : ?buffer_local:bool -> ('a, 'b) t -> ('a, 'b) Function.t -> unit
 
 val remove_symbol : ?buffer_local:bool -> ('a, 'b) t -> Symbol.t -> unit
 val clear : _ t -> unit
 
-(** [(describe-function 'run-hooks)]
-    [(Info-goto-node "(elisp)Running Hooks")] *)
+(** - [(describe-function 'run-hooks)]
+    - [(Info-goto-node "(elisp)Running Hooks")] *)
 val run : (normal, unit) t -> unit Deferred.t
 
-(** [(describe-variable 'after-change-functions)]
-    [(Info-goto-node "(elisp)Change Hooks")] *)
+(** - [(describe-variable 'after-change-functions)]
+    - [(Info-goto-node "(elisp)Change Hooks")] *)
 val after_change_functions : (after_change, unit) t
 
-(** [(describe-variable 'after-load-functions)]
-    [(Info-goto-node "(elisp)Hooks for Loading")] *)
+(** - [(describe-variable 'after-load-functions)]
+    - [(Info-goto-node "(elisp)Hooks for Loading")] *)
 val after_load : (file, unit) t
 
-(** [(describe-variable 'after-revert-hook)]
-    [(Info-goto-node "(elisp)Reverting")] *)
+(** - [(describe-variable 'after-revert-hook)]
+    - [(Info-goto-node "(elisp)Reverting")] *)
 val after_revert : (normal, unit) t
 
-(** [(describe-variable 'after-save-hook)]
-    [(Info-goto-node "(elisp)Saving Buffers")] *)
+(** - [(describe-variable 'after-save-hook)]
+    - [(Info-goto-node "(elisp)Saving Buffers")] *)
 val after_save : (normal, unit) t
 
-(** [(describe-variable 'before-change-functions)]
-    [(Info-goto-node "(elisp)Change Hooks")] *)
+(** - [(describe-variable 'before-change-functions)]
+    - [(Info-goto-node "(elisp)Change Hooks")] *)
 val before_change_functions : (before_change, unit) t
 
-(** [(describe-variable 'before-save-hook)]
-    [(Info-goto-node "(elisp)Saving Buffers")] *)
+(** - [(describe-variable 'before-save-hook)]
+    - [(Info-goto-node "(elisp)Saving Buffers")] *)
 val before_save : (normal, unit) t
 
-(** [(describe-variable 'change-major-mode-hook)]
-    [(Info-goto-node "(elisp) Creating Buffer-Local")] *)
+(** - [(describe-variable 'change-major-mode-hook)]
+    - [(Info-goto-node "(elisp) Creating Buffer-Local")] *)
 val change_major_mode : (normal, unit) t
 
 (** [(describe-variable 'emacs-startup-hook)]
@@ -155,31 +155,31 @@ val change_major_mode : (normal, unit) t
     initialized). *)
 val emacs_startup : (normal, unit) t
 
-(** [(describe-variable 'focus-in-hook)]
-    [(Info-goto-node "(elisp)Input Focus")] *)
+(** - [(describe-variable 'focus-in-hook)]
+    - [(Info-goto-node "(elisp)Input Focus")] *)
 val focus_in : (normal, unit) t
 
-(** [(describe-variable 'kill-buffer-hook)]
-    [(Info-goto-node "(elisp)Killing Buffers")] *)
+(** - [(describe-variable 'kill-buffer-hook)]
+    - [(Info-goto-node "(elisp)Killing Buffers")] *)
 val kill_buffer : (normal, unit) t
 
-(** [(describe-variable 'post-command-hook)]
-    [(Info-goto-node "(elisp)Command Overview")] *)
+(** - [(describe-variable 'post-command-hook)]
+    - [(Info-goto-node "(elisp)Command Overview")] *)
 val post_command : (normal, unit) t
 
-(** [(describe-variable 'pre-command-hook)]
-    [(Info-goto-node "(elisp)Command Overview")] *)
+(** - [(describe-variable 'pre-command-hook)]
+    - [(Info-goto-node "(elisp)Command Overview")] *)
 val pre_command : (normal, unit) t
 
 (** [(describe-variable 'server-after-make-frame-hook)] *)
 val server_after_make_frame : (normal, unit) t
 
-(** [(describe-variable 'window-configuration-change-hook)]
-    [(Info-goto-node "(elisp)Window Hooks")] *)
+(** - [(describe-variable 'window-configuration-change-hook)]
+    - [(Info-goto-node "(elisp)Window Hooks")] *)
 val window_configuration_change : (normal, unit) t
 
-(** [(describe-variable 'window-scroll-functions)]
-    [(Info-goto-node "(elisp)Window Hooks")] *)
+(** - [(describe-variable 'window-scroll-functions)]
+    - [(Info-goto-node "(elisp)Window Hooks")] *)
 val window_scroll_functions : (window, unit) t
 
 (** [(Info-goto-node "(elisp)Major Mode Conventions")] *)

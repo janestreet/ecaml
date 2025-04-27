@@ -221,7 +221,7 @@ let run =
   let run_hooks = Funcall.Wrap.("run-hooks" <: Symbol.t @-> return nil) in
   fun t ->
     let symbol = t |> symbol in
-    Value.Private.run_outside_async [%here] (fun () -> run_hooks symbol)
+    Value.Private.run_outside_async (fun () -> run_hooks symbol)
 ;;
 
 let after_change_functions = Wrap.("after-change-functions" <: After_change_hook)

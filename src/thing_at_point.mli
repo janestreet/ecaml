@@ -54,8 +54,7 @@ val end_ : t -> bool
 
 (** Define [symbol] as a "thing" so that [Other symbol] works as the argument to [find],
     etc (but not [forward]). The effect is to define a property of the symbol; so long as
-    that property isn't otherwise used, the symbol can be used for other purposes as well.
-*)
+    that property isn't otherwise used, the symbol can be used for other purposes as well. *)
 val defthing
   :  Symbol.t
   -> Source_code_position.t

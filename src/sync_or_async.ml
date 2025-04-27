@@ -22,7 +22,7 @@ let return (type a b) (t : (a, b) t) (a : a) : b =
 let protect
   (type a b)
   ?(allow_in_background = false)
-  here
+  ~(here : [%call_pos])
   (t : (a, b) t)
   ~(f : unit -> b)
   ~finally
@@ -33,7 +33,7 @@ let protect
   | Async ->
     async_protect
       ~f:(fun () ->
-        if not allow_in_background then Background.assert_foreground here;
+        if not allow_in_background then Background.assert_foreground ~here ();
         f ())
       ~finally
 ;;

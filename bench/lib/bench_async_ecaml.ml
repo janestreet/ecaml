@@ -57,11 +57,11 @@ let benchmark_small_pings () =
   let where_to_connect =
     Tcp.Where_to_connect.of_host_and_port { host = "localhost"; port }
   in
-  let start = Time_float.now () in
+  let start = Time_ns.now () in
   let%bind () = Ping_pong.Client.pings where_to_connect n in
-  let diff = Time_float.diff (Time_float.now ()) start in
+  let diff = Time_ns.diff (Time_ns.now ()) start in
   let%map () = Tcp.Server.close server in
-  [%sexp (Time_float.Span.(diff / Float.of_int n) : Time_float.Span.t)]
+  [%sexp (Time_ns.Span.(diff / Float.of_int n) : Time_ns.Span.t)]
 ;;
 
 module Throughput = struct
@@ -112,11 +112,11 @@ let benchmark_throughput () =
   let where_to_connect =
     Tcp.Where_to_connect.of_host_and_port { host = "localhost"; port }
   in
-  let start = Time_float.now () in
+  let start = Time_ns.now () in
   let%bind () = Throughput.Client.measure where_to_connect n in
-  let diff = Time_float.diff (Time_float.now ()) start in
+  let diff = Time_ns.diff (Time_ns.now ()) start in
   let%map () = Tcp.Server.close server in
-  let seconds = Time_float.Span.to_sec diff in
+  let seconds = Time_ns.Span.to_sec diff in
   let bytes_per_second = Float.iround_nearest_exn (Float.of_int n /. seconds) in
   [%sexp (bytes_per_second : int)]
 ;;

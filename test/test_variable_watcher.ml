@@ -14,7 +14,7 @@ let var =
 ;;
 
 let%expect_test _ =
-  let watcher = add [%here] var ~f:(fun event -> message_s [%sexp (event : Event.t)]) in
+  let watcher = add var ~f:(fun event -> message_s [%sexp (event : Event.t)]) in
   Current_buffer.set_value var 3;
   [%expect
     {|

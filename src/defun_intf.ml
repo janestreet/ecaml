@@ -52,8 +52,8 @@ module type Defun = sig
   end
 
   (** An [Returns.t] states the return type of a function and whether the function returns
-      a value of that type directly or via a [Deferred.t].  An [(a, a) Returns.t] means
-      that the function returns [a] directly.  An [(a, a Deferred.t) Returns.t] means that
+      a value of that type directly or via a [Deferred.t]. An [(a, a) Returns.t] means
+      that the function returns [a] directly. An [(a, a Deferred.t) Returns.t] means that
       the function returns [a] via an [a Deferred.t]. *)
   module Returns : sig
     type (_, _) t =
@@ -73,7 +73,7 @@ module type Defun = sig
     -> ?obsoletes:Obsoletes.t
     -> ?should_profile:bool
     -> ?interactive:Function.Interactive.t
-    -> ?disabled:Symbol.Disabled.t (** See {!Symbol.Property.function_disabled}  *)
+    -> ?disabled:Symbol.Disabled.t (** See {!Symbol.Property.function_disabled} *)
     -> ?evil_config:Evil.Config.t
     -> 'a
 
@@ -81,11 +81,10 @@ module type Defun = sig
   val defun_nullary : ((_, 'a) Returns.t -> (unit -> 'a) -> unit) defun
   val defun_nullary_nil : ((unit -> unit) -> unit) defun
 
-  (** [(describe-function 'defalias)]
-      [(Info-goto-node "(elisp)Defining Functions")] *)
+  (** [(describe-function 'defalias)] [(Info-goto-node "(elisp)Defining Functions")] *)
   val defalias
     :  Symbol.t
-    -> Source_code_position.t
+    -> here:[%call_pos]
     -> ?docstring:string
     -> alias_of:Value.t
     -> unit
@@ -93,10 +92,10 @@ module type Defun = sig
 
   (** [(describe-function 'define-obsolete-function-alias)]
 
-      N.B. Load order matters.  A subsequent [defun] will override the aliasing. *)
+      N.B. Load order matters. A subsequent [defun] will override the aliasing. *)
   val define_obsolete_alias
     :  Symbol.t
-    -> Source_code_position.t
+    -> here:[%call_pos]
     -> ?docstring:string
     -> alias_of:Symbol.t
     -> since:string

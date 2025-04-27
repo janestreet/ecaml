@@ -24,7 +24,7 @@ depends: [
   "ppx_jane"
   "sexp_pretty"
   "sexplib"
-  "dune"                     {>= "3.11.0"}
+  "dune"                     {>= "3.17.0"}
   "uutf"                     {= "1.0.3+jst"}
 ]
 available: arch != "arm32" & arch != "x86_32"

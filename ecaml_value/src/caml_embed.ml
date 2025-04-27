@@ -46,7 +46,6 @@ let of_value_exn v =
 
 let () =
   Ecaml_callback.(register free_embedded_caml_values)
-    [%here]
     ~f:(fun ids -> Array.iter ids ~f:(fun id -> Hashtbl.remove embedded_values id))
     ~should_run_holding_async_lock:true
 ;;

@@ -63,11 +63,11 @@ let%expect_test "[yes_or_no]" =
   return ()
 ;;
 
-let%expect_test "[read_from]" =
+let%expect_test "[read_string]" =
   let read_from_insert_foo initial_contents =
     with_input_macro "foo RET" (fun () ->
       let%bind response =
-        read_from ~initial_contents ~prompt:"" ~history:Minibuffer.history ()
+        read_string ~initial_contents ~prompt_no_colon:"" ~history:Minibuffer.history ()
       in
       print_s [%sexp (response : string)];
       return ())
@@ -83,13 +83,36 @@ let%expect_test "[read_from]" =
   return ()
 ;;
 
+let%expect_test "[read_string] default value" =
+  let read_string_with_default input =
+    with_input_macro input (fun () ->
+      let%bind response =
+        read_string
+          ~default_value:"this is the default"
+          ~prompt_no_colon:""
+          ~history:Minibuffer.history
+          ()
+      in
+      print_s [%sexp (response : string)];
+      return ())
+  in
+  let%bind () = read_string_with_default "RET" in
+  [%expect {| "this is the default" |}];
+  let%bind () = read_string_with_default "M-n RET" in
+  [%expect {| "this is the default" |}];
+  return ()
+;;
+
 let%expect_test "[exit_hook]" =
   print_s [%sexp (exit_hook : (_, _) Hook.t)];
   [%expect
     {|
     ((symbol    minibuffer-exit-hook)
      (hook_type Normal_hook)
-     (value ((minibuffer-restore-windows))))
+     (value ((
+       minibuffer--regexp-exit
+       minibuffer-exit-on-screen-keyboard
+       minibuffer-restore-windows))))
     |}];
   return ()
 ;;
@@ -102,6 +125,8 @@ let%expect_test "[setup_hook]" =
      (hook_type Normal_hook)
      (value ((
        rfn-eshadow-setup-minibuffer
+       minibuffer--regexp-setup
+       minibuffer-setup-on-screen-keyboard
        minibuffer-error-initialize
        minibuffer-history-isearch-setup
        minibuffer-history-initialize))))
@@ -140,7 +165,9 @@ let%expect_test "[setup_hook] [exit_hook]" =
                 (Minibuffer.contents () : string)]));
   let%bind () =
     with_input_macro "foo RET" (fun () ->
-      let%bind response = read_from ~prompt:"prompt: " ~history:Minibuffer.history () in
+      let%bind response =
+        read_string ~prompt_no_colon:"prompt" ~history:Minibuffer.history ()
+      in
       print_s [%sexp (response : string)];
       return ())
   in

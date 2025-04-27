@@ -79,7 +79,6 @@ let make_temp_dir ~prefix ~suffix = make_temp_file prefix true suffix
 let with_temp_dir sync_or_async ~f ~prefix ~suffix =
   let filename = make_temp_dir ~prefix ~suffix in
   Sync_or_async.protect
-    [%here]
     ~allow_in_background:true
     sync_or_async
     ~f:(fun () -> f filename)

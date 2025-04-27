@@ -50,7 +50,7 @@ module Blocking = struct
 end
 
 let change_to t ~in_ =
-  Value.Private.run_outside_async [%here] ~allowed_in_background:true (fun () ->
+  Value.Private.run_outside_async ~allowed_in_background:true (fun () ->
     Blocking.change_to t ~in_)
 ;;
 
@@ -77,7 +77,9 @@ let keymap t = Current_buffer.value_exn t.keymap_var
 let keymap_var t = t.keymap_var
 let syntax_table t = Current_buffer.value_exn t.syntax_table_var
 
-let wrap_existing_with_lazy_keymap name wrapped_at : (module S_with_lazy_keymap) =
+let wrap_existing_with_lazy_keymap ~here:(wrapped_at : [%call_pos]) name
+  : (module S_with_lazy_keymap)
+  =
   (module struct
     type Name.t += Major_mode
 
@@ -113,32 +115,31 @@ let wrap_existing_with_lazy_keymap name wrapped_at : (module S_with_lazy_keymap)
   end)
 ;;
 
-let wrap_existing name wrapped_at : (module S) =
+let wrap_existing ~(here : [%call_pos]) name : (module S) =
   (module struct
-    include (val wrap_existing_with_lazy_keymap name wrapped_at)
+    include (val wrap_existing_with_lazy_keymap ~here name)
 
     let keymap = force keymap
   end)
 ;;
 
-let find_or_wrap_existing here symbol =
+let find_or_wrap_existing ~(here : [%call_pos]) symbol =
   match Hashtbl.find t_by_symbol (symbol |> Symbol.name) with
   | Some t -> t
   | None -> add here Name.Undistinguished symbol
 ;;
 
-module Fundamental = (val wrap_existing_with_lazy_keymap "fundamental-mode" [%here])
-module Prog = (val wrap_existing "prog-mode" [%here])
-module Special = (val wrap_existing "special-mode" [%here])
-module Text = (val wrap_existing "text-mode" [%here])
-module Dired = (val wrap_existing_with_lazy_keymap "dired-mode" [%here])
-module Tuareg = (val wrap_existing_with_lazy_keymap "tuareg-mode" [%here])
-module Makefile = (val wrap_existing_with_lazy_keymap "makefile-mode" [%here])
-module Lisp_data = (val wrap_existing "lisp-data-mode" [%here])
-module Scheme = (val wrap_existing_with_lazy_keymap "scheme-mode" [%here])
-module Emacs_lisp = (val wrap_existing "emacs-lisp-mode" [%here])
-module Asm = (val wrap_existing_with_lazy_keymap "asm-mode" [%here])
-module Python = (val wrap_existing_with_lazy_keymap "python-mode" [%here])
+module Fundamental = (val wrap_existing_with_lazy_keymap "fundamental-mode")
+module Prog = (val wrap_existing "prog-mode")
+module Special = (val wrap_existing "special-mode")
+module Text = (val wrap_existing "text-mode")
+module Tuareg = (val wrap_existing_with_lazy_keymap "tuareg-mode")
+module Makefile = (val wrap_existing_with_lazy_keymap "makefile-mode")
+module Lisp_data = (val wrap_existing "lisp-data-mode")
+module Scheme = (val wrap_existing_with_lazy_keymap "scheme-mode")
+module Emacs_lisp = (val wrap_existing "emacs-lisp-mode")
+module Asm = (val wrap_existing_with_lazy_keymap "asm-mode")
+module Python = (val wrap_existing_with_lazy_keymap "python-mode")
 
 let all_derived_modes = ref []
 
@@ -172,7 +173,7 @@ let define_derived_mode
     match Symbol.Automatic_migration.migrate ~old:symbol with
     | None -> symbol
     | Some { new_; since } ->
-      Defun.define_obsolete_alias symbol here ~alias_of:new_ ~since ();
+      Defun.define_obsolete_alias symbol ~here ~alias_of:new_ ~since ();
       List.iter
         [ "abbrev-table"; "hook"; "map"; "syntax-table" ]
         ~f:
@@ -181,7 +182,7 @@ let define_derived_mode
            fun suffix ->
              Defvar.define_obsolete_alias
                ([%string "%{old_prefix}-%{suffix}"] |> Symbol.intern)
-               here
+               ~here
                ~alias_of:([%string "%{new_prefix}-%{suffix}"] |> Symbol.intern)
                ~since
                ());
@@ -211,7 +212,7 @@ let define_derived_mode
     Load_history.add_entry
       here
       (Var ([%string "%{Symbol.name symbol}-%{suffix}"] |> Symbol.intern)));
-  let m = wrap_existing (symbol |> Symbol.name) here in
+  let m = wrap_existing ~here (symbol |> Symbol.name) in
   let module M = (val m) in
   List.iter define_keys ~f:(fun (keys, symbol) ->
     Keymap.define_key M.keymap (Key_sequence.create_exn keys) (Symbol symbol));

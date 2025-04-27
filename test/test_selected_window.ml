@@ -56,7 +56,7 @@ module%test _ = struct
     [%expect {| "#<window 4 on *scratch*>" |}];
     let%bind () =
       set_temporarily Async window1 ~f:(fun () ->
-        let%map () = Clock.after (sec 0.001) in
+        let%map () = Clock_ns.after (sec_ns 0.001) in
         show ())
     in
     [%expect {| "#<window 1 on *scratch*>" |}];

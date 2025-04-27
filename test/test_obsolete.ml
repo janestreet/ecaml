@@ -17,13 +17,13 @@ let%expect_test "obsolete functions already defined" =
   print_endline (Help.describe_function_text obsolete);
   [%expect
     {|
-    foobar-2 is an interactive Lisp function.
+    foobar-2 is an interactive interpreted-function.
 
     (foobar-2)
 
     _
     |}];
-  Defun.define_obsolete_alias obsolete [%here] ~alias_of ~since:"now" ();
+  Defun.define_obsolete_alias obsolete ~alias_of ~since:"now" ();
   print_endline (Help.describe_function_text obsolete);
   [%expect
     {|
@@ -42,7 +42,7 @@ let%expect_test "obsolete functions already defined" =
 
 let%expect_test "documentation for obsolete functions" =
   let obsolete = "foobar-2" |> Symbol.intern in
-  Defun.define_obsolete_alias obsolete [%here] ~alias_of ~since:"version X.Y" ();
+  Defun.define_obsolete_alias obsolete ~alias_of ~since:"version X.Y" ();
   print_endline (Help.describe_function_text obsolete);
   [%expect
     {|
@@ -57,7 +57,6 @@ let%expect_test "documentation for obsolete functions" =
     |}];
   Defun.define_obsolete_alias
     obsolete
-    [%here]
     ~docstring:"arbitrary docstring"
     ~alias_of
     ~since:"version X.Y"
@@ -76,7 +75,6 @@ let%expect_test "documentation for obsolete functions" =
     |}];
   Defun.define_obsolete_alias
     obsolete
-    [%here]
     ~docstring:"arbitrary docstring"
     ~alias_of
     ~since:"now"
@@ -97,7 +95,7 @@ let%expect_test "documentation for obsolete functions" =
 
 let%expect_test "obsolete functions not yet defined" =
   let obsolete = "foobar" |> Symbol.intern in
-  Defun.define_obsolete_alias obsolete [%here] ~alias_of ~since:"now" ();
+  Defun.define_obsolete_alias obsolete ~alias_of ~since:"now" ();
   print_endline (Help.describe_function_text obsolete);
   [%expect
     {|
@@ -114,7 +112,7 @@ let%expect_test "obsolete functions not yet defined" =
   print_endline (Help.describe_function_text obsolete);
   [%expect
     {|
-    foobar is an interactive Lisp function.
+    foobar is an interactive interpreted-function.
 
     This function is obsolete since now; use `current-function' instead.
 

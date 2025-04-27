@@ -4,7 +4,7 @@ open! Import
 
 let find_function =
   let f = Funcall.Wrap.("find-function" <: Symbol.t @-> return nil) in
-  fun symbol -> Async_ecaml.Private.run_outside_async [%here] (fun () -> f symbol)
+  fun symbol -> Async_ecaml.Private.run_outside_async (fun () -> f symbol)
 ;;
 
 let find_ocaml ~library ~symbol ~type_ =
@@ -19,7 +19,6 @@ let advise_for_ocaml () =
     ~to_function:("find-function-search-for-symbol" |> Symbol.intern)
     (Advice.defun_around_values
        ("find-function-search-ocaml" |> Symbol.intern)
-       [%here]
        ~docstring:
          {|
 Advice that makes `find-function' able to jump to the source code position of functions

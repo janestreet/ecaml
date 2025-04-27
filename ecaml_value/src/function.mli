@@ -13,20 +13,22 @@ end
 include Value.Subtype
 
 module Interactive : sig
+  (** [(describe-function 'interactive)] *)
   type t =
     | Args of (unit -> Value.t list Deferred.t)
-    (** When a command defined with [~interactive:(Args f)] is called interactively, [f
-        ()] is called to compute the argument values to supply to the command.  Of
-        course, the argument values should match the command's [Defun.t]
-        specification. *)
+    (** When a command defined with [~interactive:(Args f)] is called interactively,
+        [f ()] is called to compute the argument values to supply to the command. Of
+        course, the argument values should match the command's [Defun.t] specification. *)
     | Form of Form.t
     | Function_name of { prompt : string }
-    | Ignored
-    | No_arg
-    | Prompt of string
-    | Raw_prefix
-    | Prefix
+    (** a -- Function name: symbol with a function definition. *)
+    | Ignored (** i -- Ignored, i.e. always nil. Does not do I/O. *)
+    | No_arg (** interactive with no argument spec *)
+    | Prompt of string (** s -- Any string. Does not inherit the current input method. *)
+    | Raw_prefix (** P -- Prefix arg in raw form. Does not do I/O. *)
+    | Prefix (** p -- Prefix arg converted to number. Does not do I/O. *)
     | Region
+    (** r -- Region: point and mark as 2 numeric args, smallest first. Does no I/O. *)
 
   (** An interactive form which evaluates to a list of constant values. *)
   val list : Value.t list -> t

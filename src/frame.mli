@@ -1,4 +1,4 @@
-(** A "frame" is a screen object that contains one or more Emacs windows.  It is the kind
+(** A "frame" is a screen object that contains one or more Emacs windows. It is the kind
     of object called a "window" in the terminology of graphical environments; but we can't
     call it a "window" here, because Emacs uses that word in a different way.
 

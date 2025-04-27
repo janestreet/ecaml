@@ -217,7 +217,7 @@ let call
     match returns with
     | Returns returns -> Value.Type.to_value returns (apply ())
     | Returns_deferred returns ->
-      Value.Private.block_on_async here apply ~context |> Value.Type.to_value returns
+      Value.Private.block_on_async ~here apply ~context |> Value.Type.to_value returns
   in
   if should_profile then profile Sync context doit else doit ()
 ;;
@@ -238,13 +238,13 @@ let defalias =
 
 (* We use defalias for all function definitions, instead of fset.  The former correctly
    handles things like advice that has already been defined for the symbol. *)
-let defalias symbol here ?docstring ~alias_of () =
+let defalias symbol ~(here : [%call_pos]) ?docstring ~alias_of () =
   add_to_load_history symbol here;
   defalias symbol alias_of (docstring |> Option.map ~f:String.strip)
 ;;
 
-let define_obsolete_alias obsolete here ?docstring ~alias_of ~since () =
-  defalias obsolete here ?docstring ~alias_of:(alias_of |> Symbol.to_value) ();
+let define_obsolete_alias obsolete ~(here : [%call_pos]) ?docstring ~alias_of ~since () =
+  defalias obsolete ~here ?docstring ~alias_of:(alias_of |> Symbol.to_value) ();
   Obsolete.make_function_obsolete obsolete ~current:(Some alias_of) ~since
 ;;
 
@@ -253,7 +253,7 @@ let defun_raw symbol here ~docstring ?interactive ~args ?optional_args ?rest_arg
   require_nonempty_docstring here ~docstring;
   defalias
     symbol
-    here
+    ~here
     ~alias_of:
       (Function.create here ~docstring ?interactive ~args ?optional_args ?rest_arg f
        |> Function.to_value)
@@ -301,7 +301,7 @@ let defun_internal
   List.iter define_keys ~f:(fun (keymap, keys) ->
     Keymap.define_key keymap (Key_sequence.create_exn keys) (Symbol symbol));
   Option.iter obsoletes ~f:(fun (obsolete, Since since) ->
-    define_obsolete_alias obsolete here ~alias_of:symbol ~since ());
+    define_obsolete_alias obsolete ~here ~alias_of:symbol ~since ());
   maybe_disable_function symbol disabled
 ;;
 

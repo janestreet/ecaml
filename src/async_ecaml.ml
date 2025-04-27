@@ -14,7 +14,7 @@ open! Import
 module Ivar = Async.Ivar
 module Mutex = Error_checking_mutex
 module Thread = Caml_threads.Thread
-module Time = Time_float_unix
+module Time = Time_ns_unix
 module Unix = Core_unix
 module Scheduler = Async_unix.Async_unix_private.Raw_scheduler
 
@@ -44,17 +44,13 @@ module Cycle_report = struct
   let generate_report () =
     let open Async in
     let%bind samples =
-      Echo_area.wrap_message
-        [%here]
-        Async
-        "Collecting 10 seconds of cycle data"
-        ~f:(fun () ->
-          measuring := true;
-          let%bind () = Clock_ns.after (sec_ns 10.) in
-          measuring := false;
-          let samples = !cycles in
-          cycles := [];
-          return samples)
+      Echo_area.wrap_message Async "Collecting 10 seconds of cycle data" ~f:(fun () ->
+        measuring := true;
+        let%bind () = Clock_ns.after (sec_ns 10.) in
+        measuring := false;
+        let samples = !cycles in
+        cycles := [];
+        return samples)
     in
     let buffer = Buffer.find_or_create ~name:"cycle report" in
     let%bind () = Selected_window.pop_to_buffer buffer in
@@ -69,11 +65,10 @@ module Cycle_report = struct
   ;;
 end
 
-(** [Thread_safe_sleeper] is a thread-safe data structure for use by threads holding
-    the Async lock.  The usage pattern is that one thread calls [blocking_sleep], which
-    causes it to release the Async lock (and OCaml lock) and block.  Later, another
-    thread calls [wake_up], after which the blocked thread wakes up and reacquires
-    the locks. *)
+(** [Thread_safe_sleeper] is a thread-safe data structure for use by threads holding the
+    Async lock. The usage pattern is that one thread calls [blocking_sleep], which causes
+    it to release the Async lock (and OCaml lock) and block. Later, another thread calls
+    [wake_up], after which the blocked thread wakes up and reacquires the locks. *)
 module Thread_safe_sleeper : sig
   type t [@@deriving sexp_of]
 
@@ -124,8 +119,7 @@ end
     byte along a socket. Emacs passes this byte on to the process filter we define, which
     runs a cycle in the emacs thread.
 
-    We maintain the invariant that there is at most one byte waiting to be read at a
-    time. *)
+    We maintain the invariant that there is at most one byte waiting to be read at a time. *)
 module Cycle_requester : sig
   type t
 
@@ -202,6 +196,7 @@ end = struct
       let server_process =
         Process.create_unix_network_process
           ()
+          ~coding:(`Decoding Coding_system.binary, `Encoding Coding_system.binary)
           ~name:"Async scheduler"
           ~socket_path
           ~filter:(fun client_process _ ->
@@ -221,8 +216,8 @@ end = struct
   ;;
 
   let shutdown t =
-    Option.iter t.client_process ~f:Process.kill;
-    Option.iter t.server_process ~f:Process.kill
+    Option.iter t.client_process ~f:Process.delete;
+    Option.iter t.server_process ~f:Process.delete
   ;;
 end
 
@@ -292,12 +287,12 @@ let run_pending_emacs_calls () =
       let result =
         match pending_emacs_call.running_in_background with
         | Some location ->
-          Background.Private.mark_running_in_background location ~f:run_job
+          Background.Private.mark_running_in_background ~here:location run_job
         | None ->
           (* If we're in this branch, that means this job was enqueued in the foreground,
              and so the foreground is blocking on the result of this job. So we make sure
              this job sees that it is running in the foreground. *)
-          Background.Private.mark_running_in_foreground ~f:run_job
+          Background.Private.mark_running_in_foreground run_job
       in
       Scheduler.lock t.scheduler;
       Ivar.fill_exn pending_emacs_call.result result));
@@ -335,7 +330,7 @@ module Block_on_async = struct
              [execution_context]'s monitor. *)
           let (_ : (unit, unit) result) =
             Scheduler.within_context execution_context (fun () ->
-              block_on_async here ?context f)
+              block_on_async ~here ?context f)
           in
           ()))
 
@@ -397,13 +392,16 @@ module Block_on_async = struct
 
   and block_on_async
     : type a.
-      _
+      here:[%call_pos]
       -> ?context:_
       -> ?for_testing_allow_nested_block_on_async:_
       -> (unit -> a Async.Deferred.t)
       -> a
     =
-    fun here ?context ?(for_testing_allow_nested_block_on_async = false) f ->
+    fun ~(here : [%call_pos])
+      ?context
+      ?(for_testing_allow_nested_block_on_async = false)
+      f ->
     assert (Scheduler.am_holding_lock t.scheduler);
     Ref.set_temporarily
       context_backtrace
@@ -471,10 +469,8 @@ let unlock_async_after_module_initialization () =
 
      It is acquired automatically by the main thread during the module initialization of
      [Async_unix.Raw_scheduler]. *)
-  Ecaml_callback.(register end_of_module_initialization)
-    [%here]
-    ~should_run_holding_async_lock:false
-    ~f:(fun () -> Scheduler.unlock t.scheduler)
+  Ecaml_callback.on_end_of_module_initialization (fun `Not_holding_the_async_lock ->
+    Scheduler.unlock t.scheduler)
 ;;
 
 let max_inter_cycle_timeout = Time_ns.Span.second
@@ -516,7 +512,7 @@ let start_scheduler () =
         {|
 For testing Async Ecaml.
 
-This runs the same OCaml code that Aysnc Ecaml uses for running an Async cycle.  It blocks
+This runs the same OCaml code that Async Ecaml uses for running an Async cycle.  It blocks
 until it can acquire the Async lock and then run a cycle.
 |}
       ~interactive:No_arg
@@ -534,7 +530,6 @@ until it can acquire the Async lock and then run a cycle.
     t.keepalive_timer
     <- Some
          (Timer.run_after
-            [%here]
             max_inter_cycle_timeout
             ~repeat:max_inter_cycle_timeout
             ~name:("async-ecaml-keepalive-timer" |> Symbol.intern)
@@ -583,6 +578,7 @@ Periodically request an Async cycle.
 
 module Export = struct
   module Clock = Async.Clock
+  module Clock_ns = Async.Clock_ns
 
   let don't_wait_for = Async.don't_wait_for
 
@@ -595,7 +591,7 @@ module Private = struct
   let block_on_async = Block_on_async.block_on_async
 
   let enqueue_foreground_block_on_async
-    here
+    ~(here : [%call_pos])
     ?context
     ?(raise_exceptions_to_monitor = Async.Monitor.main)
     f
@@ -615,12 +611,13 @@ module Private = struct
       }
   ;;
 
-  let run_outside_async here ?(allowed_in_background = false) f =
+  let run_outside_async ~(here : [%call_pos]) ?(allowed_in_background = false) f =
     if not allowed_in_background
     then
       Background.assert_foreground
         ~message:[%sexp "[run_outside_async] called unsafely in background"]
-        here;
+        ~here
+        ();
     let open Async in
     Deferred.create (fun result ->
       Queue.enqueue
@@ -636,60 +633,35 @@ module Private = struct
     >>| Result.ok_exn
   ;;
 
-  let run_outside_async1 here ?allowed_in_background f a =
-    run_outside_async here ?allowed_in_background (fun () -> f a)
+  let run_outside_async1 ~(here : [%call_pos]) ?allowed_in_background f a =
+    run_outside_async ~here ?allowed_in_background (fun () -> f a)
   ;;
 
   let () =
     Set_once.set_exn
       Value.Private.Block_on_async.set_once
-      [%here]
       { f = Block_on_async.block_on_async ~for_testing_allow_nested_block_on_async:false };
     Set_once.set_exn
       Value.Private.Enqueue_foreground_block_on_async.set_once
-      [%here]
       { f = enqueue_foreground_block_on_async };
-    Set_once.set_exn
-      Value.Private.Run_outside_async.set_once
-      [%here]
-      { f = run_outside_async }
+    Set_once.set_exn Value.Private.Run_outside_async.set_once { f = run_outside_async }
   ;;
 end
 
-module Known_rev = struct
-  type t =
-    { rev40 : string
-    ; stable_name : string
-    }
-  [@@deriving sexp]
-end
+let obscure_tmpdir s =
+  let var = "TMPDIR" in
+  let tmpdir = Sys.getenv var |> Option.value ~default:"/tmp" in
+  String.substr_replace_all s ~pattern:tmpdir ~with_:var
+;;
 
 module Expect_test_config = struct
   include Async.Expect_test_config
 
   let run f =
-    Block_on_async.block_on_async
-      [%here]
-      ~context:[%lazy_message "Expect_test_config.run"]
-      f
+    Block_on_async.block_on_async ~context:[%lazy_message "Expect_test_config.run"] f
   ;;
 
-  let sanitize_revs s =
-    (try
-       Sexp.load_sexp (Sys.getenv_exn "TMPDIR" ^ "/known_revs.sexp")
-       |> List.t_of_sexp Known_rev.t_of_sexp
-     with
-     | _ -> [])
-    |> List.fold ~init:s ~f:(fun s (kr : Known_rev.t) ->
-      let stable_name40 = String.pad_right ~len:40 ~char:'0' (kr.stable_name ^ ":") in
-      let rev12 = String.prefix kr.rev40 12 in
-      let stable_name12 = String.pad_right ~len:12 ~char:'0' (kr.stable_name ^ ":") in
-      s
-      |> String.substr_replace_all ~pattern:kr.rev40 ~with_:stable_name40
-      |> String.substr_replace_all ~pattern:rev12 ~with_:stable_name12)
-  ;;
-
-  let sanitize = sanitize >> sanitize_revs
+  let sanitize = sanitize >> obscure_tmpdir
 end
 
 module Expect_test_config_allowing_nested_block_on_async = struct
@@ -697,7 +669,6 @@ module Expect_test_config_allowing_nested_block_on_async = struct
 
   let run f =
     Block_on_async.block_on_async
-      [%here]
       ~for_testing_allow_nested_block_on_async:true
       ~context:[%lazy_message "Expect_test_config_allowing_nested_block_on_async.run"]
       f
@@ -821,7 +792,6 @@ Check aspects of Async Ecaml's handling of execution contexts.
        let timer =
          Timer.run_after
            ~repeat:(sec_ns 0.1)
-           [%here]
            (sec_ns 0.1)
            ~f:check_execution_context
            ~name:("check-execution-context-timer" |> Symbol.intern)
@@ -836,8 +806,8 @@ Periodically check that the execution context in which Async jobs run is
        don't_wait_for
          (let%map _ignored =
             Monitor.try_with (fun () ->
-              let%bind () = Clock.after (sec 0.1) in
-              let%bind () = Clock.after (sec 2.) in
+              let%bind () = Clock_ns.after (sec_ns 0.1) in
+              let%bind () = Clock_ns.after (sec_ns 2.) in
               Timer.cancel timer;
               messagef
                 "Execution-context test %s"
@@ -925,10 +895,10 @@ seconds, and then open a buffer with a hello-world message.
     ~interactive:No_arg
     (fun () ->
        let open Async in
-       Background.don't_wait_for [%here] (fun () ->
-         let%map () = Clock.after (sec 1.) in
-         Background.schedule_foreground_block_on_async [%here] (fun () ->
-           let%bind () = Clock.after (sec 1.) in
+       Background.don't_wait_for (fun () ->
+         let%map () = Clock_ns.after (sec_ns 1.) in
+         Background.schedule_foreground_block_on_async (fun () ->
+           let%bind () = Clock_ns.after (sec_ns 1.) in
            let%bind () =
              Selected_window.pop_to_buffer (Buffer.find_or_create ~name:"test buffer")
            in

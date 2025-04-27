@@ -1,19 +1,21 @@
 (** An ANSI escape sequence is a sequence of characters in a text file that is interpreted
     specially by terminals. In particular we're concerned with ANSI CSI SGR (Select
     Graphic Rendition) sequences. Those describe text attributes: foreground color,
-    background color, bold, italic, etc.  Such an escape sequence consists of:
+    background color, bold, italic, etc. Such an escape sequence consists of:
 
-    1. "\027["
-    2. a sequence of decimal integer codes separated by ";"
-    3. "m"
+    + ["\027\["]
+    + a sequence of decimal integer codes separated by [";"]
+    + ["m"]
 
-    For a description of the meaning of the integer codes, see:
-    https://en.wikipedia.org/wiki/ANSI_escape_code
+    See
+    {{:https://en.wikipedia.org/wiki/ANSI_escape_code#Select_Graphic_Rendition_parameters}
+      Wikipedia}
+    for a description of the meaning of the integer codes.
 
     This implementation works by treating a collection of attribute settings as a state in
     a state machine, and an integer code as causing a transition from one state to the
-    next.  It visits each character in the input, maintaining the current state as it
-    encounters escape sequences.  It records the current state in effect for each ordinary
+    next. It visits each character in the input, maintaining the current state as it
+    encounters escape sequences. It records the current state in effect for each ordinary
     input character, and sets a text property for the face corresponding to that state.
     The state machine is constructed from scratch dynamically on demand as states and
     transitions are encountered. *)
@@ -781,31 +783,29 @@ end
 
 exception End_of_input
 
-(** Represents the colorization I/O backend.
-    It has an input stream, a buffer and a colorized output stream. *)
+(** Represents the colorization I/O backend. It has an input stream, a buffer and a
+    colorized output stream. *)
 module Colorization_backend : sig
   type t
 
-  (** Reads the next character from the input stream into the buffer and
-      returns it. Raises [End_of_input] if end of input was reached.
+  (** Reads the next character from the input stream into the buffer and returns it.
+      Raises [End_of_input] if end of input was reached.
 
       For multibyte characters, sometimes just a single (messed up) [char] is returned,
       and sometimes their utf-8 encoding is returned in multiple [char]s, depending on
       mode. *)
   val get_char_exn : t -> char
 
-  (** Writes the buffer verbatim to the output (and applies the properties associated
-      with the given [State.t]).
-      The last [except_for_last] bytes are kept in the buffer. *)
+  (** Writes the buffer verbatim to the output (and applies the properties associated with
+      the given [State.t]). The last [except_for_last] bytes are kept in the buffer. *)
   val keep_verbatim : t -> except_for_last:int -> Add_text_properties.t -> unit
 
   (** Drops the buffer without writing it to the output. *)
   val drop : t -> unit
 
-  (** Prints an "invalid escape" error message and clears the buffer.
-      Before doing so it rewinds the input by 1 byte if possible, with the assumption that
-      the last character of the escape sequence might not be intended to be a part of it.
-  *)
+  (** Prints an "invalid escape" error message and clears the buffer. Before doing so it
+      rewinds the input by 1 byte if possible, with the assumption that the last character
+      of the escape sequence might not be intended to be a part of it. *)
   val print_invalid_escape
     :  t
     -> drop_unsupported_escapes:bool
@@ -1016,7 +1016,7 @@ module Colorization_state = struct
   include T
 
   let in_buffer =
-    Buffer_local.defvar_embedded ("ansi-color-state" |> Symbol.intern) [%here] (module T)
+    Buffer_local.defvar_embedded ("ansi-color-state" |> Symbol.intern) (module T)
   ;;
 
   let create state_machine =
@@ -1280,4 +1280,23 @@ let color_current_buffer () =
   if not buffer_was_modified then Current_buffer.set_modified false;
   Current_buffer.(set_buffer_local read_only) true;
   Point.goto_char (Point.min ())
+;;
+
+let ansi_color_apply_on_region =
+  Funcall.Wrap.(
+    "ansi-color-apply-on-region" <: Position.t @-> Position.t @-> return ignored)
+;;
+
+let apply_on_region ~start ~end_ =
+  Feature.require Q.ansi_color;
+  let ansi_color_context_region =
+    Buffer_local.wrap_existing
+      (Symbol.intern "ansi-color-context-region")
+      Value.Type.value
+  in
+  Current_buffer.set_buffer_local_temporarily
+    Sync
+    ansi_color_context_region
+    Value.nil
+    ~f:(fun () -> ansi_color_apply_on_region start end_)
 ;;

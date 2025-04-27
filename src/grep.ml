@@ -47,4 +47,4 @@ let grep ~command =
     ~f:(fun () -> grep command)
 ;;
 
-include (val Major_mode.wrap_existing_with_lazy_keymap "grep-mode" [%here])
+include (val Major_mode.wrap_existing_with_lazy_keymap "grep-mode")

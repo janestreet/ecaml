@@ -178,7 +178,7 @@ let completing_read =
          @-> nil_or string
          @-> return string)
   in
-  fun ~prompt
+  fun ~prompt_no_colon
     ~programmed_completion
     ?(predicate = Value.nil)
     ?(require_match = Require_match.default)
@@ -186,14 +186,10 @@ let completing_read =
     ?default
     ~history
     () ->
-    Async_ecaml.Private.run_outside_async [%here] (fun () ->
-      let prompt =
-        match default with
-        | None -> prompt
-        | Some d -> [%string "%{prompt}(default = %{d}) "]
-      in
+    Async_ecaml.Private.run_outside_async (fun () ->
+      let formatted_prompt = Minibuffer.format_prompt ~prompt_no_colon ~default in
       completing_read
-        prompt
+        formatted_prompt
         (Programmed_completion.to_value programmed_completion)
         predicate
         require_match
@@ -203,7 +199,7 @@ let completing_read =
 ;;
 
 let read
-  ~prompt
+  ~prompt_no_colon
   ~collection
   ?annotation_function
   ?display_sort_function
@@ -214,7 +210,7 @@ let read
   ()
   =
   completing_read
-    ~prompt
+    ~prompt_no_colon
     ~programmed_completion:
       (Programmed_completion.create
          collection
@@ -228,7 +224,7 @@ let read
 ;;
 
 let read_map_key
-  ~prompt
+  ~prompt_no_colon
   ~collection
   ?annotation_function
   ?display_sort_function
@@ -240,7 +236,7 @@ let read_map_key
   =
   let%bind choice =
     read
-      ~prompt
+      ~prompt_no_colon
       ~collection:(Map.keys collection)
       ~require_match:
         (if confirm_ret_completion
@@ -286,7 +282,7 @@ let read_multiple =
          @-> nil_or string
          @-> return (list string))
   in
-  fun ~prompt
+  fun ~prompt_no_colon
     ~collection
     ?(require_match = Require_match.False)
     ?(separator_regexp = "[ \t]*,[ \t]*")
@@ -294,20 +290,16 @@ let read_multiple =
     ?default
     ~history
     () ->
-    Async_ecaml.Private.run_outside_async [%here] (fun () ->
+    Async_ecaml.Private.run_outside_async (fun () ->
       let predicate = Value.nil in
-      let prompt =
-        match default with
-        | None -> prompt
-        | Some d -> [%string "%{prompt}(default = %{d}) "]
-      in
+      let formatted_prompt = Minibuffer.format_prompt ~prompt_no_colon ~default in
       Current_buffer.set_value_temporarily
         Sync
         crm_separator
         separator_regexp
         ~f:(fun () ->
           completing_read_multiple
-            prompt
+            formatted_prompt
             collection
             predicate
             require_match
@@ -317,7 +309,7 @@ let read_multiple =
 ;;
 
 let read_multiple_map_keys
-  ~prompt
+  ~prompt_no_colon
   ~collection
   ?separator_regexp
   ?initial_input
@@ -327,7 +319,7 @@ let read_multiple_map_keys
   =
   let%bind choices =
     read_multiple
-      ~prompt
+      ~prompt_no_colon
       ~collection:(Map.keys collection)
       ~require_match:Require_match_or_complete_or_null
       ?separator_regexp
@@ -358,12 +350,12 @@ let read_function_name =
           || is_some (Symbol.Property.get Symbol.Property.function_documentation f))
        |> Function.to_value)
   in
-  fun ~prompt ~history ->
+  fun ~prompt_no_colon ~history ->
     let collection = force symbol_collection in
     let predicate = force predicate in
     let%bind name =
       completing_read
-        ~prompt
+        ~prompt_no_colon
         ~programmed_completion:(Symbol collection)
         ~predicate
         ~require_match:Require_match_or_complete_or_null
@@ -387,12 +379,12 @@ let read_variable_name =
           || is_some (Symbol.Property.get Symbol.Property.variable_documentation var))
        |> Function.to_value)
   in
-  fun ~prompt ~history ->
+  fun ~prompt_no_colon ~history ->
     let collection = force symbol_collection in
     let predicate = force predicate in
     let%bind name =
       completing_read
-        ~prompt
+        ~prompt_no_colon
         ~programmed_completion:(Symbol collection)
         ~predicate
         ~require_match:Require_match_or_complete_or_null
