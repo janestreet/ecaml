@@ -1,5 +1,5 @@
-(** The selected window is the one that you edit in.  When a window is selected, the
-    buffer in the window becomes the current buffer, and the cursor will appear in it.
+(** The selected window is the one that you edit in. When a window is selected, the buffer
+    in the window becomes the current buffer, and the cursor will appear in it.
 
     [(Info-goto-node "(elisp)Selecting Windows")]. *)
 
@@ -40,9 +40,8 @@ val view_file : string -> unit Deferred.t
 (** [(describe-function 'save-selected-window)] *)
 val save_selected_window : (_, 'a) Sync_or_async.t -> (unit -> 'a) -> 'a
 
-(** [(describe-function 'with-selected-window)].
-    Avoid using [set_temporarily], which can have visual artifacts that annoy the user,
-    like flicker of the mode line or cursor. *)
+(** [(describe-function 'with-selected-window)]. Avoid using [set_temporarily], which can
+    have visual artifacts that annoy the user, like flicker of the mode line or cursor. *)
 val set_temporarily : (_, 'a) Sync_or_async.t -> Window.t -> f:(unit -> 'a) -> 'a
 
 (** [(describe-function 'save-window-excursion)] *)

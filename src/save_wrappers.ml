@@ -54,16 +54,15 @@ let save_
   | Sync -> save_sync caller save_function args f
   | Async ->
     Background.assert_foreground
-      [%here]
       ~message:
         [%sexp
           (sprintf
              "%s called asynchronously in background job"
              (Symbol.name save_function)
-           : string)];
-    Value.Private.run_outside_async [%here] (fun () ->
-      save_sync caller save_function args (fun () ->
-        Value.Private.block_on_async [%here] f))
+           : string)]
+      ();
+    Value.Private.run_outside_async (fun () ->
+      save_sync caller save_function args (fun () -> Value.Private.block_on_async f))
 ;;
 
 let save_current_buffer ?(here = Stdlib.Lexing.dummy_pos) sync_or_async f =

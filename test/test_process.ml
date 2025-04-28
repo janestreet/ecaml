@@ -32,7 +32,7 @@ let show t =
 ;;
 
 let%expect_test "[start], [buffer], [name], [command], [pid], [status], [exit_status], \
-                 [kill]"
+                 [delete]"
   =
   let t = sleep () in
   print_s [%sexp (t : t)];
@@ -48,7 +48,7 @@ let%expect_test "[start], [buffer], [name], [command], [pid], [status], [exit_st
      (status      Run)
      (exit_status Not_exited))
     |}];
-  kill t;
+  delete t;
   show t;
   [%expect
     {|
@@ -82,9 +82,9 @@ let%expect_test "[exit_status]" =
 ;;
 
 let wait_until f =
-  let timeout_at = Time_float.(add (now ()) (Span.of_sec 1.)) in
+  let timeout_at = Time_ns.(add (now ()) (Span.of_sec 1.)) in
   while_
-    (fun () -> (not (f ())) && Time_float.(now () < timeout_at))
+    (fun () -> (not (f ())) && Time_ns.(now () < timeout_at))
     ~do_:(fun () -> Timer.sleep_for (0.01 |> sec_ns))
 ;;
 
@@ -92,9 +92,9 @@ let%expect_test "[extend_sentinel]" =
   let test prog =
     let t = create prog [] ~name:"t" () in
     let sentinels_ran = ref false in
-    extend_sentinel [%here] t (Returns Value.Type.unit) ~sentinel:(fun ~event ->
+    extend_sentinel t (Returns Value.Type.unit) ~sentinel:(fun ~event ->
       print_endline event);
-    extend_sentinel [%here] t (Returns Value.Type.unit) ~sentinel:(fun ~event:_ ->
+    extend_sentinel t (Returns Value.Type.unit) ~sentinel:(fun ~event:_ ->
       print_s [%sexp "I'm another sentinel!"];
       sentinels_ran := true);
     wait_until (fun () -> !sentinels_ran)
@@ -119,7 +119,7 @@ let%expect_test "[extend_sentinel]" =
 let%expect_test "[extend_sentinel] where the sentinel raises" =
   let t = create "true" [] ~name:"t" () in
   let sentinels_ran = ref false in
-  extend_sentinel [%here] t (Returns Value.Type.unit) ~sentinel:(fun ~event:_ ->
+  extend_sentinel t (Returns Value.Type.unit) ~sentinel:(fun ~event:_ ->
     sentinels_ran := true;
     raise_s [%message "some error message"]);
   let%bind () = wait_until (fun () -> !sentinels_ran) in
@@ -136,8 +136,8 @@ let%expect_test "[extend_sentinel] where the sentinel raises" =
 let%expect_test "[extend_sentinel] where the sentinel raises asynchronously" =
   let t = create "true" [] ~name:"t" () in
   let sentinels_ran = ref false in
-  extend_sentinel [%here] t (Returns_deferred Value.Type.unit) ~sentinel:(fun ~event:_ ->
-    let%bind () = Clock.after (sec 0.001) in
+  extend_sentinel t (Returns_deferred Value.Type.unit) ~sentinel:(fun ~event:_ ->
+    let%bind () = Clock_ns.after (sec_ns 0.001) in
     sentinels_ran := true;
     raise_s [%message "some error message"]);
   let%bind () = wait_until (fun () -> !sentinels_ran) in
@@ -156,7 +156,6 @@ let%expect_test "[extend_sentinel] runs sentinel in the background" =
     let t = create "true" [] ~name:"t" () in
     let sentinel_ran = ref false in
     extend_sentinel
-      [%here]
       t
       (Returns.returns sync_or_async Value.Type.unit)
       ~sentinel:(fun ~event:_ ->
@@ -177,20 +176,16 @@ let%expect_test "Async [extend_sentinel]" =
   let test prog =
     let t = create prog [] ~name:"t" () in
     let sentinels_ran = ref false in
-    extend_sentinel [%here] t (Returns_deferred Value.Type.unit) ~sentinel:(fun ~event ->
-      let%map () = Clock.after (sec 0.01) in
+    extend_sentinel t (Returns_deferred Value.Type.unit) ~sentinel:(fun ~event ->
+      let%map () = Clock_ns.after (sec_ns 0.01) in
       print_endline event);
-    extend_sentinel
-      [%here]
-      t
-      (Returns_deferred Value.Type.unit)
-      ~sentinel:(fun ~event:_ ->
-        let%map () = Clock.after (sec 0.01) in
-        print_s [%sexp "I'm another sentinel!"];
-        sentinels_ran := true);
-    let timeout_at = Time_float.(add (now ()) (Span.of_sec 1.)) in
+    extend_sentinel t (Returns_deferred Value.Type.unit) ~sentinel:(fun ~event:_ ->
+      let%map () = Clock_ns.after (sec_ns 0.01) in
+      print_s [%sexp "I'm another sentinel!"];
+      sentinels_ran := true);
+    let timeout_at = Time_ns.(add (now ()) (Span.of_sec 1.)) in
     let rec loop () =
-      if (not !sentinels_ran) && Time_float.(now () < timeout_at)
+      if (not !sentinels_ran) && Time_ns.(now () < timeout_at)
       then (
         let%bind () = Timer.sleep_for (0.01 |> sec_ns) in
         loop ())
@@ -235,7 +230,7 @@ let%expect_test "[buffer]" =
   Current_buffer.set_temporarily_to_temp_buffer Sync (fun () ->
     let t = sleep () ~buffer:(Current_buffer.get ()) in
     print_s [%sexp (buffer t : Buffer.t option)];
-    kill t);
+    delete t);
   [%expect {| ("#<buffer  *temp*>") |}];
   return ()
 ;;
@@ -248,7 +243,7 @@ let%expect_test "[find_by_name]" =
   ignore (sleep () : t);
   test ();
   [%expect {| ("#<process sleeper>") |}];
-  Option.iter (find ()) ~f:kill;
+  Option.iter (find ()) ~f:delete;
   test ();
   [%expect {| () |}];
   return ()
@@ -262,7 +257,7 @@ let%expect_test "[query_on_exit], [set_query_on_exit]" =
   set_query_on_exit t false;
   show ();
   [%expect {| (query_on_exit false) |}];
-  kill t;
+  delete t;
   return ()
 ;;
 

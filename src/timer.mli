@@ -3,8 +3,8 @@
 
     Emacs cannot run timers at any arbitrary point in a program; it can run them only when
     Emacs could accept output from a subprocess: namely, while waiting or inside certain
-    primitive functions such as [sit-for] or [read-event] which _can_ wait.  Therefore, a
-    timer's execution may be delayed if Emacs is busy.  However, the time of execution is
+    primitive functions such as [sit-for] or [read-event] which _can_ wait. Therefore, a
+    timer's execution may be delayed if Emacs is busy. However, the time of execution is
     very precise if Emacs is idle.
 
     [(Info-goto-node "(elisp)Timers")] *)
@@ -19,11 +19,10 @@ val all_scheduled : unit -> t list
 
 val is_scheduled : t -> bool
 
-(** [(describe-function 'run-at-time)]
-    [(Info-goto-node "(elisp)Timers")] *)
+(** [(describe-function 'run-at-time)] [(Info-goto-node "(elisp)Timers")] *)
 val run_after
   :  ?repeat:Time_ns.Span.t
-  -> Source_code_position.t
+  -> ?here:Stdlib.Lexing.position
   -> Time_ns.Span.t
   -> f:(unit -> unit)
   -> name:Symbol.t
@@ -33,18 +32,17 @@ val run_after
 (** [run_after_i s f = ignore (run_after s f)] *)
 val run_after_i
   :  ?repeat:Time_ns.Span.t
-  -> Source_code_position.t
+  -> ?here:Stdlib.Lexing.position
   -> Time_ns.Span.t
   -> f:(unit -> unit)
   -> name:Symbol.t
   -> docstring:string
   -> unit
 
-(** [(describe-function 'run-with-idle-timer)]
-    [(Info-goto-node "(elisp) Idle Timers")] *)
+(** [(describe-function 'run-with-idle-timer)] [(Info-goto-node "(elisp) Idle Timers")] *)
 val run_after_idle
   :  ?repeat:Time_ns.Span.t
-  -> Source_code_position.t
+  -> ?here:Stdlib.Lexing.position
   -> Time_ns.Span.t
   -> f:(unit -> unit)
   -> name:Symbol.t
@@ -54,24 +52,21 @@ val run_after_idle
 (** [run_after_idle_i s f = ignore (run_after_idle s f)] *)
 val run_after_idle_i
   :  ?repeat:Time_ns.Span.t
-  -> Source_code_position.t
+  -> ?here:Stdlib.Lexing.position
   -> Time_ns.Span.t
   -> f:(unit -> unit)
   -> name:Symbol.t
   -> docstring:string
   -> unit
 
-(** [(describe-function 'cancel-timer)]
-    [(Info-goto-node "(elisp)Timers")] *)
+(** [(describe-function 'cancel-timer)] [(Info-goto-node "(elisp)Timers")] *)
 val cancel : t -> unit
 
-(** [(describe-function 'sit-for)]
-    [(Info-goto-node "(elisp)Waiting")] *)
+(** [(describe-function 'sit-for)] [(Info-goto-node "(elisp)Waiting")] *)
 val sit_for
   :  ?redisplay:bool (** default is [true] *)
   -> Time_ns.Span.t
   -> unit Deferred.t
 
-(** [(describe-function 'sleep-for)]
-    [(Info-goto-node "(elisp)Waiting")] *)
+(** [(describe-function 'sleep-for)] [(Info-goto-node "(elisp)Waiting")] *)
 val sleep_for : Time_ns.Span.t -> unit Deferred.t

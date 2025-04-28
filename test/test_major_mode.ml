@@ -15,12 +15,12 @@ module M =
          ())
 
 let%expect_test "[wrap_existing] failure" =
-  require_does_raise (fun () -> Major_mode.wrap_existing "org-mode" [%here]);
+  require_does_raise (fun () -> Major_mode.wrap_existing "org-mode");
   [%expect
     {|
     ("Major mode's keymap doesn't exist"
       (name org-mode)
-      (wrapped_at app/emacs/lib/ecaml/test/test_major_mode.ml:18:68)
+      (wrapped_at app/emacs/lib/ecaml/test/test_major_mode.ml:18:32)
       (exn (
         "[Current_buffer.value_exn] of undefined variable" (org-mode-map keymap))))
     |}];
@@ -233,7 +233,7 @@ let%expect_test "Async initialization function" =
            ~initialize:
              ( Returns_deferred Value.Type.unit
              , fun () ->
-                 let%map () = Clock.after (Time_float.Span.of_ms 1.) in
+                 let%map () = Clock_ns.after (Time_ns.Span.of_ms 1.) in
                  print_s [%message "initialized"] )
            ())
   in

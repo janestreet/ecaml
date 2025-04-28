@@ -19,7 +19,7 @@ module Blocking = struct
 end
 
 let pop_to_buffer buffer =
-  Value.Private.run_outside_async [%here] (fun () -> Blocking.pop_to_buffer buffer)
+  Value.Private.run_outside_async (fun () -> Blocking.pop_to_buffer buffer)
 ;;
 
 let switch_to_buffer_other_window =
@@ -27,8 +27,7 @@ let switch_to_buffer_other_window =
     Funcall.Wrap.("switch-to-buffer-other-window" <: Buffer.t @-> return nil)
   in
   fun buffer ->
-    Value.Private.run_outside_async [%here] (fun () ->
-      switch_to_buffer_other_window buffer)
+    Value.Private.run_outside_async (fun () -> switch_to_buffer_other_window buffer)
 ;;
 
 let split_horizontally_exn =
@@ -43,7 +42,7 @@ let split_vertically_exn =
 
 let quit =
   let quit = Funcall.Wrap.("quit-window" <: nullary @-> return nil) in
-  fun () -> Value.Private.run_outside_async [%here] quit
+  fun () -> Value.Private.run_outside_async quit
 ;;
 
 let save_window_excursion sync_or_async f =
@@ -58,18 +57,17 @@ let set_temporarily sync_or_async window ~f =
 
 let find_file =
   let find_file = Funcall.Wrap.("find-file" <: string @-> return nil) in
-  fun path -> Value.Private.run_outside_async [%here] (fun () -> find_file path)
+  fun path -> Value.Private.run_outside_async (fun () -> find_file path)
 ;;
 
 let find_file_other_window =
   let find_file_other_window =
     Funcall.Wrap.("find-file-other-window" <: string @-> return nil)
   in
-  fun path ->
-    Value.Private.run_outside_async [%here] (fun () -> find_file_other_window path)
+  fun path -> Value.Private.run_outside_async (fun () -> find_file_other_window path)
 ;;
 
 let view_file =
   let view_file = Funcall.Wrap.("view-file" <: string @-> return nil) in
-  fun path -> Value.Private.run_outside_async [%here] (fun () -> view_file path)
+  fun path -> Value.Private.run_outside_async (fun () -> view_file path)
 ;;

@@ -1,11 +1,11 @@
 (** A "window" in Emacs is the physical area of the screen in which a buffer is displayed.
 
     Each window has its own value of point, independent of the value of point in other
-    windows displaying the same buffer.  This makes it useful to have multiple windows
+    windows displaying the same buffer. This makes it useful to have multiple windows
     showing one buffer.
 
-    A window is "live" as long as it displays a buffer.  All functions other than
-    [is_live] raise if supplied a [t] such that [not (is_live t)].
+    A window is "live" as long as it displays a buffer. All functions other than [is_live]
+    raise if supplied a [t] such that [not (is_live t)].
 
     [(Info-goto-node "(elisp)Windows")]. *)
 
@@ -54,8 +54,7 @@ val set_buffer_exn
 (** [(describe-function 'set-window-point)] *)
 val set_point_exn : t -> Position.t -> unit
 
-(** [(Info-goto-node "(elisp)Display Margins")]
-    [(describe-function 'set-window-margins)]*)
+(** [(Info-goto-node "(elisp)Display Margins")] [(describe-function 'set-window-margins)] *)
 val set_window_margins : ?left_margin:int -> ?right_margin:int -> t -> unit
 
 (** [(describe-function 'delete-window)] *)

@@ -1,6 +1,6 @@
-(** A minor mode provides optional features that users may enable or
-    disable independently of the choice of major mode.  Minor modes can be
-    enabled individually or in combination.
+(** A minor mode provides optional features that users may enable or disable independently
+    of the choice of major mode. Minor modes can be enabled individually or in
+    combination.
 
     [(Info-goto-node "(elisp)Minor Modes")] *)
 
@@ -22,42 +22,34 @@ val disable : t -> unit
 val enable : t -> unit
 val temporarily_disable : (unit, 'a) Sync_or_async.t -> t -> f:(unit -> 'a) -> 'a
 
-(** [(describe-variable 'abbrev-mode)]
-    [(describe-function 'abbrev-mode)] *)
+(** [(describe-variable 'abbrev-mode)] [(describe-function 'abbrev-mode)] *)
 val abbrev : t
 
-(** [(describe-variable 'auto-fill-mode)]
-    [(describe-function 'auto-fill-mode)]*)
+(** [(describe-variable 'auto-fill-mode)] [(describe-function 'auto-fill-mode)] *)
 val auto_fill : t
 
-(** [(describe-variable 'goto-address-mode)]
-    [(describe-function 'goto-address-mode)]*)
+(** [(describe-variable 'goto-address-mode)] [(describe-function 'goto-address-mode)] *)
 val goto_address : t
 
-(** [(describe-variable 'hl-line-mode)]
-    [(describe-function 'hl-line-mode)]*)
+(** [(describe-variable 'hl-line-mode)] [(describe-function 'hl-line-mode)] *)
 val hl_line : t
 
-(** [(describe-variable 'buffer-read-only)]
-    [(describe-function 'read-only-mode)] *)
+(** [(describe-variable 'buffer-read-only)] [(describe-function 'read-only-mode)] *)
 val read_only : t
 
-(** [(describe-variable 'view-mode)]
-    [(describe-function 'view-mode)] *)
+(** [(describe-variable 'view-mode)] [(describe-function 'view-mode)] *)
 val view : t
 
-(** [(describe-variable 'visual-line-mode)]
-    [(describe-function 'visual-line-mode)]*)
+(** [(describe-variable 'visual-line-mode)] [(describe-function 'visual-line-mode)] *)
 val visual_line : t
 
-(** [(describe-variable 'url-handler-mode)]
-    [(describe-function 'url-handler-mode)]*)
+(** [(describe-variable 'url-handler-mode)] [(describe-function 'url-handler-mode)] *)
 val url_handler : t
 
 (** Find the keymap that is active when the given minor mode is enabled, if such a keymap
     exists.
 
-    [(describe-variable 'minor-mode-map-alist)]*)
+    [(describe-variable 'minor-mode-map-alist)] *)
 val keymap : t -> Keymap.t option
 
 val keymap_exn : t -> Keymap.t
@@ -75,8 +67,8 @@ val define_minor_mode
   -> ?mode_line:string
   -> global:bool
   -> ?initialize:(t -> unit)
-       (** [t] is the minor mode currently being defined, and it can be used to decide whether
-      to set up or tear down the minor mode. *)
+       (** [t] is the minor mode currently being defined, and it can be used to decide
+           whether to set up or tear down the minor mode. *)
   -> unit
   -> t
 

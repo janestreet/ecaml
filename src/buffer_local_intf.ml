@@ -25,8 +25,8 @@ module type Buffer_local = sig
   (** [defvar] defines a buffer-local variable using [Defvar.defvar], and calls
       [Var.make_buffer_local_always]. *)
   val defvar
-    :  Symbol.t
-    -> Source_code_position.t
+    :  ?here:Stdlib.Lexing.position
+    -> Symbol.t
     -> ?docstring:string
     -> type_:'a Value.Type.t
     -> default_value:'a
@@ -34,9 +34,9 @@ module type Buffer_local = sig
     -> 'a t
 
   (** [wrap_existing var] takes a variable defined in Elisp and makes it available as a
-      [Buffer_local.t].  If [make_buffer_local_always = false], then [wrap_existing]
-      raises if [Var.is_buffer_local_always var = false].  If [make_buffer_local_always =
-      true], then [wrap_existing] calls [Var.make_buffer_local_always var]. *)
+      [Buffer_local.t]. If [make_buffer_local_always = false], then [wrap_existing] raises
+      if [Var.is_buffer_local_always var = false]. If [make_buffer_local_always = true],
+      then [wrap_existing] calls [Var.make_buffer_local_always var]. *)
   val wrap_existing
     :  ?make_buffer_local_always:bool (** default is [false] *)
     -> Symbol.t
@@ -45,11 +45,15 @@ module type Buffer_local = sig
 
   (** Idiomatic usage of [Wrap] looks like:
 
-      {[ Buffer_local.Wrap.(SYMBOL_NAME <: TYPE) ]}
+      {[
+        Buffer_local.Wrap.(SYMBOL_NAME <: TYPE)
+      ]}
 
       For example:
 
-      {[ Buffer_local.Wrap.("default-directory" <: string) ]}
+      {[
+        Buffer_local.Wrap.("default-directory" <: string)
+      ]}
 
       To use [~make_buffer_local_always:true], the idiom is:
 
@@ -69,13 +73,13 @@ module type Buffer_local = sig
   end
 
   (** [defvar_embedded] defines a buffer-local variable whose Elisp representation is an
-      opaque pointer to an OCaml value, via [Caml_embed.create_type].  This allows one to
+      opaque pointer to an OCaml value, via [Caml_embed.create_type]. This allows one to
       store an arbitrary OCaml value in a buffer local, without any conversions between
       OCaml and Elisp. *)
   val defvar_embedded
-    :  Symbol.t
-    -> Source_code_position.t
+    :  ?here:Stdlib.Lexing.position
     -> ?docstring:string
+    -> Symbol.t
     -> (module Defvar_embedded_arg with type t = 'a)
     -> 'a option t
 
@@ -88,8 +92,8 @@ module type Buffer_local = sig
   val get_var : 'a Var.t -> Buffer.t -> 'a
 
   (** A permanent buffer-local variable is unaffected by [kill-all-local-variables], and
-      so it is not cleared by changing major modes.
-      See [(Info-goto-node "(elisp)Creating Buffer-Local")]. *)
+      so it is not cleared by changing major modes. See
+      [(Info-goto-node "(elisp)Creating Buffer-Local")]. *)
   val set_permanent : _ t -> bool -> unit
 
   val is_permanent : _ t -> bool

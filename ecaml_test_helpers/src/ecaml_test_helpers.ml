@@ -4,6 +4,40 @@ open! Ecaml
 open! Expect_test_helpers_core
 module Buffer_helper = Buffer_helper
 
+module Q = struct
+  let format_message = "format-message" |> Symbol.intern
+
+  let jane_fe_test_passthrough_command_error_function =
+    "jane-fe-test-passthrough-command-error-function" |> Symbol.intern
+  ;;
+
+  let jane_fe_test_error_in_minibuffer =
+    "jane-fe-test-error-in-minibuffer" |> Symbol.intern
+  ;;
+end
+
+let () =
+  (* [minibuffer-message] works by placing an overlay with property [after-string] in the
+     minibuffer, and then deleting it after [sit-for].  To show such messages in tests,
+     just advise [minibuffer-message].
+
+     We don't need to do something similar for [set-minibuffer-message], which is
+     potentially called by normal [message] but only in interactive Emacs. *)
+  Advice.add
+    ~to_function:(Symbol.intern "minibuffer-message")
+    (Advice.defun_around_values
+       ("jane-fe-test-report-minibuffer-message" |> Symbol.intern)
+       ~docstring:"For testing."
+       Sync
+       (fun f args ->
+          let formatted_msg =
+            Value.funcallN (Q.format_message |> Symbol.to_value) args
+            |> Value.to_utf8_bytes_exn
+          in
+          messagef "[minibuffer-message] %s" formatted_msg;
+          f args))
+;;
+
 let show ?(show_point = true) () =
   if show_point
   then Buffer_helper.show_point ()
@@ -18,7 +52,6 @@ let () =
   let advice =
     Advice.defun_around_values
       ("jane-fe-test-count-read-event-depth" |> Symbol.intern)
-      [%here]
       ~docstring:"For testing."
       Sync
       (fun f args ->
@@ -135,7 +168,80 @@ let () =
        show_completions ())
 ;;
 
+let () =
+  let throw = Funcall.Wrap.("throw" <: Symbol.t @-> value @-> return ignored) in
+  defun
+    Q.jane_fe_test_passthrough_command_error_function
+    [%here]
+    ~docstring:"For testing."
+    (Returns Value.Type.unit)
+    (let%map_open.Defun () = return ()
+     and error = required "error" value
+     and _context = required "context" value
+     and _signal = required "signal" value in
+     throw Q.jane_fe_test_error_in_minibuffer error)
+;;
+
+(* Normally, [read-from-minibuffer] doesn't pass command errors through to the caller, but
+   such errors still abort keyboard macro execution.  This means that the call to
+   [execute-kbd-macro] can hang indefinitely without returning/raising if it triggers any
+   error while in a minibuffer prompt.  See [minibuffer-error-initialize] which arranges
+   for this behavior in the minibuffer.
+
+   We override this by appending to [minibuffer-setup-hook] and using a different
+   [command-error-function] which simply [throw]s the exception.  We don't want to use
+   [command-error-default-function] here, because in batch mode it kills the Emacs process
+   directly (exit code 255). *)
+let raise_command_errors_through_minibuffer =
+  let command_error_function = Var.Wrap.("command-error-function" <: Function.t) in
+  let error_message_string =
+    Funcall.Wrap.("error-message-string" <: value @-> return string)
+  in
+  let hook_function =
+    Hook.Function.create
+      ("jane-fe-test-minibuffer-error-override" |> Symbol.intern)
+      [%here]
+      ~docstring:"For testing."
+      ~hook_type:Normal_hook
+      (Returns Value.Type.unit)
+      (fun () ->
+         Current_buffer.make_buffer_local command_error_function;
+         Current_buffer.set_value
+           command_error_function
+           (Function.of_symbol Q.jane_fe_test_passthrough_command_error_function))
+  in
+  fun f ->
+    Hook.add Minibuffer.setup_hook ~where:End hook_function;
+    let%map result =
+      Monitor.try_with ~extract_exn:true (fun () ->
+        (* Disable backtraces they contain nondeterministic things like memory addresses
+           of bytecode functions.  This only affects errors that we deliberately cause to
+           exit uncleanly out of [execute-kbd-macro], namely, the [throw] in
+           [jane-fe-test-passthrough-command-error-function]. *)
+        Current_buffer.set_value_temporarily
+          Async
+          Var.Wrap.("backtrace-on-error-noninteractive" <: bool)
+          false
+          ~f)
+    in
+    Hook.remove Minibuffer.setup_hook hook_function;
+    match result with
+    | Error (Value.For_testing.Elisp_throw { tag; value } as exn)
+      when Value.eq tag (Symbol.to_value Q.jane_fe_test_error_in_minibuffer) ->
+      message_s [%message "Command errored in minibuffer" ~_:(error_message_string value)];
+      (* Reraise to prevent [press_and_show_minibuffer] from printing a CR. *)
+      raise exn
+    | Error exn -> raise exn
+    | Ok () -> ()
+;;
+
+let completions_format = Customization.Wrap.("completions-format" <: Symbol.t)
+
 let press_and_show_minibuffer ?(show_contents = true) key_sequence =
+  (* Format completions in one column rather than attempting to group them in columns.
+     This is a little easier to read in test diffs, and also avoids the *Completions*
+     buffer including TAB characters when you get unlucky. *)
+  Customization.set_value completions_format (Symbol.intern "one-column");
   let%bind () =
     (* Ensure we do not display a stale completions buffer, only one that was created
        during the execution of [key_sequence]. *)
@@ -145,7 +251,8 @@ let press_and_show_minibuffer ?(show_contents = true) key_sequence =
   in
   match%map
     try_with (fun () ->
-      execute_keys [ key_sequence; show_minibuffer_key_sequence ~show_contents; "C-]" ])
+      raise_command_errors_through_minibuffer (fun () ->
+        execute_keys [ key_sequence; show_minibuffer_key_sequence ~show_contents; "C-]" ]))
   with
   | Error _ -> ()
   | Ok () -> require false

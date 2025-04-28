@@ -13,7 +13,7 @@ module type S = sig
 
   (** All commands for which [symbol_prefix] is a prefix.
 
-      N.B. This includes symbols interned with extensions of [symbol_prefix].*)
+      N.B. This includes symbols interned with extensions of [symbol_prefix]. *)
   val all_commands : Symbol.t list Lazy.t
 
   (** Interns a new symbol prefixed with [symbol_prefix].

@@ -1,6 +1,6 @@
 (** [load-history] is an Emacs alist that associates the names of loaded library files
     with the names of the functions and variables they defined, as well as the features
-    they provided or required.  This is used by [find-function], [find-variable], and in
+    they provided or required. This is used by [find-function], [find-variable], and in
     [*Help*] buffers to jump from a symbol to its definition.
 
     [(Info-goto-node "(elisp)Where Defined")] *)
@@ -33,7 +33,7 @@ val add_entry : Source_code_position.t -> Entry.t -> unit
 
 (** [update_emacs_with_entries] updates [load-history] with the information supplied to
     [add_entry], which make it possible to, within Emacs, jump from a symbol defined by
-    Ecaml to the Ecaml source.  Each source-file name is adjusted by:
+    Ecaml to the Ecaml source. Each source-file name is adjusted by:
 
     {[
       Filename.concat in_dir (String.chop_prefix_exn file ~prefix:chop_prefix)

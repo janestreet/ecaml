@@ -9,10 +9,19 @@ include Value.Make_subtype (struct
 
 let make_overlay =
   Funcall.Wrap.(
-    "make-overlay" <: Position.t @-> Position.t @-> nil_or Buffer.t @-> return t)
+    "make-overlay"
+    <: Position.t
+       @-> Position.t
+       @-> nil_or Buffer.t
+       @-> nil_or bool
+       @-> nil_or bool
+       @-> return t)
 ;;
 
-let create ?buffer () ~start ~end_ = make_overlay start end_ buffer
+let create ?buffer ?front_advance ?rear_advance () ~start ~end_ =
+  make_overlay start end_ buffer front_advance rear_advance
+;;
+
 let start = Funcall.Wrap.("overlay-start" <: t @-> return Position.t)
 let end_ = Funcall.Wrap.("overlay-end" <: t @-> return Position.t)
 let buffer = Funcall.Wrap.("overlay-buffer" <: t @-> return Buffer.t)

@@ -1,27 +1,24 @@
-(**  [(Info-goto-node "(elisp)System Environment")]
+(** [(Info-goto-node "(elisp)System Environment")]
 
-     Emacs maintains its own copy of the path and environment which is not visible to
-     OCaml. Therefore, [Async.Process.create] will not give the same path and environment
-     as [Ecaml.Process.create], and [Ecaml.System.setenv ~key:"PATH"] does not affect the
-     behavior of [Async.Process.create] (or [Ecaml.Process.create]!). *)
+    Emacs maintains its own copy of the path and environment which is not visible to
+    OCaml. Therefore, [Async.Process.create] will not give the same path and environment
+    as [Ecaml.Process.create], and [Ecaml.System.setenv ~key:"PATH"] does not affect the
+    behavior of [Async.Process.create] (or [Ecaml.Process.create]!). *)
 
 open! Core
 open! Import
 
-(** [(describe-function 'getenv)]
-    [(Info-goto-node "(elisp)System Environment")] *)
+(** [(describe-function 'getenv)] [(Info-goto-node "(elisp)System Environment")] *)
 val getenv : string -> string option
 
-(** [(describe-function 'setenv)]
-    [(Info-goto-node "(elisp)System Environment")] *)
+(** [(describe-function 'setenv)] [(Info-goto-node "(elisp)System Environment")] *)
 val setenv : key:string -> data:string option -> unit
 
 (** [(describe-variable 'process-environment)]
     [(Info-goto-node "(elisp)System Environment")] *)
 val process_environment : string list Var.t
 
-(** [(describe-variable 'noninteractive)]
-    [(Info-goto-node "(elisp)Batch Mode")] *)
+(** [(describe-variable 'noninteractive)] [(Info-goto-node "(elisp)Batch Mode")] *)
 val noninteractive : bool Var.t
 
 (** [is_interactive () = not (Current_buffer.value_exn noninteractive)] *)

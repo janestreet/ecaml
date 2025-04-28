@@ -1,6 +1,6 @@
 (** A minibuffer is a special buffer that Emacs commands use to read arguments more
-    complicated than the single numeric prefix argument.  These arguments include file
-    names, buffer names, and command names (as in [M-x]).  The minibuffer is displayed on
+    complicated than the single numeric prefix argument. These arguments include file
+    names, buffer names, and command names (as in [M-x]). The minibuffer is displayed on
     the bottom line of the frame, in the same place as the echo area, but only while it is
     in use for reading an argument.
 
@@ -35,8 +35,11 @@ end
 module History : sig
   type t [@@deriving sexp_of]
 
-  val find_or_create : Symbol.t -> ?docstring:string -> Source_code_position.t -> t
+  val find_or_create : ?docstring:string -> ?here:Stdlib.Lexing.position -> Symbol.t -> t
   val symbol : t -> Symbol.t
+
+  (** [vc_revision] is `vc-revision-history', history for reading commit hashes. *)
+  val vc_revision : t
 end
 
 (** [history] is the default history list used when reading from the minibuffer. *)
@@ -52,10 +55,12 @@ end
 (** [(describe-variable 'history-length)] *)
 val history_length : History_length.t Customization.t
 
-(** [(describe-function 'read-from-minibuffer)]
-    [(Info-goto-node "(elisp)Text from Minibuffer")] *)
-val read_from
-  :  prompt:string
+(** [(describe-function 'format-prompt)] *)
+val format_prompt : prompt_no_colon:string -> default:string option -> string
+
+(** [(describe-function 'read-string)] [(Info-goto-node "(elisp)Text from Minibuffer")] *)
+val read_string
+  :  prompt_no_colon:string
   -> ?initial_contents:Initial_input.t
   -> ?default_value:string
   -> history:History.t
@@ -63,10 +68,9 @@ val read_from
   -> unit
   -> string Deferred.t
 
-(** [(describe-function 'read-file-name)]
-    [(Info-goto-node "(elisp) Reading File Names")] *)
+(** [(describe-function 'read-file-name)] [(Info-goto-node "(elisp) Reading File Names")] *)
 val read_file_name
-  :  prompt:string
+  :  prompt_no_colon:string
   -> ?directory:string
   -> ?default_filename:string
   -> ?mustmatch:string
@@ -75,8 +79,7 @@ val read_file_name
   -> unit
   -> string Deferred.t
 
-(** [(describe-function 'y-or-n-p)]
-    [(Info-goto-node "(elisp)Yes-or-No Queries")] *)
+(** [(describe-function 'y-or-n-p)] [(Info-goto-node "(elisp)Yes-or-No Queries")] *)
 val y_or_n : prompt:string -> bool Deferred.t
 
 (** [(describe-function 'y-or-n-p-with-timeout)]
@@ -86,8 +89,7 @@ val y_or_n_with_timeout
   -> timeout:Time_ns.Span.t * 'a
   -> 'a Y_or_n_with_timeout.t Deferred.t
 
-(** [(describe-function 'yes-or-no-p)]
-    [(Info-goto-node "(elisp)Yes-or-No Queries")] *)
+(** [(describe-function 'yes-or-no-p)] [(Info-goto-node "(elisp)Yes-or-No Queries")] *)
 val yes_or_no : prompt:string -> bool Deferred.t
 
 (** [(describe-variable 'minibuffer-exit-hook)]
@@ -115,6 +117,5 @@ val depth : unit -> int
 
 (** [(describe-function 'minibuffer-contents)]
 
-    Note: if the current buffer is not a minibuffer, [contents] returns its contents too.
-*)
+    Note: if the current buffer is not a minibuffer, [contents] returns its contents too. *)
 val contents : unit -> string

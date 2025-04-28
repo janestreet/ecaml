@@ -21,7 +21,7 @@ let browse_url =
       return ())
     else
       (* browser function may be implemented in Async Ecaml *)
-      Async_ecaml.Private.run_outside_async1 [%here] browse_url url
+      Async_ecaml.Private.run_outside_async1 browse_url url
 ;;
 
 let browse_url_chrome = Funcall.Wrap.("browse-url-chrome" <: Url.t @-> return nil)

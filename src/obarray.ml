@@ -1,10 +1,12 @@
 open! Core
 open! Import0
 
+let obarrayp = Funcall.Wrap.("obarrayp" <: value @-> return bool)
+
 include Value.Make_subtype (struct
     let name = "obarray"
     let here = [%here]
-    let is_in_subtype = Value.is_vector
+    let is_in_subtype = obarrayp
   end)
 
 let standard = Current_buffer0.value_exn Var.Wrap.("obarray" <: t)

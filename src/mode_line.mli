@@ -15,8 +15,13 @@ module Format : sig
   (** Quotes any %-constructs in the string, so that the string is interpreted verbatim in
       the mode line format. *)
   val string_verbatim : string -> t
+
+  val propertize : t -> Text.Property.t list -> t
 end
 
-(** [(describe-function 'format-mode-line)]
-    Sadly, in test, which runs Emacs batch mode, [text] always returns the empty string. *)
+(** [(describe-function 'force-mode-line-update)] *)
+val force_update : ?all:bool -> unit -> unit
+
+(** [(describe-function 'format-mode-line)] Sadly, in test, which runs Emacs batch mode,
+    [text] always returns the empty string. *)
 val text : Format.t -> Text.t

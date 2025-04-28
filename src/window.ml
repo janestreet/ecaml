@@ -31,7 +31,7 @@ module Blocking = struct
 end
 
 let set_buffer_exn ?keep_margins t buffer =
-  Value.Private.run_outside_async [%here] (fun () ->
+  Value.Private.run_outside_async (fun () ->
     Blocking.set_buffer_exn ?keep_margins t buffer)
 ;;
 

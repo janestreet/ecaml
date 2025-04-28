@@ -1,4 +1,4 @@
-(** A syntax table specifies the syntactic textual function of each character.  This
+(** A syntax table specifies the syntactic textual function of each character. This
     information is used by the parsing functions, the complex movement commands, and
     others to determine where words, symbols, and other syntactic constructs begin and
     end.
@@ -22,7 +22,7 @@ val create : ?parent:t -> unit -> t
     [(Info-goto-node "(elisp)Syntax Table Functions")] *)
 val copy : t -> t
 
-(** [(Info-goto-node "(elisp)Syntax Class Table")]*)
+(** [(Info-goto-node "(elisp)Syntax Class Table")] *)
 module Class : sig
   type t =
     | Char_quote
@@ -50,7 +50,7 @@ module Class : sig
   val to_string : t -> string
 end
 
-(** [(Info-goto-node "(elisp)Syntax Flags")]*)
+(** [(Info-goto-node "(elisp)Syntax Flags")] *)
 module Flag : sig
   type t =
     | Alternative_comment

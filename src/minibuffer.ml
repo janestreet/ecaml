@@ -88,13 +88,20 @@ module History = struct
 
   let all_by_symbol_name = Hashtbl.create (module String)
 
-  let find_or_create symbol ?docstring here =
+  let find_or_create ?docstring ?(here = Stdlib.Lexing.dummy_pos) symbol =
     Hashtbl.find_or_add all_by_symbol_name (Symbol.name symbol) ~default:(fun () ->
       create symbol ?docstring here)
   ;;
+
+  let wrap_existing name =
+    Hashtbl.find_or_add all_by_symbol_name name ~default:(fun () ->
+      T Var.Wrap.(name <: list string))
+  ;;
+
+  let vc_revision = wrap_existing "vc-revision-history"
 end
 
-let history : History.t = T Var.Wrap.("minibuffer-history" <: list string)
+let history = History.wrap_existing "minibuffer-history"
 
 module History_length = struct
   type t =
@@ -123,7 +130,7 @@ let history_length = Customization.Wrap.("history-length" <: History_length.t)
 
 let y_or_n =
   let y_or_n_p = Funcall.Wrap.("y-or-n-p" <: string @-> return bool) in
-  fun ~prompt -> Async_ecaml.Private.run_outside_async [%here] (fun () -> y_or_n_p prompt)
+  fun ~prompt -> Async_ecaml.Private.run_outside_async (fun () -> y_or_n_p prompt)
 ;;
 
 include struct
@@ -135,7 +142,7 @@ include struct
   end
 
   let y_or_n_with_timeout ~prompt ~timeout:(span, a) =
-    Async_ecaml.Private.run_outside_async [%here] (fun () ->
+    Async_ecaml.Private.run_outside_async (fun () ->
       let result =
         y_or_n_p_with_timeout prompt (span |> Time_ns.Span.to_sec) Q.default_value
       in
@@ -149,35 +156,38 @@ end
 
 let yes_or_no =
   let yes_or_no_p = Funcall.Wrap.("yes-or-no-p" <: string @-> return bool) in
-  fun ~prompt ->
-    Async_ecaml.Private.run_outside_async [%here] (fun () -> yes_or_no_p prompt)
+  fun ~prompt -> Async_ecaml.Private.run_outside_async (fun () -> yes_or_no_p prompt)
 ;;
 
-let read_from =
-  let read_from_minibuffer =
+let format_prompt =
+  let f = Funcall.Wrap.("format-prompt" <: string @-> nil_or string @-> return string) in
+  fun ~prompt_no_colon ~default ->
+    (* Safe to pass [prompt_no_colon] directly into a format string because
+       [format-prompt] treats it verbatim if there are no FORMAT-ARGS passed. *)
+    f prompt_no_colon default
+;;
+
+let read_string =
+  let read_string =
     Funcall.Wrap.(
-      "read-from-minibuffer"
+      "read-string"
       <: string
          @-> Initial_input.minibuffer_t
-         @-> nil_or Keymap.t
-         @-> bool
          @-> value
          @-> nil_or string
          @-> return string)
   in
-  fun ~prompt
+  fun ~prompt_no_colon
     ?(initial_contents = Initial_input.Empty)
     ?default_value
     ~history
     ?history_pos
     () ->
-    Async_ecaml.Private.run_outside_async [%here] (fun () ->
+    Async_ecaml.Private.run_outside_async (fun () ->
       let history = History.symbol history |> Symbol.to_value in
-      read_from_minibuffer
-        prompt
+      read_string
+        (format_prompt ~prompt_no_colon ~default:default_value)
         initial_contents
-        None
-        false
         (match history_pos with
          | None -> history
          | Some i -> Value.cons history (i |> Value.of_int_exn))
@@ -196,10 +206,10 @@ let read_file_name =
          @-> nil_or Function.t
          @-> return string)
   in
-  fun ~prompt ?directory ?default_filename ?mustmatch ?initial ?predicate () ->
-    Async_ecaml.Private.run_outside_async [%here] (fun () ->
+  fun ~prompt_no_colon ?directory ?default_filename ?mustmatch ?initial ?predicate () ->
+    Async_ecaml.Private.run_outside_async (fun () ->
       read_file_name_from_minbuffer
-        prompt
+        (format_prompt ~prompt_no_colon ~default:default_filename)
         directory
         default_filename
         mustmatch

@@ -36,8 +36,8 @@ let registered_callbacks : Source_code_position.t String.Table.t = String.Table.
 
 let register
   (type callback)
+  ?(here = Stdlib.Lexing.dummy_pos)
   (t : callback t)
-  here
   ~(f : callback)
   ~should_run_holding_async_lock
   =
@@ -75,22 +75,37 @@ let register
            report_exn_when_calling_callback exn;
            raise exn)
   in
-  Stdlib.Callback.register t.name callback
+  (Stdlib.Callback.register [@ocaml.alert "-unsafe_multidomain"]) t.name callback
 ;;
 
 let dispatch_function = { arity = Arity2; name = "dispatch_function" }
 
-let end_of_module_initialization =
-  { arity = Arity1; name = "end_of_module_initialization" }
+let on_end_of_module_initialization =
+  let functions = ref [] in
+  let () =
+    register
+      { arity = Arity1; name = "end_of_module_initialization" }
+      ~should_run_holding_async_lock:false
+      ~f:(fun () ->
+        List.iter !functions ~f:(fun (here, f) ->
+          try f `Not_holding_the_async_lock with
+          | exn ->
+            eprint_s
+              [%message
+                "on_end_of_module_initialization function raised"
+                  ~_:(here : Source_code_position.t)
+                  (exn : exn)
+                  ~backtrace:(Backtrace.get () : Backtrace.t)]))
+  in
+  fun ?(here = Stdlib.Lexing.dummy_pos) f -> functions := (here, f) :: !functions
 ;;
 
 (** [no_active_env] is used when the C code detects that OCaml is attempting to call an
-    Emacs function but there is no active env.  It prints a message that includes an
-    OCaml backtrace, which may be useful in debugging. *)
+    Emacs function but there is no active env. It prints a message that includes an OCaml
+    backtrace, which may be useful in debugging. *)
 let () =
   register
     { arity = Arity1; name = "no_active_env" }
-    [%here]
     ~f:(fun () ->
       eprint_s
         [%message

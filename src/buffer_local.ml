@@ -41,7 +41,7 @@ module Wrap = struct
   include (Value.Type : Value.Type.S)
 end
 
-let defvar symbol here ?docstring ~type_ ~default_value () =
+let defvar ?(here = Stdlib.Lexing.dummy_pos) symbol ?docstring ~type_ ~default_value () =
   let var =
     Defvar.defvar
       symbol
@@ -57,14 +57,14 @@ let defvar symbol here ?docstring ~type_ ~default_value () =
 
 let defvar_embedded
   (type a)
-  symbol
-  here
+  ?(here = Stdlib.Lexing.dummy_pos)
   ?docstring
+  symbol
   (module Arg : Defvar_embedded_arg with type t = a)
   =
   defvar
     symbol
-    here
+    ~here
     ?docstring
     ~type_:
       (Value.Type.nil_or

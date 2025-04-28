@@ -25,3 +25,21 @@ let%expect_test "[press_and_show_prompt] shows completions" =
       |}];
     return ())
 ;;
+
+let%expect_test "failure to complete on RET, messages" =
+  let%bind () = press_and_show_minibuffer "C-x k zzzzz RET" in
+  [%expect
+    {|
+    [minibuffer-message] No match
+
+    Kill buffer (default *scratch*): zzzzz
+    
+    |}];
+  return ()
+;;
+
+let%expect_test "errors in minibuffer do not cause hang" =
+  let%bind () = press_and_show_minibuffer "C-x k zzzzz C-f" in
+  [%expect {| ("Command errored in minibuffer" "End of buffer") |}];
+  return ()
+;;

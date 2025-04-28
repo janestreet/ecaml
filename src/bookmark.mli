@@ -40,8 +40,8 @@ module Property : sig
 
   (** Typical use is to [defun] a handler and set [handler] to [Function.of_symbol].
 
-      The property has type [Function.t t] so that we can deserialize values like [(lambda
-      ...)] set from elisp. *)
+      The property has type [Function.t t] so that we can deserialize values like
+      [(lambda ...)] set from elisp. *)
   val handler : Function.t t
 
   val position : Position.t t
@@ -68,9 +68,9 @@ module Record : sig
   val create : Property.And_value.t list -> t
 end
 
-(** [set m t a ~no_overwrite:true] means, let [a] shadow any previous location
-    bookmarked as [t]. If the user removes this bookmark, the previous bookmark of this
-    name will be restored. *)
+(** [set m t a ~no_overwrite:true] means, let [a] shadow any previous location bookmarked
+    as [t]. If the user removes this bookmark, the previous bookmark of this name will be
+    restored. *)
 val set : t -> Record.t -> no_overwrite:bool -> unit
 
 val param : (Record.t -> 'a) -> 'a Defun.t

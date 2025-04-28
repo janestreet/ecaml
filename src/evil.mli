@@ -39,3 +39,13 @@ val is_in_use : unit -> bool
 
 (** [(describe-function 'evil-define-key* )] *)
 val define_key : State.t list -> Keymap.t -> Key_sequence.t -> Keymap.Entry.t -> unit
+
+(** Updates evil-mode's visual selection variables if mark and point have been moved
+    programmatically. Normally this is already called by [evil-visual-post-command-hook],
+    but it may be useful for code that sets mark outside of a command.
+
+    This function may be called unconditionally when mark is moved; it checks whether
+    [evil-mode] is active in the current buffer and if the current evil state is [visual].
+
+    [(describe-function 'evil-visual-refresh)] *)
+val visual_refresh_if_necessary : unit -> unit

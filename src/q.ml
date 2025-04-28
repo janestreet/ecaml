@@ -1,4 +1,4 @@
-(** [Q] is short for Emacs [quote].  [Q] defines constant symbols.
+(** [Q] is short for Emacs [quote]. [Q] defines constant symbols.
 
     The naming convention is to use the emacs name but replace '-' with '_'. *)
 
@@ -20,7 +20,7 @@ let symbol = "symbol" |> Symbol.intern
 let t = "t" |> Symbol.intern
 let vector = "vector" |> Symbol.intern
 
-(** [K] is short for "keyword".  [K] defines a symbols starting with ":". *)
+(** [K] is short for "keyword". [K] defines a symbols starting with ":". *)
 module K = struct
   let around = ":around" |> Symbol.intern
   let background = ":background" |> Symbol.intern

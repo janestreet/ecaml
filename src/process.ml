@@ -137,31 +137,46 @@ let create ?buffer ?coding ?(query_before_exit = true) ?stderr prog args ~name (
   |> of_value_exn
 ;;
 
-let kill = Funcall.Wrap.("delete-process" <: t @-> return nil)
+let kill = Funcall.Wrap.("kill-process" <: t @-> return nil)
+let delete = Funcall.Wrap.("delete-process" <: t @-> return nil)
 
-let create_unix_network_process () ~filter ~name ~socket_path =
+let create_unix_network_process
+  ?coding
+  ?(here = Stdlib.Lexing.dummy_pos)
+  ()
+  ~filter
+  ~name
+  ~socket_path
+  =
   of_value_exn
     (Symbol.funcallN
        Q.make_network_process
-       [ Q.K.name |> Symbol.to_value
-       ; name |> Value.of_utf8_bytes
-       ; Q.K.family |> Symbol.to_value
-       ; Q.local |> Symbol.to_value
-       ; Q.K.server |> Symbol.to_value
-       ; Q.t |> Symbol.to_value
-       ; Q.K.service |> Symbol.to_value
-       ; socket_path |> Value.of_utf8_bytes
-       ; Q.K.filter |> Symbol.to_value
-       ; Function.to_value
-           (Defun.lambda
-              [%here]
-              ~docstring:"Network process filter."
-              (Returns Value.Type.unit)
-              (let%map_open.Defun () = return ()
-               and process = required "process" t
-               and output = required "output" Text.t in
-               filter process output))
-       ])
+       ([ Q.K.name |> Symbol.to_value
+        ; name |> Value.of_utf8_bytes
+        ; Q.K.family |> Symbol.to_value
+        ; Q.local |> Symbol.to_value
+        ; Q.K.server |> Symbol.to_value
+        ; Q.t |> Symbol.to_value
+        ; Q.K.service |> Symbol.to_value
+        ; socket_path |> Value.of_utf8_bytes
+        ; Q.K.filter |> Symbol.to_value
+        ; Function.to_value
+            (Defun.lambda
+               here
+               ~docstring:[%string "Network process filter for \"%{name}\"."]
+               (Returns Value.Type.unit)
+               (let%map_open.Defun () = return ()
+                and process = required "process" t
+                and output = required "output" Text.t in
+                filter process output))
+        ]
+        @
+        match coding with
+        | None -> []
+        | Some (`Decoding decoding, `Encoding encoding) ->
+          [ Q.K.coding |> Symbol.to_value
+          ; Value.cons (Coding_system.to_value decoding) (Coding_system.to_value encoding)
+          ]))
 ;;
 
 module Call = struct
@@ -491,7 +506,7 @@ let wrap_sentinel
 
 let set_sentinel
   (type a)
-  here
+  ?(here = Stdlib.Lexing.dummy_pos)
   t
   (returns : (unit, a) Defun.Returns.t)
   ~(sentinel : event:string -> a)
@@ -510,7 +525,7 @@ let set_sentinel
 
 let extend_sentinel
   (type a)
-  here
+  ?(here = Stdlib.Lexing.dummy_pos)
   t
   (returns : (unit, a) Defun.Returns.t)
   ~(sentinel : event:string -> a)
@@ -534,16 +549,15 @@ let extend_sentinel
         match returns with
         | Returns _ ->
           run_previous_sentinel ();
-          Background.Private.mark_running_in_background [%here] ~f:(fun () : a ->
+          Background.Private.mark_running_in_background (fun () : a ->
             sentinel ~event:(event |> Value.to_utf8_bytes_exn))
         | Returns_deferred _ ->
           let%bind.Deferred () =
             Value.Private.run_outside_async
-              [%here]
               ~allowed_in_background:true
               run_previous_sentinel
           in
-          Background.Private.mark_running_in_background [%here] ~f:(fun () ->
+          Background.Private.mark_running_in_background (fun () ->
             sentinel ~event:(event |> Value.to_utf8_bytes_exn))))
 ;;
 
@@ -565,7 +579,7 @@ let exited =
     Caml_embed.create_type
       (Type_equal.Id.create ~name:"exited" [%sexp_of: Exited.t Deferred.t])
   in
-  fun t ->
+  fun ?(here = Stdlib.Lexing.dummy_pos) t ->
     let check_status () : Exited.t option =
       match exit_status t with
       | Not_exited -> None
@@ -579,7 +593,7 @@ let exited =
        | Some x -> return x
        | None ->
          let ivar : Exited.t Ivar.t = Ivar.create () in
-         extend_sentinel [%here] t (Returns Value.Type.unit) ~sentinel:(fun ~event:_ ->
+         extend_sentinel ~here t (Returns Value.Type.unit) ~sentinel:(fun ~event:_ ->
            Option.iter (check_status ()) ~f:(Ivar.fill_if_empty ivar));
          let exited = Ivar.read ivar in
          set_property t property (exited |> Value.Type.to_value type_);

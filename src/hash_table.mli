@@ -11,8 +11,7 @@ module Test : sig
     | Equal (** [(describe-function 'equal)] *)
 end
 
-(** [(describe-function 'make-hash-table)]
-    [(Info-goto-node "(elisp) Creating Hash")] *)
+(** [(describe-function 'make-hash-table)] [(Info-goto-node "(elisp) Creating Hash")] *)
 val create : ?test:Test.t (** default is [Eql] *) -> unit -> t
 
 (** [(describe-function 'gethash)] *)

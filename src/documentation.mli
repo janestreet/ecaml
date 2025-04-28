@@ -27,12 +27,11 @@ module Special_sequence : sig
   val describe_keymap : Symbol.t -> string
 
   (** Assume the named keymap is active, for any following {!command} sequences in the
-      current documentation string.  (This does not generate any text on its own.) *)
+      current documentation string. (This does not generate any text on its own.) *)
   val assume_keymap : Symbol.t -> string
 end
 
-(** Convenience module for constructing documentation strings with substitution
-    sequences.
+(** Convenience module for constructing documentation strings with substitution sequences.
 
     [O] is designed to be locally opened, like so:
 
@@ -42,8 +41,8 @@ end
           Documentation.O.(
             substitute_command_keys
               [%string {| Press %{command Q.foo} to invoke %{symbol Q.foo}. |}])
-    ]}
-*)
+      ;;
+    ]} *)
 module O : sig
   val substitute_command_keys : string -> Text.t
 

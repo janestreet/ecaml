@@ -3,8 +3,7 @@
 
     Requires emacs 26.1 or later.
 
-    [(Info-goto-node "(elisp)Watching Variables")]
-*)
+    [(Info-goto-node "(elisp)Watching Variables")] *)
 
 open! Core
 open! Import
@@ -32,7 +31,7 @@ end
 type t
 
 (** [(describe-function 'add-variable-watcher)] *)
-val add : Source_code_position.t -> 'a Var.t -> f:(Event.t -> unit) -> t
+val add : ?here:Stdlib.Lexing.position -> 'a Var.t -> f:(Event.t -> unit) -> t
 
 (** [(describe-function 'remove-variable-watcher)] *)
 val remove : t -> unit

@@ -8,6 +8,7 @@ module Q = struct
   let put_text_property = "put-text-property" |> Symbol.intern
   let set_text_properties = "set-text-properties" |> Symbol.intern
   let derived_mode_p = "derived-mode-p" |> Symbol.intern
+  let nomessage = "nomessage" |> Symbol.intern
 end
 
 include Current_buffer0
@@ -24,13 +25,13 @@ let set_temporarily_to_temp_buffer ?(here = Stdlib.Lexing.dummy_pos) ?name sync_
 ;;
 
 let major_mode () =
-  Major_mode.find_or_wrap_existing [%here] (get_buffer_local Major_mode.major_mode_var)
+  Major_mode.find_or_wrap_existing (get_buffer_local Major_mode.major_mode_var)
 ;;
 
 let set_auto_mode =
   let set_auto_mode = Funcall.Wrap.("set-auto-mode" <: nil_or bool @-> return nil) in
   fun ?keep_mode_if_same () ->
-    Value.Private.run_outside_async [%here] (fun () -> set_auto_mode keep_mode_if_same)
+    Value.Private.run_outside_async (fun () -> set_auto_mode keep_mode_if_same)
 ;;
 
 let bury = Funcall.Wrap.("bury-buffer" <: nullary @-> return nil)
@@ -141,14 +142,12 @@ let contents ?start ?end_ ?(text_properties = false) () =
 
 let kill =
   let kill_buffer = Funcall.Wrap.("kill-buffer" <: nullary @-> return nil) in
-  fun () ->
-    Value.Private.run_outside_async [%here] ~allowed_in_background:true kill_buffer
+  fun () -> Value.Private.run_outside_async ~allowed_in_background:true kill_buffer
 ;;
 
 let save =
   let save_buffer = Funcall.Wrap.("save-buffer" <: nullary @-> return nil) in
-  fun () ->
-    Value.Private.run_outside_async [%here] ~allowed_in_background:true save_buffer
+  fun () -> Value.Private.run_outside_async ~allowed_in_background:true save_buffer
 ;;
 
 let erase = Funcall.Wrap.("erase-buffer" <: nullary @-> return nil)
@@ -374,7 +373,7 @@ let revert_buffer_function =
     "revert-buffer-function" <: Function.t)
 ;;
 
-let set_revert_buffer_function here returns f =
+let set_revert_buffer_function ?(here = Stdlib.Lexing.dummy_pos) returns f =
   set_buffer_local
     revert_buffer_function
     (Defun.lambda
@@ -457,4 +456,20 @@ let is_derived_mode ts =
   let args = List.map ts ~f:(fun mode -> Major_mode.symbol mode |> Symbol.to_value) in
   let ret = Symbol.funcallN Q.derived_mode_p args in
   Value.to_bool ret
+;;
+
+let write_region =
+  Funcall.Wrap.(
+    "write-region"
+    <: Position.t
+       @-> Position.t
+       @-> Ecaml_filename.Filename.t
+       @-> bool
+       @-> Symbol.t
+       @-> return ignored)
+;;
+
+let write_region ?(start = Point.min ()) ?(end_ = Point.max ()) ?(append = false) filename
+  =
+  write_region start end_ filename append Q.nomessage
 ;;

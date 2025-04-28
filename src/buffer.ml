@@ -90,7 +90,7 @@ let buffer_local_variables t =
 
 let find_file_noselect =
   let f = Funcall.Wrap.("find-file-noselect" <: string @-> return t) in
-  fun filename -> Value.Private.run_outside_async [%here] (fun () -> f filename)
+  fun filename -> Value.Private.run_outside_async (fun () -> f filename)
 ;;
 
 let is_internal_or_dead t =
@@ -131,7 +131,7 @@ let save_some =
     Funcall.Wrap.("save-some-buffers" <: bool @-> Which_buffers.t @-> return nil)
   in
   fun ?(query = true) ?(which_buffers = Which_buffers.File_visiting) () ->
-    Value.Private.run_outside_async [%here] (fun () ->
+    Value.Private.run_outside_async (fun () ->
       try save_some_buffers (not query) which_buffers with
       | exn -> raise_s [%message "[Buffer.save_some]" (exn : exn)])
 ;;
@@ -139,7 +139,6 @@ let save_some =
 let with_temp_buffer ?(name = " *temp*") sync_or_async f =
   let temp_buffer = create ~name in
   Sync_or_async.protect
-    [%here]
     sync_or_async
     ~f:(fun () -> f temp_buffer)
     ~finally:(fun () -> Blocking.kill temp_buffer)
@@ -151,7 +150,7 @@ let revert =
   in
   fun ?(confirm = false) t ->
     let noconfirm = not confirm in
-    Value.Private.run_outside_async [%here] ~allowed_in_background:noconfirm (fun () ->
+    Value.Private.run_outside_async ~allowed_in_background:noconfirm (fun () ->
       Current_buffer0.set_temporarily Sync t ~f:(fun () ->
         ignore (revert_buffer false noconfirm false : bool)))
 ;;

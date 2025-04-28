@@ -58,7 +58,7 @@ let temporarily_disable sync_or_async t ~f =
   if is_enabled t
   then (
     disable t;
-    Sync_or_async.protect [%here] sync_or_async ~f ~finally:(fun () -> enable t))
+    Sync_or_async.protect sync_or_async ~f ~finally:(fun () -> enable t))
   else f ()
 ;;
 

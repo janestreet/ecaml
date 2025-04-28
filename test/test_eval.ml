@@ -10,12 +10,11 @@ end
 let%expect_test _ =
   print_s [%sexp (Feature.is_provided Q.array : bool)];
   [%expect {| false |}];
-  Eval.after_load [%here] Q.array ~f:(fun () -> print_s [%sexp "Hello world"]);
+  Eval.after_load Q.array ~f:(fun () -> print_s [%sexp "Hello world"]);
   [%expect {| |}];
   Feature.require Q.array;
   [%expect {| "Hello world" |}];
-  Eval.after_load [%here] Q.array ~f:(fun () ->
-    print_s [%sexp "This should print immediately"]);
+  Eval.after_load Q.array ~f:(fun () -> print_s [%sexp "This should print immediately"]);
   [%expect {| "This should print immediately" |}];
   return ()
 ;;

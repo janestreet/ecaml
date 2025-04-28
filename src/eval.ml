@@ -5,7 +5,7 @@ module Q = struct
   let eval_after_load = "eval-after-load" |> Symbol.intern
 end
 
-let after_load here feature ~f =
+let after_load ?(here = Stdlib.Lexing.dummy_pos) feature ~f =
   let fn =
     Function.create here ~args:[] (fun _ ->
       f ();

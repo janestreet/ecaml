@@ -65,7 +65,7 @@ let add_variable_watcher =
   Funcall.Wrap.("add-variable-watcher" <: Symbol.type_ @-> Function.type_ @-> return nil)
 ;;
 
-let add here var ~f =
+let add ?(here = Stdlib.Lexing.dummy_pos) var ~f =
   let watcher = build_function here f in
   add_variable_watcher (Var.symbol var) watcher;
   { symbol = Var.symbol var; watcher }

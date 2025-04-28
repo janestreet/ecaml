@@ -130,8 +130,8 @@ let test_ocaml_gc_handles_references_from_emacs ~make_emacs_reference =
   print_s [%message (alive_before : bool) (alive_after : bool)]
 ;;
 
-let%expect_test ("OCaml objects no longer referenced from Emacs can be gc'ed by OCaml" [@tags
-                                                                                         "disabled"])
+let%expect_test ("OCaml objects no longer referenced from Emacs can be gc'ed by OCaml"
+  [@tags "disabled"])
   =
   test_ocaml_gc_handles_references_from_emacs ~make_emacs_reference:(fun ~ocaml_value ->
     Function.create [%here] ~args:[] ocaml_value |> Function.to_value);

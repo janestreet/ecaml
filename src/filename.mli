@@ -1,4 +1,4 @@
-(** The name of a file.  Functions in this module work directly on names, but do not read
+(** The name of a file. Functions in this module work directly on names, but do not read
     from or write to the filesystem.
 
     [(Info-goto-node "(elisp)File Names")] *)
@@ -15,46 +15,46 @@ include
 include Hashable.S with type t := t
 include Valueable.S with type t := t
 
-(** [(describe-function 'file-name-directory)]
-    [(Info-goto-node "(elisp)File Name Components")] *)
+(** - [(describe-function 'file-name-directory)]
+    - [(Info-goto-node "(elisp)File Name Components")] *)
 val directory : t -> t option
 
 val directory_exn : t -> t
 
-(** [(describe-function 'file-name-nondirectory)]
-    [(Info-goto-node "(elisp)File Name Components")] *)
+(** - [(describe-function 'file-name-nondirectory)]
+    - [(Info-goto-node "(elisp)File Name Components")] *)
 val nondirectory : t -> t
 
-(** [(describe-function 'file-name-extension)]
-    [(Info-goto-node "(elisp)File Name Components")] *)
+(** - [(describe-function 'file-name-extension)]
+    - [(Info-goto-node "(elisp)File Name Components")] *)
 val extension : t -> string option
 
-(** [(describe-function 'file-name-extension)]
-    [(Info-goto-node "(elisp)File Name Components")] *)
+(** - [(describe-function 'file-name-extension)]
+    - [(Info-goto-node "(elisp)File Name Components")] *)
 val extension_exn : t -> string
 
-(** [(describe-function 'file-name-sans-extension)]
-    [(Info-goto-node "(elisp)File Name Components")] *)
+(** - [(describe-function 'file-name-sans-extension)]
+    - [(Info-goto-node "(elisp)File Name Components")] *)
 val sans_extension : t -> string
 
-(** [(describe-function 'file-name-as-directory)]
-    [(Info-goto-node "(elisp)Directory Names")] *)
+(** - [(describe-function 'file-name-as-directory)]
+    - [(Info-goto-node "(elisp)Directory Names")] *)
 val to_directory : t -> t
 
-(** [(describe-function 'directory-file-name)]
-    [(Info-goto-node "(elisp)Directory Names")] *)
+(** - [(describe-function 'directory-file-name)]
+    - [(Info-goto-node "(elisp)Directory Names")] *)
 val of_directory : t -> t
 
-(** [(describe-function 'file-name-absolute-p)]
-    [(Info-goto-node "(elisp)Relative File Names")] *)
+(** - [(describe-function 'file-name-absolute-p)]
+    - [(Info-goto-node "(elisp)Relative File Names")] *)
 val is_absolute : t -> bool
 
-(** [(describe-function 'file-relative-name)]
-    [(Info-goto-node "(elisp)Relative File Names")] *)
+(** - [(describe-function 'file-relative-name)]
+    - [(Info-goto-node "(elisp)Relative File Names")] *)
 val make_relative : t -> relative_to:t -> t
 
-(** [(describe-function 'expand-file-name)]
-    [(Info-goto-node "(elisp)File Name Expansion")] *)
+(** - [(describe-function 'expand-file-name)]
+    - [(Info-goto-node "(elisp)File Name Expansion")] *)
 val expand : t -> in_dir:[ `Default_directory_in_current_buffer | `This of string ] -> t
 
 (** [(describe-function 'read-file-name)] *)
@@ -62,8 +62,8 @@ val read : prompt:string -> t Deferred.t
 
 (** An absolute file name.
 
-    The Elisp value may begin with [~/] instead of [/], so it is automatically expanded
-    on conversion. *)
+    The Elisp value may begin with [~/] instead of [/], so it is automatically expanded on
+    conversion. *)
 val absolute_t : File_path.Absolute.t Value.Type.t
 
 (** A relative file name. *)

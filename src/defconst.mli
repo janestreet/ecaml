@@ -1,4 +1,4 @@
-(** Define constants.  (N.B. Elisp constants are mutable.  Read the docs.)
+(** Define constants. (N.B. Elisp constants are mutable. Read the docs.)
 
     [(Info-goto-node "(elisp)Defining Variables")] *)
 

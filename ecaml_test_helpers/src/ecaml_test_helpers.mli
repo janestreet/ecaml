@@ -13,8 +13,7 @@ val press
 
     - minibuffer prompt
     - minibuffer contents, unless [show_contents = false]
-    - *Completions* buffer, if any
-*)
+    - *Completions* buffer, if any *)
 val press_and_show_minibuffer
   :  ?show_contents:bool (** default: [true] *)
   -> string

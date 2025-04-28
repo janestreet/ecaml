@@ -3,7 +3,7 @@ open! Async_kernel
 open! Import
 open! Function
 
-let () = Backtrace.elide := true
+let () = Dynamic.set_root Backtrace.elide true
 
 let%expect_test "mutual recursion between Emacs and OCaml" =
   let r = ref None in
@@ -133,7 +133,7 @@ let%expect_test "raising from OCaml to OCaml through many layers of Emacs" =
       let show_errors = false in
       match show_errors with
       | true ->
-        Ref.set_temporarily Backtrace.elide false ~f:(fun () ->
+        Dynamic.with_temporarily Backtrace.elide false ~f:(fun () ->
           require_does_raise ~show_backtrace:true (fun () -> loop 1))
       | false -> require_does_raise (fun () -> loop 1));
   [%expect
@@ -166,7 +166,6 @@ let%expect_test "function descriptions" =
   let describe ?docstring ?optional_args ?rest_arg () ~args =
     Defun.defalias
       function_name
-      [%here]
       ~alias_of:
         (Function.create [%here] do_nothing ?docstring ?optional_args ?rest_arg ~args
          |> Function.to_value)
@@ -176,7 +175,7 @@ let%expect_test "function descriptions" =
   describe () ~args:[];
   [%expect
     {|
-    a Lisp function.
+    a interpreted-function.
 
     (test-function)
 
@@ -185,7 +184,7 @@ let%expect_test "function descriptions" =
   describe () ~args:[ x ];
   [%expect
     {|
-    a Lisp function.
+    a interpreted-function.
 
     (test-function X)
 
@@ -194,7 +193,7 @@ let%expect_test "function descriptions" =
   describe () ~args:[ x; y ];
   [%expect
     {|
-    a Lisp function.
+    a interpreted-function.
 
     (test-function X Y)
 
@@ -203,7 +202,7 @@ let%expect_test "function descriptions" =
   describe () ~args:[] ~rest_arg:x;
   [%expect
     {|
-    a Lisp function.
+    a interpreted-function.
 
     (test-function &rest X)
 
@@ -212,7 +211,7 @@ let%expect_test "function descriptions" =
   describe () ~args:[ x ] ~rest_arg:y;
   [%expect
     {|
-    a Lisp function.
+    a interpreted-function.
 
     (test-function X &rest Y)
 
@@ -221,7 +220,7 @@ let%expect_test "function descriptions" =
   describe () ~args:[] ~optional_args:[ x ];
   [%expect
     {|
-    a Lisp function.
+    a interpreted-function.
 
     (test-function &optional X)
 
@@ -230,7 +229,7 @@ let%expect_test "function descriptions" =
   describe () ~args:[] ~optional_args:[ x; y ];
   [%expect
     {|
-    a Lisp function.
+    a interpreted-function.
 
     (test-function &optional X Y)
 
@@ -239,7 +238,7 @@ let%expect_test "function descriptions" =
   describe () ~docstring:"custom doc" ~args:[ w ] ~optional_args:[ x; y ] ~rest_arg:z;
   [%expect
     {|
-    a Lisp function.
+    a interpreted-function.
 
     (test-function W &optional X Y &rest Z)
 

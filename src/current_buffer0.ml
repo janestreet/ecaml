@@ -9,7 +9,7 @@ let set = Funcall.Wrap.("set-buffer" <: Buffer.t @-> return nil)
 let set_temporarily ?(here = Stdlib.Lexing.dummy_pos) sync_or_async buffer ~f =
   let old = get () in
   set buffer;
-  Sync_or_async.protect here sync_or_async ~f ~finally:(fun () ->
+  Sync_or_async.protect ~here sync_or_async ~f ~finally:(fun () ->
     if Buffer.is_live old then set old)
 ;;
 
@@ -59,7 +59,7 @@ let set_values_temporarily sync_or_async vars_and_values ~f =
       Var.And_value_option.T (var, value var))
   in
   List.iter vars_and_values ~f:(fun (Var.And_value.T (var, value)) -> set_value var value);
-  Sync_or_async.protect [%here] sync_or_async ~f ~finally:(fun () ->
+  Sync_or_async.protect sync_or_async ~f ~finally:(fun () ->
     let new_buffer = get () in
     let buffer_changed = not (Buffer.equal old_buffer new_buffer) in
     if buffer_changed && Buffer.is_live old_buffer then set old_buffer;

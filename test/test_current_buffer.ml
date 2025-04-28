@@ -884,8 +884,8 @@ void f () {
 
 let%expect_test "[set_revert_buffer_function (Returns_deferred Value.Type.unit)]" =
   set_temporarily_to_temp_buffer Async (fun () ->
-    set_revert_buffer_function [%here] (Returns_deferred Value.Type.unit) (fun ~confirm ->
-      let%map () = Clock.after (sec 0.01) in
+    set_revert_buffer_function (Returns_deferred Value.Type.unit) (fun ~confirm ->
+      let%map () = Clock_ns.after (sec_ns 0.01) in
       print_s [%message "called after pause" (confirm : bool)]);
     let%bind () = revert () in
     [%expect {| ("called after pause" (confirm false)) |}];
@@ -909,7 +909,7 @@ let%expect_test "[set_values_temporarily async]" =
       Sync
       [ T (v1, 15); T (v2, 16) ]
       ~f:(fun () ->
-        let%bind () = Clock.after (Time_float.Span.of_ms 1.) in
+        let%bind () = Clock_ns.after (Time_ns.Span.of_ms 1.) in
         show ();
         [%expect {| (13 14) |}];
         return ())
@@ -920,7 +920,7 @@ let%expect_test "[set_values_temporarily async]" =
       Async
       [ T (v1, 15); T (v2, 16) ]
       ~f:(fun () ->
-        let%bind () = Clock.after (Time_float.Span.of_ms 1.) in
+        let%bind () = Clock_ns.after (Time_ns.Span.of_ms 1.) in
         show ();
         [%expect {| (15 16) |}];
         return ())
@@ -940,7 +940,7 @@ let%expect_test "[set_value_temporarily async]" =
      wrong result *)
   let%bind () =
     set_value_temporarily Sync var 14 ~f:(fun () ->
-      let%bind () = Clock.after (Time_float.Span.of_ms 1.) in
+      let%bind () = Clock_ns.after (Time_ns.Span.of_ms 1.) in
       show ();
       [%expect {| 13 |}];
       return ())
@@ -948,7 +948,7 @@ let%expect_test "[set_value_temporarily async]" =
   (* Correctly using [set_value_temporarily _ _ Async], we get a correct result. *)
   let%bind () =
     set_value_temporarily Async var 14 ~f:(fun () ->
-      let%bind () = Clock.after (Time_float.Span.of_ms 1.) in
+      let%bind () = Clock_ns.after (Time_ns.Span.of_ms 1.) in
       show ();
       [%expect {| 14 |}];
       return ())
@@ -964,7 +964,7 @@ let%expect_test "[set_temporarily async]" =
   let t = Buffer.create ~name:"foo" in
   let%bind () =
     set_temporarily Async t ~f:(fun () ->
-      let%bind () = Clock.after (sec 0.001) in
+      let%bind () = Clock_ns.after (sec_ns 0.001) in
       set t;
       show ();
       [%expect {| "#<buffer foo>" |}];
@@ -978,7 +978,7 @@ let%expect_test "[set_temporarily async]" =
 let%expect_test "[set_temporarily_to_temp_buffer async]" =
   let%bind () =
     set_temporarily_to_temp_buffer Async (fun () ->
-      let%map () = Clock.after (sec 0.001) in
+      let%map () = Clock_ns.after (sec_ns 0.001) in
       show ())
   in
   [%expect {| "#<buffer  *temp*>" |}];
@@ -990,7 +990,7 @@ let%expect_test "[set_temporarily_to_temp_buffer async]" =
 let%expect_test "[set_temporarily_to_temp_buffer Async] from background job" =
   let%bind () =
     Deferred.create (fun background_job_done ->
-      Background.don't_wait_for [%here] (fun () ->
+      Background.don't_wait_for (fun () ->
         let%bind () =
           show_raise_async ~hide_positions:true (fun () ->
             set_temporarily_to_temp_buffer Async return)
@@ -1018,7 +1018,7 @@ let%expect_test "[save_excursion] Async" =
     let%bind () =
       save_excursion Async (fun () ->
         Point.goto_char (Position.of_int_exn 5);
-        let%bind () = Clock.after (sec 0.001) in
+        let%bind () = Clock_ns.after (sec_ns 0.001) in
         show_point ();
         [%expect {| 5 |}];
         return ())
@@ -1031,7 +1031,7 @@ let%expect_test "[save_excursion] Async" =
 let%expect_test "[save_excursion Async] from background job" =
   let%bind () =
     Deferred.create (fun background_job_done ->
-      Background.don't_wait_for [%here] (fun () ->
+      Background.don't_wait_for (fun () ->
         let%bind () =
           show_raise_async ~hide_positions:true (fun () -> save_excursion Async return)
         in
@@ -1071,7 +1071,7 @@ let%expect_test "[set_temporarily] killing old buffer" =
 
 let%expect_test "[set_revert_buffer_function]" =
   set_temporarily_to_temp_buffer Async (fun () ->
-    set_revert_buffer_function [%here] (Returns Value.Type.unit) (fun ~confirm ->
+    set_revert_buffer_function (Returns Value.Type.unit) (fun ~confirm ->
       print_s [%message "called" (confirm : bool)]);
     let%bind () = revert () in
     [%expect {| (called (confirm false)) |}];
@@ -1105,7 +1105,7 @@ let%expect_test "[kill] with deferred kill hook" =
        ~hook_type:Normal_hook
        (Returns_deferred Value.Type.unit)
        (fun () ->
-          let%bind () = Clock.after (sec 0.001) in
+          let%bind () = Clock_ns.after (sec_ns 0.001) in
           print_s [%sexp "deferred hook ran"];
           return ()));
   let%bind () = kill () in

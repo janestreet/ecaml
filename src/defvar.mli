@@ -1,8 +1,7 @@
 open! Core
 open! Import
 
-(** [(describe-function 'defvar)]
-    [(Info-goto-node "(elisp)Defining Variables")] *)
+(** [(describe-function 'defvar)] [(Info-goto-node "(elisp)Defining Variables")] *)
 val defvar
   :  Symbol.t
   -> Source_code_position.t
@@ -13,11 +12,10 @@ val defvar
   -> unit
   -> 'a Var.t
 
-(** [(describe-function 'defvaralias)]
-    [(Info-goto-node "(elisp)Variable Aliases")] *)
+(** [(describe-function 'defvaralias)] [(Info-goto-node "(elisp)Variable Aliases")] *)
 val defvaralias
   :  Symbol.t
-  -> Source_code_position.t
+  -> ?here:Stdlib.Lexing.position
   -> ?docstring:string
   -> alias_of:Symbol.t
   -> unit
@@ -26,7 +24,7 @@ val defvaralias
 (** [(describe-function 'define-obsolete-variable-alias)] *)
 val define_obsolete_alias
   :  Symbol.t
-  -> Source_code_position.t
+  -> ?here:Stdlib.Lexing.position
   -> ?docstring:string
   -> alias_of:Symbol.t
   -> since:string

@@ -92,7 +92,6 @@ let make_temp_file ~prefix ~suffix = make_temp_file prefix false suffix
 let with_temp_file sync_or_async ~f ~prefix ~suffix =
   let filename = make_temp_file ~prefix ~suffix in
   Sync_or_async.protect
-    [%here]
     sync_or_async
     ~f:(fun () -> f filename)
     ~finally:(fun () -> delete filename)

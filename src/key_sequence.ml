@@ -4,7 +4,7 @@ include Key_sequence0
 
 let execute =
   let execute_kbd_macro = Funcall.Wrap.("execute-kbd-macro" <: t @-> return nil) in
-  fun t -> Value.Private.run_outside_async [%here] (fun () -> execute_kbd_macro t)
+  fun t -> Value.Private.run_outside_async (fun () -> execute_kbd_macro t)
 ;;
 
 let am_executing = Var.Wrap.("executing-kbd-macro" <: bool)

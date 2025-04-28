@@ -13,7 +13,7 @@ val return : ('a, 'b) t -> 'a -> 'b
     in the background. *)
 val protect
   :  ?allow_in_background:bool (** default: false *)
-  -> Source_code_position.t
+  -> ?here:Stdlib.Lexing.position
   -> (_, 'a) t
   -> f:(unit -> 'a)
   -> finally:(unit -> unit)

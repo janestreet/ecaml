@@ -27,11 +27,15 @@ module type Var = sig
 
   (** Idiomatic usage of [Wrap] looks like:
 
-      {[ Var.Wrap.(SYMBOL_NAME <: TYPE) ]}
+      {[
+        Var.Wrap.(SYMBOL_NAME <: TYPE)
+      ]}
 
       For example:
 
-      {[ Var.Wrap.("inhibit-quit" <: bool) ]} *)
+      {[
+        Var.Wrap.("inhibit-quit" <: bool)
+      ]} *)
   module Wrap : Wrap with type 'a t := 'a t
 
   module And_value : sig
@@ -44,16 +48,13 @@ module type Var = sig
 
   val symbol_as_value : _ t -> Value.t
 
-  (** [(describe-function 'default-value)]
-      [(Info-goto-node "(elisp)Default Value")] *)
+  (** [(describe-function 'default-value)] [(Info-goto-node "(elisp)Default Value")] *)
   val default_value_exn : 'a t -> 'a
 
-  (** [(describe-function 'default-boundp)]
-      [(Info-goto-node "(elisp)Default Value")] *)
+  (** [(describe-function 'default-boundp)] [(Info-goto-node "(elisp)Default Value")] *)
   val default_value_is_defined : _ t -> bool
 
-  (** [(describe-function 'set-default)]
-      [(Info-goto-node "(elisp)Default Value")] *)
+  (** [(describe-function 'set-default)] [(Info-goto-node "(elisp)Default Value")] *)
   val set_default_value : 'a t -> 'a -> unit
 
   (** [(describe-function 'make-variable-buffer-local)]
@@ -61,8 +62,8 @@ module type Var = sig
   val make_buffer_local_always : _ t -> unit
 
   (** [is_buffer_local_always t] returns [true] if [t] automatically becomes buffer-local
-      when set.  Calling [make_buffer_local_always t] causes [is_buffer_local_always t =
-      true]. *)
+      when set. Calling [make_buffer_local_always t] causes
+      [is_buffer_local_always t = true]. *)
   val is_buffer_local_always : _ t -> bool
 
   (** [(describe-function 'local-variable-if-set-p )]

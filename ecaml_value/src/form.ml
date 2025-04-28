@@ -59,13 +59,9 @@ module Blocking = struct
   let eval_string string = eval (read string)
 end
 
-let eval t = Value.Private.run_outside_async [%here] (fun () -> Blocking.eval t)
-let eval_i t = Value.Private.run_outside_async [%here] (fun () -> Blocking.eval_i t)
-
-let eval_string t =
-  Value.Private.run_outside_async [%here] (fun () -> Blocking.eval_string t)
-;;
-
+let eval t = Value.Private.run_outside_async (fun () -> Blocking.eval t)
+let eval_i t = Value.Private.run_outside_async (fun () -> Blocking.eval_i t)
+let eval_string t = Value.Private.run_outside_async (fun () -> Blocking.eval_string t)
 let list ts = Value.list (ts : t list :> Value.t list) |> of_value_exn
 let nil = list []
 let q value = Value.list [ Symbol.to_value Q.quote; value ]

@@ -13,6 +13,5 @@ val buffers
   -> startup_hooks:(unit -> unit) list
   -> unit Deferred.t
 
-(** [(describe-variable 'ediff-cleanup-hook)]
-    [(Info-goto-node "(ediff) Hooks")] *)
+(** [(describe-variable 'ediff-cleanup-hook)] [(Info-goto-node "(ediff) Hooks")] *)
 val cleanup_hook : (Hook.normal, unit) Hook.t

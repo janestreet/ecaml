@@ -23,8 +23,8 @@
 open! Core
 open! Async_kernel
 
-(** A [Sync_or_async.t] specifies whether the computation being profiled is
-    synchronous or asynchronous. *)
+(** A [Sync_or_async.t] specifies whether the computation being profiled is synchronous or
+    asynchronous. *)
 module Sync_or_async : sig
   type _ t =
     | Sync : _ t
@@ -48,8 +48,8 @@ module Frame_tagger : sig
 end
 
 (** [profile sync_or_async message f] measures the time taken to run [f], and outputs the
-    result.  Nested calls to profile are displayed as a tree.  Use [Async] to profile
-    Async code.  It is safe to nest calls to [profile] inside calls to [profile Async].
+    result. Nested calls to profile are displayed as a tree. Use [Async] to profile Async
+    code. It is safe to nest calls to [profile] inside calls to [profile Async].
     [profile Async] does have some restrictions in order to get valid results:
     - a nested call to [profile Async] must exit before its parent does
     - there cannot be multiple sibling calls to [profile Async] running concurrently *)
@@ -61,7 +61,7 @@ val profile
   -> 'a
 
 (** [am_forcing_message ()] returns true when profiling is calling [force] on a message
-    supplied to [profile].  This is useful if you want to have a [sexp_of_t] function
+    supplied to [profile]. This is useful if you want to have a [sexp_of_t] function
     behave differently when producing messages. *)
 val am_forcing_message : unit -> bool
 
@@ -73,7 +73,7 @@ val never_show_rendering_took : bool ref
 val sexp_of_time_ns : (Time_ns.t -> Sexp.t) ref
 val tag_frames_with : Frame_tagger.t option ref
 
-(** [profile] calls [output_profile] to display the profile to the user.  It is
+(** [profile] calls [output_profile] to display the profile to the user. It is
     [print_string] by default. *)
 val output_profile : (string -> unit) ref
 
@@ -92,8 +92,8 @@ val start_location : Start_location.t ref
 val backtrace : unit -> Sexp.t list option
 
 (** [disown f] runs [f] as though it were at top level, rather than whatever the current
-    context is.  In other words, it causes the parent (current) context to disown children
-    created by [f].  This is useful for background jobs that might outlive their parents,
+    context is. In other words, it causes the parent (current) context to disown children
+    created by [f]. This is useful for background jobs that might outlive their parents,
     since Nested_profile requires that parents wait for their children. *)
 val disown : (unit -> 'a) -> 'a
 

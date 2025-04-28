@@ -1,7 +1,7 @@
 (** The command bindings of input events are recorded in data structures called keymaps.
     Each entry in a keymap associates (or "binds") an individual event type, either to
-    another keymap or to a command.  When an event type is bound to a keymap, that keymap
-    is used to look up the next input event; this continues until a command is found.  The
+    another keymap or to a command. When an event type is bound to a keymap, that keymap
+    is used to look up the next input event; this continues until a command is found. The
     whole process is called "key lookup".
 
     [(Info-goto-node "(elisp)Keymaps")] *)
@@ -29,13 +29,11 @@ module Kind : sig
   [@@deriving sexp_of]
 end
 
-(** [(describe-function 'make-sparse-keymap)]
-    [(describe-function 'make-keymap)]
+(** [(describe-function 'make-sparse-keymap)] [(describe-function 'make-keymap)]
     [(Info-goto-node "(elisp) Creating Keymaps")] *)
 val create : ?kind:Kind.t (** default is [Sparse] *) -> ?menu_name:string -> unit -> t
 
-(** [(describe-function 'copy-keymap)]
-    [(Info-goto-node "(elisp) Creating Keymaps")] *)
+(** [(describe-function 'copy-keymap)] [(Info-goto-node "(elisp) Creating Keymaps")] *)
 val deep_copy : t -> t
 
 (** [(describe-function 'current-global-map)]
@@ -63,16 +61,14 @@ module Entry : sig
   include Valueable.S with type t := t
 end
 
-(** [(describe-function 'lookup-key)]
-    [(Info-goto-node "(elisp)Functions for Key Lookup")] *)
+(** [(describe-function 'lookup-key)] [(Info-goto-node "(elisp)Functions for Key Lookup")] *)
 val lookup_key
   :  ?accept_defaults:bool (** default is [false] *)
   -> t
   -> Key_sequence.t
   -> Entry.t Or_error.t
 
-(** [(describe-function 'define-key)]
-    [(Info-goto-node "(elisp)Functions for Key Lookup")] *)
+(** [(describe-function 'define-key)] [(Info-goto-node "(elisp)Functions for Key Lookup")] *)
 val define_key : t -> Key_sequence.t -> Entry.t -> unit
 
 (** [(describe-variable 'minor-mode-map-alist)] *)

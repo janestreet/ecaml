@@ -23,7 +23,7 @@ end
 module Char_class = struct
   type t =
     | Chars_in of string
-    (** [Chars_in s] matches characters in [s] (e.g., "[:digit:]" matches ':')  *)
+    (** [Chars_in s] matches characters in [s] (e.g., "[:digit:]" matches ':') *)
     | Named of Named_char_class.t
     (** [Named name] matches characters from a named character class, e.g., [alpha]. *)
     | Range of char * char
@@ -60,8 +60,8 @@ module T = struct
         }
     | Seq of t list
     | Submatch of t
-    (** Text matched by [Submatch] can be retrieved using [Regexp.Last_match.text_exn
-        ~subexp:index].
+    (** Text matched by [Submatch] can be retrieved using
+        [Regexp.Last_match.text_exn ~subexp:index].
 
         [index] is the number of parentheses to the left of this submatch in the regexp
         pattern. *)
@@ -69,8 +69,8 @@ module T = struct
         { index : int
         ; t : t
         }
-    (** Text matched by [Submatch_n] can be retrieved using [Regexp.Last_match.text_exn
-        ~subexp:index].
+    (** Text matched by [Submatch_n] can be retrieved using
+        [Regexp.Last_match.text_exn ~subexp:index].
 
         [index] must be at least the number of parentheses left of this submatch in the
         regexp pattern. If [index] is greater, it will shadow the submatch that would have

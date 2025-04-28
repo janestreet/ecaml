@@ -20,7 +20,7 @@ let%expect_test "[inhibit_read_only]" =
     [%expect {| (raised (buffer-read-only ("#<buffer  *temp*>"))) |}];
     let%bind () =
       inhibit_read_only Async (fun () ->
-        let%map () = Clock.after (sec 0.001) in
+        let%map () = Clock_ns.after (sec_ns 0.001) in
         Point.insert "foo")
     in
     print_s [%sexp (Current_buffer.contents () : Text.t)];

@@ -1,6 +1,6 @@
 (** A feature name is a symbol that stands for a collection of functions, variables, etc.
-    The file that defines them should "provide" the feature.  Another program that uses
-    them may ensure they are defined by "requiring" the feature.  This loads the file of
+    The file that defines them should "provide" the feature. Another program that uses
+    them may ensure they are defined by "requiring" the feature. This loads the file of
     definitions if it hasn't been loaded already.
 
     [(Info-goto-node "(elisp)Named Features")]. *)

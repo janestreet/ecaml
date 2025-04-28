@@ -1,7 +1,7 @@
 (** [Ocaml_or_elisp_value] is for calling Elisp functions, supplying either an OCaml value
-    or an Elisp value.  This is useful to precompute an Elisp value from an OCaml value,
+    or an Elisp value. This is useful to precompute an Elisp value from an OCaml value,
     and then to pass the Elisp value rather than repeatedly converting the same OCaml
-    value to an Elisp value.  As an example, see [Completing.Collection]. *)
+    value to an Elisp value. As an example, see [Completing.Collection]. *)
 
 open! Core
 open! Import

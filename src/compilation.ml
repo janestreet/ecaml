@@ -1,6 +1,6 @@
 open! Core
 open! Import
-include (val Major_mode.wrap_existing_with_lazy_keymap "compilation-mode" [%here])
+include (val Major_mode.wrap_existing_with_lazy_keymap "compilation-mode")
 
 let buffer_name_function =
   Var.Wrap.("compilation-buffer-name-function" <: nil_or Function.t)

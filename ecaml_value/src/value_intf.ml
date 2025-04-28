@@ -1,10 +1,10 @@
-(** [Value.t] is the OCaml type corresponding to Emacs's universal type of values.  It is
+(** [Value.t] is the OCaml type corresponding to Emacs's universal type of values. It is
     represented as an OCaml custom block ([emacs_value_ops] in [ecaml_stubs.c]) wrapped
     around the [emacs_value] pointer type defined by the Emacs native-code module
-    interface, [emacs-module.h], available in Emacs 25 and beyond.  This module has
+    interface, [emacs-module.h], available in Emacs 25 and beyond. This module has
     low-level functions for working with Emacs values, OCaml wrappers that call the C
-    functions specified in [emacs-module.h].  All other calls from OCaml to Emacs are
-    built on top of this module. *)
+    functions specified in [emacs-module.h]. All other calls from OCaml to Emacs are built
+    on top of this module. *)
 
 open! Core
 open! Import
@@ -56,9 +56,9 @@ module type Subtype = sig
   type t = private value [@@deriving sexp_of]
 
   (** [eq t1 t2 = Value.eq (to_value t1) (to_value t2)], i.e. [eq] checks whether the
-      Emacs values underlying [t1] and [t2] are physically equal.  This is different than
+      Emacs values underlying [t1] and [t2] are physically equal. This is different than
       [phys_equal t1 t2], because we don't always wrap [eq] Emacs values in [phys_equal]
-      OCaml values.  I.e. [phys_equal t1 t2] implies [eq t1 t2], but not the converse. *)
+      OCaml values. I.e. [phys_equal t1 t2] implies [eq t1 t2], but not the converse. *)
   val eq : t -> t -> bool
 
   val is_in_subtype : value -> bool
@@ -97,6 +97,10 @@ module type Type = sig
   val list : 'a t -> 'a list t
   val vector : 'a t -> 'a array t
 
+  (** Represent a single-element list as an atom (not wrapped in a list), and a
+      multi-element or empty list as a regular Lisp list. *)
+  val list_or_singleton : 'a t -> 'a list t
+
   (** Represent an ocaml array as an elisp list, without creating an intermediate ocaml
       list. *)
   val array_as_list : 'a t -> 'a array t
@@ -106,8 +110,8 @@ module type Type = sig
   val option : 'a t -> 'a option t
 
   (** [nil_or t] represents [None] as [nil] and [Some a] as [v], where [v] is the
-      representation of [a].  This is a common representation used by Elisp functions.
-      But it is only correct if [nil] is not a representation of any value in [t]; in that
+      representation of [a]. This is a common representation used by Elisp functions. But
+      it is only correct if [nil] is not a representation of any value in [t]; in that
       situation use [Type.option]. *)
   val nil_or : 'a t -> 'a option t
 
@@ -133,7 +137,8 @@ module type Type = sig
   val sexpable : (module Sexpable with type t = 'a) -> name:Sexp.t -> 'a t
 
   (** A list of directories. Each element is a string (directory name) or nil (try
-      default directory). nil values are converted to ".", which has the same meaning. *)
+      [default-directory]). nil values are converted to ["."] in OCaml, which has the same
+      meaning. *)
   val path_list : string list t
 end
 
@@ -267,15 +272,15 @@ module type Value = sig
   val of_utf8_bytes : string -> t
 
   (** [of_utf8_bytes_cached] is like [of_utf8_bytes], except it keeps a hash table mapping
-      each OCaml string to the corresponding Elisp string.  This can be used to optimize
+      each OCaml string to the corresponding Elisp string. This can be used to optimize
       the conversion of OCaml values to Elisp values. *)
   val of_utf8_bytes_cached : string -> t
 
   (** Like [of_utf8_bytes], but instead of failing on invalid UTF-8 sequences, replace
       them with the Unicode replacement character (U+FFFD).
 
-      Return the resulting value, as well as the first malformed sequence (and its
-      index) in the input string, if any. *)
+      Return the resulting value, as well as the first malformed sequence (and its index)
+      in the input string, if any. *)
   val of_utf8_bytes_replacing_invalid
     :  string
     -> t * [ `First_malformed of (int * string) option ]
@@ -307,14 +312,14 @@ module type Value = sig
       val map : 'a t -> name:Sexp.t -> of_:('a -> 'b) -> to_:('b -> 'a) -> 'b t
       val to_sexp : 'a t -> 'a -> Sexp.t
 
-      (** [map_id type_ name] is short for [map type_ ~name ~of_:Fn.id ~to_:Fn.id].
-        It is not interchangeable with [type_] itself. *)
+      (** [map_id type_ name] is short for [map type_ ~name ~of_:Fn.id ~to_:Fn.id]. It is
+          not interchangeable with [type_] itself. *)
       val map_id : 'a t -> Sexp.t -> 'a t
 
       val enum : Sexp.t -> (module Enum.S with type t = 'a) -> ('a -> value) -> 'a t
 
       (** [enum_symbol name (module M)] represents [m : M.t] as symbols named after
-        [Enum.to_string_hum (module M) m]. *)
+          [Enum.to_string_hum (module M) m]. *)
       val enum_symbol : Sexp.t -> (module Enum.S with type t = 'a) -> 'a t
 
       val stringable : Sexp.t -> (module Stringable.S with type t = 'a) -> 'a t
@@ -379,13 +384,13 @@ module type Value = sig
     val ecaml_profile_print_length : int option ref
     val ecaml_profile_print_level : int option ref
 
-    (** These functions are defined in Async_ecaml. This module exists to avoid
-        dependency cycles. *)
+    (** These functions are defined in Async_ecaml. This module exists to avoid dependency
+        cycles. *)
     module Block_on_async : sig
       type t =
         { f :
             'a.
-            Source_code_position.t
+            ?here:Stdlib.Lexing.position
             -> ?context:Sexp.t Lazy.t
             -> (unit -> 'a Deferred.t)
             -> 'a
@@ -397,7 +402,7 @@ module type Value = sig
     module Enqueue_foreground_block_on_async : sig
       type t =
         { f :
-            Source_code_position.t
+            ?here:Stdlib.Lexing.position
             -> ?context:Sexp.t Lazy.t
             -> ?raise_exceptions_to_monitor:Monitor.t
             -> (unit -> unit Deferred.t)
@@ -411,7 +416,7 @@ module type Value = sig
       type t =
         { f :
             'a.
-            Source_code_position.t
+            ?here:Stdlib.Lexing.position
             -> ?allowed_in_background:bool
             -> (unit -> 'a)
             -> 'a Deferred.t
@@ -421,20 +426,20 @@ module type Value = sig
     end
 
     val block_on_async
-      :  Source_code_position.t
+      :  ?here:Stdlib.Lexing.position
       -> ?context:Sexp.t Lazy.t
       -> (unit -> 'a Deferred.t)
       -> 'a
 
     val enqueue_foreground_block_on_async
-      :  Source_code_position.t
+      :  ?here:Stdlib.Lexing.position
       -> ?context:Sexp.t Lazy.t
       -> ?raise_exceptions_to_monitor:Monitor.t
       -> (unit -> unit Deferred.t)
       -> unit
 
     val run_outside_async
-      :  Source_code_position.t
+      :  ?here:Stdlib.Lexing.position
       -> ?allowed_in_background:bool
       -> (unit -> 'a)
       -> 'a Deferred.t
