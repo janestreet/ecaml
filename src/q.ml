@@ -13,7 +13,6 @@ let funcall = "funcall" |> Symbol.intern
 let list = "list" |> Symbol.intern
 let nil = "nil" |> Symbol.intern
 let number = "number" |> Symbol.intern
-let quote = "quote" |> Symbol.intern
 let regexp = "regexp" |> Symbol.intern
 let sexp = "sexp" |> Symbol.intern
 let symbol = "symbol" |> Symbol.intern

@@ -195,18 +195,19 @@ let define_derived_mode
     | None -> Defun.lambda_nullary_nil here Fn.id
     | Some (returns, f) -> Defun.lambda_nullary here returns f
   in
-  Form.Blocking.eval_i
-    (Form.list
-       [ Q.define_derived_mode |> Form.symbol
-       ; symbol |> Form.symbol
-       ; (match parent with
-          | None -> Form.nil
-          | Some t -> Field.get Fields.symbol t |> Form.symbol)
-       ; mode_line |> Form.string
-       ; docstring |> Form.string
-       ; Form.list
-           [ Q.funcall |> Form.symbol; Form.quote (initialize_fn |> Function.to_value) ]
-       ]);
+  let init = [%string "%{Symbol.name symbol}--init"] |> Symbol.intern in
+  Dump.defalias ~here init (Function.to_value initialize_fn);
+  Dump.eval_and_dump ~here (fun () ->
+    Form.list
+      [ Q.define_derived_mode |> Form.symbol
+      ; symbol |> Form.symbol
+      ; (match parent with
+         | None -> Form.nil
+         | Some t -> Field.get Fields.symbol t |> Form.symbol)
+      ; mode_line |> Form.string
+      ; docstring |> Form.string
+      ; Form.apply init []
+      ]);
   Load_history.add_entry here (Fun symbol);
   List.iter [ "abbrev-table"; "hook"; "map"; "syntax-table" ] ~f:(fun suffix ->
     Load_history.add_entry
@@ -214,8 +215,7 @@ let define_derived_mode
       (Var ([%string "%{Symbol.name symbol}-%{suffix}"] |> Symbol.intern)));
   let m = wrap_existing ~here (symbol |> Symbol.name) in
   let module M = (val m) in
-  List.iter define_keys ~f:(fun (keys, symbol) ->
-    Keymap.define_key M.keymap (Key_sequence.create_exn keys) (Symbol symbol));
+  Dump.keymap_set ~here (keymap_var M.major_mode) define_keys;
   all_derived_modes := M.major_mode :: !all_derived_modes;
   Option.iter auto_mode ~f:(add_auto_mode ~symbol);
   m

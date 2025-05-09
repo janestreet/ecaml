@@ -8,7 +8,7 @@
 
 open! Core
 open! Import
-include Value.Subtype
+include module type of Keymap0
 
 type keymap := t
 
@@ -70,6 +70,9 @@ val lookup_key
 
 (** [(describe-function 'define-key)] [(Info-goto-node "(elisp)Functions for Key Lookup")] *)
 val define_key : t -> Key_sequence.t -> Entry.t -> unit
+
+(** [(describe-function 'keymap-set)] [(Info-goto-node "(elisp)Changing Key Bindings")] *)
+val set : t -> string -> Entry.t -> unit
 
 (** [(describe-variable 'minor-mode-map-alist)] *)
 val minor_mode_map_alist : (Symbol.t * t) list Var.t

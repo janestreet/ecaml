@@ -26,6 +26,7 @@ module Q = struct
   let plist = "plist" |> Symbol.intern
   let radio = "radio" |> Symbol.intern
   let repeat = "repeat" |> Symbol.intern
+  let quote = "quote" |> Symbol.intern
   let set = "set" |> Symbol.intern
   let string = "string" |> Symbol.intern
   let variable = "variable" |> Symbol.intern

@@ -68,6 +68,7 @@ let%expect_test "[define_derived_mode]" =
   [%expect
     {|
     (test-load-history-major-mode <dir>/lib/ecaml/test/test_load_history.ml)
+    (test-load-history-major-mode--init <dir>/lib/ecaml/test/test_load_history.ml)
     (test-load-history-major-mode-abbrev-table
      <dir>/lib/ecaml/test/test_load_history.ml)
     (test-load-history-major-mode-hook <dir>/lib/ecaml/test/test_load_history.ml)
@@ -93,6 +94,7 @@ let%expect_test "[define_minor_mode]" =
   [%expect
     {|
     (test-load-history-minor-mode <dir>/lib/ecaml/test/test_load_history.ml)
+    (test-load-history-minor-mode--init <dir>/lib/ecaml/test/test_load_history.ml)
     (test-load-history-minor-mode-hook <dir>/lib/ecaml/test/test_load_history.ml)
     (test-load-history-minor-mode-map <dir>/lib/ecaml/test/test_load_history.ml)
     (test-load-history-minor-mode-off-hook

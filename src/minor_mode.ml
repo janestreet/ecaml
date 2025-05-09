@@ -8,6 +8,7 @@ module Q = struct
   let auto_fill_mode = "auto-fill-mode" |> Symbol.intern
   let buffer_read_only = "buffer-read-only" |> Symbol.intern
   let define_minor_mode = "define-minor-mode" |> Symbol.intern
+  let define_keymap = "define-keymap" |> Symbol.intern
   let goto_address_mode = "goto-address-mode" |> Symbol.intern
   let hl_line_mode = "hl-line-mode" |> Symbol.intern
   let read_only_mode = "read-only-mode" |> Symbol.intern
@@ -81,10 +82,6 @@ let define_minor_mode
   let docstring = docstring |> String.strip in
   require_nonempty_docstring here ~docstring;
   let keymap_var = Var.Wrap.(concat [ name |> Symbol.name; "-map" ] <: Keymap.t) in
-  Current_buffer.set_value keymap_var (Keymap.create ());
-  let keymap = Current_buffer.value_exn keymap_var in
-  List.iter define_keys ~f:(fun (keys, symbol) ->
-    Keymap.define_key keymap (Key_sequence.create_exn keys) (Symbol symbol));
   let docstring =
     concat
       [ docstring
@@ -93,27 +90,28 @@ let define_minor_mode
       ]
   in
   let t = { function_name = name; variable_name = name } in
-  Form.Blocking.eval_i
-    (Form.list
-       [ Q.define_minor_mode |> Form.symbol
-       ; name |> Form.symbol
-       ; docstring |> String.strip |> Form.string
-       ; Q.K.lighter |> Form.symbol
-       ; Option.value_map
-           mode_line
-           ~f:(fun mode_line -> String.concat [ " "; mode_line ] |> Form.string)
-           ~default:Form.nil
-       ; Q.K.keymap |> Form.symbol
-       ; Var.symbol_as_value keymap_var |> Form.of_value_exn
-       ; Q.K.global |> Form.symbol
-       ; Value.of_bool global |> Form.of_value_exn
-       ; Form.list
-           [ Q.funcall |> Form.symbol
-           ; Form.quote
-               (Defun.lambda_nullary_nil here (fun () -> initialize t)
-                |> Function.to_value)
-           ]
-       ]);
+  let initialize_fn = Defun.lambda_nullary_nil here (fun () -> initialize t) in
+  let init = [%string "%{Symbol.name name}--init"] |> Symbol.intern in
+  Dump.defalias ~here init (Function.to_value initialize_fn);
+  Dump.eval_and_dump ~here (fun () ->
+    Form.list
+      [ Q.define_minor_mode |> Form.symbol
+      ; name |> Form.symbol
+      ; docstring |> String.strip |> Form.string
+      ; Q.K.lighter |> Form.symbol
+      ; Option.value_map
+          mode_line
+          ~f:(fun mode_line -> String.concat [ " "; mode_line ] |> Form.string)
+          ~default:Form.nil
+      ; Q.K.keymap |> Form.symbol
+      ; Form.apply
+          Q.define_keymap
+          (List.concat_map define_keys ~f:(fun (key, symbol) ->
+             [ Form.string key; Form.quote (Symbol.to_value symbol) ]))
+      ; Q.K.global |> Form.symbol
+      ; Value.of_bool global |> Form.of_value_exn
+      ; Form.apply init []
+      ]);
   Load_history.add_entry here (Fun name);
   Load_history.add_entry here (Var (Var.symbol keymap_var));
   List.iter [ "hook"; "on-hook"; "off-hook" ] ~f:(fun suffix ->

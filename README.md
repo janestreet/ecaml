@@ -5,6 +5,10 @@
 
 ## Building a plugin
 
+First you build the plugin as a shared object (e.g. `my_plugin.so`).
+Then you use `bin/dump-ecaml.sh` to dump a wrapper Elisp file
+which will perform top-level definitions and load that shared object.
+
 ### Using Dune
 
 Compile your plugin using `(modes (native shared_object))` in the executable

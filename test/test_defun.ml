@@ -261,11 +261,6 @@ let%expect_test "[defalias]" =
     Return sum of any number of arguments, which are numbers or markers.
 
       Probably introduced at or before Emacs version 1.6.
-      This function does not change global state, including the match
-        data.
-      This function has a `byte-compile' property
-        `byte-compile-variadic-numeric' and a byte-code optimizer
-        `byte-optimize-plus'.  See the manual for details.
     |}];
   return ()
 ;;
