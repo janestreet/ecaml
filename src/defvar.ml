@@ -46,17 +46,13 @@ let defvar
   in
   let docstring = docstring |> String.strip in
   require_nonempty_docstring here ~docstring;
-  ignore
-    (Form.Blocking.eval
-       ([ Q.defvar |> Symbol.to_value
-        ; symbol |> Symbol.to_value
-        ; Value.list
-            [ Symbol.to_value Q.quote; initial_value |> Value.Type.to_value type_ ]
-        ; docstring |> Value.of_utf8_bytes
-        ]
-        |> Value.list
-        |> Form.of_value_exn)
-     : Value.t);
+  Dump.eval_and_dump ~here (fun () ->
+    Form.apply
+      Q.defvar
+      [ Form.symbol symbol
+      ; Form.quote (Value.Type.to_value type_ initial_value)
+      ; Form.string docstring
+      ]);
   if include_in_all_defvar_symbols then add_to_load_history symbol here;
   Var.create symbol type_
 ;;

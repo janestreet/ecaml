@@ -86,16 +86,16 @@ let show_current_buffer_local_variables () =
    not still running (to avoid timing out reading from a minibuffer, in tests). *)
 let with_input_macro string f =
   let start_sequence = "C-c e" in
-  let raise_if_still_running_sequence = "C-M-H-e" in
+  let raise_if_still_running_sequence = "C-H-M-e" in
   let keyseq =
     String.concat ~sep:" " [ start_sequence; string; raise_if_still_running_sequence ]
     |> Key_sequence.create_exn
   in
   let f_is_running = ref false in
   let keymap = Keymap.create () in
-  Keymap.define_key
+  Keymap.set
     keymap
-    (Key_sequence.create_exn start_sequence)
+    start_sequence
     (Value
        (lambda_nullary
           [%here]
@@ -110,9 +110,9 @@ let with_input_macro string f =
                  f_is_running := false;
                  return ()))
         |> Function.to_value));
-  Keymap.define_key
+  Keymap.set
     (Keymap.global ())
-    (Key_sequence.create_exn raise_if_still_running_sequence)
+    raise_if_still_running_sequence
     (Value
        (lambda_nullary [%here] ~interactive:No_arg (Returns Value.Type.unit) (fun () ->
           match !f_is_running with

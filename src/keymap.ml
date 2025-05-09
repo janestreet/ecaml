@@ -7,11 +7,7 @@ module Q = struct
   let undefined = "undefined" |> Symbol.intern
 end
 
-include Value.Make_subtype (struct
-    let name = "keymap"
-    let here = [%here]
-    let is_in_subtype = Value.is_keymap
-  end)
+include Keymap0
 
 type keymap = t [@@deriving sexp_of]
 
@@ -104,6 +100,8 @@ let lookup_key ?(accept_defaults = false) t key_sequence =
 let define_key =
   Funcall.Wrap.("define-key" <: t @-> Key_sequence.t @-> Entry.t @-> return nil)
 ;;
+
+let set = Funcall.Wrap.("keymap-set" <: t @-> string @-> Entry.t @-> return nil)
 
 let minor_mode_map_alist =
   Var.Wrap.("minor-mode-map-alist" <: list (tuple Symbol.t type_))

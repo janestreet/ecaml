@@ -76,7 +76,7 @@ let defstruct
   in
   if Option.is_none defined_by_feature
   then (
-    Form.Blocking.eval_i (build_form ~name ~doc fields);
+    Dump.eval_and_dump ~here (fun () -> build_form ~name ~doc fields);
     (* This defstruct wrapper doesn't support customizing the predicate or constructor
        names, or anything like that, so we can predict all of the names [cl-defstruct] will
        define. *)

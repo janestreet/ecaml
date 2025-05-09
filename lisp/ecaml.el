@@ -10,14 +10,7 @@
 (require 'find-func)
 (declare-function ecaml-profile--inner "ecaml_plugin" (function-name function &rest arguments) t)
 
-(defun ecaml--load-and-delete-history (file)
-  ;; This shouldn't normally happen, but we may as well defend against it.
-  ;;
-  ;; However, we can't just `require' the file because the inline_tests_runner doesn't
-  ;; actually `provide' a feature.
-  (cl-assert (not (featurep 'ecaml_plugin)) nil "Loading the Ecaml plugin twice will segfault Emacs.")
-  (load file nil 'nomessage)
-
+(defun ecaml--delete-history (file)
   ;; Work around Emacs >=27 being too helpful.
   ;;
   ;; In solving https://debbugs.gnu.org/cgi/bugreport.cgi?bug=30164, Emacs upstream made
@@ -29,10 +22,26 @@
     (setq load-history
           (assoc-delete-all filename load-history))))
 
+(defun ecaml--load-and-delete-history (file)
+  (load file nil 'nomessage)
+
+  (ecaml--delete-history file))
+
 (defun ecaml-plugin-load ()
-  (ecaml--load-and-delete-history
-   (if (equal (getenv "TESTING_FRAMEWORK") "inline-test")
-       "inline_tests_runner" "ecaml_plugin")))
+  ;; This shouldn't normally happen, but we may as well defend against it.
+  ;;
+  ;; However, we can't just `require' the file because the inline_tests_runner doesn't
+  ;; actually `provide' a feature.
+  (cl-assert (not (featurep 'ecaml_plugin)) nil "Loading the Ecaml plugin twice will segfault Emacs.")
+  (cond
+   ((equal (getenv "TESTING_FRAMEWORK") "inline-test")
+    (ecaml--load-and-delete-history "inline_tests_runner"))
+   ((getenv "ECAML_SKIP_LOADING_ELISP_WRAPPER")
+    (ecaml--load-and-delete-history "ecaml_plugin"))
+   (t
+    (require 'jane-ecaml)
+    (ecaml--delete-history "ecaml_plugin")
+    (ecaml--delete-history "jane-ecaml"))))
 
 (defmacro ecaml-profile (message &rest body)
   "Evaluate BODY, recording a profiling frame in the *profile* buffer.

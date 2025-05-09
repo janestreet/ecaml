@@ -49,3 +49,13 @@ For example, "(foo .?a)" is parsed by `read' as "(foo . ?a)".|}
     (let%map_open.Defun string = required "string" string in
      string |> Sexp.of_string)
 ;;
+
+let () =
+  Defun.defun
+    ("ecaml-sexp-to-string-mach" |> Symbol.intern)
+    [%here]
+    ~docstring:"Machine-print SEXP and return the result as a string."
+    (Returns Value.Type.string)
+    (let%map_open.Defun sexp = required "sexp" t in
+     Sexp.to_string_mach sexp)
+;;

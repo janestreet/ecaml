@@ -32,6 +32,18 @@ module Require_match : sig
   val default : t
 end
 
+module Programmed_completion : sig
+  type t
+
+  val to_value : t -> Value.t
+
+  val create
+    :  string list
+    -> annotation_function:(string -> string) option
+    -> display_sort_function:(string list -> string list) option
+    -> t
+end
+
 (** [(describe-function 'completing-read)] **)
 val read
   :  prompt_no_colon:string (** passed to [format-prompt] *)

@@ -45,9 +45,6 @@ let%expect_test "[all_provided]" =
      base64
      bookmark
      button
-     byte-compile
-     byte-opt
-     bytecomp
      cairo
      case-table
      cconv
@@ -72,7 +69,6 @@ let%expect_test "[all_provided]" =
      dynamic-setting
      easymenu
      ediff-hook
-     edmacro
      eldoc
      electric
      elisp-mode
@@ -97,7 +93,6 @@ let%expect_test "[all_provided]" =
      fringe
      georgian
      greek
-     gv
      hashtable-print-readable
      hebrew
      help
@@ -111,7 +106,6 @@ let%expect_test "[all_provided]" =
      jit-lock
      jka-cmpr-hook
      keymap
-     kmacro
      korean
      lao
      lisp-float-type
