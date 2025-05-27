@@ -95,23 +95,29 @@ let define_minor_mode
   Dump.defalias ~here init (Function.to_value initialize_fn);
   Dump.eval_and_dump ~here (fun () ->
     Form.list
-      [ Q.define_minor_mode |> Form.symbol
-      ; name |> Form.symbol
-      ; docstring |> String.strip |> Form.string
-      ; Q.K.lighter |> Form.symbol
-      ; Option.value_map
-          mode_line
-          ~f:(fun mode_line -> String.concat [ " "; mode_line ] |> Form.string)
-          ~default:Form.nil
-      ; Q.K.keymap |> Form.symbol
-      ; Form.apply
-          Q.define_keymap
-          (List.concat_map define_keys ~f:(fun (key, symbol) ->
-             [ Form.string key; Form.quote (Symbol.to_value symbol) ]))
-      ; Q.K.global |> Form.symbol
-      ; Value.of_bool global |> Form.of_value_exn
-      ; Form.apply init []
-      ]);
+      ([ Q.define_minor_mode |> Form.symbol
+       ; name |> Form.symbol
+       ; docstring |> String.strip |> Form.string
+       ; Q.K.lighter |> Form.symbol
+       ; Option.value_map
+           mode_line
+           ~f:(fun mode_line -> String.concat [ " "; mode_line ] |> Form.string)
+           ~default:Form.nil
+       ; Q.K.keymap |> Form.symbol
+       ; Form.apply
+           Q.define_keymap
+           (List.concat_map define_keys ~f:(fun (key, symbol) ->
+              [ Form.string key; Form.quote (Symbol.to_value symbol) ]))
+       ]
+       @ (match global with
+          | None -> []
+          | Some group ->
+            [ Q.K.global |> Form.symbol
+            ; Value.of_bool true |> Form.of_value_exn
+            ; Q.K.group |> Form.symbol
+            ; group |> Customization.Group.to_value |> Form.quote
+            ])
+       @ [ Form.apply init [] ]));
   Load_history.add_entry here (Fun name);
   Load_history.add_entry here (Var (Var.symbol keymap_var));
   List.iter [ "hook"; "on-hook"; "off-hook" ] ~f:(fun suffix ->

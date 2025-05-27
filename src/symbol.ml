@@ -2,10 +2,6 @@ open! Core
 open! Import0
 include Ecaml_value.Symbol
 
-module Q = struct
-  let cl_lib = "cl-lib" |> intern
-end
-
 let name = Funcall.Wrap.("symbol-name" <: t @-> return string)
 let compare_name t1 t2 = String.compare (name t1) (name t2)
 let function_is_defined = Funcall.Wrap.("fboundp" <: t @-> return bool)
@@ -20,14 +16,9 @@ let function_exn t =
 ;;
 
 let make_symbol = Funcall.Wrap.("make-symbol" <: string @-> return t)
-let create ~name = make_symbol name
-let require_cl_lib = Memo.unit (fun () -> Ecaml_value.Feature.require Q.cl_lib)
+let create_uninterned ~name = make_symbol name
 let gensym = Funcall.Wrap.("gensym" <: nil_or string @-> return t)
-
-let gensym ?prefix () =
-  require_cl_lib ();
-  gensym prefix
-;;
+let gensym ?prefix () = gensym prefix
 
 module Automatic_migration = struct
   module New = struct

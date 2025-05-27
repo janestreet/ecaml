@@ -27,6 +27,7 @@ module Clock : sig
     -> ?stop:unit Deferred.t
     -> ?continue_on_error:bool
     -> ?finished:unit Ivar.t
+    -> ?should_profile:bool
     -> ?here:Stdlib.Lexing.position
     -> Time_ns.Span.t
     -> (unit -> unit Deferred.t)
@@ -38,6 +39,7 @@ module Clock : sig
     :  ?start:unit Deferred.t
     -> ?stop:unit Deferred.t
     -> ?continue_on_error:bool
+    -> ?should_profile:bool
     -> ?here:Stdlib.Lexing.position
     -> Time_ns.Span.t
     -> (unit -> unit)

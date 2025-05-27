@@ -25,7 +25,7 @@ val function_is_defined : t -> bool
 val compare_name : t -> t -> int
 
 (** [(describe-function 'make-symbol)]. *)
-val create : name:string -> t
+val create_uninterned : name:string -> t
 
 (** [(describe-function 'gensym)]. *)
 val gensym : ?prefix:string -> unit -> t

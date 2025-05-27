@@ -85,7 +85,7 @@ let%expect_test "[define_minor_mode]" =
     (define_minor_mode
        base_symbol
        [%here]
-       ~global:false
+       ~global:None
        ~docstring:"minor mode docstring"
        ()
      : Minor_mode.t);

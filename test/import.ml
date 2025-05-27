@@ -69,7 +69,7 @@ let touch filename =
     (Process.call_exn "touch" [ filename ] ~working_directory:Of_current_buffer : string)
 ;;
 
-let int_var name = Var.create (Symbol.create ~name) Value.Type.int
+let int_var name = Var.create (Symbol.create_uninterned ~name) Value.Type.int
 
 let show_current_buffer_local_variables () =
   print_s

@@ -136,5 +136,3 @@ let override_minor_mode_map symbol ~f =
 ;;
 
 let special_event_map = Var.Wrap.("special-event-map" <: t)
-let suppress_keymap = Funcall.Wrap.("suppress-keymap" <: t @-> bool @-> return nil)
-let suppress_keymap ?(suppress_digits = false) t = suppress_keymap t suppress_digits

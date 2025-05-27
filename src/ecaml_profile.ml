@@ -77,8 +77,6 @@ The major mode for the *profile* buffer, which holds a log of Ecaml profile outp
                  profile_kill_buffer_query_function )
          ())
 
-let () = Keymap.suppress_keymap keymap ~suppress_digits:true
-
 module Start_location = struct
   include Profile.Start_location
 
