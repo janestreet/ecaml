@@ -6,7 +6,7 @@ open! Customization
 let group = Group.of_string "test-customization-group"
 
 let test ?show_form type_ customization_type standard_value =
-  let variable = Symbol.create ~name:"test-customization-symbol" in
+  let variable = Symbol.create_uninterned ~name:"test-customization-symbol" in
   ignore
     (defcustom
        variable

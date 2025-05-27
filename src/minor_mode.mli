@@ -65,7 +65,7 @@ val define_minor_mode
   -> docstring:string
   -> ?define_keys:(string * Symbol.t) list
   -> ?mode_line:string
-  -> global:bool
+  -> global:Customization.Group.t option
   -> ?initialize:(t -> unit)
        (** [t] is the minor mode currently being defined, and it can be used to decide
            whether to set up or tear down the minor mode. *)

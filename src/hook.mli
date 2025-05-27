@@ -163,6 +163,10 @@ val focus_in : (normal, unit) t
     - [(Info-goto-node "(elisp)Killing Buffers")] *)
 val kill_buffer : (normal, unit) t
 
+(** - [(describe-variable 'kill-emacs-hook)]
+    - [(Info-goto-node "(elisp) Killing Emacs")] *)
+val kill_emacs : (normal, unit) t
+
 (** - [(describe-variable 'post-command-hook)]
     - [(Info-goto-node "(elisp)Command Overview")] *)
 val post_command : (normal, unit) t

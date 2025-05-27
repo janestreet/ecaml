@@ -22,7 +22,7 @@ let%expect_test "[provide], [require]" =
 ;;
 
 let%expect_test "[require] uses [Symbol.equal]" =
-  show_raise (fun () -> require (Symbol.create ~name:"foo"));
+  show_raise (fun () -> require (Symbol.create_uninterned ~name:"foo"));
   [%expect
     {|
     (raised (

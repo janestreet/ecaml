@@ -68,7 +68,9 @@ let%expect_test "sexpable value in a var" =
   in
   let a_type = Value.Type.sexpable ~name:(Sexp.of_string "A") (module A) in
   let t =
-    create (Symbol.create ~name:"a-and-marker") (Value.Type.tuple a_type Marker.t)
+    create
+      (Symbol.create_uninterned ~name:"a-and-marker")
+      (Value.Type.tuple a_type Marker.t)
   in
   make_buffer_local_always t;
   let setup buf ~a ~b =
@@ -128,7 +130,7 @@ let%expect_test "caml_embed value" =
   in
   let a_type = Caml_embed.create_type A.type_id in
   let var_name = "embedded-var-a" in
-  let t = create (Symbol.create ~name:var_name) a_type in
+  let t = create (Symbol.create_uninterned ~name:var_name) a_type in
   make_buffer_local_always t;
   (* Trying to read [nil] as a caml_embedded value raises, but doesn't segfault. *)
   show_raise (fun () -> Current_buffer.value_exn t);

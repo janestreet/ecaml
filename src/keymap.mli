@@ -89,6 +89,3 @@ val override_minor_mode_map : Symbol.t -> f:(t -> unit) -> unit
 
 (** [(describe-variable 'special-event-map)] *)
 val special_event_map : t Var.t
-
-(** [(describe-function 'suppress-keymap)] *)
-val suppress_keymap : ?suppress_digits:bool (** default is [false] *) -> t -> unit

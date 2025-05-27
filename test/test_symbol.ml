@@ -14,7 +14,7 @@ let%expect_test "[intern] with different names returns unequal symbols" =
 ;;
 
 let%expect_test "[create] with same name returns unequal symbols" =
-  require (not (equal (create ~name:"foo") (create ~name:"foo")));
+  require (not (equal (create_uninterned ~name:"foo") (create_uninterned ~name:"foo")));
   return ()
 ;;
 
@@ -25,7 +25,7 @@ let%expect_test "[name]" =
 ;;
 
 let%expect_test "[function_exn] raise" =
-  let t = create ~name:"z" in
+  let t = create_uninterned ~name:"z" in
   show_raise (fun () -> function_exn t);
   [%expect
     {| (raised ("[Symbol.function_exn] of symbol with no function field" (symbol z))) |}];
@@ -33,7 +33,7 @@ let%expect_test "[function_exn] raise" =
 ;;
 
 let%expect_test "[set_function], [function_exn]" =
-  let t = create ~name:"z" in
+  let t = create_uninterned ~name:"z" in
   Defun.defalias t ~alias_of:(13 |> Value.of_int_exn) ();
   print_s [%sexp (function_exn t : Value.t)];
   [%expect {| 13 |}];

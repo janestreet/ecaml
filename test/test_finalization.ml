@@ -66,7 +66,7 @@ let%expect_test "finalization of embedded ocaml values" =
     in
     let a_type = Caml_embed.create_type A.type_id in
     let var_name = "embedded-var-a" in
-    let var = Var.create (Symbol.create ~name:var_name) a_type in
+    let var = Var.create (Symbol.create_uninterned ~name:var_name) a_type in
     Var.make_buffer_local_always var;
     let v1 : A.t = { a = "V1"; b = 1 } in
     let v2 : A.t = { a = "V2"; b = 2 } in

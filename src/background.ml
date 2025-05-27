@@ -54,22 +54,45 @@ let don't_wait_for ~(here : [%call_pos]) f =
 ;;
 
 module Clock = struct
-  let every' ?start ?stop ?continue_on_error ?finished ~(here : [%call_pos]) interval f =
+  let every'
+    ?start
+    ?stop
+    ?continue_on_error
+    ?finished
+    ?(should_profile = true)
+    ~(here : [%call_pos])
+    interval
+    f
+    =
     mark_running_in_background ~here (fun () ->
       Clock_ns.every' ?start ?stop ?continue_on_error ?finished interval (fun () ->
-        Nested_profile.Profile.profile
-          Async
-          [%lazy_message "[Background.Clock.every']" (here : Source_code_position.t)]
-          f))
+        match should_profile with
+        | false -> f ()
+        | true ->
+          Nested_profile.Profile.profile
+            Async
+            [%lazy_message "[Background.Clock.every']" (here : Source_code_position.t)]
+            f))
   ;;
 
-  let every ?start ?stop ?continue_on_error ~(here : [%call_pos]) interval f =
+  let every
+    ?start
+    ?stop
+    ?continue_on_error
+    ?(should_profile = true)
+    ~(here : [%call_pos])
+    interval
+    f
+    =
     mark_running_in_background ~here (fun () ->
       Clock_ns.every ?start ?stop ?continue_on_error interval (fun () ->
-        Nested_profile.Profile.profile
-          Sync
-          [%lazy_message "[Background.clock.every]" (here : Source_code_position.t)]
-          f))
+        match should_profile with
+        | false -> f ()
+        | true ->
+          Nested_profile.Profile.profile
+            Sync
+            [%lazy_message "[Background.clock.every]" (here : Source_code_position.t)]
+            f))
   ;;
 end
 

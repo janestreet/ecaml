@@ -99,7 +99,7 @@ let%expect_test "[set_value], [value_exn]" =
 ;;
 
 let%expect_test "[has_non_null_value]" =
-  let var = Var.create (Symbol.create ~name:"zzz") Value.Type.value in
+  let var = Var.create (Symbol.create_uninterned ~name:"zzz") Value.Type.value in
   let show () = print_s [%sexp (has_non_null_value var : bool)] in
   show ();
   [%expect {| false |}];
@@ -143,7 +143,7 @@ let%expect_test "[set_value_temporarily] with an unbound var" =
 ;;
 
 let%expect_test "[set_value_temporarily] with a buffer-local and changed buffer" =
-  let var = Var.create (Symbol.create ~name:"z") Value.Type.(nil_or int) in
+  let var = Var.create (Symbol.create_uninterned ~name:"z") Value.Type.(nil_or int) in
   Var.make_buffer_local_always var;
   let b1 = Buffer.create ~name:"b1" in
   let b2 = Buffer.create ~name:"b2" in
