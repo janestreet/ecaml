@@ -57,13 +57,10 @@ module Include_minibuffer = struct
   let never = Q.never |> Symbol.to_value
 
   let type_ =
-    Value.Type.enum
-      [%sexp "include-minibuffer"]
-      (module T)
-      (function
-        | Yes -> Value.t
-        | No -> never
-        | Only_if_active -> Value.nil)
+    Value.Type.enum [%sexp "include-minibuffer"] (module T) (function
+      | Yes -> Value.t
+      | No -> never
+      | Only_if_active -> Value.nil)
   ;;
 
   let t = type_

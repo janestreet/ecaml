@@ -52,7 +52,7 @@ val url_handler : t
     [(describe-variable 'minor-mode-map-alist)] *)
 val keymap : t -> Keymap.t option
 
-val keymap_exn : t -> Keymap.t
+val keymap_exn : t -> Keymap.t Var.t
 
 (** [(describe-function 'define-minor-mode)]
     [(Info-goto-node "(elisp)Defining Minor Modes")]

@@ -72,7 +72,13 @@ val lookup_key
 val define_key : t -> Key_sequence.t -> Entry.t -> unit
 
 (** [(describe-function 'keymap-set)] [(Info-goto-node "(elisp)Changing Key Bindings")] *)
-val set : t -> string -> Entry.t -> unit
+val set : t Var.t -> string -> Entry.t -> unit
+
+val set_val : t -> string -> Entry.t -> unit
+
+(** [(describe-function 'keymap-global-set)]
+    [(Info-goto-node "(elisp)Changing Key Bindings")] *)
+val global_set : string -> Entry.t -> unit
 
 (** [(describe-variable 'minor-mode-map-alist)] *)
 val minor_mode_map_alist : (Symbol.t * t) list Var.t

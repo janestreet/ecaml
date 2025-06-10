@@ -13,13 +13,14 @@ type entry =
 [@@deriving fields ~getters, sexp_of]
 
 module M =
-  (val define_derived_mode
-         test_mode
-         [%here]
-         ~docstring:"for testing"
-         ~mode_line:"Test-mode"
-         ~parent:Tabulated_list_mode.major_mode
-         ())
+  (val Ecaml.Dump.with_allowed_dump_for_testing (fun () ->
+         define_derived_mode
+           test_mode
+           [%here]
+           ~docstring:"for testing"
+           ~mode_line:"Test-mode"
+           ~parent:Tabulated_list_mode.major_mode
+           ()))
 
 let t =
   let format =

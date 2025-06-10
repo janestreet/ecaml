@@ -1,6 +1,6 @@
 open! Core
 open! Import
-include (val Major_mode.wrap_existing_with_lazy_keymap "dired-mode")
+include (val Major_mode.wrap_existing "dired-mode")
 
 let get_marked_files =
   Funcall.Wrap.(

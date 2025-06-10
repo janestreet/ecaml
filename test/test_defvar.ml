@@ -6,7 +6,8 @@ open! Defvar
 let%expect_test "[defvar]" =
   let x = "x" |> Symbol.intern in
   ignore
-    (defvar x [%here] ~docstring:"some text" ~type_:Value.Type.int ~initial_value:13 ()
+    (Ecaml.Dump.with_allowed_dump_for_testing (fun () ->
+       defvar x [%here] ~docstring:"some text" ~type_:Value.Type.int ~initial_value:13 ())
      : _ Var.t);
   print_s [%sexp (Current_buffer.value_exn { symbol = x; type_ = Value.Type.int } : int)];
   [%expect {| 13 |}];
@@ -32,13 +33,14 @@ let%expect_test "[defvar]" =
 
 let%expect_test "[defvar] with invalid value" =
   let var =
-    defvar
-      ("var-with-invalid-valuer" |> Symbol.intern)
-      [%here]
-      ~docstring:"<docstring>"
-      ~type_:Value.Type.int
-      ~initial_value:13
-      ()
+    Ecaml.Dump.with_allowed_dump_for_testing (fun () ->
+      defvar
+        ("var-with-invalid-valuer" |> Symbol.intern)
+        [%here]
+        ~docstring:"<docstring>"
+        ~type_:Value.Type.int
+        ~initial_value:13
+        ())
   in
   Current_buffer.set_value { var with type_ = Value.Type.bool } false;
   show_raise (fun () -> Current_buffer.value_exn var);

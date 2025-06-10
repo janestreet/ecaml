@@ -714,7 +714,7 @@ let%expect_test "[local_keymap], [set_local_keymap]" =
     show_local_keymap ();
     [%expect {| () |}];
     let keymap = Keymap.create () in
-    Keymap.set keymap "a" Undefined;
+    Keymap.set_val keymap "a" Undefined;
     set_local_keymap keymap;
     show_local_keymap ();
     [%expect {| ((keymap (97 . undefined))) |}]);

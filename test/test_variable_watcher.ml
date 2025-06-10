@@ -4,13 +4,14 @@ open! Import
 open! Variable_watcher
 
 let var =
-  defvar
-    ("watch-this-variable" |> Symbol.intern)
-    [%here]
-    ~docstring:"test variable"
-    ~type_:Value.Type.int
-    ~initial_value:0
-    ()
+  Ecaml.Dump.with_allowed_dump_for_testing (fun () ->
+    defvar
+      ("watch-this-variable" |> Symbol.intern)
+      [%here]
+      ~docstring:"test variable"
+      ~type_:Value.Type.int
+      ~initial_value:0
+      ())
 ;;
 
 let%expect_test _ =

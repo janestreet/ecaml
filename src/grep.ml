@@ -21,13 +21,10 @@ module Save_buffers = struct
   let ask = Q.ask |> Symbol.to_value
 
   let type_ =
-    Value.Type.enum
-      [%message "Grep.Save_buffers.t"]
-      (module T)
-      (function
-        | Ask -> ask
-        | False -> Value.nil
-        | True -> Value.t)
+    Value.Type.enum [%message "Grep.Save_buffers.t"] (module T) (function
+      | Ask -> ask
+      | False -> Value.nil
+      | True -> Value.t)
   ;;
 
   let t = type_
@@ -47,4 +44,4 @@ let grep ~command =
     ~f:(fun () -> grep command)
 ;;
 
-include (val Major_mode.wrap_existing_with_lazy_keymap "grep-mode")
+include (val Major_mode.wrap_existing "grep-mode")

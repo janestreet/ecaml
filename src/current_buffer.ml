@@ -78,12 +78,9 @@ module Coding_system = struct
   include T
 
   let type_ =
-    Value.Type.enum
-      [%sexp "buffer-file-coding-system"]
-      (module T)
-      (function
-        | Utf_8 -> "utf-8" |> Value.intern
-        | Utf_8_unix -> "utf-8-unix" |> Value.intern)
+    Value.Type.enum [%sexp "buffer-file-coding-system"] (module T) (function
+      | Utf_8 -> "utf-8" |> Value.intern
+      | Utf_8_unix -> "utf-8-unix" |> Value.intern)
   ;;
 
   let t = type_
@@ -286,12 +283,7 @@ let active_region () =
 ;;
 
 let make_local_variable = Funcall.Wrap.("make-local-variable" <: Symbol.t @-> return nil)
-
-let make_buffer_local var =
-  add_gc_root (var |> Var.symbol_as_value);
-  make_local_variable (var |> Var.symbol)
-;;
-
+let make_buffer_local var = make_local_variable (var |> Var.symbol)
 let local_variable_p = Funcall.Wrap.("local-variable-p" <: Symbol.t @-> return bool)
 let is_buffer_local var = local_variable_p (var |> Var.symbol)
 

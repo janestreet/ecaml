@@ -165,13 +165,14 @@ let%expect_test "obsolete an defined variable" =
   let obsolete = "obsolete2" |> Symbol.intern in
   let current = "current2" |> Symbol.intern in
   ignore
-    (defvar
-       obsolete
-       [%here]
-       ~docstring:"an obsolete variable"
-       ~type_:Value.Type.bool
-       ~initial_value:false
-       ()
+    (Ecaml.Dump.with_allowed_dump_for_testing (fun () ->
+       defvar
+         obsolete
+         [%here]
+         ~docstring:"an obsolete variable"
+         ~type_:Value.Type.bool
+         ~initial_value:false
+         ())
      : _ Var.t);
   let show () =
     print_endline (Help.describe_variable_text obsolete);
@@ -211,13 +212,14 @@ let%expect_test "define an obsoleted variable" =
   let current = "current3" |> Symbol.intern in
   make_variable_obsolete obsolete ~current:(Some current) ~since:"now";
   ignore
-    (defvar
-       obsolete
-       [%here]
-       ~docstring:"an obsolete variable"
-       ~type_:Value.Type.bool
-       ~initial_value:false
-       ()
+    (Ecaml.Dump.with_allowed_dump_for_testing (fun () ->
+       defvar
+         obsolete
+         [%here]
+         ~docstring:"an obsolete variable"
+         ~type_:Value.Type.bool
+         ~initial_value:false
+         ())
      : _ Var.t);
   print_endline (Help.describe_variable_text obsolete);
   [%expect
@@ -235,13 +237,14 @@ let%expect_test "define an obsoleted variable with no current replacement" =
   let obsolete = "obsolete4" |> Symbol.intern in
   make_variable_obsolete obsolete ~current:None ~since:"now";
   ignore
-    (defvar
-       obsolete
-       [%here]
-       ~docstring:"an obsolete variable"
-       ~type_:Value.Type.bool
-       ~initial_value:false
-       ()
+    (Ecaml.Dump.with_allowed_dump_for_testing (fun () ->
+       defvar
+         obsolete
+         [%here]
+         ~docstring:"an obsolete variable"
+         ~type_:Value.Type.bool
+         ~initial_value:false
+         ())
      : _ Var.t);
   print_endline (Help.describe_variable_text obsolete);
   [%expect

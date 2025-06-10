@@ -4,11 +4,21 @@ open! Import
 open! Buffer_local
 
 let int =
-  defvar
-    ("some-int" |> Symbol.intern)
-    ~type_:Value.Type.(option int)
-    ~default_value:None
-    ()
+  Ecaml.Dump.with_allowed_dump_for_testing (fun () ->
+    defvar
+      ("some-int" |> Symbol.intern)
+      ~type_:Value.Type.(option int)
+      ~default_value:None
+      ())
+;;
+
+let bool =
+  Ecaml.Dump.with_allowed_dump_for_testing (fun () ->
+    defvar
+      ("some-bool" |> Symbol.intern)
+      ~type_:Value.Type.(option bool)
+      ~default_value:None
+      ())
 ;;
 
 let%expect_test "[symbol]" =
@@ -77,13 +87,6 @@ let%expect_test "different values in different buffers" =
 ;;
 
 let%expect_test "[get] with value represented as [nil]" =
-  let bool =
-    defvar
-      ("some-bool" |> Symbol.intern)
-      ~type_:Value.Type.(option bool)
-      ~default_value:None
-      ()
-  in
   let test b =
     Current_buffer.set_buffer_local bool (Some b);
     print_s [%sexp (Current_buffer.get_buffer_local_exn bool : bool)]
@@ -97,11 +100,12 @@ let%expect_test "[get] with value represented as [nil]" =
 
 let%expect_test "[defvar_embedded]" =
   let t =
-    defvar_embedded
-      ("x" |> Symbol.intern)
-      (module struct
-        type t = int ref [@@deriving sexp_of]
-      end)
+    Ecaml.Dump.with_allowed_dump_for_testing (fun () ->
+      defvar_embedded
+        ("x" |> Symbol.intern)
+        (module struct
+          type t = int ref [@@deriving sexp_of]
+        end))
   in
   let show () = print_s [%sexp (Current_buffer.get_buffer_local t : int ref option)] in
   show ();
@@ -118,11 +122,12 @@ let%expect_test "[defvar_embedded]" =
 
 let%expect_test "[defvar ~wrapped:false]" =
   let t =
-    defvar
-      ("unwrapped" |> Symbol.intern)
-      ~type_:Value.Type.(nil_or int)
-      ~default_value:None
-      ()
+    Ecaml.Dump.with_allowed_dump_for_testing (fun () ->
+      defvar
+        ("unwrapped" |> Symbol.intern)
+        ~type_:Value.Type.(nil_or int)
+        ~default_value:None
+        ())
   in
   let show () = print_s [%sexp (Current_buffer.get_buffer_local t : int option)] in
   show ();
@@ -135,7 +140,12 @@ let%expect_test "[defvar ~wrapped:false]" =
 
 let%expect_test "non-nil default value" =
   let t =
-    defvar ("non-nil-default" |> Symbol.intern) ~type_:Value.Type.int ~default_value:13 ()
+    Ecaml.Dump.with_allowed_dump_for_testing (fun () ->
+      defvar
+        ("non-nil-default" |> Symbol.intern)
+        ~type_:Value.Type.int
+        ~default_value:13
+        ())
   in
   let show () = print_s [%sexp (Current_buffer.get_buffer_local t : int)] in
   show ();
@@ -148,13 +158,14 @@ let%expect_test "non-nil default value" =
 
 let%expect_test "[wrap_existing]" =
   let var =
-    Defvar.defvar
-      ("for-wrapping" |> Symbol.intern)
-      [%here]
-      ~docstring:"<docstring>"
-      ~type_:Value.Type.string
-      ~initial_value:"initial"
-      ()
+    Ecaml.Dump.with_allowed_dump_for_testing (fun () ->
+      Defvar.defvar
+        ("for-wrapping" |> Symbol.intern)
+        [%here]
+        ~docstring:"<docstring>"
+        ~type_:Value.Type.string
+        ~initial_value:"initial"
+        ())
   in
   let wrap ~make_buffer_local_always =
     wrap_existing var.symbol var.type_ ~make_buffer_local_always

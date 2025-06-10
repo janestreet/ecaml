@@ -32,6 +32,7 @@ module Dired = Dired
 module Display = Display
 module Display_property = Display_property
 module Documentation = Documentation
+module Dump = Dump
 module Ecaml_profile = Ecaml_profile
 module Ecaml_sexp = Ecaml_sexp
 module Echo_area = Echo_area
@@ -367,6 +368,23 @@ after loading the test modules, to print the results and exit.|}
     (fun () ->
        let exit_code = Ppx_inline_test_lib.evaluate_exit_status () in
        kill_emacs exit_code)
+;;
+
+let () =
+  Hook.add
+    Hook.kill_emacs
+    (Hook.Function.create
+       ("ecaml-kill-emacs-hook" |> Symbol.intern)
+       [%here]
+       ~docstring:
+         {|
+Run OCaml at_exit functions when killing Emacs.
+
+This is primarily to support profiling the Ecaml plugin using PPX_MODULE_TIMER.
+|}
+       ~hook_type:Normal_hook
+       (Returns Value.Type.unit)
+       (fun () -> Stdlib.do_at_exit ()))
 ;;
 
 let () =

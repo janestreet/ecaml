@@ -93,7 +93,7 @@ let with_input_macro string f =
   in
   let f_is_running = ref false in
   let keymap = Keymap.create () in
-  Keymap.set
+  Keymap.set_val
     keymap
     start_sequence
     (Value
@@ -110,8 +110,7 @@ let with_input_macro string f =
                  f_is_running := false;
                  return ()))
         |> Function.to_value));
-  Keymap.set
-    (Keymap.global ())
+  Keymap.global_set
     raise_if_still_running_sequence
     (Value
        (lambda_nullary [%here] ~interactive:No_arg (Returns Value.Type.unit) (fun () ->

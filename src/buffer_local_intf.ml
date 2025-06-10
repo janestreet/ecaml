@@ -22,8 +22,7 @@ module type Buffer_local = sig
   val symbol : _ t -> Symbol.t
   val var : 'a t -> 'a Var.t
 
-  (** [defvar] defines a buffer-local variable using [Defvar.defvar], and calls
-      [Var.make_buffer_local_always]. *)
+  (** [defvar] defines a buffer-local variable using [Defvar.defvar_local]. *)
   val defvar
     :  here:[%call_pos]
     -> Symbol.t

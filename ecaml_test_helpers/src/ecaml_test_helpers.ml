@@ -77,18 +77,14 @@ let is_minibuffer_open () =
 ;;
 
 let () =
-  let query_replace_map =
-    Var.Wrap.("query-replace-map" <: Keymap.t) |> Current_buffer.value_exn
-  in
+  let query_replace_map = Var.Wrap.("query-replace-map" <: Keymap.t) in
+  let sym = "jane-fe-test-raise-if-in-minibuffer" |> Symbol.intern in
   defun_nullary_nil
-    ("jane-fe-test-raise-if-in-minibuffer" |> Symbol.intern)
+    sym
     [%here]
     ~docstring:"For testing."
     ~interactive:No_arg
-    ~define_keys:
-      [ Keymap.global (), raise_if_in_minibuffer_key
-      ; query_replace_map, raise_if_in_minibuffer_key
-      ]
+    ~define_keys:[ query_replace_map, raise_if_in_minibuffer_key ]
     (fun () ->
       match is_minibuffer_open () with
       | false -> minibuffer_was_open := false
@@ -96,7 +92,8 @@ let () =
         minibuffer_was_open := true;
         let prompt = Minibuffer.prompt () in
         message_s [%sexp "Minibuffer open", { prompt : string option }];
-        never_returns (Command.abort_recursive_edit ()))
+        never_returns (Command.abort_recursive_edit ()));
+  Keymap.global_set raise_if_in_minibuffer_key (Symbol sym)
 ;;
 
 let execute_keys keys =
@@ -151,12 +148,12 @@ let () =
       Current_buffer.set_temporarily Sync buffer ~f:(fun () ->
         print_endline (Current_buffer.contents () |> Text.to_utf8_bytes)))
   in
+  let sym = "jane-fe-test-show-minibuffer" |> Symbol.intern in
   defun
-    ("jane-fe-test-show-minibuffer" |> Symbol.intern)
+    sym
     [%here]
     ~docstring:"For testing."
     ~interactive:Raw_prefix
-    ~define_keys:[ Keymap.global (), show_minibuffer_key ]
     (Returns Value.Type.unit)
     (let%map_open.Defun show_contents = required "SHOW-CONTENTS" bool in
      match Minibuffer.active_window () with
@@ -165,7 +162,8 @@ let () =
        require false
      | Some _ ->
        show_minibuffer ~show_contents;
-       show_completions ())
+       show_completions ());
+  Keymap.global_set show_minibuffer_key (Symbol sym)
 ;;
 
 let () =

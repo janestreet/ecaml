@@ -298,7 +298,8 @@ let defun_internal
     ~optional_args:args.optional
     ?rest_arg:args.rest
     fn;
-  List.iter define_keys ~f:(fun (keymap, keys) -> Keymap.set keymap keys (Symbol symbol));
+  List.iter define_keys ~f:(fun (keymap, keys) ->
+    Dump.keymap_set ~here keymap [ keys, symbol ]);
   Option.iter obsoletes ~f:(fun (obsolete, Since since) ->
     define_obsolete_alias obsolete ~here ~alias_of:symbol ~since ());
   maybe_disable_function symbol disabled

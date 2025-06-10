@@ -69,7 +69,7 @@ module type Defun = sig
     Symbol.t
     -> Source_code_position.t
     -> docstring:string
-    -> ?define_keys:(Keymap.t * string) list
+    -> ?define_keys:(Keymap.t Var.t * string) list
     -> ?obsoletes:Obsoletes.t
     -> ?should_profile:bool
     -> ?interactive:Function.Interactive.t

@@ -133,13 +133,10 @@ let%expect_test "[to_list]" =
 
 let%expect_test "[invoking_this_command]" =
   let key_sequence = "C-c z y x" in
-  defun_nullary_nil
-    (Symbol.gensym ())
-    [%here]
-    ~docstring:"test function"
-    ~define_keys:[ Keymap.global (), key_sequence ]
-    ~interactive:No_arg
-    (fun () -> message_s [%message (invoking_this_command () : t)]);
+  let sym = Symbol.gensym () in
+  defun_nullary_nil sym [%here] ~docstring:"test function" ~interactive:No_arg (fun () ->
+    message_s [%message (invoking_this_command () : t)]);
+  Keymap.global_set key_sequence (Symbol sym);
   let%bind () = Key_sequence.execute (Key_sequence.create_exn key_sequence) in
   [%expect {| ("invoking_this_command ()" "C-c z y x") |}];
   return ()

@@ -47,10 +47,7 @@ let make_variable_buffer_local =
   Funcall.Wrap.("make-variable-buffer-local" <: Symbol.t @-> return nil)
 ;;
 
-let make_buffer_local_always t =
-  add_gc_root (symbol_as_value t);
-  make_variable_buffer_local t.symbol
-;;
+let make_buffer_local_always t = make_variable_buffer_local t.symbol
 
 let local_variable_if_set_p =
   Funcall.Wrap.("local-variable-if-set-p" <: Symbol.t @-> Buffer.t @-> return bool)

@@ -26,20 +26,23 @@ let%expect_test "[defcustom], [defvar], [defun], [update_emacs_with_entries], \
   let var = "var" |> Symbol.intern in
   let fun_ = "fun" |> Symbol.intern in
   ignore
-    (defcustom
-       custom
-       [%here]
-       ~docstring:"custom docstring"
-       ~group:("custom-group" |> Customization.Group.of_string)
-       ~type_:Value.Type.bool
-       ~customization_type:Boolean
-       ~standard_value:false
-       ()
+    (Ecaml.Dump.with_allowed_dump_for_testing (fun () ->
+       defcustom
+         custom
+         [%here]
+         ~docstring:"custom docstring"
+         ~group:("custom-group" |> Customization.Group.of_string)
+         ~type_:Value.Type.bool
+         ~customization_type:Boolean
+         ~standard_value:false
+         ())
      : _ Customization.t);
   ignore
-    (defvar var [%here] ~docstring:"foo" ~type_:Value.Type.bool ~initial_value:false ()
+    (Ecaml.Dump.with_allowed_dump_for_testing (fun () ->
+       defvar var [%here] ~docstring:"foo" ~type_:Value.Type.bool ~initial_value:false ())
      : _ Var.t);
-  defun_nullary_nil fun_ [%here] ~docstring:"<docstring>" Fn.id;
+  Ecaml.Dump.with_allowed_dump_for_testing (fun () ->
+    defun_nullary_nil fun_ [%here] ~docstring:"<docstring>" Fn.id);
   update_emacs_with_entries ~chop_prefix:"app/emacs/" ~in_dir:"<dir>";
   let show_defining_file symbol =
     print_s [%sexp (defining_file symbol : string option)]
@@ -56,12 +59,13 @@ let%expect_test "[defcustom], [defvar], [defun], [update_emacs_with_entries], \
 let%expect_test "[define_derived_mode]" =
   let base_symbol = "test-load-history-major-mode" |> Symbol.intern in
   ignore
-    (define_derived_mode
-       base_symbol
-       [%here]
-       ~docstring:"derived major mode docstring"
-       ~mode_line:"test-load-history"
-       ()
+    (Ecaml.Dump.with_allowed_dump_for_testing (fun () ->
+       define_derived_mode
+         base_symbol
+         [%here]
+         ~docstring:"derived major mode docstring"
+         ~mode_line:"test-load-history"
+         ())
      : (module Major_mode.S));
   update_emacs_with_entries ~chop_prefix:"app/emacs/" ~in_dir:"<dir>";
   show_defining_file (String.is_prefix ~prefix:(Symbol.name base_symbol));
@@ -82,12 +86,13 @@ let%expect_test "[define_derived_mode]" =
 let%expect_test "[define_minor_mode]" =
   let base_symbol = "test-load-history-minor-mode" |> Symbol.intern in
   ignore
-    (define_minor_mode
-       base_symbol
-       [%here]
-       ~global:None
-       ~docstring:"minor mode docstring"
-       ()
+    (Ecaml.Dump.with_allowed_dump_for_testing (fun () ->
+       define_minor_mode
+         base_symbol
+         [%here]
+         ~global:None
+         ~docstring:"minor mode docstring"
+         ())
      : Minor_mode.t);
   update_emacs_with_entries ~chop_prefix:"app/emacs/" ~in_dir:"<dir>";
   show_defining_file (String.is_prefix ~prefix:(Symbol.name base_symbol));
@@ -108,12 +113,13 @@ let%expect_test "[define_minor_mode]" =
 let%expect_test "[defstruct]" =
   let base_symbol = "test-load-history-struct" |> Symbol.intern in
   ignore
-    (Defstruct.defstruct
-       ~here:[%here]
-       ~name:(Symbol.name base_symbol)
-       ~doc:"cl-defstruct docstring"
-       Defstruct.Field.
-         [ field "host" Host_and_port.host string; field "port" Host_and_port.port int ]
+    (Ecaml.Dump.with_allowed_dump_for_testing (fun () ->
+       Defstruct.defstruct
+         ~here:[%here]
+         ~name:(Symbol.name base_symbol)
+         ~doc:"cl-defstruct docstring"
+         Defstruct.Field.
+           [ field "host" Host_and_port.host string; field "port" Host_and_port.port int ])
      : Host_and_port.t Defstruct.t);
   update_emacs_with_entries ~chop_prefix:"app/emacs/" ~in_dir:"<dir>";
   show_defining_file (fun sym ->

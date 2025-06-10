@@ -1,6 +1,12 @@
 open! Core
 open! Import
 
+module Q = struct
+  include Q
+
+  let defvar_local = "defvar-local" |> Symbol.intern
+end
+
 let all_defvar_symbols = ref []
 
 module Private = struct
@@ -28,7 +34,8 @@ let define_obsolete_alias obsolete ~(here : [%call_pos]) ?docstring ~alias_of ~s
   Obsolete.make_variable_obsolete obsolete ~current:(Some alias_of) ~since
 ;;
 
-let defvar
+let defvar_internal
+  defvar_symbol
   symbol
   here
   ~docstring
@@ -48,11 +55,43 @@ let defvar
   require_nonempty_docstring here ~docstring;
   Dump.eval_and_dump ~here (fun () ->
     Form.apply
-      Q.defvar
+      defvar_symbol
       [ Form.symbol symbol
       ; Form.quote (Value.Type.to_value type_ initial_value)
       ; Form.string docstring
       ]);
   if include_in_all_defvar_symbols then add_to_load_history symbol here;
   Var.create symbol type_
+;;
+
+let defvar symbol here ~docstring ~type_ ~initial_value ?include_in_all_defvar_symbols () =
+  defvar_internal
+    Q.defvar
+    symbol
+    here
+    ~docstring
+    ~type_
+    ~initial_value
+    ?include_in_all_defvar_symbols
+    ()
+;;
+
+let defvar_local
+  symbol
+  here
+  ~docstring
+  ~type_
+  ~default_value
+  ?include_in_all_defvar_symbols
+  ()
+  =
+  defvar_internal
+    Q.defvar_local
+    symbol
+    here
+    ~docstring
+    ~type_
+    ~initial_value:default_value
+    ?include_in_all_defvar_symbols
+    ()
 ;;

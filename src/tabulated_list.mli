@@ -58,7 +58,7 @@ val create
   -> get_id:('record -> string)
   -> 'record t
 
-val keymap : _ t -> Keymap.t
+val keymap : _ t -> Keymap.t Var.t
 val major_mode : _ t -> Major_mode.t
 
 val draw

@@ -12,3 +12,5 @@ val keymap_set
   -> Keymap.t Var.t
   -> (string * Symbol.t) list
   -> unit
+
+val with_allowed_dump_for_testing : (unit -> 'a) -> 'a

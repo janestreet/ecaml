@@ -136,7 +136,5 @@ let keymap t =
 ;;
 
 let keymap_exn t =
-  match keymap t with
-  | Some x -> x
-  | None -> raise_s [%message "minor mode has no keymap" ~minor_mode:(t : t)]
+  Var.Wrap.(concat [ t.function_name |> Symbol.name; "-map" ] <: Keymap.t)
 ;;

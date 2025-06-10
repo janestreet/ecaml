@@ -101,7 +101,9 @@ let define_key =
   Funcall.Wrap.("define-key" <: t @-> Key_sequence.t @-> Entry.t @-> return nil)
 ;;
 
-let set = Funcall.Wrap.("keymap-set" <: t @-> string @-> Entry.t @-> return nil)
+let set_val = Funcall.Wrap.("keymap-set" <: t @-> string @-> Entry.t @-> return nil)
+let set var keys entry = set_val (Current_buffer0.value_exn var) keys entry
+let global_set = Funcall.Wrap.("keymap-global-set" <: string @-> Entry.t @-> return nil)
 
 let minor_mode_map_alist =
   Var.Wrap.("minor-mode-map-alist" <: list (tuple Symbol.t type_))
