@@ -5,6 +5,8 @@ module Q = struct
   include Q
 
   let undefined = "undefined" |> Symbol.intern
+  let defvar_keymap = "defvar-keymap" |> Symbol.intern
+  let set_keymap_parent = "set-keymap-parent" |> Symbol.intern
 end
 
 include Keymap0
@@ -12,8 +14,6 @@ include Keymap0
 type keymap = t [@@deriving sexp_of]
 
 let equal = eq
-let parent = Funcall.Wrap.("keymap-parent" <: t @-> return (nil_or t))
-let set_parent = Funcall.Wrap.("set-keymap-parent" <: t @-> nil_or t @-> return nil)
 let set_transient = Funcall.Wrap.("set-transient-map" <: t @-> bool @-> return nil)
 let set_transient ?(keep_if_used = false) t = set_transient t keep_if_used
 
@@ -32,6 +32,15 @@ let create ?(kind = Kind.Sparse) ?menu_name () =
    | Full -> make_keymap
    | Sparse -> make_sparse_keymap)
     menu_name
+;;
+
+let defvar ?(here = Stdlib.Lexing.dummy_pos) symbol ~docstring =
+  Dump.eval_and_dump ~here (fun () ->
+    Form.apply
+      Q.defvar_keymap
+      [ Form.symbol symbol; Form.symbol Q.K.doc; Form.string docstring ]);
+  Load_history.add_entry here (Var symbol);
+  Var.create symbol t
 ;;
 
 let deep_copy = Funcall.Wrap.("copy-keymap" <: t @-> return t)
@@ -101,7 +110,20 @@ let define_key =
   Funcall.Wrap.("define-key" <: t @-> Key_sequence.t @-> Entry.t @-> return nil)
 ;;
 
-let set = Funcall.Wrap.("keymap-set" <: t @-> string @-> Entry.t @-> return nil)
+let set_val = Funcall.Wrap.("keymap-set" <: t @-> string @-> Entry.t @-> return nil)
+
+let set ?(here = Stdlib.Lexing.dummy_pos) var keys entry =
+  Dump.keymap_set ~here var [ keys, entry ]
+;;
+
+let set_parent ?(here = Stdlib.Lexing.dummy_pos) keymap ~parent =
+  Dump.eval_and_dump ~here (fun () ->
+    Form.apply
+      Q.set_keymap_parent
+      [ Form.symbol (Var.symbol keymap); Form.symbol (Var.symbol parent) ])
+;;
+
+let global_set = Funcall.Wrap.("keymap-global-set" <: string @-> Entry.t @-> return nil)
 
 let minor_mode_map_alist =
   Var.Wrap.("minor-mode-map-alist" <: list (tuple Symbol.t type_))

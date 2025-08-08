@@ -21,7 +21,3 @@ val defconst_i
   -> type_:'a Value.Type.t
   -> value:'a
   -> unit
-
-module Private : sig
-  val all_defconst_symbols : unit -> Symbol.t list
-end

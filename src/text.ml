@@ -55,6 +55,13 @@ end
 
 let length = Funcall.Wrap.("length" <: t @-> return int)
 let concat ts = Symbol.funcallN Q.concat (ts : t list :> Value.t list) |> of_value_exn
+let string_join = Funcall.Wrap.("string-join" <: list t @-> t @-> return t)
+
+let concat ?sep ts =
+  match sep with
+  | Some sep -> string_join ts sep
+  | None -> concat ts
+;;
 
 let substring =
   let substring = Funcall.Wrap.("substring" <: t @-> int @-> int @-> return t) in

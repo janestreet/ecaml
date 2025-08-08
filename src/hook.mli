@@ -71,6 +71,7 @@ module Function : sig
     -> Source_code_position.t
     -> docstring:string
     -> ?should_profile:bool
+    -> ?demote_errors:bool (** default = [true] *)
     -> hook_type:('a, 'b) Hook_type.t
     -> ('b, 'r) Defun.Returns.t
     -> ('a -> 'r)
@@ -85,6 +86,8 @@ module Function : sig
     :  Symbol.t
     -> Source_code_position.t
     -> docstring:string
+    -> ?should_profile:bool
+    -> ?demote_errors:bool (** default = [true] *)
     -> hook_type:('a, 'b) Hook_type.t
     -> ('b, 'r) Defun.Returns.t
     -> (('a, 'b) t -> 'a -> 'r)
@@ -98,12 +101,9 @@ module Function : sig
 end
 
 (** - [(describe-function 'add-hook)]
-    - [(Info-goto-node "(elisp)Setting Hooks")]
-
-    If [one_shot] is [true], the hook will be removed after the first time it runs. *)
+    - [(Info-goto-node "(elisp)Setting Hooks")] *)
 val add
   :  ?buffer_local:bool (** default is [false] *)
-  -> ?one_shot:bool (** default is [false] *)
   -> ?where:Where.t (** default is [Start] *)
   -> ('a, 'b) t
   -> ('a, 'b) Function.t
@@ -175,9 +175,6 @@ val post_command : (normal, unit) t
     - [(Info-goto-node "(elisp)Command Overview")] *)
 val pre_command : (normal, unit) t
 
-(** [(describe-variable 'server-after-make-frame-hook)] *)
-val server_after_make_frame : (normal, unit) t
-
 (** - [(describe-variable 'window-configuration-change-hook)]
     - [(Info-goto-node "(elisp)Window Hooks")] *)
 val window_configuration_change : (normal, unit) t
@@ -191,3 +188,7 @@ val major_mode_hook : Major_mode.t -> (normal, unit) t
 
 (** [(describe-variable 'project-find-functions)] *)
 val project_find_functions : (file, unit) t
+
+(** - [(describe-variable 'write-contents-functions)]
+    - [(Info-goto-node "(elisp) Saving Buffers")] *)
+val write_contents_functions : (normal, bool) t

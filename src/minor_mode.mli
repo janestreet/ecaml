@@ -28,6 +28,9 @@ val abbrev : t
 (** [(describe-variable 'auto-fill-mode)] [(describe-function 'auto-fill-mode)] *)
 val auto_fill : t
 
+(** [(describe-variable 'button-mode)] [(describe-function 'button-mode)] *)
+val button : t
+
 (** [(describe-variable 'goto-address-mode)] [(describe-function 'goto-address-mode)] *)
 val goto_address : t
 
@@ -52,7 +55,7 @@ val url_handler : t
     [(describe-variable 'minor-mode-map-alist)] *)
 val keymap : t -> Keymap.t option
 
-val keymap_exn : t -> Keymap.t
+val keymap_exn : t -> Keymap.t Var.t
 
 (** [(describe-function 'define-minor-mode)]
     [(Info-goto-node "(elisp)Defining Minor Modes")]

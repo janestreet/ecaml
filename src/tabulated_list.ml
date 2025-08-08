@@ -292,7 +292,6 @@ end
 type 'record t =
   { columns : 'record Column.t_internal list
   ; entries_var : 'record list Buffer_local.t
-  ; major_mode : Major_mode.t
   ; original_record : 'record Text.Property_name.t
   (* The original record is smuggled as a text property on the ID string of line.  The IDs
      are compared with [equal], so including the original record as an opaque pointer in
@@ -305,8 +304,6 @@ type 'record t =
      [find_exn]. *)
   }
 [@@deriving fields ~getters]
-
-let keymap t = Major_mode.keymap (major_mode t)
 
 let tabulated_list_format_var =
   Buffer_local.Wrap.("tabulated-list-format" <: vector Column.Format.Fixed_width.t)
@@ -358,13 +355,7 @@ let draw ?sort_by t rows =
 
 module Tabulated_list_mode = (val Major_mode.wrap_existing "tabulated-list-mode")
 
-let create major_mode (type a) (column_specs : a Column.t list) ~get_id =
-  if not (Major_mode.is_derived major_mode ~from:Tabulated_list_mode.major_mode)
-  then
-    raise_s
-      [%sexp
-        "[Tabulated_list.create] called on a major mode not derived from \
-         [Tabulated_list.Tabulated_list_mode.major_mode]."];
+let create (type a) (column_specs : a Column.t list) ~get_id =
   let type_ : a Value.Type.t =
     Type_equal.Id.create ~name:(Current_buffer.name ()) [%sexp_of: _]
     |> Caml_embed.create_type
@@ -394,7 +385,7 @@ let create major_mode (type a) (column_specs : a Column.t list) ~get_id =
     List.map column_specs ~f:(fun spec -> Column.create_internal spec entry_type)
   in
   let entries_var = Buffer_local.Wrap.("tabulated-list-entries" <: list entry_type) in
-  { columns; entries_var; major_mode; original_record }
+  { columns; entries_var; original_record }
 ;;
 
 let tabulated_list_get_id =

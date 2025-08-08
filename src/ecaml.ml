@@ -32,6 +32,7 @@ module Dired = Dired
 module Display = Display
 module Display_property = Display_property
 module Documentation = Documentation
+module Dump = Dump
 module Ecaml_profile = Ecaml_profile
 module Ecaml_sexp = Ecaml_sexp
 module Echo_area = Echo_area
@@ -85,7 +86,6 @@ module Selected_window = Selected_window
 module Symbol = Symbol
 module Symbol_prefix = Symbol_prefix
 module Sync_or_async = Sync_or_async
-module Syntax_table = Syntax_table
 module System = System
 module Tabulated_list = Tabulated_list
 module Terminal = Terminal
@@ -119,6 +119,7 @@ let defgroup = Customization.Group.defgroup
 let define_derived_mode = Major_mode.define_derived_mode
 let define_minor_mode = Minor_mode.define_minor_mode
 let defun = Defun.defun
+let defun_func = Defun.defun_func
 let defun_nullary = Defun.defun_nullary
 let defun_nullary_nil = Defun.defun_nullary_nil
 let defvar = Defvar.defvar
@@ -224,7 +225,7 @@ For testing Ecaml.
 List the Unix signals that are managed by the Async OCaml library in the running Emacs
 process.
 |}
-    ~interactive:(Function.Interactive.list [ Value.t ])
+    ~interactive:(Defun.Interactive.list [ Value.t ])
     (Returns Ecaml_sexp.t)
     (let%map_open.Defun interactive = optional_with_nil "interactive" bool in
      let sexp =
@@ -370,6 +371,23 @@ after loading the test modules, to print the results and exit.|}
 ;;
 
 let () =
+  Hook.add
+    Hook.kill_emacs
+    (Hook.Function.create
+       ("ecaml-kill-emacs-hook" |> Symbol.intern)
+       [%here]
+       ~docstring:
+         {|
+Run OCaml at_exit functions when killing Emacs.
+
+This is primarily to support profiling the Ecaml plugin using PPX_MODULE_TIMER.
+|}
+       ~hook_type:Normal_hook
+       (Returns Value.Type.unit)
+       (fun () -> Stdlib.do_at_exit ()))
+;;
+
+let () =
   defun
     ("ecaml--ppx-inline-test-lib-init" |> Symbol.intern)
     [%here]
@@ -394,6 +412,17 @@ let () =
     (let open Defun.Let_syntax in
      let%map_open file = required "file" string in
      Dynlink.loadfile file)
+;;
+
+let () =
+  defun_nullary_nil
+    ("ecaml-allow-dump-calls-after-module-initialization" |> Symbol.intern)
+    [%here]
+    ~docstring:
+      {|Allow calls to Dump functions from this point forward.
+
+This is an internal function of no use to most people.|}
+    Dump.For_testing.allow_calls_after_module_initialization
 ;;
 
 let debug_embedded_caml_values () = Caml_embed.debug_sexp ()

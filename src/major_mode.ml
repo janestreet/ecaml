@@ -18,7 +18,6 @@ type t =
   ; keymap_var : Keymap.t Var.t
   ; name : (Name.t[@sexp.opaque])
   ; hook : (Hook.normal, unit) Hook.t Or_error.t
-  ; syntax_table_var : Syntax_table.t Var.t
   }
 [@@deriving fields ~getters ~fields, sexp_of]
 
@@ -65,21 +64,14 @@ let add wrapped_at name symbol =
           {|fundamental-mode has no mode hook. [(Info-goto-node "(elisp) Major Modes")]|}]
   in
   let keymap_var = Var.Wrap.([%string "%{Symbol.name symbol}-map"] <: Keymap.t) in
-  let syntax_table_var =
-    Var.Wrap.([%string "%{Symbol.name symbol}-syntax-table"] <: Syntax_table.t)
-  in
-  let t = { wrapped_at; symbol; keymap_var; name; hook; syntax_table_var } in
+  let t = { wrapped_at; symbol; keymap_var; name; hook } in
   Hashtbl.add_exn t_by_symbol ~key:(symbol |> Symbol.name) ~data:t;
   t
 ;;
 
-let keymap t = Current_buffer.value_exn t.keymap_var
-let keymap_var t = t.keymap_var
-let syntax_table t = Current_buffer.value_exn t.syntax_table_var
+let keymap t = t.keymap_var
 
-let wrap_existing_with_lazy_keymap ?here:(wrapped_at = Stdlib.Lexing.dummy_pos) name
-  : (module S_with_lazy_keymap)
-  =
+let wrap_existing ?here:(wrapped_at = Stdlib.Lexing.dummy_pos) name : (module S) =
   (module struct
     type Name.t += Major_mode
 
@@ -95,17 +87,7 @@ let wrap_existing_with_lazy_keymap ?here:(wrapped_at = Stdlib.Lexing.dummy_pos) 
               ~previous_def:(t : t)]
     ;;
 
-    let keymap =
-      lazy
-        (try keymap major_mode with
-         | exn ->
-           raise_s
-             [%message
-               "Major mode's keymap doesn't exist"
-                 (name : string)
-                 (wrapped_at : Source_code_position.t)
-                 (exn : exn)])
-    ;;
+    let keymap = major_mode.keymap_var
 
     let enabled_in_current_buffer () =
       Buffer_local.get major_mode_var (Current_buffer0.get ())
@@ -115,31 +97,23 @@ let wrap_existing_with_lazy_keymap ?here:(wrapped_at = Stdlib.Lexing.dummy_pos) 
   end)
 ;;
 
-let wrap_existing ?(here = Stdlib.Lexing.dummy_pos) name : (module S) =
-  (module struct
-    include (val wrap_existing_with_lazy_keymap ~here name)
-
-    let keymap = force keymap
-  end)
-;;
-
 let find_or_wrap_existing ?(here = Stdlib.Lexing.dummy_pos) symbol =
   match Hashtbl.find t_by_symbol (symbol |> Symbol.name) with
   | Some t -> t
   | None -> add here Name.Undistinguished symbol
 ;;
 
-module Fundamental = (val wrap_existing_with_lazy_keymap "fundamental-mode")
+module Fundamental = (val wrap_existing "fundamental-mode")
 module Prog = (val wrap_existing "prog-mode")
 module Special = (val wrap_existing "special-mode")
 module Text = (val wrap_existing "text-mode")
-module Tuareg = (val wrap_existing_with_lazy_keymap "tuareg-mode")
-module Makefile = (val wrap_existing_with_lazy_keymap "makefile-mode")
+module Tuareg = (val wrap_existing "tuareg-mode")
+module Makefile = (val wrap_existing "makefile-mode")
 module Lisp_data = (val wrap_existing "lisp-data-mode")
-module Scheme = (val wrap_existing_with_lazy_keymap "scheme-mode")
+module Scheme = (val wrap_existing "scheme-mode")
 module Emacs_lisp = (val wrap_existing "emacs-lisp-mode")
-module Asm = (val wrap_existing_with_lazy_keymap "asm-mode")
-module Python = (val wrap_existing_with_lazy_keymap "python-mode")
+module Asm = (val wrap_existing "asm-mode")
+module Python = (val wrap_existing "python-mode")
 
 let all_derived_modes = ref []
 
@@ -215,7 +189,7 @@ let define_derived_mode
       (Var ([%string "%{Symbol.name symbol}-%{suffix}"] |> Symbol.intern)));
   let m = wrap_existing ~here (symbol |> Symbol.name) in
   let module M = (val m) in
-  Dump.keymap_set ~here (keymap_var M.major_mode) define_keys;
+  Dump.keymap_set ~here (keymap M.major_mode) define_keys;
   all_derived_modes := M.major_mode :: !all_derived_modes;
   Option.iter auto_mode ~f:(add_auto_mode ~symbol);
   m

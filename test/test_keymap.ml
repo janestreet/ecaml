@@ -80,19 +80,6 @@ let%expect_test "[set_global]" =
   return ()
 ;;
 
-let%expect_test "[parent], [set_parent]" =
-  let t = create () in
-  print_s [%sexp (parent t : t option)];
-  [%expect {| () |}];
-  set_parent t (Some (create ()));
-  print_s [%sexp (parent t : t option)];
-  [%expect {| ((keymap)) |}];
-  set_parent t None;
-  print_s [%sexp (parent t : t option)];
-  [%expect {| () |}];
-  return ()
-;;
-
 let%expect_test "[deep_copy]" =
   let t1 = create () in
   define_key t1 "abc" Undefined;

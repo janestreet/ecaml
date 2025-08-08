@@ -27,6 +27,11 @@ let create ?variable_name function_name =
   { function_name; variable_name = Option.value variable_name ~default:function_name }
 ;;
 
+let wrap_existing name =
+  let name = Symbol.intern name in
+  { function_name = name; variable_name = name }
+;;
+
 let compare_name a b = Comparable.lift Symbol.compare_name ~f:function_name a b
 let abbrev = { function_name = Q.abbrev_mode; variable_name = Q.abbrev_mode }
 let auto_fill = { function_name = Q.auto_fill_mode; variable_name = Q.auto_fill_mode }
@@ -38,6 +43,7 @@ let goto_address =
 let hl_line = { function_name = Q.hl_line_mode; variable_name = Q.hl_line_mode }
 let read_only = { function_name = Q.read_only_mode; variable_name = Q.buffer_read_only }
 let view = { function_name = Q.view_mode; variable_name = Q.view_mode }
+let button = wrap_existing "button-mode"
 
 let url_handler =
   { function_name = Q.url_handler_mode; variable_name = Q.url_handler_mode }
@@ -136,7 +142,5 @@ let keymap t =
 ;;
 
 let keymap_exn t =
-  match keymap t with
-  | Some x -> x
-  | None -> raise_s [%message "minor mode has no keymap" ~minor_mode:(t : t)]
+  Var.Wrap.(concat [ t.function_name |> Symbol.name; "-map" ] <: Keymap.t)
 ;;

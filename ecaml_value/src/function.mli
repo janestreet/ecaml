@@ -12,48 +12,16 @@ end
 
 include Value.Subtype
 
-module Interactive : sig
-  (** [(describe-function 'interactive)] *)
-  type t =
-    | Args of (unit -> Value.t list Deferred.t)
-    (** When a command defined with [~interactive:(Args f)] is called interactively,
-        [f ()] is called to compute the argument values to supply to the command. Of
-        course, the argument values should match the command's [Defun.t] specification. *)
-    | Form of Form.t
-    | Function_name of { prompt : string }
-    (** a -- Function name: symbol with a function definition. *)
-    | Ignored (** i -- Ignored, i.e. always nil. Does not do I/O. *)
-    | No_arg (** interactive with no argument spec *)
-    | Prompt of string (** s -- Any string. Does not inherit the current input method. *)
-    | Raw_prefix (** P -- Prefix arg in raw form. Does not do I/O. *)
-    | Prefix (** p -- Prefix arg converted to number. Does not do I/O. *)
-    | Region
-    (** r -- Region: point and mark as 2 numeric args, smallest first. Does no I/O. *)
+val of_ocaml_func0 : Source_code_position.t -> (unit -> Value.t) -> t
+val of_ocaml_func1 : Source_code_position.t -> (Value.t -> Value.t) -> t
+val of_ocaml_func2 : Source_code_position.t -> (Value.t -> Value.t -> Value.t) -> t
 
-  (** An interactive form which evaluates to a list of constant values. *)
-  val list : Value.t list -> t
-end
-
-val create
+val of_ocaml_funcN_M
   :  Source_code_position.t
-  -> ?docstring:string
-  -> ?interactive:Interactive.t
-  -> args:Symbol.t list
-  -> ?optional_args:Symbol.t list
-  -> ?rest_arg:Symbol.t
-  -> Fn.t
-  -> t
-
-val create_nullary
-  :  Source_code_position.t
-  -> ?docstring:string
-  -> ?interactive:Interactive.t
-  -> (unit -> unit)
+  -> min_args:int
+  -> max_args:int option
+  -> (Value0.t array -> Value0.t)
   -> t
 
 val to_value : t -> Value.t
-val of_symbol : Symbol.t -> t
-
-module Expert : sig
-  val raise_in_dispatch : bool ref
-end
+val of_symbol_exn : Symbol.t -> t

@@ -15,8 +15,6 @@ let function_exn t =
   symbol_function t
 ;;
 
-let make_symbol = Funcall.Wrap.("make-symbol" <: string @-> return t)
-let create_uninterned ~name = make_symbol name
 let gensym = Funcall.Wrap.("gensym" <: nil_or string @-> return t)
 let gensym ?prefix () = gensym prefix
 
@@ -34,31 +32,6 @@ module Automatic_migration = struct
   let all = ref []
   let add (one : one) = all := !all @ [ one ]
   let migrate ~old = List.find_map !all ~f:(fun f -> f ~old)
-end
-
-module Disabled = struct
-  type t =
-    | Not_disabled
-    | Disabled of { message : string option }
-  [@@deriving sexp_of]
-
-  let of_value value =
-    if Value.is_nil value
-    then Not_disabled
-    else (
-      let message = Option.try_with (fun () -> Value.to_utf8_bytes_exn value) in
-      Disabled { message })
-  ;;
-
-  let to_value = function
-    | Not_disabled -> Value.nil
-    | Disabled { message = None } -> Value.t
-    | Disabled { message = Some message } -> Value.of_utf8_bytes message
-  ;;
-
-  let type_ =
-    Value.Type.create [%sexp "function-disabled-property"] [%sexp_of: t] of_value to_value
-  ;;
 end
 
 type symbol = t [@@deriving sexp_of]
@@ -91,7 +64,6 @@ module Property = struct
     create ("variable-documentation" |> intern) Value.Type.value
   ;;
 
-  let function_disabled = create ("disabled" |> intern) Disabled.type_
   let advertised_binding = create (":advertised-binding" |> intern) Key_sequence0.type_
 end
 

@@ -12,7 +12,7 @@
   (pps ppx_jane)))
 
 (rule
- (alias DEFAULT)
+ (alias default)
  (deps unnecessarily-global-symbols.sh glob_files *.ml)
  (action
   (bash ./unnecessarily-global-symbols.sh)))

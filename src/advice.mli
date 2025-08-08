@@ -29,7 +29,7 @@ val defun_around_values
   -> ?here:Stdlib.Lexing.position
   -> (Value.t, 'a) Sync_or_async.t
   -> docstring:string
-  -> ?interactive:Function.Interactive.t
+  -> ?interactive:Defun.Interactive.t
   -> ?should_profile:bool
   -> ((Value.t list -> Value.t) -> Value.t list -> 'a)
   -> t
@@ -47,7 +47,7 @@ val defun_around_funcall
   :  Symbol.t
   -> ?here:Stdlib.Lexing.position
   -> docstring:string
-  -> ?interactive:Function.Interactive.t
+  -> ?interactive:Defun.Interactive.t
   -> ?on_parse_error:On_parse_error.t
   -> ?should_profile:bool
   -> 'a Funcall.t

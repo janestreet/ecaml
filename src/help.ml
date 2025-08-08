@@ -8,11 +8,7 @@ let get_text_of_help ~invoke_help =
     Current_buffer.contents ()
     |> Text.to_utf8_bytes
     |> String.split_lines
-    |> List.filter_map ~f:(fun line ->
-      if (am_running_test && String.is_prefix line ~prefix:"Implemented at")
-         || String.( = ) "[back]" (String.strip line)
-      then None
-      else Some line)
+    |> List.filter ~f:(fun line -> not (String.( = ) "[back]" (String.strip line)))
     |> concat ~sep:"\n"
     |> String.strip)
 ;;

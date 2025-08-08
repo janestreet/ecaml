@@ -183,6 +183,10 @@ val delete_region : start:Position.t -> end_:Position.t -> unit
 (** [(describe-function 'kill-region)] *)
 val kill_region : start:Position.t -> end_:Position.t -> unit
 
+(** - [(describe-function 'narrow-to-region)]
+    - [(Info-goto-node "(elisp)Narrowing")] *)
+val narrow_to_region : start:Position.t -> end_:Position.t -> unit
+
 (** - [(describe-function 'widen)]
     - [(Info-goto-node "(elisp)Narrowing")] *)
 val widen : unit -> unit
@@ -316,18 +320,6 @@ val active_region : unit -> (Position.t * Position.t) option
 (** - [(describe-function 'deactivate-mark)]
     - [(Info-goto-node "(elisp)The Mark")] *)
 val deactivate_mark : unit -> unit
-
-(** - [(describe-function 'char-syntax)]
-    - [(Info-goto-node "(elisp)Syntax Table Functions")] *)
-val syntax_class : Char_code.t -> Syntax_table.Class.t
-
-(** - [(describe-function 'syntax-table)]
-    - [(Info-goto-node "(elisp)Syntax Table Functions")] *)
-val syntax_table : unit -> Syntax_table.t
-
-(** - [(describe-function 'set-syntax-table)]
-    - [(Info-goto-node "(elisp)Syntax Table Functions")] *)
-val set_syntax_table : Syntax_table.t -> unit
 
 (** [(describe-function 'flush-lines)] *)
 val delete_lines_matching

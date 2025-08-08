@@ -108,7 +108,7 @@ module Which_buffers = struct
   let to_value = function
     | File_visiting -> Value.nil
     | These f ->
-      Function.create [%here] ~args:[] (fun _ ->
+      Function.of_ocaml_func0 [%here] (fun () ->
         let buffer = Current_buffer0.get () in
         try f buffer |> Value.of_bool with
         | exn -> raise_s [%message "[Which_buffers.These]" (buffer : buffer) (exn : exn)])

@@ -22,6 +22,7 @@ val string : string -> t
 val symbol : Symbol.t -> t
 val int : int -> t
 val quote : Value.t -> t
+val quoted_symbol : Symbol.t -> t
 val progn : t list -> t
 val let_ : (Symbol.t * t) list -> t -> t
 

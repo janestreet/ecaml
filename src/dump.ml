@@ -28,8 +28,22 @@ let princ = Funcall.Wrap.("princ" <: string @-> return ignored)
 let ecaml_dumped = Current_buffer0.variable_is_defined Q.ecaml_dumped
 let ecaml_dumping = Sys.getenv "ECAML_DUMPING" |> Option.is_some
 
+(* This is set to false at the end of module initialization. *)
+let in_module_initialization = ref true
+let allow_dump_override = ref false
+
+let assert_can_dump here =
+  if (not !in_module_initialization) && not !allow_dump_override
+  then
+    raise_s
+      [%sexp
+        "Tried to call a Dump function after module initialization"
+        , (here : Source_code_position.t)]
+;;
+
 let eval_and_dump ~(here : Source_code_position.t) make_form =
-  let should_eval = not ecaml_dumped in
+  assert_can_dump here;
+  let should_eval = (not ecaml_dumped) || !allow_dump_override in
   let should_dump = ecaml_dumping in
   if should_eval || should_dump
   then (
@@ -51,6 +65,7 @@ let ecaml_plugin_so = Form.string "ecaml_plugin.so"
 let t = Form.of_value_exn Value.t
 
 let defalias ~here symbol value =
+  assert_can_dump here;
   let should_dump = ecaml_dumping in
   if should_dump
   then pp (Form.apply Q.declare_function [ Form.symbol symbol; ecaml_plugin_so; t; t ]);
@@ -75,3 +90,12 @@ let keymap_set ~here keymap keydefs =
     eval_and_dump ~here (fun () ->
       Form.apply Q.progn (List.map keydefs ~f:(keymap_set_form keymap)))
 ;;
+
+let () =
+  Ecaml_value.Ecaml_callback.on_end_of_module_initialization
+    (fun `Not_holding_the_async_lock -> in_module_initialization := false)
+;;
+
+module For_testing = struct
+  let allow_calls_after_module_initialization () = allow_dump_override := true
+end

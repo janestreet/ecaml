@@ -57,13 +57,10 @@ module Include_minibuffer = struct
   let never = Q.never |> Symbol.to_value
 
   let type_ =
-    Value.Type.enum
-      [%sexp "include-minibuffer"]
-      (module T)
-      (function
-        | Yes -> Value.t
-        | No -> never
-        | Only_if_active -> Value.nil)
+    Value.Type.enum [%sexp "include-minibuffer"] (module T) (function
+      | Yes -> Value.t
+      | No -> never
+      | Only_if_active -> Value.nil)
   ;;
 
   let t = type_
@@ -94,14 +91,4 @@ let window_tree =
     Funcall.Wrap.("window-tree" <: nil_or t @-> return (tuple Window0.Tree.t ignored))
   in
   fun t -> fst (f (Some t))
-;;
-
-let modify_all_frames_parameters =
-  Funcall.Wrap.(
-    "modify-all-frames-parameters" <: list (tuple Symbol.t value) @-> return nil)
-;;
-
-let modify_frame_parameters =
-  Funcall.Wrap.(
-    "modify-frame-parameters" <: t @-> list (tuple Symbol.t value) @-> return nil)
 ;;

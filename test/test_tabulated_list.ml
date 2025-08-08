@@ -28,7 +28,7 @@ let t =
     ; Column.create ~header:"s3" ~align_right:true s3
     ]
   in
-  create M.major_mode format ~get_id:s1
+  create format ~get_id:s1
 ;;
 
 let entries =
@@ -39,7 +39,7 @@ let entries =
 ;;
 
 let draw_and_print' t ?sort_by entries =
-  let%bind () = Current_buffer.change_major_mode (major_mode t) in
+  let%bind () = Current_buffer.change_major_mode M.major_mode in
   draw ?sort_by t entries;
   printf "%s" (Current_buffer.contents () |> Text.to_utf8_bytes);
   return ()
@@ -189,7 +189,6 @@ let%expect_test "move_point_to_record" =
 let%expect_test "generic sortable column" =
   let t_regular =
     create
-      M.major_mode
       [ Column.create ~align_right:true ~header:"idx" ~sortable:true (fst >> Int.to_string)
       ; Column.create ~header:"file" ~sortable:true snd
       ]
@@ -197,7 +196,6 @@ let%expect_test "generic sortable column" =
   in
   let t_with_sort =
     create
-      M.major_mode
       [ Column.create_gen
           ~align_right:true
           ~header:"idx"

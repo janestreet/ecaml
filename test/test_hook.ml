@@ -157,9 +157,20 @@ let create_after_load_fun s =
 
 let%expect_test "[after_load] hooks" =
   let f1 = create_after_load_fun "f1" in
+  let f_one_shot =
+    Function.create_with_self
+      ("f-one-shot" |> Symbol.intern)
+      [%here]
+      ~docstring:"<docstring>"
+      ~hook_type:File_hook
+      (Returns Value.Type.unit)
+      (fun self _ ->
+         print_endline (Symbol.name (Function.symbol self));
+         remove after_load self)
+  in
   let f2 = create_after_load_fun "f2" in
   add after_load f1;
-  add after_load ~one_shot:true (create_after_load_fun "after_load one_shot hook");
+  add after_load f_one_shot;
   add after_load f2;
   let file = Stdlib.Filename.temp_file "ecamltest" ".el" in
   Out_channel.write_all file ~data:"'()";
@@ -167,7 +178,7 @@ let%expect_test "[after_load] hooks" =
   [%expect
     {|
     f2
-    after_load one_shot hook
+    f-one-shot
     f1
     |}];
   let%bind () = Load.load ~message:false file in

@@ -36,7 +36,7 @@ val length : t -> int
 val num_bytes : t -> int
 
 (** [(describe-function 'concat)] *)
-val concat : t list -> t
+val concat : ?sep:t -> t list -> t
 
 (** [(describe-function 'substring)]
 

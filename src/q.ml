@@ -27,6 +27,7 @@ module K = struct
   let buffer = ":buffer" |> Symbol.intern
   let coding = ":coding" |> Symbol.intern
   let command = ":command" |> Symbol.intern
+  let doc = ":doc" |> Symbol.intern
   let extend = ":extend" |> Symbol.intern
   let family = ":family" |> Symbol.intern
   let file = ":file" |> Symbol.intern

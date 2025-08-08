@@ -30,15 +30,12 @@ module Type = struct
   include T
 
   let type_ =
-    Value.Type.enum
-      [%message "terminal-type"]
-      (module T)
-      (function
-        | Text -> Value.t
-        | X11 -> Q.x |> Symbol.to_value
-        | Windows -> Q.w32 |> Symbol.to_value
-        | Mac_os -> Q.ns |> Symbol.to_value
-        | Ms_dos -> Q.pc |> Symbol.to_value)
+    Value.Type.enum [%message "terminal-type"] (module T) (function
+      | Text -> Value.t
+      | X11 -> Q.x |> Symbol.to_value
+      | Windows -> Q.w32 |> Symbol.to_value
+      | Mac_os -> Q.ns |> Symbol.to_value
+      | Ms_dos -> Q.pc |> Symbol.to_value)
   ;;
 
   let t = type_

@@ -284,30 +284,12 @@ static void if_exception_signal_emacs_and_use_ecaml_nil(emacs_env *env,
   }
 }
 
-static emacs_value Fdispatch_assuming_lock_is_held(emacs_env *env, ptrdiff_t nargs,
-                                                   emacs_value args[],
-                                                   __attribute__((unused)) void *data) {
+static emacs_value ecaml_function_trampoline_assuming_lock_is_held(emacs_env *env,
+                                                                   ptrdiff_t nargs,
+                                                                   emacs_value args[],
+                                                                   void *func_root) {
   CAMLparam0();
-  CAMLlocal4(callback_id, arg_array, ret, tmp);
-
-  /* shouldn't never really happen since Fdispatch is not bound to any symbol */
-  if (nargs <= 0) {
-    /* error wrong-number-of-arguments requires a list of two elements, function
-       symbol and the number of arguments */
-    emacs_value list_fun = env->intern(env, "list");
-    emacs_value list_elems[] = {env->intern(env, "Fdispatch"),
-                                env->make_integer(env, nargs)};
-    emacs_value signal_data = env->funcall(env, list_fun, 2, list_elems);
-
-    env->non_local_exit_signal(env, env->intern(env, "wrong-number-of-arguments"),
-                               signal_data);
-
-    CAMLreturnT(emacs_value, emacs_nil(env));
-  }
-
-  callback_id = *((value *)env->get_user_ptr(env, args[0]));
-  nargs--;
-  args++;
+  CAMLlocal4(func, arg_array, ret, tmp);
 
   if (nargs == 0) {
     // A zero-length array.  The OCaml manual says not to use [caml_alloc] to
@@ -321,10 +303,19 @@ static emacs_value Fdispatch_assuming_lock_is_held(emacs_env *env, ptrdiff_t nar
     }
   }
 
-  CAML_NAMED_CALLBACK(ret, dispatch_function, 2_exn, callback_id, arg_array);
-  if_exception_signal_emacs_and_use_ecaml_nil(env, "Fdispatch", &ret);
+  emacs_value ret_val = emacs_nil(env);
+  ret = caml_callback_exn(*((value *)func_root), arg_array);
+  if (Is_exception_result(ret)) {
+    /* We rely on the callback to handle exceptions and call non_local_exit_signal itself,
+       rather than doing it here.  This is so that the Async scheduler lock can be held
+       the whole time, and we don't have the non_local_exit_signal calls for different
+       OCaml callbacks being incorrectly interleaved. */
+    env->non_local_exit_signal(env, env->intern(env, "error"),
+                               env->intern(env, "ecaml_make_function"));
 
-  emacs_value ret_val = emacs_of_ocaml(env, ret);
+  } else {
+    ret_val = emacs_of_ocaml(env, ret);
+  }
 
   CAMLreturnT(emacs_value, ret_val);
 }
@@ -333,28 +324,16 @@ static emacs_value Fdispatch_assuming_lock_is_held(emacs_env *env, ptrdiff_t nar
 static void free_embedded_caml_values(emacs_env *);
 
 typedef struct {
-  bool need_to_lock_caml;
   emacs_env *old_env;
 } acquire_lock;
 
 static acquire_lock acquire_ocaml_lock_from_emacs(emacs_env *env) {
-  /* Emacs can call us both as a response to us calling it, in which case we
-     already have the OCaml lock, or in response to user input, in which case we
-     need to take the lock. The OCaml lock is not recursive, we just deadlock is
-     we try to acquire it again, and the OCaml runtime does not provide a way of
-     checking whether we hold the lock, so we
-     use [active_env] to check whether we have the lock. */
-  bool need_to_lock_caml = active_env == NULL;
-
-  if (need_to_lock_caml) {
-    caml_c_thread_register();
-    caml_acquire_runtime_system();
-  }
+  caml_c_thread_register();
+  caml_acquire_runtime_system();
   free_emacs_values_assuming_in_emacs_thread(env);
   free_embedded_caml_values(env);
 
-  acquire_lock acquire_lock = {.need_to_lock_caml = need_to_lock_caml,
-                               .old_env = active_env};
+  acquire_lock acquire_lock = {.old_env = active_env};
 
   active_env = env;
 
@@ -364,23 +343,52 @@ static acquire_lock acquire_ocaml_lock_from_emacs(emacs_env *env) {
 static void release_ocaml_lock_from_emacs(acquire_lock acquire_lock, emacs_env *env) {
   active_env = acquire_lock.old_env;
   free_emacs_values_assuming_in_emacs_thread(env);
-  if (acquire_lock.need_to_lock_caml) {
-    caml_release_runtime_system();
-  }
+  caml_release_runtime_system();
 }
 
-// [Fdispatch] and [free_caml_cb] are the only functions that we use for calling
-// from Emacs to OCaml.
-static emacs_value Fdispatch(emacs_env *env, ptrdiff_t nargs, emacs_value args[],
-                             void *data) {
+static void ecaml_function_finalizer(void *func_root) {
+  caml_remove_generational_global_root(func_root);
+  caml_stat_free(func_root);
+}
+
+static emacs_value ecaml_function_trampoline(emacs_env *env, ptrdiff_t nargs,
+                                             emacs_value args[], void *func_root) {
+  /* We take the OCaml lock unconditionally at the start of every Ecaml function.  The
+   * OCaml lock is not recursive, so it's important that we don't already hold it when an
+   * Ecaml function is called.  That in turn means we must make sure to release the OCaml
+   * lock around calls into Emacs which might call an Ecaml function.  At the moment,
+   * that's probably just env->funcall (with arbitrary functions).  */
   acquire_lock lock_state = acquire_ocaml_lock_from_emacs(env);
   emacs_value ret;
 
-  ret = Fdispatch_assuming_lock_is_held(env, nargs, args, data);
+  ret = ecaml_function_trampoline_assuming_lock_is_held(env, nargs, args, func_root);
 
   release_ocaml_lock_from_emacs(lock_state, env);
 
   return ret;
+}
+
+/* OCAML_FUNC should be a function of one argument, a Value.t array.  ecaml_make_function
+ * returns (an OCaml wrapper for) an emacs_value which is a function; when called, that
+ * function packages up its arguments as an array and calls OCAML_FUNC with them. */
+CAMLprim value ecaml_make_function(value min_args, value max_args, value ocaml_func) {
+  CAMLparam1(ocaml_func);
+  CAMLlocal1(ret);
+  emacs_env *env = ecaml_active_env_or_die();
+  value *ocaml_func_root = caml_stat_alloc(sizeof(*ocaml_func_root));
+  *ocaml_func_root = ocaml_func;
+  caml_register_generational_global_root(ocaml_func_root);
+  /* We pass OCAML_FUNC (wrapped in the GC root) as the arbitrary "data" parameter to
+   * make_function.  ecaml_function_trampoline will call it. */
+  emacs_value emacs_func = env->make_function(
+      env, Long_val(min_args),
+      Is_some(max_args) ? Long_val(Some_val(max_args)) : emacs_variadic_function,
+      ecaml_function_trampoline, NULL, ocaml_func_root);
+  /* When EMACS_FUNC is GC'd (by the Emacs GC), Emacs will call ecaml_function_finalizer,
+   * which will free OCAML_FUNC_ROOT, which then allows OCAML_FUNC to also be GC'd. */
+  env->set_function_finalizer(env, emacs_func, ecaml_function_finalizer);
+  ret = ocaml_of_emacs(env, emacs_func);
+  CAMLreturn(ret);
 }
 
 int emacs_module_init(struct emacs_runtime *ert) {
@@ -398,23 +406,16 @@ int emacs_module_init(struct emacs_runtime *ert) {
   return 0;
 }
 
-CAMLprim value ecaml_make_dispatch_function(value doc) {
-  CAMLparam1(doc);
-  CAMLlocal1(ret);
-  emacs_env *env = ecaml_active_env_or_die();
-  /* [make_function] doesn't deal with NULs in OCaml strings. */
-  emacs_value emacs_func = env->make_function(env, 0, emacs_variadic_function, Fdispatch,
-                                              String_val(doc), NULL);
-  ret = ocaml_of_emacs(env, emacs_func);
-  CAMLreturn(ret);
-}
-
 value ecaml_funcall(emacs_env *env, value fun, emacs_value *args, size_t nargs,
                     value should_return_result) {
   CAMLparam2(fun, should_return_result);
   CAMLlocal1(ret);
   emacs_value the_fun = emacs_of_ocaml(env, fun);
+  /* We release the OCaml runtime lock around arbitrary calls into Lisp to allow other
+   * OCaml threads to run in parallel with Lisp evaluation.  */
+  caml_release_runtime_system();
   emacs_value ret_val = env->funcall(env, the_fun, nargs, args);
+  caml_acquire_runtime_system();
   if (Bool_val(should_return_result)) {
     ret = ocaml_of_emacs(env, ret_val);
   } else {

@@ -5,37 +5,20 @@ open! Major_mode
 
 let test_mode = "test-major-mode" |> Symbol.intern
 
-module M =
-  (val define_derived_mode
-         test_mode
-         [%here]
-         ~docstring:"docstring"
-         ~mode_line:"<test-mode mode line>"
-         ~initialize:(Returns Value.Type.unit, fun () -> print_s [%message "initialized"])
-         ())
-
-let%expect_test "[wrap_existing] failure" =
-  require_does_raise (fun () -> Major_mode.wrap_existing "org-mode");
-  [%expect
-    {|
-    ("Major mode's keymap doesn't exist"
-      (name org-mode)
-      (wrapped_at app/emacs/lib/ecaml/test/test_major_mode.ml:18:32)
-      (exn (
-        "[Current_buffer.value_exn] of undefined variable" (org-mode-map keymap))))
-    |}];
-  return ()
+let define_mode sym here =
+  define_derived_mode
+    sym
+    here
+    ~docstring:"docstring"
+    ~mode_line:"<test-mode mode line>"
+    ~initialize:(Returns Value.Type.unit, fun () -> print_s [%message "initialized"])
+    ()
 ;;
 
+module M = (val define_mode test_mode [%here])
+
 let%expect_test "duplicate [define_derived_mode]" =
-  show_raise ~hide_positions:true (fun () ->
-    define_derived_mode
-      test_mode
-      [%here]
-      ~docstring:"docstring"
-      ~mode_line:"<test-mode mode line>"
-      ~initialize:(Returns Value.Type.unit, fun () -> print_s [%message "initialized"])
-      ());
+  show_raise ~hide_positions:true (fun () -> define_mode test_mode [%here]);
   [%expect
     {|
     (raised (
@@ -51,20 +34,13 @@ let%expect_test "duplicate [define_derived_mode]" =
           Ok (
             (symbol    test-major-mode-hook)
             (hook_type Normal_hook)
-            (value (())))))
-        (syntax_table_var (test-major-mode-syntax-table syntax-table))))))
+            (value (())))))))))
     |}];
   return ()
 ;;
 
 let%expect_test "duplicate name is NOT caught" =
-  show_raise (fun () ->
-    define_derived_mode
-      ("other-mode" |> Symbol.intern)
-      [%here]
-      ~docstring:"<docstring>"
-      ~mode_line:""
-      ());
+  show_raise (fun () -> define_mode ("other-mode" |> Symbol.intern) [%here]);
   [%expect {| "did not raise" |}];
   return ()
 ;;
@@ -83,8 +59,7 @@ let%expect_test "[define_derived_mode]" =
        (name <opaque>)
        (hook (
          Error
-         "fundamental-mode has no mode hook. [(Info-goto-node \"(elisp) Major Modes\")]"))
-       (syntax_table_var (fundamental-mode-syntax-table syntax-table)))
+         "fundamental-mode has no mode hook. [(Info-goto-node \"(elisp) Major Modes\")]")))
       |}];
     let%bind () = Current_buffer.change_major_mode M.major_mode in
     [%expect {| initialized |}];
@@ -99,21 +74,13 @@ let%expect_test "[define_derived_mode]" =
          Ok (
            (symbol    test-major-mode-hook)
            (hook_type Normal_hook)
-           (value (())))))
-       (syntax_table_var (test-major-mode-syntax-table syntax-table)))
+           (value (()))))))
       |}];
     return ())
 ;;
 
 let%expect_test "[hook]" =
-  let module M =
-    (val define_derived_mode
-           ("for-testing-mode-hook" |> Symbol.intern)
-           [%here]
-           ~docstring:"<docstring>"
-           ~mode_line:""
-           ())
-  in
+  let module M = (val define_mode ("for-testing-mode-hook" |> Symbol.intern) [%here]) in
   let t = M.major_mode in
   Hook.add
     (hook t |> ok_exn)
@@ -128,80 +95,10 @@ let%expect_test "[hook]" =
     Current_buffer.set_temporarily_to_temp_buffer Async (fun () ->
       Current_buffer.change_major_mode t)
   in
-  [%expect {| "hook ran" |}];
-  return ()
-;;
-
-let%expect_test "[keymap]" =
-  print_s [%sexp (M.keymap : Keymap.t)];
-  [%expect {| (keymap) |}];
-  return ()
-;;
-
-let show_syntax_table t = Test_syntax_table.show (syntax_table t)
-
-let%expect_test "[syntax_table]" =
-  show_syntax_table M.major_mode;
   [%expect
     {|
-    ((Close_paren         ")]}")
-     (Escape              \)
-     (Open_paren          "([{")
-     (Punctuation         "!#',.:;?@^`~")
-     (String_quote        "\"")
-     (Symbol_constitutent &*+-/<=>_|)
-     (Whitespace          " ")
-     (Word_constituent
-      $%0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz))
-    |}];
-  return ()
-;;
-
-let%expect_test "[prog]" =
-  show_syntax_table Prog.major_mode;
-  [%expect
-    {|
-    ((Close_paren         ")]}")
-     (Escape              \)
-     (Open_paren          "([{")
-     (Punctuation         "!#',.:;?@^`~")
-     (String_quote        "\"")
-     (Symbol_constitutent &*+-/<=>_|)
-     (Whitespace          " ")
-     (Word_constituent
-      $%0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz))
-    |}];
-  return ()
-;;
-
-let%expect_test "[special]" =
-  show_syntax_table Special.major_mode;
-  [%expect
-    {|
-    ((Close_paren         ")]}")
-     (Escape              \)
-     (Open_paren          "([{")
-     (Punctuation         "!#',.:;?@^`~")
-     (String_quote        "\"")
-     (Symbol_constitutent &*+-/<=>_|)
-     (Whitespace          " ")
-     (Word_constituent
-      $%0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz))
-    |}];
-  return ()
-;;
-
-let%expect_test "[text]" =
-  show_syntax_table Text.major_mode;
-  [%expect
-    {|
-    ((Close_paren         ")]}")
-     (Open_paren          "([{")
-     (Punctuation         "!\"#,.:;?@\\^`~")
-     (Symbol_constitutent &*+-/<=>_|)
-     (Whitespace          " ")
-     (Word_constituent
-      $%'0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz))
+    initialized
+    "hook ran"
     |}];
   return ()
 ;;

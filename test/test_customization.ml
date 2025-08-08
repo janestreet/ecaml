@@ -5,7 +5,7 @@ open! Customization
 
 let group = Group.of_string "test-customization-group"
 
-let test ?show_form type_ customization_type standard_value =
+let test type_ customization_type standard_value =
   let variable = Symbol.create_uninterned ~name:"test-customization-symbol" in
   ignore
     (defcustom
@@ -16,7 +16,6 @@ let test ?show_form type_ customization_type standard_value =
        ~type_
        ~customization_type
        ~standard_value
-       ?show_form
        ()
      : _ Customization.t);
   ignoring_stderr (fun () -> customize_variable variable);
@@ -29,24 +28,12 @@ let test ?show_form type_ customization_type standard_value =
 ;;
 
 let%expect_test "[Boolean] with default [nil]" =
-  test Value.Type.bool Boolean false ~show_form:true;
+  test Value.Type.bool Boolean false;
   [%expect
     {|
-    (defcustom test-customization-symbol (quote nil)
-      "<docstring>\
-     \n\
-     \nCustomization group: test-customization-group\
-     \nStandard value: nil\
-     \nCustomization type: boolean" :group (quote test-customization-group) :type
-     (quote boolean))
-
     Hide Test Customization Symbol: Boolean: [Toggle]  off (nil)
        [ State ]: STANDARD.
-       <docstring> Hide
-
-       Customization group: test-customization-group
-       Standard value: nil
-       Customization type: boolean
+       <docstring>
     Groups: [Test Customization Group]
     |}];
   return ()
@@ -58,11 +45,7 @@ let%expect_test "[Boolean] with default [t]" =
     {|
     Hide Test Customization Symbol: Boolean: [Toggle]  on (non-nil)
        [ State ]: STANDARD.
-       <docstring> Hide
-
-       Customization group: test-customization-group
-       Standard value: t
-       Customization type: boolean
+       <docstring>
     Groups: [Test Customization Group]
     |}];
   return ()
@@ -75,11 +58,7 @@ let%expect_test "[Const]" =
     {|
     Hide Test Customization Symbol: Choice: [Value Menu] 13
        [ State ]: STANDARD.
-       <docstring> Hide
-
-       Customization group: test-customization-group
-       Standard value: 13
-       Customization type: (choice (const 13))
+       <docstring>
     Groups: [Test Customization Group]
     |}];
   return ()
@@ -99,11 +78,7 @@ let%expect_test "[Tag]" =
     {|
     Hide Test Customization Symbol: Choice: [Value Menu] the second-loneliest number
        [ State ]: STANDARD.
-       <docstring> Hide
-
-       Customization group: test-customization-group
-       Standard value: 2
-       Customization type: (choice (const :tag "the loneliest number" 1) (const :tag "the second-loneliest number" 2) (integer :tag "some other number"))
+       <docstring>
     Groups: [Test Customization Group]
     |}];
   return ()
@@ -117,11 +92,7 @@ let%expect_test "nested [Tag]" =
     {|
     Hide Test Customization Symbol: Choice: [Value Menu] a
        [ State ]: STANDARD.
-       <docstring> Hide
-
-       Customization group: test-customization-group
-       Standard value: nil
-       Customization type: (choice (const :tag "a" :tag "b" :tag "c" nil))
+       <docstring>
     Groups: [Test Customization Group]
     |}];
   return ()
@@ -150,11 +121,7 @@ let%expect_test "[enum]" =
     {|
     Hide Test Customization Symbol: Choice: [Value Menu] A
        [ State ]: STANDARD.
-       <docstring> Hide
-
-       Customization group: test-customization-group
-       Standard value: A
-       Customization type: (choice (const A) (const B))
+       <docstring>
     Groups: [Test Customization Group]
     |}];
   return ()

@@ -222,9 +222,6 @@ module type Value = sig
   (** [(describe-function 'symbolp)] *)
   val is_symbol : t -> bool
 
-  (** [(describe-function 'syntax-table-p)] *)
-  val is_syntax_table : t -> bool
-
   (** [(describe-function 'timerp)] *)
   val is_timer : t -> bool
 

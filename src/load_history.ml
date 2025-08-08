@@ -1,6 +1,5 @@
 open! Core
 open! Import0
-module Face = Face0
 
 module Q = struct
   include Q
@@ -20,7 +19,7 @@ let defining_file = Funcall.Wrap.("symbol-file" <: Symbol.t @-> return (nil_or s
 module Entry = struct
   type t =
     | Autoload of Symbol.t
-    | Face of Face.t
+    | Face of Symbol.t
     | Fun of Symbol.t
     | Previously_an_autoload of Symbol.t
     | Provide of Symbol.t
@@ -32,7 +31,7 @@ module Entry = struct
 
   let to_value = function
     | Autoload s -> cons Q.autoload (s |> Symbol.to_value)
-    | Face f -> cons Q.defface (f |> Face.to_value)
+    | Face f -> cons Q.defface (f |> Symbol.to_value)
     | Fun s -> cons Q.defun (s |> Symbol.to_value)
     | Previously_an_autoload s -> cons Q.t (s |> Symbol.to_value)
     | Provide s -> cons Q.provide (s |> Symbol.to_value)
@@ -56,13 +55,10 @@ module Type = struct
       type nonrec t = t
 
       let type_ =
-        Value.Type.enum
-          [%sexp "load-history type"]
-          (module T)
-          (function
-            | Face -> Q.defface |> Symbol.to_value
-            | Fun -> Value.nil
-            | Var -> Q.defvar |> Symbol.to_value)
+        Value.Type.enum [%sexp "load-history type"] (module T) (function
+          | Face -> Q.defface |> Symbol.to_value
+          | Fun -> Value.nil
+          | Var -> Q.defvar |> Symbol.to_value)
       ;;
     end)
 end
@@ -100,7 +96,7 @@ let add_entry here (entry : Entry.t) =
     Hashtbl.set location_by_key ~key:(Key.create symbol type_) ~data:here
   in
   match entry with
-  | Face face -> add (face |> Face.to_name |> Symbol.intern) Face
+  | Face symbol -> add symbol Face
   | Fun symbol -> add symbol Fun
   | Var symbol -> add symbol Var
   | _ -> ()

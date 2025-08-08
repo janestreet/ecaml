@@ -79,12 +79,9 @@ module Coding_system = struct
   include T
 
   let type_ =
-    Value.Type.enum
-      [%sexp "buffer-file-coding-system"]
-      (module T)
-      (function
-        | Utf_8 -> "utf-8" |> Value.intern
-        | Utf_8_unix -> "utf-8-unix" |> Value.intern)
+    Value.Type.enum [%sexp "buffer-file-coding-system"] (module T) (function
+      | Utf_8 -> "utf-8" |> Value.intern
+      | Utf_8_unix -> "utf-8-unix" |> Value.intern)
   ;;
 
   let t = type_
@@ -159,6 +156,12 @@ let delete_region =
 let delete_region ~start ~end_ = delete_region start end_
 let kill_region = Funcall.Wrap.("kill-region" <: Position.t @-> Position.t @-> return nil)
 let kill_region ~start ~end_ = kill_region start end_
+
+let narrow_to_region =
+  Funcall.Wrap.("narrow-to-region" <: Position.t @-> Position.t @-> return nil)
+;;
+
+let narrow_to_region ~start ~end_ = narrow_to_region start end_
 let widen = Funcall.Wrap.("widen" <: nullary @-> return nil)
 let save_current_buffer = Save_wrappers.save_current_buffer
 let save_excursion = Save_wrappers.save_excursion
@@ -287,12 +290,7 @@ let active_region () =
 ;;
 
 let make_local_variable = Funcall.Wrap.("make-local-variable" <: Symbol.t @-> return nil)
-
-let make_buffer_local var =
-  add_gc_root (var |> Var.symbol_as_value);
-  make_local_variable (var |> Var.symbol)
-;;
-
+let make_buffer_local var = make_local_variable (var |> Var.symbol)
 let local_variable_p = Funcall.Wrap.("local-variable-p" <: Symbol.t @-> return bool)
 let is_buffer_local var = local_variable_p (var |> Var.symbol)
 
@@ -316,10 +314,6 @@ let buffer_local_variables () =
 
 let kill_local_variable = Funcall.Wrap.("kill-local-variable" <: Symbol.t @-> return nil)
 let kill_buffer_local var = kill_local_variable (var |> Var.symbol)
-let char_syntax = Funcall.Wrap.("char-syntax" <: Char_code.t @-> return Char_code.t)
-let syntax_class char_code = char_syntax char_code |> Syntax_table.Class.of_char_code_exn
-let syntax_table = Funcall.Wrap.("syntax-table" <: nullary @-> return Syntax_table.t)
-let set_syntax_table = Funcall.Wrap.("set-syntax-table" <: Syntax_table.t @-> return nil)
 
 let local_keymap =
   Funcall.Wrap.("current-local-map" <: nullary @-> return (nil_or Keymap.t))

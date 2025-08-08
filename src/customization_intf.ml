@@ -105,8 +105,7 @@ module type Customization = sig
       structures in sync with the setting. If [on_set] raises, the customization is not
       set. *)
   val defcustom
-    :  ?show_form:bool (** default is [false] *)
-    -> Symbol.t
+    :  Symbol.t
     -> Source_code_position.t
     -> docstring:string
     -> group:Group.t

@@ -3,6 +3,10 @@ open! Import0
 open! Async_kernel
 module Buffer = Buffer0
 
+module Q = struct
+  let funcall = "funcall" |> Symbol.intern
+end
+
 let get = Funcall.Wrap.("current-buffer" <: nullary @-> return Buffer.t)
 let set = Funcall.Wrap.("set-buffer" <: Buffer.t @-> return nil)
 
@@ -52,22 +56,37 @@ let set_values vars_and_values =
   List.iter vars_and_values ~f:(fun (Var.And_value.T (var, value)) -> set_value var value)
 ;;
 
-let set_values_temporarily sync_or_async vars_and_values ~f =
-  let old_buffer = get () in
-  let olds =
-    List.map vars_and_values ~f:(fun (Var.And_value.T (var, _)) ->
-      Var.And_value_option.T (var, value var))
+let set_values_temporarily
+  (type a b)
+  (sync_or_async : (a, b) Sync_or_async.t)
+  (vars_and_values : Var.And_value.t list)
+  ~(f : unit -> b)
+  =
+  let r : a Set_once.t = Set_once.create () in
+  let f =
+    match sync_or_async with
+    | Sync ->
+      Function.of_ocaml_func0 [%here] (fun () ->
+        Set_once.set_exn r (f ());
+        Value.nil)
+    | Async ->
+      Function.of_ocaml_func0 [%here] (fun () ->
+        Set_once.set_exn r (Value.Private.block_on_async f);
+        Value.nil)
   in
-  List.iter vars_and_values ~f:(fun (Var.And_value.T (var, value)) -> set_value var value);
-  Sync_or_async.protect sync_or_async ~f ~finally:(fun () ->
-    let new_buffer = get () in
-    let buffer_changed = not (Buffer.equal old_buffer new_buffer) in
-    if buffer_changed && Buffer.is_live old_buffer then set old_buffer;
-    List.iter olds ~f:(fun (Var.And_value_option.T (var, value_opt)) ->
-      match value_opt with
-      | None -> clear_value var
-      | Some value -> set_value var value);
-    if buffer_changed then set new_buffer)
+  let form =
+    Form.let_
+      (List.map vars_and_values ~f:(fun (Var.And_value.T (var, value)) ->
+         var.symbol, Form.quote (Value.Type.to_value var.type_ value)))
+      (Form.apply Q.funcall [ Form.quote (Function.to_value f) ])
+  in
+  match sync_or_async with
+  | Sync ->
+    Form.Blocking.eval_i form;
+    (Set_once.get_exn r : b)
+  | Async ->
+    let%bind () = Form.eval_i form in
+    return (Set_once.get_exn r)
 ;;
 
 let set_value_temporarily sync_or_async var value ~f =

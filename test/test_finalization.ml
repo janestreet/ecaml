@@ -134,7 +134,7 @@ let%expect_test ("OCaml objects no longer referenced from Emacs can be gc'ed by 
   [@tags "disabled"])
   =
   test_ocaml_gc_handles_references_from_emacs ~make_emacs_reference:(fun ~ocaml_value ->
-    Function.create [%here] ~args:[] ocaml_value |> Function.to_value);
+    Function.of_ocaml_func0 [%here] ocaml_value |> Function.to_value);
   [%expect
     {|
     ((alive_before true)
@@ -159,7 +159,7 @@ let%expect_test "finalization of an Emacs function" =
     in
     Core.Gc.Expert.add_finalizer_ignore f (fun _ ->
       print_s [%message "finalized" (r : int ref)]);
-    ignore (Function.create [%here] ~args:[] f : Function.t));
+    ignore (Function.of_ocaml_func0 [%here] f : Function.t));
   make_ocaml_garbage_not_keep_emacs_values_alive ();
   emacs_garbage_collect ();
   Gc.compact ();

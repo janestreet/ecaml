@@ -11,6 +11,14 @@ let int =
     ()
 ;;
 
+let bool =
+  defvar
+    ("some-bool" |> Symbol.intern)
+    ~type_:Value.Type.(option bool)
+    ~default_value:None
+    ()
+;;
+
 let%expect_test "[symbol]" =
   print_s [%sexp (symbol int : Symbol.t)];
   [%expect {| some-int |}];
@@ -77,13 +85,6 @@ let%expect_test "different values in different buffers" =
 ;;
 
 let%expect_test "[get] with value represented as [nil]" =
-  let bool =
-    defvar
-      ("some-bool" |> Symbol.intern)
-      ~type_:Value.Type.(option bool)
-      ~default_value:None
-      ()
-  in
   let test b =
     Current_buffer.set_buffer_local bool (Some b);
     print_s [%sexp (Current_buffer.get_buffer_local_exn bool : bool)]

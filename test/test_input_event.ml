@@ -103,13 +103,9 @@ let%expect_test "[recent_keys]" =
      (Key b))
     |}];
   let f = "add-recent-command" |> Symbol.intern in
-  defun_nullary_nil
-    f
-    [%here]
-    ~docstring:"<docstring>"
-    ~interactive:No_arg
-    ~define_keys:[ Keymap.global (), "c" ]
-    (fun () -> message_s [%message "ran"]);
+  defun_nullary_nil f [%here] ~docstring:"<docstring>" ~interactive:No_arg (fun () ->
+    message_s [%message "ran"]);
+  Keymap.global_set "c" (Symbol f);
   let%bind () = Key_sequence.execute (Key_sequence.create_exn "c") in
   [%expect {| ran |}];
   print_s [%sexp (recent_commands_and_keys () : Command_or_key.t array)];

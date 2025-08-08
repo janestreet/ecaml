@@ -42,17 +42,13 @@ module Wrap = struct
 end
 
 let defvar ?(here = Stdlib.Lexing.dummy_pos) symbol ?docstring ~type_ ~default_value () =
-  let var =
-    Defvar.defvar
-      symbol
-      here
-      ~docstring:(Option.value docstring ~default:"An Ecaml buffer-local.")
-      ~type_
-      ~initial_value:default_value
-      ()
-  in
-  Var.make_buffer_local_always var;
-  var
+  Defvar.defvar_local
+    symbol
+    here
+    ~docstring:(Option.value docstring ~default:"An Ecaml buffer-local.")
+    ~type_
+    ~default_value
+    ()
 ;;
 
 let defvar_embedded
@@ -84,16 +80,19 @@ let set_temporarily_in_current_buffer sync_or_async t a ~f =
   Current_buffer.set_value_temporarily sync_or_async t a ~f
 ;;
 
+let[@cold] raise_buffer_has_strange_value (variable : _ Var.t) buffer =
+  raise_s
+    [%message
+      "buffer has strange value for variable"
+        (variable : _ Var.t)
+        (buffer : Buffer.t)
+        ~value:(Current_buffer.symbol_value variable.symbol : Value.t)]
+;;
+
 let get_in_current_buffer t =
   match Current_buffer.value_exn t with
   | t -> t
-  | exception _ ->
-    raise_s
-      [%message
-        "buffer has strange value for variable"
-          ~variable:(t : _ Var.t)
-          ~buffer:(Current_buffer.get () : Buffer.t)
-          ~value:(Current_buffer.symbol_value t.symbol : Value.t)]
+  | exception _ -> raise_buffer_has_strange_value t (Current_buffer.get ())
 ;;
 
 let buffer_local_value =
@@ -101,12 +100,12 @@ let buffer_local_value =
 ;;
 
 let get t buffer =
-  Value.Type.of_value_exn (var t).type_ (buffer_local_value (symbol t) buffer)
+  let value = buffer_local_value (symbol t) buffer in
+  try Value.Type.of_value_exn (var t).type_ value with
+  | _ -> raise_buffer_has_strange_value t buffer
 ;;
 
-let get_var var buffer =
-  Value.Type.of_value_exn (Var.type_ var) (buffer_local_value (Var.symbol var) buffer)
-;;
+let get_var = get
 
 let raise_buffer_has_no_value_for_variable t ~buffer =
   raise_s

@@ -26,18 +26,12 @@ end
 module Intf (T : T) = struct
   open T
 
-  module type S_with_lazy_keymap = sig
+  module type S = sig
     type Name.t += Major_mode
 
     val major_mode : t
-    val keymap : Keymap.t Lazy.t
     val enabled_in_current_buffer : unit -> bool
-  end
-
-  module type S = sig
-    include S_with_lazy_keymap
-
-    val keymap : Keymap.t
+    val keymap : Keymap.t Var.t
   end
 end
 
@@ -62,23 +56,12 @@ module type Major_mode = sig
   val symbol : t -> Symbol.t
   val name : t -> Name.t
   val hook : t -> (Hook.normal, unit) Hook.t Or_error.t
-  val keymap : t -> Keymap.t
-  val keymap_var : t -> Keymap.t Var.t
-  val syntax_table : t -> Syntax_table.t
+  val keymap : t -> Keymap.t Var.t
 
   (** [wrap_existing mode_name] wraps the existing Emacs major mode named [mode_name], and
       stores it in the table of all major modes indexed by symbol. [wrap_existing] raises
       if a major mode associated with this symbol was already wrapped. *)
   val wrap_existing : ?here:Stdlib.Lexing.position -> string -> (module S)
-
-  (** [wrap_existing_with_lazy_keymap] is like [wrap_existing], except the resulting
-      module's [keymap] value has type [Keymap.t Lazy.t] rather than [Keymap.t]. This is
-      needed if the keymap value isn't defined at the point that the major mode is
-      wrapped. *)
-  val wrap_existing_with_lazy_keymap
-    :  ?here:Stdlib.Lexing.position
-    -> string
-    -> (module S_with_lazy_keymap)
 
   (** [find_or_wrap_existing] looks up the major mode associated with this symbol by a
       previous call to [wrap_existing] or creates one with the [Undistinguished] name. *)
@@ -91,7 +74,7 @@ module type Major_mode = sig
   end
 
   (** [(describe-function 'fundamental-mode)] [(Info-goto-node "(elisp)Major Modes")] *)
-  module Fundamental : S_with_lazy_keymap
+  module Fundamental : S
 
   (** [(describe-function 'prog-mode)] [(Info-goto-node "(elisp)Basic Major Modes")] *)
   module Prog : S
@@ -103,25 +86,25 @@ module type Major_mode = sig
   module Text : S
 
   (** [(describe-function 'tuareg-mode)] *)
-  module Tuareg : S_with_lazy_keymap
+  module Tuareg : S
 
   (** [(describe-function 'makefile-mode)] *)
-  module Makefile : S_with_lazy_keymap
+  module Makefile : S
 
   (** [(describe-function 'lisp-data-mode)] *)
   module Lisp_data : S
 
   (** [(describe-function 'scheme-mode)] *)
-  module Scheme : S_with_lazy_keymap
+  module Scheme : S
 
   (** [(describe-function 'emacs-lisp-mode)] *)
   module Emacs_lisp : S
 
   (** [(describe-function 'asm-mode)] *)
-  module Asm : S_with_lazy_keymap
+  module Asm : S
 
   (** [(describe-function 'python-mode)] *)
-  module Python : S_with_lazy_keymap
+  module Python : S
 
   (** [(describe-function 'define-derived-mode)] [(Info-goto-node "(elisp)Derived Modes")]
 

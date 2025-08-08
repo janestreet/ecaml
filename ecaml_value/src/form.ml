@@ -66,6 +66,7 @@ let list ts = Value.list (ts : t list :> Value.t list) |> of_value_exn
 let nil = list []
 let q value = Value.list [ Symbol.to_value Q.quote; value ]
 let quote value = q value |> of_value_exn
+let quoted_symbol sym = quote (Symbol.to_value sym)
 let progn ts = list (symbol Q.progn :: ts)
 
 let let_ bindings body =

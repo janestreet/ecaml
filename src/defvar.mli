@@ -12,6 +12,17 @@ val defvar
   -> unit
   -> 'a Var.t
 
+(** [(describe-function 'defvar-local)] [(Info-goto-node "(elisp) Creating Buffer-Local")] *)
+val defvar_local
+  :  Symbol.t
+  -> Source_code_position.t
+  -> docstring:string
+  -> type_:'a Value.Type.t
+  -> default_value:'a
+  -> ?include_in_all_defvar_symbols:bool (** default is [true] *)
+  -> unit
+  -> 'a Var.t
+
 (** [(describe-function 'defvaralias)] [(Info-goto-node "(elisp)Variable Aliases")] *)
 val defvaralias
   :  Symbol.t

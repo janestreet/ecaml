@@ -74,3 +74,5 @@ module Q = struct
 end
 
 let name t = funcall1 Q.symbol_name (t |> to_value) |> Value.to_utf8_bytes_exn
+let make_symbol = Funcall.Wrap.("make-symbol" <: string @-> return t)
+let create_uninterned ~name = make_symbol name

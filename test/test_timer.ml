@@ -5,9 +5,12 @@ open! Timer
 
 let test f =
   let continue = ref true in
-  run_after_i (sec_ns 0.) ~name:(Symbol.gensym ()) ~docstring:"<docstring>" ~f:(fun () ->
-    print_s [%message "ran"];
-    continue := false);
+  run_after_i
+    (sec_ns 0.)
+    (Function.of_ocaml_func0 [%here] (fun () ->
+       print_s [%message "ran"];
+       continue := false;
+       Value.nil));
   while_ (fun () -> !continue) ~do_:(fun () -> f (sec_ns 0.001))
 ;;
 
@@ -29,14 +32,13 @@ let%expect_test "[run_after ~repeat]" =
   run_after_i
     (sec_ns 0.)
     ~repeat:(sec_ns 0.001)
-    ~name:(Symbol.gensym ())
-    ~docstring:"<docstring>"
-    ~f:(fun () ->
-      if !r = 3
-      then continue := false
-      else (
-        incr r;
-        print_s [%message "" ~_:(!r : int)]));
+    (Function.of_ocaml_func0 [%here] (fun () ->
+       if !r = 3
+       then continue := false
+       else (
+         incr r;
+         print_s [%message "" ~_:(!r : int)]);
+       Value.nil));
   let%bind () = while_ (fun () -> !continue) ~do_:(fun () -> sit_for (sec_ns 0.001)) in
   [%expect
     {|
@@ -49,7 +51,7 @@ let%expect_test "[run_after ~repeat]" =
 
 let%expect_test "[cancel], [is_scheduled]" =
   let t =
-    run_after (sec_ns 60.) ~name:(Symbol.gensym ()) ~docstring:"<docstring>" ~f:ignore
+    run_after (sec_ns 60.) (Function.of_ocaml_func0 [%here] (fun () -> Value.nil))
   in
   print_s [%sexp (is_scheduled t : bool)];
   [%expect {| true |}];

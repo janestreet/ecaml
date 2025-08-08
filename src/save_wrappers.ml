@@ -18,24 +18,15 @@ end
 let save_sync caller save_function args f =
   let r = ref None in
   let f =
-    Defun.lambda_nullary_nil
-      [%here]
-      ~docstring:
-        [%string
-          "%{save_function |> Symbol.name} called from %{caller#Source_code_position}"]
-      (fun () -> r := Some (f ()))
+    Function.of_ocaml_func0 caller (fun () ->
+      r := Some (f ());
+      Value.nil)
   in
-  ignore
-    (Form.Blocking.eval
-       (Form.list
-          (List.concat
-             [ [ save_function |> Form.symbol ]
-             ; args |> List.map ~f:Form.of_value_exn
-             ; [ Form.list
-                   [ Q.funcall |> Form.symbol; f |> Function.to_value |> Form.quote ]
-               ]
-             ]))
-     : Value.t);
+  Form.apply
+    save_function
+    (List.map args ~f:Form.of_value_exn
+     @ [ Form.apply Q.funcall [ Form.quote (Function.to_value f) ] ])
+  |> Form.Blocking.eval_i;
   match !r with
   | None -> assert false
   | Some a -> a

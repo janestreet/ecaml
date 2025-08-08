@@ -20,44 +20,16 @@ val all_scheduled : unit -> t list
 val is_scheduled : t -> bool
 
 (** [(describe-function 'run-at-time)] [(Info-goto-node "(elisp)Timers")] *)
-val run_after
-  :  ?repeat:Time_ns.Span.t
-  -> ?here:Stdlib.Lexing.position
-  -> Time_ns.Span.t
-  -> f:(unit -> unit)
-  -> name:Symbol.t
-  -> docstring:string
-  -> t
+val run_after : ?repeat:Time_ns.Span.t -> Time_ns.Span.t -> Function.t -> t
 
 (** [run_after_i s f = ignore (run_after s f)] *)
-val run_after_i
-  :  ?repeat:Time_ns.Span.t
-  -> ?here:Stdlib.Lexing.position
-  -> Time_ns.Span.t
-  -> f:(unit -> unit)
-  -> name:Symbol.t
-  -> docstring:string
-  -> unit
+val run_after_i : ?repeat:Time_ns.Span.t -> Time_ns.Span.t -> Function.t -> unit
 
 (** [(describe-function 'run-with-idle-timer)] [(Info-goto-node "(elisp) Idle Timers")] *)
-val run_after_idle
-  :  ?repeat:Time_ns.Span.t
-  -> ?here:Stdlib.Lexing.position
-  -> Time_ns.Span.t
-  -> f:(unit -> unit)
-  -> name:Symbol.t
-  -> docstring:string
-  -> t
+val run_after_idle : ?repeat:Time_ns.Span.t -> Time_ns.Span.t -> Function.t -> t
 
 (** [run_after_idle_i s f = ignore (run_after_idle s f)] *)
-val run_after_idle_i
-  :  ?repeat:Time_ns.Span.t
-  -> ?here:Stdlib.Lexing.position
-  -> Time_ns.Span.t
-  -> f:(unit -> unit)
-  -> name:Symbol.t
-  -> docstring:string
-  -> unit
+val run_after_idle_i : ?repeat:Time_ns.Span.t -> Time_ns.Span.t -> Function.t -> unit
 
 (** [(describe-function 'cancel-timer)] [(Info-goto-node "(elisp)Timers")] *)
 val cancel : t -> unit
