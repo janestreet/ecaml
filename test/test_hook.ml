@@ -220,9 +220,8 @@ let%expect_test "Blocking async hook" =
 let%expect_test "[after_save], [kill_buffer]" =
   let file = "test-after-save.tmp" in
   let%bind () = Selected_window.find_file file in
-  add
+  add_local
     after_save
-    ~buffer_local:true
     (Function.create
        ("test-after-save-hook" |> Symbol.intern)
        [%here]
@@ -232,9 +231,8 @@ let%expect_test "[after_save], [kill_buffer]" =
        (fun () -> print_s [%message "after-save hook ran"]));
   print_s [%sexp (Current_buffer.is_buffer_local (var after_save) : bool)];
   [%expect {| true |}];
-  add
+  add_local
     kill_buffer
-    ~buffer_local:true
     (Function.create
        ("test-kill-buffer-hook" |> Symbol.intern)
        [%here]

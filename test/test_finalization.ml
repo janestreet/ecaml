@@ -96,8 +96,8 @@ let%expect_test "Emacs objects no longer referenced from OCaml can be gc'ed by E
   print_s [%sexp (Value.Stat.diff after before : Value.Stat.t)];
   [%expect
     {|
-    ((emacs_free_performed 2)
-     (emacs_free_scheduled 2))
+    ((emacs_free_performed 6)
+     (emacs_free_scheduled 6))
     |}];
   return ()
 ;;

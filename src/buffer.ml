@@ -67,6 +67,7 @@ let displayed_in ?(current_frame_only = false) t =
 
 let display = Funcall.Wrap.("display-buffer" <: t @-> return (nil_or Window.t))
 let display_i t = ignore (display t : Window0.t option)
+let view t = Value.Private.run_outside_async (fun () -> Blocking.view t)
 
 let buffer_local_value =
   Funcall.Wrap.("buffer-local-value" <: Symbol.t @-> t @-> return value)

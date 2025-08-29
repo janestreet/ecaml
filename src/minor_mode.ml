@@ -13,7 +13,6 @@ module Q = struct
   let hl_line_mode = "hl-line-mode" |> Symbol.intern
   let read_only_mode = "read-only-mode" |> Symbol.intern
   let url_handler_mode = "url-handler-mode" |> Symbol.intern
-  let view_mode = "view-mode" |> Symbol.intern
   let visual_line_mode = "visual-line-mode" |> Symbol.intern
 end
 
@@ -42,7 +41,6 @@ let goto_address =
 
 let hl_line = { function_name = Q.hl_line_mode; variable_name = Q.hl_line_mode }
 let read_only = { function_name = Q.read_only_mode; variable_name = Q.buffer_read_only }
-let view = { function_name = Q.view_mode; variable_name = Q.view_mode }
 let button = wrap_existing "button-mode"
 
 let url_handler =
@@ -82,7 +80,7 @@ let define_minor_mode
   ?(define_keys = [])
   ?mode_line
   ~global
-  ?(initialize = (ignore : t -> unit))
+  ?initialize
   ()
   =
   let docstring = docstring |> String.strip in
@@ -96,9 +94,18 @@ let define_minor_mode
       ]
   in
   let t = { function_name = name; variable_name = name } in
-  let initialize_fn = Defun.lambda_nullary_nil here (fun () -> initialize t) in
-  let init = [%string "%{Symbol.name name}--init"] |> Symbol.intern in
-  Dump.defalias ~here init (Function.to_value initialize_fn);
+  let initialize =
+    Option.map initialize ~f:(fun f ->
+      Defun.defun_func
+        ([%string "%{Symbol.name name}--init"] |> Symbol.intern)
+        here
+        ~docstring:[%string "Initializer for %{Symbol.name name}"]
+        (Returns Value.Type.unit)
+        (let%map_open.Defun () = return () in
+         f t)
+      |> Function.to_value
+      |> Symbol.of_value_exn)
+  in
   Dump.eval_and_dump ~here (fun () ->
     Form.list
       ([ Q.define_minor_mode |> Form.symbol
@@ -123,7 +130,10 @@ let define_minor_mode
             ; Q.K.group |> Form.symbol
             ; group |> Customization.Group.to_value |> Form.quote
             ])
-       @ [ Form.apply init [] ]));
+       @
+       match initialize with
+       | None -> []
+       | Some initialize -> [ Form.apply initialize [] ]));
   Load_history.add_entry here (Fun name);
   Load_history.add_entry here (Var (Var.symbol keymap_var));
   List.iter [ "hook"; "on-hook"; "off-hook" ] ~f:(fun suffix ->

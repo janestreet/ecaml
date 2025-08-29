@@ -408,6 +408,9 @@ let () =
     ("ecaml-dynlink-loadfile" |> Symbol.intern)
     [%here]
     ~docstring:{|Using Dynlink.loadfile, load .cmxs FILE|}
+      (* If this function did profiling, all profiling happening in tests would be part of
+         this frame, and would never get output to the *profile* buffer. *)
+    ~should_profile:false
     (Returns Value.Type.unit)
     (let open Defun.Let_syntax in
      let%map_open file = required "file" string in

@@ -343,7 +343,9 @@ let defun_raw
                 ])
          ]));
   add_to_load_history symbol here;
-  Function.of_symbol_exn symbol
+  (* Since the defun form was dumped, this symbol isn't actually a functionp yet, so we
+     can't use of_symbol_exn which checks that. *)
+  Function.of_symbol_unsafe symbol
 ;;
 
 let defun_internal

@@ -103,8 +103,15 @@ end
 (** - [(describe-function 'add-hook)]
     - [(Info-goto-node "(elisp)Setting Hooks")] *)
 val add
-  :  ?buffer_local:bool (** default is [false] *)
+  :  ?here:Stdlib.Lexing.position
   -> ?where:Where.t (** default is [Start] *)
+  -> ('a, 'b) t
+  -> ('a, 'b) Function.t
+  -> unit
+
+(** Like calling "add-hook" with LOCAL=t *)
+val add_local
+  :  ?where:Where.t (** default is [Start] *)
   -> ('a, 'b) t
   -> ('a, 'b) Function.t
   -> unit

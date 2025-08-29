@@ -344,6 +344,41 @@ let%expect_test "[to_utf8_bytes_exn] raise" =
   return ()
 ;;
 
+module%test Buffer = struct
+  let%expect_test "[of_buffer_contents] matches [of_utf8_bytes] with [Buffer.contents]" =
+    let show buf =
+      let expected = buf |> Core.Buffer.contents in
+      let roundtrip = buf |> of_buffer_contents |> to_utf8_bytes_exn in
+      require_equal (module String) expected roundtrip;
+      print_endline roundtrip
+    in
+    let buf = Core.Buffer.create 16 in
+    (* without resizing *)
+    Core.Buffer.add_string buf "zzz";
+    show buf;
+    [%expect {| zzz |}];
+    (* force buffer to grow and use a new underlying [bytes] *)
+    let (), { major_words_allocated; minor_words_allocated } =
+      Gc.For_testing.measure_allocation (fun () ->
+        Core.Buffer.add_string buf "1234567890";
+        Core.Buffer.add_string buf "1234567890")
+    in
+    assert (major_words_allocated = 0);
+    assert (minor_words_allocated > 0);
+    show buf;
+    [%expect {| zzz12345678901234567890 |}];
+    (* truncation is respected... *)
+    Stdlib.Buffer.truncate buf 5;
+    show buf;
+    [%expect {| zzz12 |}];
+    (* ... as is clearing *)
+    Core.Buffer.clear buf;
+    show buf;
+    [%expect {| |}];
+    return ()
+  ;;
+end
+
 module%test Make_subtype = struct
   module Non_nil = Make_subtype (struct
       let name = "non-nil"
@@ -506,14 +541,14 @@ let print_num_args =
 let length = Funcall.Wrap.("length" <: value @-> return value)
 
 let%expect_test "[funcallN_array{,_i}] with many arguments" =
-  let array = Array.create nil ~len:3_500_000 in
+  let array = Array.create nil ~len:350_000 in
   let list = funcallN_array print_num_args array in
-  [%expect {| (num_args 3_500_000) |}];
+  [%expect {| (num_args 350_000) |}];
   let length = length list in
   print_s [%sexp (length : t)];
-  [%expect {| 3500000 |}];
+  [%expect {| 350000 |}];
   funcallN_array_i print_num_args array;
-  [%expect {| (num_args 3_500_000) |}];
+  [%expect {| (num_args 350_000) |}];
   return ()
 ;;
 

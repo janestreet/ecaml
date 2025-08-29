@@ -35,6 +35,10 @@ end
 module Programmed_completion : sig
   type t
 
+  (** Serializes the collection to Elisp.
+
+      This can be done eagerly and cached to avoid serialization costs when completing
+      over the same collection multiple times is expected. *)
   val to_value : t -> Value.t
 
   val create
@@ -106,3 +110,15 @@ val read_multiple_map_keys
   -> history:Minibuffer.History.t
   -> unit
   -> 'a list Deferred.t
+
+(** [(describe-function 'completing-read)] **)
+val read_raw
+  :  prompt_no_colon:string (** passed to [format-prompt] *)
+  -> collection:Value.t
+  -> ?predicate:Value.t
+  -> ?require_match:Require_match.t (** default is [Require_match.default] *)
+  -> ?initial_input:Minibuffer.Initial_input.t (** default is Empty *)
+  -> ?default:string
+  -> history:Symbol.t
+  -> unit
+  -> string Deferred.t

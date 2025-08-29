@@ -13,6 +13,7 @@ let create ~name = generate_new_buffer name
 
 module Blocking = struct
   let kill = Funcall.Wrap.("kill-buffer" <: t @-> return nil)
+  let view = Funcall.Wrap.("view-buffer" <: t @-> return nil)
 end
 
 let kill t =

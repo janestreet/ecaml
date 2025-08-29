@@ -23,5 +23,5 @@ val of_ocaml_funcN_M
   -> (Value0.t array -> Value0.t)
   -> t
 
-val to_value : t -> Value.t
 val of_symbol_exn : Symbol.t -> t
+val of_symbol_unsafe : Symbol.t -> t

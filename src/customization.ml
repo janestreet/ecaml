@@ -273,22 +273,22 @@ let defcustom
                 succeeds. *)
             set_default_toplevel_value symbol value))
      in
-     Form.Blocking.eval_i
-       (Form.apply
-          Q.defcustom
-          ([ Form.symbol symbol
-           ; Form.quote standard_value
-           ; Form.string docstring
-           ; Form.symbol Q.K.group
-           ; Form.quoted_symbol group
-           ; Form.symbol Q.K.type_
-           ; Form.list [ Form.symbol Q.quote; Type.to_form customization_type ]
-           ]
-           @
-           match on_set with
-           | None -> []
-           | Some on_set -> [ Form.symbol Q.K.set; Form.quote (Function.to_value on_set) ]
-          ))
+     Dump.eval_and_dump ~here (fun () ->
+       Form.apply
+         Q.defcustom
+         ([ Form.symbol symbol
+          ; Form.quote standard_value
+          ; Form.string docstring
+          ; Form.symbol Q.K.group
+          ; Form.quoted_symbol group
+          ; Form.symbol Q.K.type_
+          ; Form.list [ Form.symbol Q.quote; Type.to_form customization_type ]
+          ]
+          @
+          match on_set with
+          | None -> []
+          | Some on_set -> [ Form.symbol Q.K.set; Form.quote (Function.to_value on_set) ]
+         ))
    with
    | exn ->
      raise_s

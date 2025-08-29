@@ -165,7 +165,7 @@ module Programmed_completion = struct
   ;;
 end
 
-let completing_read =
+let read_raw =
   let completing_read =
     Funcall.Wrap.(
       "completing-read"
@@ -179,7 +179,7 @@ let completing_read =
          @-> return string)
   in
   fun ~prompt_no_colon
-    ~programmed_completion
+    ~collection
     ?(predicate = Value.nil)
     ?(require_match = Require_match.default)
     ?(initial_input = Initial_input.Empty)
@@ -190,12 +190,33 @@ let completing_read =
       let formatted_prompt = Minibuffer.format_prompt ~prompt_no_colon ~default in
       completing_read
         formatted_prompt
-        (Programmed_completion.to_value programmed_completion)
+        collection
         predicate
         require_match
         initial_input
-        (Minibuffer.History.symbol history)
+        history
         default)
+;;
+
+let completing_read
+  ~prompt_no_colon
+  ~programmed_completion
+  ?predicate
+  ?require_match
+  ?initial_input
+  ?default
+  ~history
+  ()
+  =
+  read_raw
+    ~prompt_no_colon
+    ~collection:(Programmed_completion.to_value programmed_completion)
+    ?predicate
+    ?require_match
+    ?initial_input
+    ~history:(Minibuffer.History.symbol history)
+    ?default
+    ()
 ;;
 
 let read

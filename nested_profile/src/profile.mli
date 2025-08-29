@@ -104,6 +104,7 @@ module Private : sig
     val create : now:Time_ns.t -> t
     val advance : t -> by:Time_ns.Span.t -> unit
     val now : t -> Time_ns.t
+    val is_virtual : t -> bool
   end
 
   val record_frame : start:Time_ns.t -> stop:Time_ns.t -> message:Sexp.t Lazy.t -> unit

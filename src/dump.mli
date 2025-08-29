@@ -2,10 +2,11 @@ open! Core
 open! Import
 module Keymap := Keymap0
 
+(** Dump this form and eval it; if dumping would fail, raise an exception. *)
 val eval_and_dump : here:Source_code_position.t -> (unit -> Form.t) -> unit
 
-(** Call [Defun.defalias] and also dump a "declare-function" for this symbol. *)
-val defalias : here:Source_code_position.t -> Symbol.t -> Value.t -> unit
+(** Try dumping this form, but if that won't work, just eval it. *)
+val dump_or_eval : here:Source_code_position.t -> (unit -> Form.t) -> unit
 
 val keymap_set
   :  here:Source_code_position.t

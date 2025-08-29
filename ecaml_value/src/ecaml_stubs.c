@@ -653,20 +653,35 @@ CAMLprim value ecaml_unibyte_of_string(value val) {
   emacs_env *env = ecaml_active_env_or_die();
   const char *buf = String_val(val);
   int len = caml_string_length(val);
-  /* Stay compatible with Emacs 27 modules, which don't have
-   * make_unibyte_string. */
-  emacs_value ret_val;
-#if EMACS_MAJOR_VERSION < 28
-  ret_val = env->make_string(env, buf, len);
-#else
-  /* We might compile using the Emacs 28 headers but still need to be able to
-     run with Emacs 27 at runtime. */
-  if (offsetof(emacs_env, make_unibyte_string) < (size_t)env->size) {
-    ret_val = env->make_unibyte_string(env, buf, len);
-  } else {
-    ret_val = env->make_string(env, buf, len);
-  }
-#endif
+  emacs_value ret_val = env->make_unibyte_string(env, buf, len);
+  ret = ocaml_of_emacs(env, ret_val);
+  CAMLreturn(ret);
+}
+
+CAMLprim value ecaml_unibyte_of_buffer(value val) {
+  CAMLparam1(val);
+  CAMLlocal1(ret);
+  emacs_env *env = ecaml_active_env_or_die();
+  /* This is the internal representation of [Stdlib.Buffer.t].  It's possible that it
+     might change, but probably not often, so we have tests that specifically exercise
+     [ecaml_unibyte_of_buffer].
+
+type inner_buffer = {
+  buffer: bytes;
+  length: int;
+}
+
+type t =
+ {mutable inner : inner_buffer;
+  mutable position : int;
+  initial_buffer : bytes}
+   */
+  /* buffer.inner.buffer is a bytes, which we can read as string.  make_unibyte_string
+     wants [const char *]. */
+  const char *buf = String_val(Field(Field(val, 0), 0));
+  /* buffer.position */
+  long len = Long_val(Field(val, 1));
+  emacs_value ret_val = env->make_unibyte_string(env, buf, len);
   ret = ocaml_of_emacs(env, ret_val);
   CAMLreturn(ret);
 }
@@ -707,8 +722,10 @@ CAMLprim value ecaml_text_to_char_array(value text) {
   CAMLlocal1(arr);
   emacs_env *env = ecaml_active_env_or_die();
   emacs_value string = emacs_of_ocaml(env, text);
+  caml_release_runtime_system();
   emacs_value vector =
       env->funcall(env, env->intern(env, "string-to-vector"), 1, &string);
+  caml_acquire_runtime_system();
   ptrdiff_t size = env->vec_size(env, vector);
   arr = caml_alloc(size, 0);
   for (ptrdiff_t i = 0; i < size; i++) {
@@ -767,7 +784,9 @@ CAMLprim value ecaml_inject(value caml_embedded_id) {
 bool user_ptrp(emacs_env *env, emacs_value val) {
   static emacs_value cache = NULL;
   emacs_value function = ecaml_cache_symbol_and_keep_alive(env, &cache, "user-ptrp");
+  caml_release_runtime_system();
   emacs_value result = env->funcall(env, function, 1, &val);
+  caml_acquire_runtime_system();
   return (env->is_not_nil(env, result));
 }
 

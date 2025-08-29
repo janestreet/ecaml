@@ -293,6 +293,12 @@ module type Value = sig
   val message_s : Sexp.t -> unit
   val prin1_to_string : t -> string
 
+  (** Copy a buffer's contents directly into an Elisp string.
+
+      Compared to [of_utf8_bytes (Buffer.contents buf)], [of_buffer_contents buf] saves
+      one string copy operation. *)
+  val of_buffer_contents : Buffer.t -> t
+
   (** An ['a Type.t] is an isomorphism between ['a] and a subset of [Value.t]. *)
   module Type : sig
       type value

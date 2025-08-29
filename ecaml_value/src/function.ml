@@ -4,7 +4,7 @@ open! Import
 include Value.Make_subtype (struct
     let name = "function"
     and here = [%here]
-    and is_in_subtype = Value.is_function
+    and is_in_subtype v = Value.is_symbol v || Value.is_function v
   end)
 
 module Fn = struct
@@ -60,4 +60,13 @@ let of_ocaml_func2 here f =
     | actual -> raise_unexpected_arguments ~expected:2 ~actual)
 ;;
 
-let of_symbol_exn symbol = of_value_exn (Symbol.to_value symbol)
+let of_symbol_exn symbol =
+  let value = Symbol.to_value symbol in
+  assert (Value.is_function value);
+  of_value_exn value
+;;
+
+let of_symbol_unsafe symbol =
+  let value = Symbol.to_value symbol in
+  of_value_exn value
+;;

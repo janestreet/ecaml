@@ -66,7 +66,8 @@ let%expect_test "Nested calls to block_on_async raise" =
          (created_at _))
         ((here app/emacs/lib/ecaml/src/async_ecaml.ml:LINE:COL)
          (context    Expect_test_config.run)
-         (created_at _))))))
+         (created_at _))))
+      (profile_backtrace ())))
     |}];
   return ()
 ;;
@@ -75,11 +76,8 @@ let%expect_test "Nested calls to block_on_async include Nested_profile backtrace
   show_raise ~hide_positions:true (fun () ->
     let clock = Nested_profile.Profile.Private.Clock.create ~now:Time_ns.epoch in
     Ref.set_temporarily Nested_profile.Profile.Private.clock clock ~f:(fun () ->
-      Ref.set_temporarily Nested_profile.Profile.should_profile true ~f:(fun () ->
-        Nested_profile.profile
-          Sync
-          [%lazy_message "Some badly-behaved function"]
-          (fun () -> Async_ecaml.Private.block_on_async (fun () -> Deferred.unit)))));
+      Nested_profile.profile Sync [%lazy_message "Some badly-behaved function"] (fun () ->
+        Async_ecaml.Private.block_on_async (fun () -> Deferred.unit))));
   [%expect
     {|
     (raised (
@@ -180,7 +178,10 @@ let%expect_test "Nested calls to block_on_async raise, even via elisp" =
          (created_at _))
         ((here app/emacs/lib/ecaml/src/async_ecaml.ml:LINE:COL)
          (context    Expect_test_config.run)
-         (created_at _)))))))
+         (created_at _))))
+      (profile_backtrace (
+        (block-on-async)
+        (block-on-async))))))
     |}];
   return ()
 ;;

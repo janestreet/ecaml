@@ -24,11 +24,11 @@ let to_string_elisp sexp =
   (* Sexps serialized via this are almost always very large. *)
   let buf = Core.Buffer.create 8192 in
   to_buffer_elisp ~buf sexp;
-  Core.Buffer.contents buf
+  Value.of_buffer_contents buf
 ;;
 
 let read_from_string =
-  Funcall.Wrap.("read-from-string" <: string @-> return (tuple value int))
+  Funcall.Wrap.("read-from-string" <: value @-> return (tuple value int))
 ;;
 
 include Valueable.Make (struct

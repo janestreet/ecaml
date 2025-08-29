@@ -2,6 +2,10 @@ open! Core
 open! Import
 include Hook0
 
+module Q = struct
+  let add_hook = "add-hook" |> Symbol.intern
+end
+
 module Function = struct
   type ('a, 'b) t =
     { symbol : Symbol.t
@@ -156,15 +160,33 @@ let add_hook =
   Funcall.Wrap.("add-hook" <: Symbol.t @-> Symbol.t @-> bool @-> bool @-> return nil)
 ;;
 
-let add (type a b) ?(buffer_local = false) ?(where = Where.Start) (t : (a, b) t) function_
+let add
+  ?(here = Stdlib.Lexing.dummy_pos)
+  (type a b)
+  ?(where = Where.Start)
+  (t : (a, b) t)
+  function_
   =
+  Dump.dump_or_eval ~here (fun () ->
+    Form.apply
+      Q.add_hook
+      ([ Form.quoted_symbol (t |> symbol)
+       ; Form.quoted_symbol (Function.symbol function_)
+       ]
+       @
+       match where with
+       | Start -> []
+       | End -> [ Form.quote Value.t ]))
+;;
+
+let add_local (type a b) ?(where = Where.Start) (t : (a, b) t) function_ =
   add_hook
     (t |> symbol)
     (Function.symbol function_)
     (match where with
      | End -> true
      | Start -> false)
-    buffer_local
+    true
 ;;
 
 let clear t = Current_buffer.set_value t.var []

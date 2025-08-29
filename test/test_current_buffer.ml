@@ -722,6 +722,7 @@ let%expect_test "[local_keymap], [set_local_keymap]" =
 ;;
 
 let%expect_test "[minor_mode_keymaps]" =
+  let view = Minor_mode.create ("view-mode" |> Symbol.intern) in
   set_temporarily_to_temp_buffer Sync (fun () ->
     Minor_mode.(enable view);
     print_s [%sexp (minor_mode_keymaps () : Keymap.t list)];
@@ -1095,8 +1096,7 @@ let%expect_test "[kill]" =
 let%expect_test "[kill] with deferred kill hook" =
   let buffer = Buffer.create ~name:"z" in
   set buffer;
-  Ecaml.Hook.add
-    ~buffer_local:true
+  Ecaml.Hook.add_local
     Ecaml.Hook.kill_buffer
     (Ecaml.Hook.Function.create
        ("test-deferred-kill-hook" |> Symbol.intern)
@@ -1137,6 +1137,7 @@ let%expect_test "[bury]" =
      "#<buffer *Messages*>"
      "#<buffer b1>"
      "#<buffer b2>"
+     "#<buffer *profile*>"
      "#<buffer zzz>"
      "#<buffer z>")
     |}];
@@ -1147,6 +1148,7 @@ let%expect_test "[bury]" =
     ("#<buffer  *Minibuf-0*>"
      "#<buffer b1>"
      "#<buffer b2>"
+     "#<buffer *profile*>"
      "#<buffer zzz>"
      "#<buffer z>"
      "#<buffer *Messages*>")

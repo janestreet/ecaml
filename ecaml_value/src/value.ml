@@ -128,6 +128,7 @@ module Must_check_exit = struct
   external vec_get : t -> int -> t = "ecaml_vec_get"
   external vec_set : t -> int -> t -> unit = "ecaml_vec_set"
   external vec_size : t -> int = "ecaml_vec_size"
+  external of_buffer_contents : Buffer.t -> t = "ecaml_unibyte_of_buffer"
 end
 [@@alert
   must_check_exit
@@ -202,6 +203,7 @@ module Have_checked_exit = struct
   let vec_get = wrap_raise2 vec_get
   let vec_set = wrap_raise3 vec_set
   let vec_size = wrap_raise1 vec_size
+  let of_buffer_contents = wrap_raise1 of_buffer_contents
 end
 
 include Have_checked_exit
@@ -464,6 +466,7 @@ let unibyte_of_string = unibyte_of_string
    That's what string-as-multibyte does when passed a unibyte string.
 *)
 let of_utf8_bytes s = funcall1 Q.string_as_multibyte (unibyte_of_string s)
+let of_buffer_contents buf = funcall1 Q.string_as_multibyte (of_buffer_contents buf)
 let of_utf8_bytes_cached = Memo.general ~hashable:String.hashable of_utf8_bytes
 
 let of_utf8_bytes_replacing_invalid str =
@@ -480,7 +483,7 @@ let of_utf8_bytes_replacing_invalid str =
       None
       str
   in
-  of_utf8_bytes (Buffer.contents buffer), `First_malformed first_malformed
+  of_buffer_contents buffer, `First_malformed first_malformed
 ;;
 
 let percent_s = of_utf8_bytes "%s"

@@ -164,24 +164,32 @@ let define_derived_mode
   in
   let docstring = docstring |> String.strip in
   require_nonempty_docstring here ~docstring;
-  let initialize_fn =
-    match initialize with
-    | None -> Defun.lambda_nullary_nil here Fn.id
-    | Some (returns, f) -> Defun.lambda_nullary here returns f
+  let initialize =
+    Option.map initialize ~f:(fun (returns, f) ->
+      Defun.defun_func
+        ([%string "%{Symbol.name symbol}--init"] |> Symbol.intern)
+        here
+        ~docstring:[%string "Initializer for %{Symbol.name symbol}"]
+        returns
+        (let%map_open.Defun () = return () in
+         f ())
+      |> Function.to_value
+      |> Symbol.of_value_exn)
   in
-  let init = [%string "%{Symbol.name symbol}--init"] |> Symbol.intern in
-  Dump.defalias ~here init (Function.to_value initialize_fn);
   Dump.eval_and_dump ~here (fun () ->
     Form.list
-      [ Q.define_derived_mode |> Form.symbol
-      ; symbol |> Form.symbol
-      ; (match parent with
-         | None -> Form.nil
-         | Some t -> Field.get Fields.symbol t |> Form.symbol)
-      ; mode_line |> Form.string
-      ; docstring |> Form.string
-      ; Form.apply init []
-      ]);
+      ([ Q.define_derived_mode |> Form.symbol
+       ; symbol |> Form.symbol
+       ; (match parent with
+          | None -> Form.nil
+          | Some t -> Field.get Fields.symbol t |> Form.symbol)
+       ; mode_line |> Form.string
+       ; docstring |> Form.string
+       ]
+       @
+       match initialize with
+       | None -> []
+       | Some fn -> [ Form.apply fn [] ]));
   Load_history.add_entry here (Fun symbol);
   List.iter [ "abbrev-table"; "hook"; "map"; "syntax-table" ] ~f:(fun suffix ->
     Load_history.add_entry

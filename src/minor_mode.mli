@@ -40,9 +40,6 @@ val hl_line : t
 (** [(describe-variable 'buffer-read-only)] [(describe-function 'read-only-mode)] *)
 val read_only : t
 
-(** [(describe-variable 'view-mode)] [(describe-function 'view-mode)] *)
-val view : t
-
 (** [(describe-variable 'visual-line-mode)] [(describe-function 'visual-line-mode)] *)
 val visual_line : t
 

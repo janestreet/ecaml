@@ -34,8 +34,8 @@ val find_file : string -> unit Deferred.t
 (** [(describe-function 'find-file-other-window)] *)
 val find_file_other_window : string -> unit Deferred.t
 
-(** [(describe-function 'view-file)] *)
-val view_file : string -> unit Deferred.t
+(** [(describe-function 'find-file-read-only)] *)
+val find_file_read_only : string -> unit Deferred.t
 
 (** [(describe-function 'save-selected-window)] *)
 val save_selected_window : (_, 'a) Sync_or_async.t -> (unit -> 'a) -> 'a
