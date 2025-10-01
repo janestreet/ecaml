@@ -6,7 +6,8 @@
 
 open! Core
 open! Import
-include Major_mode.S
+
+val major_mode : Major_mode.t
 
 (** Run [command] and report its output in a grep-mode buffer. *)
 val grep : command:string -> unit

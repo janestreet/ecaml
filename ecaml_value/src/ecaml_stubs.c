@@ -79,6 +79,7 @@ static long to_free_size = 0;
 static long to_free_index = 0;
 static long num_emacs_free_scheduled = 0;
 static long num_emacs_free_performed = 0;
+static long num_emacs_root_allocated = 0;
 
 CAMLprim value ecaml_num_emacs_free_scheduled(value unit) {
   (void)unit;
@@ -88,6 +89,11 @@ CAMLprim value ecaml_num_emacs_free_scheduled(value unit) {
 CAMLprim value ecaml_num_emacs_free_performed(value unit) {
   (void)unit;
   return Val_long(num_emacs_free_performed);
+}
+
+CAMLprim value ecaml_num_emacs_root_allocated(value unit) {
+  (void)unit;
+  return Val_long(num_emacs_root_allocated);
 }
 
 static void push_to_free(emacs_value v) {
@@ -174,6 +180,7 @@ static value ocaml_of_emacs(emacs_env *env, emacs_value val) {
     v = Val_long(env->extract_integer(env, val));
   } else {
     v = caml_alloc_custom(&emacs_value_ops, sizeof(emacs_value), 0, 1);
+    num_emacs_root_allocated += 1;
     Emacs_val(v) = env->make_global_ref(env, val);
   }
   CAMLreturn(v);

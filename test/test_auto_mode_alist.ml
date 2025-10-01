@@ -23,7 +23,9 @@ let%expect_test "[add]" =
 
 let%expect_test "[auto_mode_alist]" =
   (* Prevent [Expect_test_config.sanitize] from replace /tmp with TMPDIR. *)
-  Core_unix.putenv ~key:"TMPDIR" ~data:"/nonexistent";
+  (Core_unix.putenv [@ocaml.alert "-unsafe_multidomain"])
+    ~key:"TMPDIR"
+    ~data:"/nonexistent";
   print_s [%sexp (Current_buffer.value_exn auto_mode_alist : t)];
   [%expect
     {|

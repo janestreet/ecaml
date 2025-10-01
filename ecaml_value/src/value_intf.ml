@@ -295,8 +295,11 @@ module type Value = sig
 
   (** Copy a buffer's contents directly into an Elisp string.
 
-      Compared to [of_utf8_bytes (Buffer.contents buf)], [of_buffer_contents buf] saves
-      one string copy operation. *)
+      Compared to [Buffer.contents buf], [of_buffer_contents buf] saves one string copy
+      operation.
+
+      Also, the returned string is unibyte, not multibyte, and is therefore suitable for
+      handling non-UTF8 data. *)
   val of_buffer_contents : Buffer.t -> t
 
   (** An ['a Type.t] is an isomorphism between ['a] and a subset of [Value.t]. *)
@@ -350,8 +353,9 @@ module type Value = sig
 
   module Stat : sig
     type t =
-      { emacs_free_performed : int
-      ; emacs_free_scheduled : int
+      { free_performed : int
+      ; free_scheduled : int
+      ; root_allocated : int
       }
     [@@deriving sexp_of]
 

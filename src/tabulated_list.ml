@@ -353,7 +353,7 @@ let draw ?sort_by t rows =
   tabulated_list_print true false
 ;;
 
-module Tabulated_list_mode = (val Major_mode.wrap_existing "tabulated-list-mode")
+let major_mode = Major_mode.wrap_existing "tabulated-list-mode"
 
 let create (type a) (column_specs : a Column.t list) ~get_id =
   let type_ : a Value.Type.t =

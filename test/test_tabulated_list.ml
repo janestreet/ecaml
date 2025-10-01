@@ -12,14 +12,15 @@ type entry =
   }
 [@@deriving fields ~getters, sexp_of]
 
-module M =
-  (val define_derived_mode
-         test_mode
-         [%here]
-         ~docstring:"for testing"
-         ~mode_line:"Test-mode"
-         ~parent:Tabulated_list_mode.major_mode
-         ())
+let major_mode =
+  define_derived_mode
+    test_mode
+    [%here]
+    ~docstring:"for testing"
+    ~mode_line:"Test-mode"
+    ~parent:Tabulated_list.major_mode
+    ()
+;;
 
 let t =
   let format =
@@ -39,7 +40,7 @@ let entries =
 ;;
 
 let draw_and_print' t ?sort_by entries =
-  let%bind () = Current_buffer.change_major_mode M.major_mode in
+  let%bind () = Current_buffer.change_major_mode major_mode in
   draw ?sort_by t entries;
   printf "%s" (Current_buffer.contents () |> Text.to_utf8_bytes);
   return ()

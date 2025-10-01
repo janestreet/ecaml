@@ -25,6 +25,7 @@ depends: [
   "sexp_pretty"
   "sexplib"
   "dune"                     {>= "3.17.0"}
+  "memtrace"                 {>= "0.2.1.2"}
   "uutf"                     {>= "1.0.2"}
 ]
 available: arch != "arm32" & arch != "x86_32"

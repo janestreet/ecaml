@@ -179,7 +179,7 @@ let%expect_test "non-permanent buffer-locals cleared on changing major modes" =
     Current_buffer.set_buffer_local int (Some 23);
     show_in_current_buffer ();
     [%expect {| (23) |}];
-    let%bind () = Current_buffer.change_major_mode Major_mode.Prog.major_mode in
+    let%bind () = Current_buffer.change_major_mode Major_mode.prog in
     show_in_current_buffer ();
     [%expect {| () |}];
     return ())
@@ -191,11 +191,11 @@ let%expect_test "permanent buffer-locals not cleared on changing major modes" =
     Current_buffer.set_buffer_local int (Some 23);
     show_in_current_buffer ();
     [%expect {| (23) |}];
-    let%bind () = Current_buffer.change_major_mode Major_mode.Prog.major_mode in
+    let%bind () = Current_buffer.change_major_mode Major_mode.prog in
     show_in_current_buffer ();
     [%expect {| (23) |}];
     Buffer_local.set_permanent int false;
-    let%bind () = Current_buffer.change_major_mode Major_mode.Prog.major_mode in
+    let%bind () = Current_buffer.change_major_mode Major_mode.prog in
     show_in_current_buffer ();
     [%expect {| () |}];
     return ())

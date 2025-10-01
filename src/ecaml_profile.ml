@@ -61,23 +61,24 @@ Kill the profile buffer? |}])
               |> Text.to_utf8_bytes))
 ;;
 
-include
-  (val Major_mode.define_derived_mode
-         ("ecaml-profile-mode" |> Symbol.intern)
-         [%here]
-         ~docstring:
-           {|
+let major_mode =
+  Major_mode.define_derived_mode
+    ("ecaml-profile-mode" |> Symbol.intern)
+    [%here]
+    ~docstring:
+      {|
 The major mode for the *profile* buffer, which holds a log of Ecaml profile output.
 |}
-         ~parent:Major_mode.Special.major_mode
-         ~mode_line:"ecaml-profile"
-         ~initialize:
-           ( Returns Value.Type.unit
-           , fun () ->
-               Hook.add_local
-                 Buffer.kill_buffer_query_functions
-                 profile_kill_buffer_query_function )
-         ())
+    ~parent:Major_mode.special
+    ~mode_line:"ecaml-profile"
+    ~initialize:
+      ( Returns Value.Type.unit
+      , fun () ->
+          Hook.add_local
+            Buffer.kill_buffer_query_functions
+            profile_kill_buffer_query_function )
+    ()
+;;
 
 module Start_location = struct
   include Profile.Start_location

@@ -62,7 +62,7 @@ let%expect_test "[define_derived_mode]" =
        ~docstring:"derived major mode docstring"
        ~mode_line:"test-load-history"
        ()
-     : (module Major_mode.S));
+     : Major_mode.t);
   update_emacs_with_entries ~chop_prefix:"app/emacs/" ~in_dir:"<dir>";
   show_defining_file (String.is_prefix ~prefix:(Symbol.name base_symbol));
   [%expect

@@ -1,6 +1,7 @@
 open! Core
 open! Import
-include (val Major_mode.wrap_existing "dired-mode")
+
+let major_mode = Major_mode.wrap_existing "dired-mode"
 
 let get_marked_files =
   Funcall.Wrap.(

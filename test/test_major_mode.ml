@@ -15,7 +15,7 @@ let define_mode sym here =
     ()
 ;;
 
-module M = (val define_mode test_mode [%here])
+let major_mode = define_mode test_mode [%here]
 
 let%expect_test "duplicate [define_derived_mode]" =
   show_raise ~hide_positions:true (fun () -> define_mode test_mode [%here]);
@@ -29,7 +29,6 @@ let%expect_test "duplicate [define_derived_mode]" =
         (wrapped_at app/emacs/lib/ecaml/test/test_major_mode.ml:LINE:COL)
         (symbol test-major-mode)
         (keymap_var (test-major-mode-map keymap))
-        (name <opaque>)
         (hook (
           Ok (
             (symbol    test-major-mode-hook)
@@ -56,12 +55,11 @@ let%expect_test "[define_derived_mode]" =
       ((wrapped_at app/emacs/lib/ecaml/src/major_mode.ml:LINE:COL)
        (symbol fundamental-mode)
        (keymap_var (fundamental-mode-map keymap))
-       (name <opaque>)
        (hook (
          Error
          "fundamental-mode has no mode hook. [(Info-goto-node \"(elisp) Major Modes\")]")))
       |}];
-    let%bind () = Current_buffer.change_major_mode M.major_mode in
+    let%bind () = Current_buffer.change_major_mode major_mode in
     [%expect {| initialized |}];
     show_major_mode ();
     [%expect
@@ -69,7 +67,6 @@ let%expect_test "[define_derived_mode]" =
       ((wrapped_at app/emacs/lib/ecaml/test/test_major_mode.ml:LINE:COL)
        (symbol test-major-mode)
        (keymap_var (test-major-mode-map keymap))
-       (name <opaque>)
        (hook (
          Ok (
            (symbol    test-major-mode-hook)
@@ -80,8 +77,7 @@ let%expect_test "[define_derived_mode]" =
 ;;
 
 let%expect_test "[hook]" =
-  let module M = (val define_mode ("for-testing-mode-hook" |> Symbol.intern) [%here]) in
-  let t = M.major_mode in
+  let t = define_mode ("for-testing-mode-hook" |> Symbol.intern) [%here] in
   Hook.add
     (hook t |> ok_exn)
     (Hook.Function.create
@@ -104,37 +100,37 @@ let%expect_test "[hook]" =
 ;;
 
 let%expect_test "[is_derived]" =
-  print_s [%sexp (is_derived Text.major_mode ~from:Special.major_mode : bool)];
+  print_s [%sexp (is_derived text ~from:special : bool)];
   [%expect {| false |}];
-  let module M =
-    (val define_derived_mode
-           ("texting-mode" |> Symbol.intern)
-           [%here]
-           ~docstring:"<docstring>"
-           ~mode_line:"texting"
-           ~parent:Text.major_mode
-           ())
+  let major_mode =
+    define_derived_mode
+      ("texting-mode" |> Symbol.intern)
+      [%here]
+      ~docstring:"<docstring>"
+      ~mode_line:"texting"
+      ~parent:text
+      ()
   in
-  print_s [%sexp (is_derived M.major_mode ~from:Text.major_mode : bool)];
+  print_s [%sexp (is_derived major_mode ~from:text : bool)];
   [%expect {| true |}];
   return ()
 ;;
 
 let%expect_test "Async initialization function" =
-  let module M =
-    (val define_derived_mode
-           ("test-major-mode-async-init-function" |> Symbol.intern)
-           [%here]
-           ~docstring:"docstring"
-           ~mode_line:"<test-mode mode line>"
-           ~initialize:
-             ( Returns_deferred Value.Type.unit
-             , fun () ->
-                 let%map () = Clock_ns.after (Time_ns.Span.of_ms 1.) in
-                 print_s [%message "initialized"] )
-           ())
+  let major_mode =
+    define_derived_mode
+      ("test-major-mode-async-init-function" |> Symbol.intern)
+      [%here]
+      ~docstring:"docstring"
+      ~mode_line:"<test-mode mode line>"
+      ~initialize:
+        ( Returns_deferred Value.Type.unit
+        , fun () ->
+            let%map () = Clock_ns.after (Time_ns.Span.of_ms 1.) in
+            print_s [%message "initialized"] )
+      ()
   in
-  let%bind () = Current_buffer.change_major_mode M.major_mode in
+  let%bind () = Current_buffer.change_major_mode major_mode in
   [%expect {| initialized |}];
   return ()
 ;;

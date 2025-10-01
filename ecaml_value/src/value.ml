@@ -466,7 +466,7 @@ let unibyte_of_string = unibyte_of_string
    That's what string-as-multibyte does when passed a unibyte string.
 *)
 let of_utf8_bytes s = funcall1 Q.string_as_multibyte (unibyte_of_string s)
-let of_buffer_contents buf = funcall1 Q.string_as_multibyte (of_buffer_contents buf)
+let of_buffer_contents buf = of_buffer_contents buf
 let of_utf8_bytes_cached = Memo.general ~hashable:String.hashable of_utf8_bytes
 
 let of_utf8_bytes_replacing_invalid str =
@@ -483,7 +483,8 @@ let of_utf8_bytes_replacing_invalid str =
       None
       str
   in
-  of_buffer_contents buffer, `First_malformed first_malformed
+  ( funcall1 Q.string_as_multibyte (of_buffer_contents buffer)
+  , `First_malformed first_malformed )
 ;;
 
 let percent_s = of_utf8_bytes "%s"
@@ -1007,23 +1008,27 @@ end
 
 module Stat = struct
   type t =
-    { emacs_free_performed : int
-    ; emacs_free_scheduled : int
+    { free_performed : int
+    ; free_scheduled : int
+    ; root_allocated : int
     }
   [@@deriving sexp_of]
 
   external num_emacs_free_performed : unit -> int = "ecaml_num_emacs_free_performed"
   external num_emacs_free_scheduled : unit -> int = "ecaml_num_emacs_free_scheduled"
+  external num_emacs_root_allocated : unit -> int = "ecaml_num_emacs_root_allocated"
 
   let now () =
-    { emacs_free_performed = num_emacs_free_performed ()
-    ; emacs_free_scheduled = num_emacs_free_scheduled ()
+    { free_performed = num_emacs_free_performed ()
+    ; free_scheduled = num_emacs_free_scheduled ()
+    ; root_allocated = num_emacs_root_allocated ()
     }
   ;;
 
   let diff t2 t1 =
-    { emacs_free_performed = t2.emacs_free_performed - t1.emacs_free_performed
-    ; emacs_free_scheduled = t2.emacs_free_scheduled - t1.emacs_free_scheduled
+    { free_performed = t2.free_performed - t1.free_performed
+    ; free_scheduled = t2.free_scheduled - t1.free_scheduled
+    ; root_allocated = t2.root_allocated - t1.root_allocated
     }
   ;;
 end

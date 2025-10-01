@@ -208,3 +208,6 @@ val of_char_array : Char_code.t array -> t
 
 (** [(describe-function 'string-to-vector)] *)
 val to_char_array : t -> Char_code.t array
+
+(** [(describe-function 'string-search)] *)
+val string_search : needle:string -> t -> int option

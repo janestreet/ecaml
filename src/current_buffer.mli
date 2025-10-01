@@ -187,10 +187,6 @@ val kill_region : start:Position.t -> end_:Position.t -> unit
     - [(Info-goto-node "(elisp)Narrowing")] *)
 val narrow_to_region : start:Position.t -> end_:Position.t -> unit
 
-(** - [(describe-function 'widen)]
-    - [(Info-goto-node "(elisp)Narrowing")] *)
-val widen : unit -> unit
-
 (** [(describe-function 'save-current-buffer)] *)
 val save_current_buffer
   :  ?here:Stdlib.Lexing.position
@@ -260,6 +256,9 @@ val set_text_properties_staged
 
 (** [(describe-function 'get-text-property)] *)
 val get_text_property : Position.t -> 'a Text.Property_name.t -> 'a option
+
+(** [(describe-function 'get-char-property)] *)
+val get_char_property : Position.t -> 'a Text.Property_name.t -> 'a option
 
 (** - [(describe-function 'add-text-properties)]
     - [(Info-goto-node "(elisp)Changing Properties")]. *)
@@ -354,13 +353,6 @@ val indent_region
 (** - [(describe-function 'revert-buffer)]
     - [(Info-goto-node "(elisp)Reverting")] *)
 val revert : ?confirm:bool (** default is [false] *) -> unit -> unit Deferred.t
-
-(** [(describe-variable 'revert-buffer-function)] *)
-val set_revert_buffer_function
-  :  ?here:Stdlib.Lexing.position
-  -> (unit, 'a) Defun.Returns.t
-  -> (confirm:bool -> 'a)
-  -> unit
 
 (** [(describe-function 'replace-buffer-contents)] *)
 val replace_buffer_contents

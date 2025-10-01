@@ -14,12 +14,24 @@ let with_buffer_and_point sync_or_async contents line_and_column ~f =
 ;;
 
 let utf8_full_block_U2588 = "\xE2\x96\x88"
+let utf8_upper_left_U259B = "▛"
+let utf8_lower_right_U259F = "▟"
 
 let show_buffer ~block_out =
-  let contents = Current_buffer.contents () |> Text.to_utf8_bytes in
+  let start, end_ = Point.min (), Point.max () in
+  let all_contents =
+    Current_buffer.save_restriction Sync (fun () ->
+      Current_buffer.widen ();
+      Current_buffer.contents () |> Text.to_utf8_bytes)
+  in
+  let start_marker = Marker.create () in
+  let end_marker = Marker.create () in
+  Marker.set_insertion_type end_marker After_inserted_text;
   Current_buffer.set_temporarily_to_temp_buffer Sync (fun () ->
-    Point.insert contents;
-    List.iter block_out ~f:(fun position ->
+    Point.insert all_contents;
+    Marker.set start_marker (Current_buffer.get ()) start;
+    Marker.set end_marker (Current_buffer.get ()) end_;
+    List.iter block_out ~f:(fun (position, replacement) ->
       let min = Point.min () in
       let max = Point.max () in
       let start = Position.clamp_exn position ~min ~max in
@@ -31,34 +43,22 @@ let show_buffer ~block_out =
         |> String.is_substring ~substring:"\n"
       in
       Current_buffer.delete_region ~start ~end_;
-      Point.insert utf8_full_block_U2588;
+      Point.insert replacement;
       if contains_newline then Point.insert "\n");
-    message (Current_buffer.contents () |> Text.to_utf8_bytes))
+    let start = Marker.position start_marker |> Option.value_exn in
+    let end_ = Marker.position end_marker |> Option.value_exn in
+    if Position.( <> ) start (Point.min ()) then message "<narrowed>";
+    message (Current_buffer.contents ~start ~end_ () |> Text.to_utf8_bytes);
+    if Position.( <> ) end_ (Point.max ()) then message "<narrowed>")
 ;;
 
-let show_point () = show_buffer ~block_out:[ Point.get () ]
-
-module Region = struct
-  type t =
-    { start : Line_and_column.t
-    ; end_ : Line_and_column.t
-    }
-  [@@deriving sexp_of]
-end
-
-open Region
-
-let with_buffer_and_active_region sync_or_async contents { start; end_ } ~f =
-  with_buffer sync_or_async contents ~f:(fun () ->
-    Current_buffer.set_mark (Current_buffer.position_of_line_and_column start);
-    Point.goto_line_and_column end_;
-    f ())
-;;
+let show_point () = show_buffer ~block_out:[ Point.get (), utf8_full_block_U2588 ]
 
 let show_active_region () =
   match Current_buffer.active_region () with
   | None -> print_s [%message "No region is active."]
-  | Some (start, end_) -> show_buffer ~block_out:[ start; end_ ]
+  | Some (start, end_) ->
+    show_buffer ~block_out:[ start, utf8_upper_left_U259B; end_, utf8_lower_right_U259F ]
 ;;
 
 (* The semantics of how to display overlay [before-string] and [after-string] properties

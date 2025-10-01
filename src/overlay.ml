@@ -77,9 +77,25 @@ let overlays_at =
 
 let at position = overlays_at position None
 
+let filter_map_by_property property =
+  List.filter_map ~f:(fun t ->
+    match get_property t property with
+    | value -> Some (t, value)
+    | exception _ -> None)
+;;
+
+let at_filtered_by_property property position =
+  at position |> filter_map_by_property property
+;;
+
 let overlays_in =
   Funcall.Wrap.("overlays-in" <: Position.t @-> Position.t @-> return (list t))
 ;;
 
 let in_ ~start ~end_ = overlays_in start end_
+
+let in_filtered_by_property property ~start ~end_ =
+  in_ ~start ~end_ |> filter_map_by_property property
+;;
+
 let equal a b = Value.eq (a |> to_value) (b |> to_value)

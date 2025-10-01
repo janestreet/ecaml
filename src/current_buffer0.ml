@@ -101,3 +101,4 @@ let has_non_null_value var =
 
 let rename_buffer = Funcall.Wrap.("rename-buffer" <: string @-> bool @-> return nil)
 let rename_exn ?(unique = false) () ~name = rename_buffer name unique
+let widen = Funcall.Wrap.("widen" <: nullary @-> return nil)

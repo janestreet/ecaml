@@ -430,3 +430,6 @@ let of_char_array chars =
 ;;
 
 external to_char_array : t -> Char_code.t array = "ecaml_text_to_char_array"
+
+let string_search = Funcall.Wrap.("string-search" <: string @-> t @-> return (nil_or int))
+let string_search ~needle t = string_search needle t

@@ -81,6 +81,7 @@ module Print = Print
 module Process = Process
 module Progress_reporter = Progress_reporter
 module Regexp = Regexp
+module Revert_buffer = Revert_buffer
 module Rx = Rx
 module Selected_window = Selected_window
 module Symbol = Symbol
@@ -371,6 +372,24 @@ after loading the test modules, to print the results and exit.|}
 ;;
 
 let () =
+  defun_nullary
+    ("ecaml-gc-root-stats" |> Symbol.intern)
+    [%here]
+    ~docstring:
+      {|Get stats about GC roots created by Ecaml.
+
+A list containing:
+- number of roots ever scheduled to be freed
+- number of roots ever actually free
+- number of roots ever allocated
+|}
+    (Returns Value.Type.(tuple3_as_list int int int))
+    (fun () ->
+      let now = Value.Stat.now () in
+      now.free_scheduled, now.free_performed, now.root_allocated)
+;;
+
+let () =
   Hook.add
     Hook.kill_emacs
     (Hook.Function.create
@@ -415,6 +434,23 @@ let () =
     (let open Defun.Let_syntax in
      let%map_open file = required "file" string in
      Dynlink.loadfile file)
+;;
+
+let () =
+  defun
+    ("ecaml-start-memtrace" |> Symbol.intern)
+    [%here]
+    ~docstring:
+      {|Start writing a trace to FILE.
+
+There's no way to stop tracing, oh well.|}
+    (Returns Value.Type.unit)
+    (let open Defun.Let_syntax in
+     let%map_open file = required "file" string in
+     let (_ : Memtrace.tracer) =
+       Memtrace.start_tracing ~context:(Some "ecaml") ~filename:file ~sampling_rate:0.0001
+     in
+     ())
 ;;
 
 let () =

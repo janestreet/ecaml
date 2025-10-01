@@ -47,6 +47,9 @@ val delete_property : t -> Symbol.t -> unit
 (** [(describe-function 'overlays-at)] *)
 val at : Position.t -> t list
 
+(** Like [at], but only returning overlays that contain a given property *)
+val at_filtered_by_property : 'a Text.Property_name.t -> Position.t -> (t * 'a) list
+
 (** [(describe-function 'remove-overlays)]. [(Info-goto-node "(elisp)Managing Overlays")] *)
 val remove_overlays
   :  ?start:Position.t
@@ -57,5 +60,12 @@ val remove_overlays
 
 (** [(describe-function 'overlays-in)] *)
 val in_ : start:Position.t -> end_:Position.t -> t list
+
+(** Like [in], but only returning overlays that contain a given property *)
+val in_filtered_by_property
+  :  'a Text.Property_name.t
+  -> start:Position.t
+  -> end_:Position.t
+  -> (t * 'a) list
 
 val equal : t -> t -> bool

@@ -20,15 +20,11 @@ let to_buffer_elisp ~buf sexp =
   loop sexp
 ;;
 
-let to_string_elisp sexp =
+let to_form_elisp sexp =
   (* Sexps serialized via this are almost always very large. *)
   let buf = Core.Buffer.create 8192 in
   to_buffer_elisp ~buf sexp;
-  Value.of_buffer_contents buf
-;;
-
-let read_from_string =
-  Funcall.Wrap.("read-from-string" <: value @-> return (tuple value int))
+  Form.read_buffer buf
 ;;
 
 include Valueable.Make (struct
@@ -44,7 +40,7 @@ include Valueable.Make (struct
             [ T (Print.level, None); T (Print.length, None) ]
             ~f:(fun () -> Value.prin1_to_string v)
           |> Sexp.of_string)
-        (fun sexp -> to_string_elisp sexp |> read_from_string |> fst)
+        (fun sexp -> to_form_elisp sexp |> Form.to_value)
     ;;
   end)
 

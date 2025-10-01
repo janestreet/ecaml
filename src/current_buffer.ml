@@ -162,7 +162,6 @@ let narrow_to_region =
 ;;
 
 let narrow_to_region ~start ~end_ = narrow_to_region start end_
-let widen = Funcall.Wrap.("widen" <: nullary @-> return nil)
 let save_current_buffer = Save_wrappers.save_current_buffer
 let save_excursion = Save_wrappers.save_excursion
 let save_mark_and_excursion = Save_wrappers.save_mark_and_excursion
@@ -226,6 +225,15 @@ let get_text_property =
 
 let get_text_property at property_name =
   get_text_property at (property_name |> Text.Property_name.name_as_value)
+  |> Option.map ~f:(Text.Property_name.of_value_exn property_name)
+;;
+
+let get_char_property =
+  Funcall.Wrap.("get-char-property" <: Position.t @-> value @-> return (nil_or value))
+;;
+
+let get_char_property at property_name =
+  get_char_property at (property_name |> Text.Property_name.name_as_value)
   |> Option.map ~f:(Text.Property_name.of_value_exn property_name)
 ;;
 
@@ -361,24 +369,6 @@ let indent_region ?start ?end_ () =
 let change_major_mode major_mode = Major_mode.change_to major_mode ~in_:(get ())
 let revert ?confirm () = Buffer.revert ?confirm (get ())
 
-let revert_buffer_function =
-  Buffer_local.Wrap.(
-    let ( <: ) = ( <: ) ~make_buffer_local_always:true in
-    "revert-buffer-function" <: Function.t)
-;;
-
-let set_revert_buffer_function ?(here = Stdlib.Lexing.dummy_pos) returns f =
-  set_buffer_local
-    revert_buffer_function
-    (Defun.lambda
-       here
-       returns
-       (let%map_open.Defun () = return ()
-        and () = required "ignore-auto" ignored
-        and noconfirm = required "noconfirm" bool in
-        f ~confirm:(not noconfirm)))
-;;
-
 let replace_buffer_contents =
   Funcall.Wrap.(
     "replace-buffer-contents" <: Buffer.t @-> nil_or float @-> nil_or int @-> return bool)
@@ -423,16 +413,14 @@ let inhibit_read_only sync_or_async f =
   set_value_temporarily sync_or_async inhibit_read_only true ~f
 ;;
 
-let position_of_line_and_column line_and_column =
-  save_excursion Sync (fun () ->
-    Point.goto_line_and_column line_and_column;
-    Point.get ())
-;;
+let position_of_line_and_column = Point.position_of_line_and_column
 
 let line_and_column_of_position position =
   save_excursion Sync (fun () ->
-    Point.goto_char position;
-    Point.get_line_and_column ())
+    save_restriction Sync (fun () ->
+      widen ();
+      Point.goto_char position;
+      Point.get_line_and_column ()))
 ;;
 
 let replace_string ?start ?end_ ~from ~to_ () =

@@ -4,7 +4,8 @@
 
 open! Core
 open! Import
-module Tabulated_list_mode : Major_mode.S
+
+val major_mode : Major_mode.t
 
 module Column : sig
   (** A column of data to be displayed on screen. *)

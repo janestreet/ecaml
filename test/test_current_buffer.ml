@@ -885,9 +885,11 @@ void f () {
 
 let%expect_test "[set_revert_buffer_function (Returns_deferred Value.Type.unit)]" =
   set_temporarily_to_temp_buffer Async (fun () ->
-    set_revert_buffer_function (Returns_deferred Value.Type.unit) (fun ~confirm ->
-      let%map () = Clock_ns.after (sec_ns 0.01) in
-      print_s [%message "called after pause" (confirm : bool)]);
+    Revert_buffer.set
+      (Current_buffer.get ())
+      (Revert_buffer.lambda (fun ~confirm ->
+         let%map () = Clock_ns.after (sec_ns 0.01) in
+         print_s [%message "called after pause" (confirm : bool)]));
     let%bind () = revert () in
     [%expect {| ("called after pause" (confirm false)) |}];
     let%bind () = revert () ~confirm:true in
@@ -1068,17 +1070,6 @@ let%expect_test "[set_temporarily] killing old buffer" =
   print_s [%sexp (Buffer.is_live old : bool)];
   [%expect {| false |}];
   return ()
-;;
-
-let%expect_test "[set_revert_buffer_function]" =
-  set_temporarily_to_temp_buffer Async (fun () ->
-    set_revert_buffer_function (Returns Value.Type.unit) (fun ~confirm ->
-      print_s [%message "called" (confirm : bool)]);
-    let%bind () = revert () in
-    [%expect {| (called (confirm false)) |}];
-    let%bind () = revert () ~confirm:true in
-    [%expect {| (called (confirm true)) |}];
-    return ())
 ;;
 
 let%expect_test "[kill]" =

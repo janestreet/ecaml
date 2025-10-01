@@ -7,6 +7,5 @@ let compilation_start =
   Funcall.Wrap.("compilation-start" <: string @-> Symbol.t @-> return nil)
 ;;
 
-include (val Major_mode.wrap_existing "grep-mode")
-
+let major_mode = Major_mode.wrap_existing "grep-mode"
 let grep ~command = compilation_start command (Major_mode.symbol major_mode)

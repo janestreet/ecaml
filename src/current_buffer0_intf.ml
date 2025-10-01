@@ -66,6 +66,11 @@ module type Current_buffer0_public = sig
       [unique = false]; with [unique = true] it generates a new name.
       [(describe-function 'rename-buffer)]. *)
   val rename_exn : ?unique:bool -> unit -> name:string -> unit
+
+  (** - [(describe-function 'widen)]
+
+      - [(Info-goto-node "(elisp)Narrowing")] *)
+  val widen : unit -> unit
 end
 
 module type Current_buffer0 = sig
