@@ -65,6 +65,26 @@ module type Defun = sig
     val returns : ('a, 'b) Sync_or_async.t -> 'a Value.Type.t -> ('a, 'b) t
   end
 
+  module Interactive : sig
+    (** [(describe-function 'interactive)] *)
+    type t =
+      | Args of Function.t
+      | Form of Form.t
+      | Function_name of { prompt : string }
+      (** a -- Function name: symbol with a function definition. *)
+      | Ignored (** i -- Ignored, i.e. always nil. Does not do I/O. *)
+      | No_arg (** interactive with no argument spec *)
+      | Prompt of string
+      (** s -- Any string. Does not inherit the current input method. *)
+      | Raw_prefix (** P -- Prefix arg in raw form. Does not do I/O. *)
+      | Prefix (** p -- Prefix arg converted to number. Does not do I/O. *)
+      | Region
+      (** r -- Region: point and mark as 2 numeric args, smallest first. Does no I/O. *)
+
+    (** An interactive form which evaluates to a list of constant values. *)
+    val list : Value.t list -> t
+  end
+
   type 'a defun :=
     Symbol.t
     -> Source_code_position.t
@@ -72,14 +92,25 @@ module type Defun = sig
     -> ?define_keys:(Keymap.t Var.t * string) list
     -> ?obsoletes:Obsoletes.t
     -> ?should_profile:bool
-    -> ?interactive:Function.Interactive.t
-    -> ?disabled:Symbol.Disabled.t (** See {!Symbol.Property.function_disabled} *)
-    -> ?evil_config:Evil.Config.t
+    -> ?interactive:Interactive.t
     -> 'a
 
   val defun : ((_, 'a) Returns.t -> 'a t -> unit) defun
   val defun_nullary : ((_, 'a) Returns.t -> (unit -> 'a) -> unit) defun
   val defun_nullary_nil : ((unit -> unit) -> unit) defun
+  val defun_func : ((_, 'a) Returns.t -> 'a t -> Function.t) defun
+
+  (** Define a function which will be used in another function's interactive spec.
+
+      When a command defined with [~interactive:(defun_interactive_arg ... f)] is called
+      interactively, [f ()] is called to compute the argument values to supply to the
+      command. Of course, the argument values should match the command's [Defun.t]
+      specification. *)
+  val defun_interactive_arg
+    :  Symbol.t
+    -> here:[%call_pos]
+    -> (unit -> Value.t list Deferred.t)
+    -> Interactive.t
 
   (** [(describe-function 'defalias)] [(Info-goto-node "(elisp)Defining Functions")] *)
   val defalias
@@ -102,28 +133,15 @@ module type Defun = sig
     -> unit
     -> unit
 
-  val lambda
-    :  Source_code_position.t
-    -> ?docstring:string
-    -> ?interactive:Function.Interactive.t
-    -> (_, 'a) Returns.t
-    -> 'a t
-    -> Function.t
+  val lambda : Source_code_position.t -> (_, 'a) Returns.t -> 'a t -> Function.t
 
   val lambda_nullary
     :  Source_code_position.t
-    -> ?docstring:string
-    -> ?interactive:Function.Interactive.t
     -> (_, 'a) Returns.t
     -> (unit -> 'a)
     -> Function.t
 
-  val lambda_nullary_nil
-    :  Source_code_position.t
-    -> ?docstring:string
-    -> ?interactive:Function.Interactive.t
-    -> (unit -> unit)
-    -> Function.t
+  val lambda_nullary_nil : Source_code_position.t -> (unit -> unit) -> Function.t
 
   (** [apply t args ~function_ ~defined_at] applies [args] to [t], using [function_] and
       [defined_at] to construct a nice error message if [args] are not what [t] expects.

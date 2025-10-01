@@ -17,6 +17,7 @@ include Value.Subtype
 include Equal.S with type t := t
 
 val default : t
+val warning : t
 val of_name : string -> t
 val to_name : t -> string
 

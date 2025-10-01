@@ -34,7 +34,6 @@ end
 
 let customize_group = Funcall.Wrap.("customize-group" <: Symbol.t @-> return nil)
 let customize_variable = Funcall.Wrap.("customize-variable" <: Symbol.t @-> return nil)
-let q value = Value.list [ Symbol.to_value Q.quote; value ]
 
 module Group = struct
   include (
@@ -48,29 +47,19 @@ module Group = struct
   let all_defgroups = ref []
 
   let defgroup group_name here ~docstring ~parents =
-    let docstring = docstring |> String.strip in
-    require_nonempty_docstring here ~docstring;
     let group_name = group_name |> Symbol.intern in
-    let form_of_parent parent =
-      Form.[ Q.K.group |> symbol; parent |> Symbol.to_value |> quote ]
-    in
-    let docstring =
-      let here = here |> Source_code_position.to_string in
-      [%string
-        {|
-%{docstring}
-
-Defined at %{here}
-|}]
-      |> String.strip
-    in
-    Form.(
-      Blocking.eval_i
-        (list
-           (List.concat
-              [ [ Q.defgroup |> symbol; group_name |> symbol; nil; docstring |> string ]
-              ; List.concat_map parents ~f:form_of_parent
-              ])));
+    Dump.eval_and_dump ~here (fun () ->
+      let docstring = docstring |> String.strip in
+      require_nonempty_docstring here ~docstring;
+      let form_of_parent parent =
+        Form.[ Q.K.group |> symbol; parent |> Symbol.to_value |> quote ]
+      in
+      Form.(
+        list
+          (List.concat
+             [ [ Q.defgroup |> symbol; group_name |> symbol; nil; docstring |> string ]
+             ; List.concat_map parents ~f:form_of_parent
+             ])));
     all_defgroups := group_name :: !all_defgroups;
     group_name
   ;;
@@ -124,23 +113,23 @@ module Type = struct
     | Vector of t list
   [@@deriving sexp_of]
 
-  let s = Symbol.to_value
+  let s = Form.symbol
 
-  let rec vs ts = List.map ts ~f:v
-  and composite s ts = Value.list (Symbol.to_value s :: vs ts)
+  let rec fs ts = List.map ts ~f
+  and composite s ts = Form.list (Form.symbol s :: fs ts)
 
-  and v = function
+  and f = function
     | Alist (t1, t2) ->
-      Value.list [ s Q.alist; s Q.K.key_type; v t1; s Q.K.value_type; v t2 ]
+      Form.list [ s Q.alist; s Q.K.key_type; f t1; s Q.K.value_type; f t2 ]
     | Boolean -> s Q.boolean
     | Character -> s Q.character
     | Choice ts -> composite Q.choice ts
     | Coding_system -> s Q.coding_system
     | Color -> s Q.color
     | Cons (t1, t2) -> composite Q.cons [ t1; t2 ]
-    | Const v -> Value.list [ s Q.const; v ]
+    | Const v -> Form.list [ s Q.const; Form.of_value_exn v ]
     | Directory -> s Q.directory
-    | Existing_file -> Value.list [ s Q.file; s Q.K.must_match; Value.t ]
+    | Existing_file -> Form.list [ s Q.file; s Q.K.must_match; Form.of_value_exn Value.t ]
     | Face -> s Q.face
     | File -> s Q.file
     | Float -> s Q.float
@@ -151,7 +140,7 @@ module Type = struct
     | Key_sequence -> s Q.key_sequence
     | List ts -> composite Q.list ts
     | Number -> s Q.number
-    | Option { doc_for_none; t } -> v (Choice [ Tag (doc_for_none, Const (s Q.nil)); t ])
+    | Option { doc_for_none; t } -> f (Choice [ Tag (doc_for_none, Const Value.nil); t ])
     | Plist -> s Q.plist
     | Radio ts -> composite Q.radio ts
     | Regexp -> s Q.regexp
@@ -161,21 +150,23 @@ module Type = struct
     | String -> s Q.string
     | Symbol -> s Q.symbol
     | Tag (tag, t) ->
-      let v = v t in
-      if Value.is_cons v
+      let f = f t in
+      let f_value = Form.to_value f in
+      if Value.is_cons f_value
       then
         (* Insert [:tag TAG] immediately after constructor, for a compound type. *)
         Value.cons
-          (Value.car_exn v)
+          (Value.car_exn f_value)
           (Value.cons
-             (s Q.K.tag)
-             (Value.cons (Value.of_utf8_bytes tag) (Value.cdr_exn v)))
-      else Value.list [ v; s Q.K.tag; Value.of_utf8_bytes tag ]
+             (Symbol.to_value Q.K.tag)
+             (Value.cons (Value.of_utf8_bytes tag) (Value.cdr_exn f_value)))
+        |> Form.of_value_exn
+      else Form.list [ f; s Q.K.tag; Form.string tag ]
     | Variable -> s Q.variable
     | Vector ts -> composite Q.vector ts
   ;;
 
-  let to_value = v
+  let to_form = f
   let enum all value_of_a = Choice (List.map all ~f:(fun a -> Const (value_of_a a)))
 end
 
@@ -240,8 +231,11 @@ let define_obsolete_alias obsolete here ?docstring ~alias_of ~since () =
   Obsolete.make_variable_obsolete obsolete ~current:(Some alias_of) ~since
 ;;
 
+let set_default_toplevel_value =
+  Funcall.Wrap.("set-default-toplevel-value" <: Symbol.t @-> value @-> return ignored)
+;;
+
 let defcustom
-  ?(show_form = false)
   symbol
   here
   ~docstring
@@ -263,56 +257,38 @@ let defcustom
   (try
      let docstring = docstring |> String.strip in
      require_nonempty_docstring here ~docstring;
-     let docstring =
-       concat
-         [ docstring
-         ; "\n\n"
-         ; concat [ "Customization group: "; group |> Group.to_string; "\n" ]
-         ; concat [ "Standard value: "; standard_value |> Value.prin1_to_string; "\n" ]
-         ; concat
-             [ "Customization type:"
-             ; (let string =
-                  customization_type |> Type.to_value |> Value.prin1_to_string
-                in
-                if String.contains string '\n'
-                then concat [ "\n"; string ]
-                else concat [ " "; string ])
-             ]
-         ]
-     in
      add_to_load_history symbol here;
-     let form =
-       List.concat
-         [ [ Q.defcustom |> Symbol.to_value ]
-         ; [ symbol |> Symbol.to_value ]
-         ; [ standard_value |> q ]
-         ; [ docstring |> Value.of_utf8_bytes ]
-         ; [ Q.K.group |> Symbol.to_value; group |> Symbol.to_value |> q ]
-         ; [ Q.K.type_ |> Symbol.to_value; customization_type |> Type.to_value |> q ]
-         ; (match on_set with
-            | None -> []
-            | Some on_set ->
-              [ Q.K.set |> Symbol.to_value
-              ; Function.to_value
-                  (Defun.lambda
-                     [%here]
-                     (Returns Value.Type.unit)
-                     (let var = Var.create symbol type_ in
-                      let%map_open.Defun () = return ()
-                      and _ = required "symbol" Symbol.t
-                      and a = required "value" type_ in
-                      on_set a;
-                      (* We set the Elisp variable after calling the user-supplied
-                         [on_set] function, because we only want to do the set if that
-                         succeeds. *)
-                      Var.set_default_value var a))
-              ])
-         ]
-       |> Value.list
-       |> Form.of_value_exn
+     let on_set =
+       Option.map on_set ~f:(fun on_set ->
+         Defun.defun_func
+           (Symbol.intern (Symbol.name symbol ^ "--setter"))
+           here
+           ~docstring:"The :set function for a defcustom."
+           (Returns Value.Type.unit)
+           (let%map_open.Defun symbol = required "symbol" Symbol.t
+            and value = required "value" value in
+            on_set (Value.Type.of_value_exn type_ value);
+            (* We set the Elisp variable after calling the user-supplied
+                [on_set] function, because we only want to do the set if that
+                succeeds. *)
+            set_default_toplevel_value symbol value))
      in
-     if show_form then message_s [%sexp (form : Form.t)];
-     ignore (Form.Blocking.eval form : Value.t)
+     Dump.eval_and_dump ~here (fun () ->
+       Form.apply
+         Q.defcustom
+         ([ Form.symbol symbol
+          ; Form.quote standard_value
+          ; Form.string docstring
+          ; Form.symbol Q.K.group
+          ; Form.quoted_symbol group
+          ; Form.symbol Q.K.type_
+          ; Form.list [ Form.symbol Q.quote; Type.to_form customization_type ]
+          ]
+          @
+          match on_set with
+          | None -> []
+          | Some on_set -> [ Form.symbol Q.K.set; Form.quote (Function.to_value on_set) ]
+         ))
    with
    | exn ->
      raise_s

@@ -28,6 +28,9 @@ val abbrev : t
 (** [(describe-variable 'auto-fill-mode)] [(describe-function 'auto-fill-mode)] *)
 val auto_fill : t
 
+(** [(describe-variable 'button-mode)] [(describe-function 'button-mode)] *)
+val button : t
+
 (** [(describe-variable 'goto-address-mode)] [(describe-function 'goto-address-mode)] *)
 val goto_address : t
 
@@ -36,9 +39,6 @@ val hl_line : t
 
 (** [(describe-variable 'buffer-read-only)] [(describe-function 'read-only-mode)] *)
 val read_only : t
-
-(** [(describe-variable 'view-mode)] [(describe-function 'view-mode)] *)
-val view : t
 
 (** [(describe-variable 'visual-line-mode)] [(describe-function 'visual-line-mode)] *)
 val visual_line : t

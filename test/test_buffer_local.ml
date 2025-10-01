@@ -4,21 +4,19 @@ open! Import
 open! Buffer_local
 
 let int =
-  Ecaml.Dump.with_allowed_dump_for_testing (fun () ->
-    defvar
-      ("some-int" |> Symbol.intern)
-      ~type_:Value.Type.(option int)
-      ~default_value:None
-      ())
+  defvar
+    ("some-int" |> Symbol.intern)
+    ~type_:Value.Type.(option int)
+    ~default_value:None
+    ()
 ;;
 
 let bool =
-  Ecaml.Dump.with_allowed_dump_for_testing (fun () ->
-    defvar
-      ("some-bool" |> Symbol.intern)
-      ~type_:Value.Type.(option bool)
-      ~default_value:None
-      ())
+  defvar
+    ("some-bool" |> Symbol.intern)
+    ~type_:Value.Type.(option bool)
+    ~default_value:None
+    ()
 ;;
 
 let%expect_test "[symbol]" =
@@ -100,12 +98,11 @@ let%expect_test "[get] with value represented as [nil]" =
 
 let%expect_test "[defvar_embedded]" =
   let t =
-    Ecaml.Dump.with_allowed_dump_for_testing (fun () ->
-      defvar_embedded
-        ("x" |> Symbol.intern)
-        (module struct
-          type t = int ref [@@deriving sexp_of]
-        end))
+    defvar_embedded
+      ("x" |> Symbol.intern)
+      (module struct
+        type t = int ref [@@deriving sexp_of]
+      end)
   in
   let show () = print_s [%sexp (Current_buffer.get_buffer_local t : int ref option)] in
   show ();
@@ -122,12 +119,11 @@ let%expect_test "[defvar_embedded]" =
 
 let%expect_test "[defvar ~wrapped:false]" =
   let t =
-    Ecaml.Dump.with_allowed_dump_for_testing (fun () ->
-      defvar
-        ("unwrapped" |> Symbol.intern)
-        ~type_:Value.Type.(nil_or int)
-        ~default_value:None
-        ())
+    defvar
+      ("unwrapped" |> Symbol.intern)
+      ~type_:Value.Type.(nil_or int)
+      ~default_value:None
+      ()
   in
   let show () = print_s [%sexp (Current_buffer.get_buffer_local t : int option)] in
   show ();
@@ -140,12 +136,7 @@ let%expect_test "[defvar ~wrapped:false]" =
 
 let%expect_test "non-nil default value" =
   let t =
-    Ecaml.Dump.with_allowed_dump_for_testing (fun () ->
-      defvar
-        ("non-nil-default" |> Symbol.intern)
-        ~type_:Value.Type.int
-        ~default_value:13
-        ())
+    defvar ("non-nil-default" |> Symbol.intern) ~type_:Value.Type.int ~default_value:13 ()
   in
   let show () = print_s [%sexp (Current_buffer.get_buffer_local t : int)] in
   show ();
@@ -158,14 +149,13 @@ let%expect_test "non-nil default value" =
 
 let%expect_test "[wrap_existing]" =
   let var =
-    Ecaml.Dump.with_allowed_dump_for_testing (fun () ->
-      Defvar.defvar
-        ("for-wrapping" |> Symbol.intern)
-        [%here]
-        ~docstring:"<docstring>"
-        ~type_:Value.Type.string
-        ~initial_value:"initial"
-        ())
+    Defvar.defvar
+      ("for-wrapping" |> Symbol.intern)
+      [%here]
+      ~docstring:"<docstring>"
+      ~type_:Value.Type.string
+      ~initial_value:"initial"
+      ()
   in
   let wrap ~make_buffer_local_always =
     wrap_existing var.symbol var.type_ ~make_buffer_local_always
@@ -189,7 +179,7 @@ let%expect_test "non-permanent buffer-locals cleared on changing major modes" =
     Current_buffer.set_buffer_local int (Some 23);
     show_in_current_buffer ();
     [%expect {| (23) |}];
-    let%bind () = Current_buffer.change_major_mode Major_mode.Prog.major_mode in
+    let%bind () = Current_buffer.change_major_mode Major_mode.prog in
     show_in_current_buffer ();
     [%expect {| () |}];
     return ())
@@ -201,11 +191,11 @@ let%expect_test "permanent buffer-locals not cleared on changing major modes" =
     Current_buffer.set_buffer_local int (Some 23);
     show_in_current_buffer ();
     [%expect {| (23) |}];
-    let%bind () = Current_buffer.change_major_mode Major_mode.Prog.major_mode in
+    let%bind () = Current_buffer.change_major_mode Major_mode.prog in
     show_in_current_buffer ();
     [%expect {| (23) |}];
     Buffer_local.set_permanent int false;
-    let%bind () = Current_buffer.change_major_mode Major_mode.Prog.major_mode in
+    let%bind () = Current_buffer.change_major_mode Major_mode.prog in
     show_in_current_buffer ();
     [%expect {| () |}];
     return ())

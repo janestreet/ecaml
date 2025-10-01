@@ -84,57 +84,71 @@ let show_current_buffer_local_variables () =
 
    It then sends some additional keystrokes that invoke a command to assert that [f] is
    not still running (to avoid timing out reading from a minibuffer, in tests). *)
-let with_input_macro string f =
+
+let with_input_macro =
+  let with_input_macro_map =
+    Keymap.defvar
+      ("ecaml-with-input-macro-map" |> Symbol.intern)
+      ~docstring:"with_input_macro transient map"
+  in
   let start_sequence = "C-c e" in
   let raise_if_still_running_sequence = "C-H-M-e" in
-  let keyseq =
-    String.concat ~sep:" " [ start_sequence; string; raise_if_still_running_sequence ]
-    |> Key_sequence.create_exn
-  in
   let f_is_running = ref false in
-  let keymap = Keymap.create () in
-  Keymap.set_val
-    keymap
-    start_sequence
-    (Value
-       (lambda_nullary
-          [%here]
-          ~interactive:No_arg
-          (Returns_deferred Value.Type.unit)
-          (fun () ->
-             Monitor.protect
-               (fun () ->
-                 f_is_running := true;
-                 f ())
-               ~finally:(fun () ->
-                 f_is_running := false;
-                 return ()))
-        |> Function.to_value));
-  Keymap.global_set
-    raise_if_still_running_sequence
-    (Value
-       (lambda_nullary [%here] ~interactive:No_arg (Returns Value.Type.unit) (fun () ->
-          match !f_is_running with
-          | false -> ()
-          | true ->
-            let minibuffer_prompt = Minibuffer.prompt () in
-            let minibuffer_contents =
-              if Minibuffer.depth () > 0 then Some (Minibuffer.contents ()) else None
-            in
-            (* If the [f] is stuck inside [read-from-minibuffer], any exceptions raised
+  let string_ref = ref "<should never be seen>" in
+  let f_ref = ref (fun () -> return ()) in
+  Defun.defun_nullary
+    ("ecaml-input-macro-start" |> Symbol.intern)
+    [%here]
+    ~define_keys:[ with_input_macro_map, start_sequence ]
+    ~docstring:"Start with_input_macro input."
+    ~interactive:No_arg
+    (Returns_deferred Value.Type.unit)
+    (fun () ->
+      Monitor.protect
+        (fun () ->
+          f_is_running := true;
+          !f_ref ())
+        ~finally:(fun () ->
+          f_is_running := false;
+          return ()));
+  let raise_if_running = "ecaml-input-macro-raise-if-running" |> Symbol.intern in
+  let top_level = Funcall.Wrap.("top-level" <: nullary @-> return ignored) in
+  Defun.defun_nullary
+    raise_if_running
+    [%here]
+    ~docstring:"Raise at the end of with_input_macro if it's still running"
+    ~interactive:No_arg
+    (Returns Value.Type.unit)
+    (fun () ->
+       match !f_is_running with
+       | false -> ()
+       | true ->
+         let minibuffer_prompt = Minibuffer.prompt () in
+         let minibuffer_contents =
+           if Minibuffer.depth () > 0 then Some (Minibuffer.contents ()) else None
+         in
+         (* If the [f] is stuck inside [read-from-minibuffer], any exceptions raised
                here will be caught and not propagated past [read-from-minibuffer].
                Instead, message and call [top-level] (which does a [throw] instead of
                [signal]). *)
-            message_s
-              [%message
-                "[with_input_macro] provided full input but function is still running"
-                  ~input:(string : string)
-                  (minibuffer_prompt : (string option[@sexp.option]))
-                  (minibuffer_contents : (string option[@sexp.option]))];
-            Funcall.Wrap.("top-level" <: nullary @-> return ignored) ())
-        |> Function.to_value));
-  Keymap.set_transient keymap;
-  Key_sequence.execute keyseq
+         message_s
+           [%message
+             "[with_input_macro] provided full input but function is still running"
+               ~input:(!string_ref : string)
+               (minibuffer_prompt : (string option[@sexp.option]))
+               (minibuffer_contents : (string option[@sexp.option]))];
+         top_level ());
+  Keymap.global_set raise_if_still_running_sequence (Symbol raise_if_running);
+  fun string f ->
+    let keyseq =
+      String.concat ~sep:" " [ start_sequence; string; raise_if_still_running_sequence ]
+      |> Key_sequence.create_exn
+    in
+    f_is_running := false;
+    string_ref := string;
+    f_ref := f;
+    Keymap.set_transient (Current_buffer.value_exn with_input_macro_map);
+    Key_sequence.execute keyseq
 ;;
 
 let%expect_test "[with_input_macro] raises if [f] is still running after receiving \

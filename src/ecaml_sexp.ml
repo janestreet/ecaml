@@ -2,9 +2,29 @@ open Core
 open Import
 include Sexp
 
-let rec to_lisp = function
-  | Atom s -> Form.string s
-  | List ls -> Form.list (List.map ~f:to_lisp ls)
+let to_buffer_elisp ~buf sexp =
+  let rec loop = function
+    | Atom str ->
+      Core.Buffer.add_char buf '"';
+      String.iter str ~f:(fun c ->
+        (match c with
+         | '\"' | '\\' -> Core.Buffer.add_char buf '\\'
+         | _ -> ());
+        Core.Buffer.add_char buf c);
+      Core.Buffer.add_char buf '"'
+    | List sexps ->
+      Core.Buffer.add_char buf '(';
+      List.iter sexps ~f:loop;
+      Core.Buffer.add_char buf ')'
+  in
+  loop sexp
+;;
+
+let to_form_elisp sexp =
+  (* Sexps serialized via this are almost always very large. *)
+  let buf = Core.Buffer.create 8192 in
+  to_buffer_elisp ~buf sexp;
+  Form.read_buffer buf
 ;;
 
 include Valueable.Make (struct
@@ -20,7 +40,7 @@ include Valueable.Make (struct
             [ T (Print.level, None); T (Print.length, None) ]
             ~f:(fun () -> Value.prin1_to_string v)
           |> Sexp.of_string)
-        (fun sexp -> to_lisp sexp |> Form.to_value)
+        (fun sexp -> to_form_elisp sexp |> Form.to_value)
     ;;
   end)
 

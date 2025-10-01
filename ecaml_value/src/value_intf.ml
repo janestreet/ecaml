@@ -222,9 +222,6 @@ module type Value = sig
   (** [(describe-function 'symbolp)] *)
   val is_symbol : t -> bool
 
-  (** [(describe-function 'syntax-table-p)] *)
-  val is_syntax_table : t -> bool
-
   (** [(describe-function 'timerp)] *)
   val is_timer : t -> bool
 
@@ -296,6 +293,15 @@ module type Value = sig
   val message_s : Sexp.t -> unit
   val prin1_to_string : t -> string
 
+  (** Copy a buffer's contents directly into an Elisp string.
+
+      Compared to [Buffer.contents buf], [of_buffer_contents buf] saves one string copy
+      operation.
+
+      Also, the returned string is unibyte, not multibyte, and is therefore suitable for
+      handling non-UTF8 data. *)
+  val of_buffer_contents : Buffer.t -> t
+
   (** An ['a Type.t] is an isomorphism between ['a] and a subset of [Value.t]. *)
   module Type : sig
       type value
@@ -347,8 +353,9 @@ module type Value = sig
 
   module Stat : sig
     type t =
-      { emacs_free_performed : int
-      ; emacs_free_scheduled : int
+      { free_performed : int
+      ; free_scheduled : int
+      ; root_allocated : int
       }
     [@@deriving sexp_of]
 

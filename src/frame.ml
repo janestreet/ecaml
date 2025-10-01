@@ -92,13 +92,3 @@ let window_tree =
   in
   fun t -> fst (f (Some t))
 ;;
-
-let modify_all_frames_parameters =
-  Funcall.Wrap.(
-    "modify-all-frames-parameters" <: list (tuple Symbol.t value) @-> return nil)
-;;
-
-let modify_frame_parameters =
-  Funcall.Wrap.(
-    "modify-frame-parameters" <: t @-> list (tuple Symbol.t value) @-> return nil)
-;;

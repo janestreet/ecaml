@@ -32,31 +32,35 @@ let wrap_message
   (type a b)
   ?allow_in_background
   ?echo
+  ?(show_in_tests = true)
   ~(here : [%call_pos])
   (sync_or_async : (a, b) Sync_or_async.t)
   msg
-  ~f
+  ~(f : unit -> b)
   =
-  let msg = msg ^ " ... " in
-  let returned_normally = ref false in
-  message ?echo msg;
-  let (f : unit -> b) =
-    match sync_or_async with
-    | Sync ->
-      fun () ->
-        let result = f () in
-        returned_normally := true;
-        result
-    | Async ->
-      fun () ->
-        let%map result = f () in
-        returned_normally := true;
-        result
-  in
-  Sync_or_async.protect ?allow_in_background ~here sync_or_async ~f ~finally:(fun () ->
-    match !returned_normally with
-    | true -> message ?echo [%string "%{msg}done"]
-    | false -> message ?echo [%string "%{msg}raised"])
+  match am_running_test, show_in_tests with
+  | true, false -> f ()
+  | false, _ | _, true ->
+    let msg = msg ^ " ... " in
+    let returned_normally = ref false in
+    message ?echo msg;
+    let (f : unit -> b) =
+      match sync_or_async with
+      | Sync ->
+        fun () ->
+          let result = f () in
+          returned_normally := true;
+          result
+      | Async ->
+        fun () ->
+          let%map result = f () in
+          returned_normally := true;
+          result
+    in
+    Sync_or_async.protect ?allow_in_background ~here sync_or_async ~f ~finally:(fun () ->
+      match !returned_normally with
+      | true -> message ?echo [%string "%{msg}done"]
+      | false -> message ?echo [%string "%{msg}raised"])
 ;;
 
 let clear =

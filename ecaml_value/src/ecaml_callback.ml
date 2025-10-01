@@ -5,10 +5,7 @@ module Scheduler = Async_unix.Async_unix_private.Raw_scheduler
 let scheduler = Scheduler.t ()
 
 module Arity = struct
-  type 'callback t =
-    | Arity1 : ('a1 -> 'r) t
-    | Arity2 : ('a1 -> 'a2 -> 'r) t
-  [@@deriving sexp_of]
+  type 'callback t = Arity1 : ('a1 -> 'r) t [@@deriving sexp_of]
 end
 
 open Arity
@@ -64,21 +61,9 @@ let register
          | exn ->
            report_exn_when_calling_callback exn;
            raise exn)
-    | Arity2 ->
-      fun a1 a2 ->
-        (try
-           if not should_run_holding_async_lock
-           then f a1 a2
-           else with_lock (fun () -> f a1 a2)
-         with
-         | exn ->
-           report_exn_when_calling_callback exn;
-           raise exn)
   in
   (Stdlib.Callback.register [@ocaml.alert "-unsafe_multidomain"]) t.name callback
 ;;
-
-let dispatch_function = { arity = Arity2; name = "dispatch_function" }
 
 let on_end_of_module_initialization =
   let functions = ref [] in

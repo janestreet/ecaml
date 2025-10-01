@@ -81,12 +81,12 @@ module Print = Print
 module Process = Process
 module Progress_reporter = Progress_reporter
 module Regexp = Regexp
+module Revert_buffer = Revert_buffer
 module Rx = Rx
 module Selected_window = Selected_window
 module Symbol = Symbol
 module Symbol_prefix = Symbol_prefix
 module Sync_or_async = Sync_or_async
-module Syntax_table = Syntax_table
 module System = System
 module Tabulated_list = Tabulated_list
 module Terminal = Terminal
@@ -120,6 +120,7 @@ let defgroup = Customization.Group.defgroup
 let define_derived_mode = Major_mode.define_derived_mode
 let define_minor_mode = Minor_mode.define_minor_mode
 let defun = Defun.defun
+let defun_func = Defun.defun_func
 let defun_nullary = Defun.defun_nullary
 let defun_nullary_nil = Defun.defun_nullary_nil
 let defvar = Defvar.defvar
@@ -225,7 +226,7 @@ For testing Ecaml.
 List the Unix signals that are managed by the Async OCaml library in the running Emacs
 process.
 |}
-    ~interactive:(Function.Interactive.list [ Value.t ])
+    ~interactive:(Defun.Interactive.list [ Value.t ])
     (Returns Ecaml_sexp.t)
     (let%map_open.Defun interactive = optional_with_nil "interactive" bool in
      let sexp =
@@ -371,6 +372,24 @@ after loading the test modules, to print the results and exit.|}
 ;;
 
 let () =
+  defun_nullary
+    ("ecaml-gc-root-stats" |> Symbol.intern)
+    [%here]
+    ~docstring:
+      {|Get stats about GC roots created by Ecaml.
+
+A list containing:
+- number of roots ever scheduled to be freed
+- number of roots ever actually free
+- number of roots ever allocated
+|}
+    (Returns Value.Type.(tuple3_as_list int int int))
+    (fun () ->
+      let now = Value.Stat.now () in
+      now.free_scheduled, now.free_performed, now.root_allocated)
+;;
+
+let () =
   Hook.add
     Hook.kill_emacs
     (Hook.Function.create
@@ -408,10 +427,41 @@ let () =
     ("ecaml-dynlink-loadfile" |> Symbol.intern)
     [%here]
     ~docstring:{|Using Dynlink.loadfile, load .cmxs FILE|}
+      (* If this function did profiling, all profiling happening in tests would be part of
+         this frame, and would never get output to the *profile* buffer. *)
+    ~should_profile:false
     (Returns Value.Type.unit)
     (let open Defun.Let_syntax in
      let%map_open file = required "file" string in
      Dynlink.loadfile file)
+;;
+
+let () =
+  defun
+    ("ecaml-start-memtrace" |> Symbol.intern)
+    [%here]
+    ~docstring:
+      {|Start writing a trace to FILE.
+
+There's no way to stop tracing, oh well.|}
+    (Returns Value.Type.unit)
+    (let open Defun.Let_syntax in
+     let%map_open file = required "file" string in
+     let (_ : Memtrace.tracer) =
+       Memtrace.start_tracing ~context:(Some "ecaml") ~filename:file ~sampling_rate:0.0001
+     in
+     ())
+;;
+
+let () =
+  defun_nullary_nil
+    ("ecaml-allow-dump-calls-after-module-initialization" |> Symbol.intern)
+    [%here]
+    ~docstring:
+      {|Allow calls to Dump functions from this point forward.
+
+This is an internal function of no use to most people.|}
+    Dump.For_testing.allow_calls_after_module_initialization
 ;;
 
 let debug_embedded_caml_values () = Caml_embed.debug_sexp ()

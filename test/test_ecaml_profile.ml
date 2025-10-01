@@ -8,16 +8,28 @@ let sec = Time_ns.Span.of_sec
 
 module Clock = Profile.Private.Clock
 
-let test_setup ~f =
+let show_profile_and_flush () =
+  Current_buffer.set_temporarily Sync (Buffer.find_exn ~name:"*profile*") ~f:(fun () ->
+    let contents = Current_buffer.contents () in
+    Current_buffer.inhibit_read_only Sync (fun () -> Current_buffer.erase ());
+    contents)
+  |> Text.to_utf8_bytes
+  |> print_endline
+;;
+
+let test_setup_minimal ~f =
   let clock = Clock.create ~now:Time_ns.epoch in
-  Ref.sets_temporarily
-    [ T (Profile.should_profile, true)
-    ; T (Profile.hide_top_level_if_less_than, Time_ns.Span.zero)
-    ; T (Profile.hide_if_less_than, Time_ns.Span.zero)
-    ; T (Profile.output_profile, fun string -> message string)
-    ; T (Profile.Private.clock, clock)
-    ]
-    ~f:(fun () -> f clock)
+  Ref.sets_temporarily [ T (Profile.Private.clock, clock) ] ~f:(fun () -> f clock);
+  show_profile_and_flush ()
+;;
+
+let test_setup ~f =
+  test_setup_minimal ~f:(fun clock ->
+    Ref.sets_temporarily
+      [ T (Profile.hide_top_level_if_less_than, Time_ns.Span.zero)
+      ; T (Profile.hide_if_less_than, Time_ns.Span.zero)
+      ]
+      ~f:(fun () -> f clock))
 ;;
 
 let%expect_test _ =
@@ -48,19 +60,19 @@ let%expect_test _ =
 ;;
 
 let%expect_test "tag-frame-function" =
-  Current_buffer.set_value_temporarily
-    Sync
-    Ecaml_profile.Private.tag_function
-    (Some
-       (Defun.lambda_nullary [%here] (Returns Value.Type.string) (fun () -> "hello world")))
-    ~f:(fun () ->
-      Current_buffer.set_temporarily_to_temp_buffer Sync (fun () ->
-        test_setup ~f:(fun clock ->
-          profile Sync [%lazy_sexp "nest"] (fun () -> Clock.advance clock ~by:(sec 0.3)))));
+  test_setup_minimal ~f:(fun clock ->
+    Current_buffer.set_value_temporarily
+      Sync
+      Ecaml_profile.Private.tag_function
+      (Some
+         (Defun.lambda_nullary [%here] (Returns Value.Type.string) (fun () ->
+            "hello world")))
+      ~f:(fun () ->
+        profile Sync [%lazy_sexp "nest"] (fun () -> Clock.advance clock ~by:(sec 0.3))));
   [%expect
     {|
-    ((rendering_took 0us)
-     (300_000us (nest "hello world") (19:00:00.000000000-05:00 1969-12-31)))
+    (300_000us (eval (let ((ecaml-profile-tag-frame-function (quote ecaml-func-app/emacs/lib/ecaml/test/test_ecaml_profile.ml:68:31))) (funcall (quote ecaml-func-app/emacs/lib/ecaml/src/current_buffer0.ml:74:30)))) (19:00:00.000000000-05:00 1969-12-31) (
+       (100% 300_000us (nest "hello world"))))
     |}];
   return ()
 ;;

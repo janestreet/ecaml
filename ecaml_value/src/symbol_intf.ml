@@ -8,4 +8,7 @@ module type Symbol = sig
 
   val intern : string -> t
   val name : t -> string
+
+  (** [(describe-function 'make-symbol)]. *)
+  val create_uninterned : name:string -> t
 end

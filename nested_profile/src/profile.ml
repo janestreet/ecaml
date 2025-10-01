@@ -59,6 +59,12 @@ module Clock = struct
     | Wall -> raise_s [%message "[Nested_profile.Clock.advance]"]
     | Virtual s -> s.now <- Time_ns.add s.now by
   ;;
+
+  let is_virtual t =
+    match t with
+    | Wall -> false
+    | Virtual _ -> true
+  ;;
 end
 
 let clock = ref Clock.Wall

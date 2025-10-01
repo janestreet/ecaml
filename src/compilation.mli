@@ -2,7 +2,8 @@
 
 open! Core
 open! Import
-include Major_mode.S
+
+val major_mode : Major_mode.t
 
 (** [(describe-variable 'compilation-buffer-name-function)] *)
 val buffer_name_function : Function.t option Var.t

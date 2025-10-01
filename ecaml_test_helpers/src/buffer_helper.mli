@@ -10,30 +10,16 @@ val with_buffer_and_point
   -> f:(unit -> 'a)
   -> 'a
 
-val show_buffer : block_out:Position.t list -> unit
+val utf8_full_block_U2588 : string
+val utf8_upper_left_U259B : string
+val utf8_lower_right_U259F : string
+val show_buffer : block_out:(Position.t * string) list -> unit
 
 (** Print buffer contents with the point shown as a solid block. *)
 val show_point : unit -> unit
 
-module Region : sig
-  type t =
-    { start : Line_and_column.t
-    ; end_ : Line_and_column.t
-    }
-  [@@deriving sexp_of]
-end
-
-(** [with_buffer_and_active_region contents region ~f] runs [f] in a temp buffer with
-    [contents], mark at [region.start], and point at [region.end_]. *)
-val with_buffer_and_active_region
-  :  (_, 'a) Sync_or_async.t
-  -> string
-  -> Region.t
-  -> f:(unit -> 'a)
-  -> 'a
-
 (** Print buffer contents with the start and the end of the active region replaced by
-    solid blocks. *)
+    delimiter characters (double angle brackets). *)
 val show_active_region : unit -> unit
 
 (** Print buffer contents with the [before-string] and [after-string] properties from any

@@ -14,6 +14,9 @@ val eval_i : t -> unit Deferred.t
 (** [(describe-function 'read)] *)
 val read : string -> t
 
+(** Read the first complete Elisp form out of this buffer. *)
+val read_buffer : Core.Buffer.t -> t
+
 (** [eval_string string] = [eval (read string)] *)
 val eval_string : string -> Value.t Deferred.t
 
@@ -22,6 +25,7 @@ val string : string -> t
 val symbol : Symbol.t -> t
 val int : int -> t
 val quote : Value.t -> t
+val quoted_symbol : Symbol.t -> t
 val progn : t list -> t
 val let_ : (Symbol.t * t) list -> t -> t
 

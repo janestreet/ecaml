@@ -38,7 +38,7 @@ module Property : sig
   val filename : Filename.t t
   val front_context_string : string t
 
-  (** Typical use is to [defun] a handler and set [handler] to [Function.of_symbol].
+  (** Typical use is to [defun] a handler and set [handler] to [Function.of_symbol_exn].
 
       The property has type [Function.t t] so that we can deserialize values like
       [(lambda ...)] set from elisp. *)

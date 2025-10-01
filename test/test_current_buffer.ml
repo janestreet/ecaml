@@ -722,6 +722,7 @@ let%expect_test "[local_keymap], [set_local_keymap]" =
 ;;
 
 let%expect_test "[minor_mode_keymaps]" =
+  let view = Minor_mode.create ("view-mode" |> Symbol.intern) in
   set_temporarily_to_temp_buffer Sync (fun () ->
     Minor_mode.(enable view);
     print_s [%sexp (minor_mode_keymaps () : Keymap.t list)];
@@ -884,9 +885,11 @@ void f () {
 
 let%expect_test "[set_revert_buffer_function (Returns_deferred Value.Type.unit)]" =
   set_temporarily_to_temp_buffer Async (fun () ->
-    set_revert_buffer_function (Returns_deferred Value.Type.unit) (fun ~confirm ->
-      let%map () = Clock_ns.after (sec_ns 0.01) in
-      print_s [%message "called after pause" (confirm : bool)]);
+    Revert_buffer.set
+      (Current_buffer.get ())
+      (Revert_buffer.lambda (fun ~confirm ->
+         let%map () = Clock_ns.after (sec_ns 0.01) in
+         print_s [%message "called after pause" (confirm : bool)]));
     let%bind () = revert () in
     [%expect {| ("called after pause" (confirm false)) |}];
     let%bind () = revert () ~confirm:true in
@@ -1069,17 +1072,6 @@ let%expect_test "[set_temporarily] killing old buffer" =
   return ()
 ;;
 
-let%expect_test "[set_revert_buffer_function]" =
-  set_temporarily_to_temp_buffer Async (fun () ->
-    set_revert_buffer_function (Returns Value.Type.unit) (fun ~confirm ->
-      print_s [%message "called" (confirm : bool)]);
-    let%bind () = revert () in
-    [%expect {| (called (confirm false)) |}];
-    let%bind () = revert () ~confirm:true in
-    [%expect {| (called (confirm true)) |}];
-    return ())
-;;
-
 let%expect_test "[kill]" =
   let buffer = Buffer.create ~name:"z" in
   let show_live () = print_s [%sexp (Buffer.is_live buffer : bool)] in
@@ -1095,8 +1087,7 @@ let%expect_test "[kill]" =
 let%expect_test "[kill] with deferred kill hook" =
   let buffer = Buffer.create ~name:"z" in
   set buffer;
-  Ecaml.Hook.add
-    ~buffer_local:true
+  Ecaml.Hook.add_local
     Ecaml.Hook.kill_buffer
     (Ecaml.Hook.Function.create
        ("test-deferred-kill-hook" |> Symbol.intern)
@@ -1137,6 +1128,7 @@ let%expect_test "[bury]" =
      "#<buffer *Messages*>"
      "#<buffer b1>"
      "#<buffer b2>"
+     "#<buffer *profile*>"
      "#<buffer zzz>"
      "#<buffer z>")
     |}];
@@ -1147,6 +1139,7 @@ let%expect_test "[bury]" =
     ("#<buffer  *Minibuf-0*>"
      "#<buffer b1>"
      "#<buffer b2>"
+     "#<buffer *profile*>"
      "#<buffer zzz>"
      "#<buffer z>"
      "#<buffer *Messages*>")

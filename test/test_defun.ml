@@ -62,7 +62,9 @@ let%expect_test "[defun ~interactive:(Args _)]" =
     symbol
     [%here]
     ~docstring:"<docstring>"
-    ~interactive:(Args (fun () -> return [ 13 |> Value.of_int_exn ]))
+    ~interactive:
+      (Defun.defun_interactive_arg ("test--interactive-arg" |> Symbol.intern) (fun () ->
+         return [ 13 |> Value.of_int_exn ]))
     (Returns Value.Type.unit)
     (let%map_open.Defun () = return ()
      and arg = required "arg" int in
@@ -82,7 +84,7 @@ let%expect_test "[defun ~interactive:(Form _)]" =
     ~docstring:"<docstring>"
       (* Deliberately using a symbol to check that Interactive.list quotes it rather than
          evaluating it. *)
-    ~interactive:(Function.Interactive.list [ Value.intern "interactive" ])
+    ~interactive:(Defun.Interactive.list [ Value.intern "interactive" ])
     (Returns Value.Type.unit)
     (let%map_open.Defun () = return ()
      and arg = required "arg" Symbol.t in
@@ -241,10 +243,11 @@ let%expect_test "[lambda]" =
   in
   print_s [%sexp (retval : int)];
   [%expect {| 2 |}];
-  let docstring = Funcall.Wrap.("documentation" <: Function.t @-> return string) fn in
-  if not (String.is_prefix docstring ~prefix:"Implemented at")
-  then print_endline docstring;
-  [%expect {| |}];
+  let docstring =
+    Funcall.Wrap.("documentation" <: Function.t @-> return (nil_or string)) fn
+  in
+  print_s [%sexp (docstring : string option)];
+  [%expect {| () |}];
   return ()
 ;;
 

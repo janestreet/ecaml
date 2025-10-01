@@ -29,7 +29,10 @@ let%expect_test "[Raw_prefix_argument]" =
   return ()
 ;;
 
-let give_emacs_chance_to_signal () = ignore (Text.of_utf8_bytes "ignoreme" : Text.t)
+let give_emacs_chance_to_signal () =
+  ignore (Value.Expert.process_input () : Value.Expert.Process_input.t);
+  Value.Expert.raise_if_emacs_signaled ()
+;;
 
 let%expect_test "quit" =
   show_raise (fun () ->

@@ -29,8 +29,3 @@ val gid : unit -> int
 
 (** [(describe-function 'group-real-gid)] [(Info-goto-node "(elisp) User Identification")] *)
 val real_gid : unit -> int
-
-(** [(describe-variable 'user-init-file)] [(Info-goto-node "(elisp) Init File")]
-
-    May be None during startup or if Emacs was started with `-q' or `--no-init-file'. *)
-val init_file : Filename.t option Var.t

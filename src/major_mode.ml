@@ -1,7 +1,6 @@
 open! Core
 open! Import
 open! Async_kernel
-include Major_mode_intf
 module Hook = Hook0
 
 module Q = struct
@@ -10,36 +9,25 @@ module Q = struct
   let define_derived_mode = "define-derived-mode" |> Symbol.intern
 end
 
+module Auto_mode = struct
+  type t =
+    | If_filename_matches of Regexp.t
+    | If_filename_matches_then_delete_suffix_and_recur of Regexp.t
+end
+
 module Current_buffer = Current_buffer0
 
 type t =
   { wrapped_at : Source_code_position.t
   ; symbol : Symbol.t
   ; keymap_var : Keymap.t Var.t
-  ; name : (Name.t[@sexp.opaque])
   ; hook : (Hook.normal, unit) Hook.t Or_error.t
-  ; syntax_table_var : Syntax_table.t Var.t
   }
 [@@deriving fields ~getters ~fields, sexp_of]
 
 let equal t1 t2 = Symbol.equal t1.symbol t2.symbol
 let compare_name t1 t2 = Symbol.compare_name t1.symbol t2.symbol
 let t_by_symbol : t String.Table.t = Hashtbl.create (module String)
-
-include Intf (struct
-    type nonrec t = t
-  end)
-
-module Compare_by_name = struct
-  type nonrec t = t [@@deriving sexp_of]
-
-  let to_string = symbol >> Symbol.name
-  let hash = to_string >> String.hash
-  let hash_fold_t state t = String.hash_fold_t state (to_string t)
-  let equal t1 t2 = String.equal (to_string t1) (to_string t2)
-  let compare a b = Comparable.lift String.compare ~f:to_string a b
-end
-
 let major_mode_var = Buffer_local.Wrap.("major-mode" <: Symbol.t)
 
 module Blocking = struct
@@ -54,7 +42,7 @@ let change_to t ~in_ =
     Blocking.change_to t ~in_)
 ;;
 
-let add wrapped_at name symbol =
+let add wrapped_at symbol =
   let hook =
     let fundamental_mode = Symbol.intern "fundamental-mode" in
     match [%compare.equal: Symbol.Compare_name.t] symbol fundamental_mode with
@@ -65,61 +53,42 @@ let add wrapped_at name symbol =
           {|fundamental-mode has no mode hook. [(Info-goto-node "(elisp) Major Modes")]|}]
   in
   let keymap_var = Var.Wrap.([%string "%{Symbol.name symbol}-map"] <: Keymap.t) in
-  let syntax_table_var =
-    Var.Wrap.([%string "%{Symbol.name symbol}-syntax-table"] <: Syntax_table.t)
-  in
-  let t = { wrapped_at; symbol; keymap_var; name; hook; syntax_table_var } in
+  let t = { wrapped_at; symbol; keymap_var; hook } in
   Hashtbl.add_exn t_by_symbol ~key:(symbol |> Symbol.name) ~data:t;
   t
 ;;
 
 let keymap t = t.keymap_var
-let syntax_table t = Current_buffer.value_exn t.syntax_table_var
 
-let wrap_existing ~here:(wrapped_at : [%call_pos]) name : (module S) =
-  (module struct
-    type Name.t += Major_mode
-
-    let major_mode =
-      match Hashtbl.find t_by_symbol name with
-      | None -> add wrapped_at Major_mode (name |> Symbol.intern)
-      | Some t ->
-        raise_s
-          [%message
-            "Already associated with a name."
-              (name : string)
-              (wrapped_at : Source_code_position.t)
-              ~previous_def:(t : t)]
-    ;;
-
-    let keymap = major_mode.keymap_var
-
-    let enabled_in_current_buffer () =
-      Buffer_local.get major_mode_var (Current_buffer0.get ())
-      |> Symbol.name
-      |> String.( = ) name
-    ;;
-  end)
+let wrap_existing ~here:(wrapped_at : [%call_pos]) name : t =
+  match Hashtbl.find t_by_symbol name with
+  | None -> add wrapped_at (name |> Symbol.intern)
+  | Some t ->
+    raise_s
+      [%message
+        "Already associated with a name."
+          (name : string)
+          (wrapped_at : Source_code_position.t)
+          ~previous_def:(t : t)]
 ;;
 
 let find_or_wrap_existing ~(here : [%call_pos]) symbol =
   match Hashtbl.find t_by_symbol (symbol |> Symbol.name) with
   | Some t -> t
-  | None -> add here Name.Undistinguished symbol
+  | None -> add here symbol
 ;;
 
-module Fundamental = (val wrap_existing "fundamental-mode")
-module Prog = (val wrap_existing "prog-mode")
-module Special = (val wrap_existing "special-mode")
-module Text = (val wrap_existing "text-mode")
-module Tuareg = (val wrap_existing "tuareg-mode")
-module Makefile = (val wrap_existing "makefile-mode")
-module Lisp_data = (val wrap_existing "lisp-data-mode")
-module Scheme = (val wrap_existing "scheme-mode")
-module Emacs_lisp = (val wrap_existing "emacs-lisp-mode")
-module Asm = (val wrap_existing "asm-mode")
-module Python = (val wrap_existing "python-mode")
-
+let fundamental = wrap_existing "fundamental-mode"
+let prog = wrap_existing "prog-mode"
+let special = wrap_existing "special-mode"
+let text = wrap_existing "text-mode"
+let tuareg = wrap_existing "tuareg-mode"
+let makefile = wrap_existing "makefile-mode"
+let lisp_data = wrap_existing "lisp-data-mode"
+let scheme = wrap_existing "scheme-mode"
+let emacs_lisp = wrap_existing "emacs-lisp-mode"
+let asm = wrap_existing "asm-mode"
+let python = wrap_existing "python-mode"
 let all_derived_modes = ref []
 
 module For_testing = struct
@@ -169,35 +138,42 @@ let define_derived_mode
   in
   let docstring = docstring |> String.strip in
   require_nonempty_docstring here ~docstring;
-  let initialize_fn =
-    match initialize with
-    | None -> Defun.lambda_nullary_nil here Fn.id
-    | Some (returns, f) -> Defun.lambda_nullary here returns f
+  let initialize =
+    Option.map initialize ~f:(fun (returns, f) ->
+      Defun.defun_func
+        ([%string "%{Symbol.name symbol}--init"] |> Symbol.intern)
+        here
+        ~docstring:[%string "Initializer for %{Symbol.name symbol}"]
+        returns
+        (let%map_open.Defun () = return () in
+         f ())
+      |> Function.to_value
+      |> Symbol.of_value_exn)
   in
-  let init = [%string "%{Symbol.name symbol}--init"] |> Symbol.intern in
-  Dump.defalias ~here init (Function.to_value initialize_fn);
   Dump.eval_and_dump ~here (fun () ->
     Form.list
-      [ Q.define_derived_mode |> Form.symbol
-      ; symbol |> Form.symbol
-      ; (match parent with
-         | None -> Form.nil
-         | Some t -> Field.get Fields.symbol t |> Form.symbol)
-      ; mode_line |> Form.string
-      ; docstring |> Form.string
-      ; Form.apply init []
-      ]);
+      ([ Q.define_derived_mode |> Form.symbol
+       ; symbol |> Form.symbol
+       ; (match parent with
+          | None -> Form.nil
+          | Some t -> Field.get Fields.symbol t |> Form.symbol)
+       ; mode_line |> Form.string
+       ; docstring |> Form.string
+       ]
+       @
+       match initialize with
+       | None -> []
+       | Some fn -> [ Form.apply fn [] ]));
   Load_history.add_entry here (Fun symbol);
   List.iter [ "abbrev-table"; "hook"; "map"; "syntax-table" ] ~f:(fun suffix ->
     Load_history.add_entry
       here
       (Var ([%string "%{Symbol.name symbol}-%{suffix}"] |> Symbol.intern)));
-  let m = wrap_existing ~here (symbol |> Symbol.name) in
-  let module M = (val m) in
-  Dump.keymap_set ~here (keymap M.major_mode) define_keys;
-  all_derived_modes := M.major_mode :: !all_derived_modes;
+  let major_mode = wrap_existing ~here (symbol |> Symbol.name) in
+  Dump.keymap_set ~here (keymap major_mode) define_keys;
+  all_derived_modes := major_mode :: !all_derived_modes;
   Option.iter auto_mode ~f:(add_auto_mode ~symbol);
-  m
+  major_mode
 ;;
 
 let provided_mode_derived_p =

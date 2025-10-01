@@ -6,6 +6,11 @@ include Defun_intf
 module Q = struct
   include Q
 
+  let apply = "apply" |> Symbol.intern
+  let interactive = "interactive" |> Symbol.intern
+  let ecaml_module_function = "ecaml-module-function" |> Symbol.intern
+  let get = "get" |> Symbol.intern
+
   module A = struct
     let optional = "&optional" |> Symbol.intern
     let rest = "&rest" |> Symbol.intern
@@ -135,6 +140,14 @@ module Args = struct
     ; rest : Symbol.t option
     }
 
+  let min_args t = List.length t.required
+
+  let max_args t =
+    match t.rest with
+    | Some _ -> None
+    | None -> Some (List.length t.required + List.length t.optional)
+  ;;
+
   let sexp_of_t { required; optional; rest } =
     [%sexp
       (List.concat
@@ -248,25 +261,84 @@ let define_obsolete_alias obsolete ~(here : [%call_pos]) ?docstring ~alias_of ~s
   Obsolete.make_function_obsolete obsolete ~current:(Some alias_of) ~since
 ;;
 
-let defun_raw symbol here ~docstring ?interactive ~args ?optional_args ?rest_arg f =
-  let docstring = String.strip docstring in
-  require_nonempty_docstring here ~docstring;
-  defalias
-    symbol
-    ~here
-    ~alias_of:
-      (Function.create here ~docstring ?interactive ~args ?optional_args ?rest_arg f
-       |> Function.to_value)
-    ()
-;;
+module Interactive = struct
+  type t =
+    | Args of Function.t
+    | Form of Form.t
+    | Function_name of { prompt : string }
+    | Ignored
+    | No_arg
+    | Prompt of string
+    | Raw_prefix
+    | Prefix
+    | Region
 
-let maybe_disable_function name disabled =
-  (* the user may have explicitly put [disabled nil] for the symbol to undisable the
-     function before we define it. So we check for that first *)
-  let open Symbol.Property in
-  match get function_disabled name with
-  | Some _ -> ()
-  | None -> put function_disabled name disabled
+  let to_form = function
+    | Args func -> Form.apply Q.funcall [ Function.to_value func |> Form.quote ]
+    | Form form -> form
+    | Function_name { prompt } -> sprintf "a%s" prompt |> Form.string
+    | Ignored -> "i" |> Form.string
+    | No_arg -> "" |> Form.string
+    | Prompt prompt -> sprintf "s%s" prompt |> Form.string
+    | Raw_prefix -> "P" |> Form.string
+    | Prefix -> "p" |> Form.string
+    | Region -> "r" |> Form.string
+  ;;
+
+  let list vals = Form (Form.apply Q.list (List.map ~f:Form.quote vals))
+end
+
+let ecaml_module_function = Symbol.Property.create Q.ecaml_module_function Function.t
+
+let defun_raw
+  symbol
+  here
+  ~docstring
+  ?interactive
+  ~args
+  ?(optional_args = [])
+  ?rest_arg
+  func
+  =
+  Symbol.Property.put ecaml_module_function symbol func;
+  Dump.eval_and_dump ~here (fun () ->
+    let module_function_form =
+      Form.apply
+        Q.get
+        [ Form.quoted_symbol symbol; Form.quoted_symbol Q.ecaml_module_function ]
+    in
+    let docstring = docstring |> String.strip |> String.capitalize in
+    require_nonempty_docstring here ~docstring;
+    if String.mem docstring '\000'
+    then raise_s [%message "docstring contains a NUL byte" (docstring : string)];
+    Form.apply
+      Q.defun
+      ([ Form.symbol symbol
+       ; Form.list
+           (List.map
+              ~f:Form.symbol
+              (args
+               @ (match optional_args with
+                  | [] -> []
+                  | optional_args -> Q.A.optional :: optional_args)
+               @ Option.value_map rest_arg ~default:[] ~f:(fun rest_arg ->
+                 [ Q.A.rest; rest_arg ])))
+       ; Form.string docstring
+       ]
+       @ (Option.map interactive ~f:(fun interactive ->
+            Form.list [ Form.symbol Q.interactive; Interactive.to_form interactive ])
+          |> Option.to_list)
+       @ [ Form.apply
+             Q.apply
+             ([ module_function_form ]
+              @ List.map ~f:Form.symbol (args @ optional_args)
+              @ [ rest_arg |> Option.map ~f:Form.symbol |> Option.value ~default:Form.nil
+                ])
+         ]));
+  add_to_load_history symbol here;
+  (* Since the defun form was dumped, this symbol isn't actually a functionp yet, so we
+     can't use of_symbol_exn which checks that. *)
+  Function.of_symbol_unsafe symbol
 ;;
 
 let defun_internal
@@ -276,7 +348,6 @@ let defun_internal
   ?(define_keys = [])
   ?(obsoletes : Obsoletes.t option)
   ?interactive
-  ?(disabled = Symbol.Disabled.Not_disabled)
   t
   fn
   =
@@ -289,20 +360,61 @@ let defun_internal
       | Some { new_; since } -> new_, Some (symbol, Since since))
   in
   let args = get_args t in
-  defun_raw
-    symbol
-    here
-    ~docstring
-    ?interactive
-    ~args:args.required
-    ~optional_args:args.optional
-    ?rest_arg:args.rest
-    fn;
+  let func =
+    defun_raw
+      symbol
+      here
+      ~docstring
+      ?interactive
+      ~args:args.required
+      ~optional_args:args.optional
+      ?rest_arg:args.rest
+      (Function.of_ocaml_funcN_M
+         here
+         ~min_args:(Args.min_args args)
+         ~max_args:(Args.max_args args)
+         fn)
+  in
   List.iter define_keys ~f:(fun (keymap, keys) ->
     Dump.keymap_set ~here keymap [ keys, symbol ]);
   Option.iter obsoletes ~f:(fun (obsolete, Since since) ->
     define_obsolete_alias obsolete ~here ~alias_of:symbol ~since ());
-  maybe_disable_function symbol disabled
+  func
+;;
+
+let defun_func
+  symbol
+  here
+  ~docstring
+  ?define_keys
+  ?obsoletes
+  ?should_profile
+  ?interactive
+  returns
+  t
+  =
+  let function_ = [%sexp (symbol : Symbol.t)] in
+  defun_internal
+    ~docstring
+    ?define_keys
+    ?obsoletes
+    ?interactive
+    symbol
+    here
+    t
+    (fun args -> call t here ~function_ ~args ~returns ~should_profile)
+;;
+
+let defun_interactive_arg symbol ~(here : [%call_pos]) f =
+  Interactive.Args
+    (defun_func
+       symbol
+       here
+       ~docstring:"Return arguments for an interactive function call."
+       (Returns_deferred (Value.Type.list Value.Type.value))
+       (let open Let_syntax in
+        let%map_open () = return () in
+        f ()))
 ;;
 
 let defun
@@ -313,24 +425,21 @@ let defun
   ?obsoletes
   ?should_profile
   ?interactive
-  ?disabled
-  ?evil_config
   returns
   t
   =
-  let function_ = [%sexp (symbol : Symbol.t)] in
-  defun_internal
-    ~docstring
-    ?define_keys
-    ?obsoletes
-    ?interactive
-    ?disabled
-    symbol
-    here
-    t
-    (fun args -> call t here ~function_ ~args ~returns ~should_profile);
-  Option.iter evil_config ~f:(fun evil_config ->
-    Evil.Config.apply_to_defun evil_config symbol)
+  (defun_func
+     symbol
+     here
+     ~docstring
+     ?define_keys
+     ?obsoletes
+     ?should_profile
+     ?interactive
+     returns
+     t
+   : Function.t)
+  |> ignore
 ;;
 
 let defun_nullary
@@ -341,8 +450,6 @@ let defun_nullary
   ?obsoletes
   ?should_profile
   ?interactive
-  ?disabled
-  ?evil_config
   returns
   f
   =
@@ -354,8 +461,6 @@ let defun_nullary
     ?obsoletes
     ?should_profile
     ?interactive
-    ?disabled
-    ?evil_config
     returns
     (let open Let_syntax in
      let%map_open () = return () in
@@ -370,8 +475,6 @@ let defun_nullary_nil
   ?obsoletes
   ?should_profile
   ?interactive
-  ?disabled
-  ?evil_config
   f
   =
   defun_nullary
@@ -382,38 +485,29 @@ let defun_nullary_nil
     ?obsoletes
     ?should_profile
     ?interactive
-    ?disabled
-    ?evil_config
     (Returns Value.Type.unit)
     f
 ;;
 
-let lambda here ?docstring ?interactive returns t =
+let lambda here returns t =
   let args = get_args t in
   let function_ =
     [%message "lambda" ~_:(args : Args.t) ~created_at:(here : Source_code_position.t)]
   in
-  Function.create
+  Function.of_ocaml_funcN_M
     here
-    ?docstring
-    ?interactive
-    ~optional_args:args.optional
-    ?rest_arg:args.rest
-    ~args:args.required
+    ~min_args:(Args.min_args args)
+    ~max_args:(Args.max_args args)
     (fun args -> call t here ~function_ ~args ~returns ~should_profile:None)
 ;;
 
-let lambda_nullary here ?docstring ?interactive returns f =
+let lambda_nullary here returns f =
   lambda
     here
-    ?docstring
-    ?interactive
     returns
     (let open Let_syntax in
      let%map_open () = return () in
      f ())
 ;;
 
-let lambda_nullary_nil here ?docstring ?interactive f =
-  lambda_nullary here ?docstring ?interactive (Returns Value.Type.unit) f
-;;
+let lambda_nullary_nil here f = lambda_nullary here (Returns Value.Type.unit) f

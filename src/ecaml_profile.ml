@@ -45,37 +45,40 @@ Prompt the user before killing the *profile* buffer and losing data.
     ~hook_type:Query_function
     (Returns_deferred Value.Type.bool)
     (fun () ->
-       Minibuffer.yes_or_no
-         ~prompt:
-           (Documentation.O.(
-              substitute_command_keys
-                [%string
-                  {|Killing the profile buffer loses data, and is probably not what you meant.
+       if am_running_test
+       then return true
+       else
+         Minibuffer.yes_or_no
+           ~prompt:
+             (Documentation.O.(
+                substitute_command_keys
+                  [%string
+                    {|Killing the profile buffer loses data, and is probably not what you meant.
 
 Consider pressing \[quit-window] instead.
 
 Kill the profile buffer? |}])
-            |> Text.to_utf8_bytes))
+              |> Text.to_utf8_bytes))
 ;;
 
-include
-  (val Major_mode.define_derived_mode
-         ("ecaml-profile-mode" |> Symbol.intern)
-         [%here]
-         ~docstring:
-           {|
+let major_mode =
+  Major_mode.define_derived_mode
+    ("ecaml-profile-mode" |> Symbol.intern)
+    [%here]
+    ~docstring:
+      {|
 The major mode for the *profile* buffer, which holds a log of Ecaml profile output.
 |}
-         ~parent:Major_mode.Special.major_mode
-         ~mode_line:"ecaml-profile"
-         ~initialize:
-           ( Returns Value.Type.unit
-           , fun () ->
-               Hook.add
-                 ~buffer_local:true
-                 Buffer.kill_buffer_query_functions
-                 profile_kill_buffer_query_function )
-         ())
+    ~parent:Major_mode.special
+    ~mode_line:"ecaml-profile"
+    ~initialize:
+      ( Returns Value.Type.unit
+      , fun () ->
+          Hook.add_local
+            Buffer.kill_buffer_query_functions
+            profile_kill_buffer_query_function )
+    ()
+;;
 
 module Start_location = struct
   include Profile.Start_location
@@ -102,25 +105,21 @@ end = struct
   let initialize_profile_buffer () =
     profile_buffer := Initializing;
     let buffer = Buffer.create ~name:"*profile*" in
-    Background.don't_wait_for (fun () ->
-      let%bind () = Major_mode.change_to major_mode ~in_:buffer in
-      Buffer_local.set Current_buffer.truncate_lines true buffer;
-      profile_buffer := This buffer;
-      return ())
+    Major_mode.Blocking.change_to major_mode ~in_:buffer;
+    Buffer_local.set Current_buffer.truncate_lines true buffer;
+    (* Force it to be in ~ to avoid inheriting the default-directory from wherever we
+       first called into the profiler. *)
+    Buffer_local.set Current_buffer.directory (Some "~/") buffer;
+    profile_buffer := This buffer;
+    Some buffer
   ;;
 
   let profile_buffer () =
     match !profile_buffer with
     | Initializing -> None
-    | Absent ->
-      initialize_profile_buffer ();
-      None
+    | Absent -> initialize_profile_buffer ()
     | This buffer ->
-      if Buffer.is_live buffer
-      then Some buffer
-      else (
-        initialize_profile_buffer ();
-        None)
+      if Buffer.is_live buffer then Some buffer else initialize_profile_buffer ()
   ;;
 end
 
@@ -157,7 +156,7 @@ let () =
       ~group:Customization.Group.ecaml
       ~type_:Value.Type.bool
       ~customization_type:Boolean
-      ~standard_value:(System.is_interactive ())
+      ~standard_value:true
       ~on_set:(fun bool -> Profile.should_profile := bool)
       ()
   in
@@ -187,10 +186,6 @@ let () =
         Profile.hide_top_level_if_less_than := string |> Time_ns.Span.of_string)
       ()
   in
-  if System.is_interactive ()
-  then
-    (* We start initializing the profile buffer, so that it exists when we need it. *)
-    ignore (Profile_buffer.profile_buffer () : Buffer.t option);
   (Profile.Private.on_async_out_of_order
    := fun (lazy sexp) -> Echo_area.inhibit_messages Sync (fun () -> message_s sexp));
   (Profile.sexp_of_time_ns
@@ -246,13 +241,13 @@ Called by `post-gc-hook' to add Elisp GC information to the Ecaml profiler.
             let clock = !Profile.Private.clock in
             let gc_elapsed = Elisp_gc.gc_elapsed () in
             let gc_took =
-              if not am_running_test
-              then Time_ns.Span.( - ) gc_elapsed !last_gc_elapsed
-              else (
+              if Clock.is_virtual clock
+              then (
                 (* A fixed time, to make test output deterministic. *)
                 let took = 10 |> Time_ns.Span.of_int_ms in
                 Clock.advance clock ~by:took;
                 took)
+              else Time_ns.Span.( - ) gc_elapsed !last_gc_elapsed
             in
             last_gc_elapsed := gc_elapsed;
             let stop = Clock.now clock in

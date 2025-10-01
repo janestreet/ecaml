@@ -12,9 +12,6 @@ val register
   -> should_run_holding_async_lock:bool
   -> unit
 
-(** [dispatch_function] is how Emacs calls from C to OCaml. *)
-val dispatch_function : (Caml_embedded_id.t -> Value.t array -> Value.t) t
-
 (** The C code arranges to call [end_of_module_initialization] at the end of
     [emacs_module_init], which is what Emacs calls to initialize an Ecaml plugin. This is
     after all the other top-level OCaml code has run.

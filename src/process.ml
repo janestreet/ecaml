@@ -163,7 +163,6 @@ let create_unix_network_process
         ; Function.to_value
             (Defun.lambda
                here
-               ~docstring:[%string "Network process filter for \"%{name}\"."]
                (Returns Value.Type.unit)
                (let%map_open.Defun () = return ()
                 and process = required "process" t

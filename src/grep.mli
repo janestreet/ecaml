@@ -6,21 +6,11 @@
 
 open! Core
 open! Import
-include Major_mode.S
 
-(** [(describe-function 'grep)] [(Info-goto-node "(emacs)Grep Searching")] *)
+val major_mode : Major_mode.t
+
+(** Run [command] and report its output in a grep-mode buffer. *)
 val grep : command:string -> unit
-
-module Save_buffers : sig
-  type t =
-    | Ask
-    | False
-    | True
-  [@@deriving sexp_of]
-end
 
 (** [(describe-variable 'grep-last-buffer)] *)
 val last_buffer : Buffer.t option Var.t
-
-(** [(describe-variable 'grep-save-buffers)] *)
-val save_buffers : Save_buffers.t Customization.t

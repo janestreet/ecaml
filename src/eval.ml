@@ -7,7 +7,7 @@ end
 
 let after_load ~(here : [%call_pos]) feature ~f =
   let fn =
-    Function.create here ~args:[] (fun _ ->
+    Function.of_ocaml_func0 here (fun () ->
       f ();
       Value.nil)
   in

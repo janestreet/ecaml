@@ -128,6 +128,7 @@ module Must_check_exit = struct
   external vec_get : t -> int -> t = "ecaml_vec_get"
   external vec_set : t -> int -> t -> unit = "ecaml_vec_set"
   external vec_size : t -> int = "ecaml_vec_size"
+  external of_buffer_contents : Buffer.t -> t = "ecaml_unibyte_of_buffer"
 end
 [@@alert
   must_check_exit
@@ -202,6 +203,7 @@ module Have_checked_exit = struct
   let vec_get = wrap_raise2 vec_get
   let vec_set = wrap_raise3 vec_set
   let vec_size = wrap_raise1 vec_size
+  let of_buffer_contents = wrap_raise1 of_buffer_contents
 end
 
 include Have_checked_exit
@@ -254,7 +256,6 @@ module Q = struct
   let substring_no_properties = "substring-no-properties" |> intern
   let symbol_value = "symbol-value" |> intern
   let symbolp = "symbolp" |> intern
-  let syntax_table_p = "syntax-table-p" |> intern
   let t = "t" |> intern
   let timerp = "timerp" |> intern
   let vector = "vector" |> intern
@@ -457,6 +458,7 @@ let unibyte_of_string = unibyte_of_string
    That's what string-as-multibyte does when passed a unibyte string.
 *)
 let of_utf8_bytes s = funcall1 Q.string_as_multibyte (unibyte_of_string s)
+let of_buffer_contents buf = of_buffer_contents buf
 let of_utf8_bytes_cached = Memo.general ~hashable:String.hashable of_utf8_bytes
 
 let of_utf8_bytes_replacing_invalid str =
@@ -473,7 +475,8 @@ let of_utf8_bytes_replacing_invalid str =
       None
       str
   in
-  of_utf8_bytes (Buffer.contents buffer), `First_malformed first_malformed
+  ( funcall1 Q.string_as_multibyte (of_buffer_contents buffer)
+  , `First_malformed first_malformed )
 ;;
 
 let percent_s = of_utf8_bytes "%s"
@@ -512,7 +515,6 @@ let is_marker t = funcall1 Q.markerp t |> to_bool
 let is_process t = funcall1 Q.processp t |> to_bool
 let is_string t = funcall1 Q.stringp t |> to_bool
 let is_symbol t = funcall1 Q.symbolp t |> to_bool
-let is_syntax_table t = funcall1 Q.syntax_table_p t |> to_bool
 let is_timer t = funcall1 Q.timerp t |> to_bool
 let is_vector t = funcall1 Q.vectorp t |> to_bool
 let is_window t = funcall1 Q.windowp t |> to_bool
@@ -998,23 +1000,27 @@ end
 
 module Stat = struct
   type t =
-    { emacs_free_performed : int
-    ; emacs_free_scheduled : int
+    { free_performed : int
+    ; free_scheduled : int
+    ; root_allocated : int
     }
   [@@deriving sexp_of]
 
   external num_emacs_free_performed : unit -> int = "ecaml_num_emacs_free_performed"
   external num_emacs_free_scheduled : unit -> int = "ecaml_num_emacs_free_scheduled"
+  external num_emacs_root_allocated : unit -> int = "ecaml_num_emacs_root_allocated"
 
   let now () =
-    { emacs_free_performed = num_emacs_free_performed ()
-    ; emacs_free_scheduled = num_emacs_free_scheduled ()
+    { free_performed = num_emacs_free_performed ()
+    ; free_scheduled = num_emacs_free_scheduled ()
+    ; root_allocated = num_emacs_root_allocated ()
     }
   ;;
 
   let diff t2 t1 =
-    { emacs_free_performed = t2.emacs_free_performed - t1.emacs_free_performed
-    ; emacs_free_scheduled = t2.emacs_free_scheduled - t1.emacs_free_scheduled
+    { free_performed = t2.free_performed - t1.free_performed
+    ; free_scheduled = t2.free_scheduled - t1.free_scheduled
+    ; root_allocated = t2.root_allocated - t1.root_allocated
     }
   ;;
 end

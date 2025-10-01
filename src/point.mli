@@ -29,6 +29,12 @@ val max : unit -> Position.t
 (** [(describe-function 'goto-char)]. *)
 val goto_char : Position.t -> unit
 
+(** Like [goto_char], but widen the buffer automatically if the target position is not in
+    the accessible region of the buffer, and [widen-automatically] is non-nil.
+
+    [(describe-variable 'widen-automatically)] *)
+val goto_char_maybe_widen : Position.t -> unit
+
 val goto_line_and_column : Line_and_column.t -> unit
 
 (** [goto_max () = goto_char (max ())] *)
@@ -107,6 +113,9 @@ val following_char : unit -> Char_code.t
 (** [line_number] returns the line number of the character after point, where the first
     line of the buffer is line [1].
 
+    This function always returns the absolute line number, regardless of any buffer
+    narrowing. See the ABSOLUTE argument to [line-number-at-pos].
+
     - [(describe-function 'line-number-at-pos)]
     - [(Info-goto-node "(elisp)Text Lines")] *)
 val line_number : unit -> int
@@ -123,13 +132,19 @@ val is_end_of_buffer : unit -> bool
     - [(Info-goto-node "(elisp)Columns")] *)
 val column_number : unit -> int
 
-(** [goto_column c] moves point to column [c] on the current line.
+(** [goto_column c] moves point to column [c] on the current line, where the beginning of
+    the line is column 0.
 
     - [(describe-function 'move-to-column)]
     - [(Info-goto-node "(elisp)Columns")] *)
 val goto_column : int -> unit
 
-(** [goto_line l = goto_min (); forward_line (l - 1)] *)
+val position_of_line_and_column : Line_and_column.t -> Position.t
+
+(** [goto_line l] moves point to the beginning of line number [l], where the first line in
+    the buffer is numbered 1.
+
+    [(describe-function 'goto-line)] *)
 val goto_line : int -> unit
 
 (** [(describe-function 'indent-line-to)] *)

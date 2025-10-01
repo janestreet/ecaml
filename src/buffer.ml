@@ -67,6 +67,7 @@ let displayed_in ?(current_frame_only = false) t =
 
 let display = Funcall.Wrap.("display-buffer" <: t @-> return (nil_or Window.t))
 let display_i t = ignore (display t : Window0.t option)
+let view t = Value.Private.run_outside_async (fun () -> Blocking.view t)
 
 let buffer_local_value =
   Funcall.Wrap.("buffer-local-value" <: Symbol.t @-> t @-> return value)
@@ -108,7 +109,7 @@ module Which_buffers = struct
   let to_value = function
     | File_visiting -> Value.nil
     | These f ->
-      Function.create [%here] ~args:[] (fun _ ->
+      Function.of_ocaml_func0 [%here] (fun () ->
         let buffer = Current_buffer0.get () in
         try f buffer |> Value.of_bool with
         | exn -> raise_s [%message "[Which_buffers.These]" (buffer : buffer) (exn : exn)])

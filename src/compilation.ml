@@ -1,6 +1,7 @@
 open! Core
 open! Import
-include (val Major_mode.wrap_existing "compilation-mode")
+
+let major_mode = Major_mode.wrap_existing "compilation-mode"
 
 let buffer_name_function =
   Var.Wrap.("compilation-buffer-name-function" <: nil_or Function.t)

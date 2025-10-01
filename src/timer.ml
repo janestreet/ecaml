@@ -15,31 +15,23 @@ let is_scheduled t = memq t (Current_buffer.value_exn timer_list_as_value)
 let to_seconds span = span |> Time_ns.Span.to_sec
 
 let run_at_time =
-  Funcall.Wrap.("run-at-time" <: float @-> nil_or float @-> Symbol.t @-> return t)
+  Funcall.Wrap.("run-at-time" <: float @-> nil_or float @-> Function.t @-> return t)
 ;;
 
 let run_with_idle_timer =
-  Funcall.Wrap.("run-with-idle-timer" <: float @-> nil_or float @-> Symbol.t @-> return t)
+  Funcall.Wrap.(
+    "run-with-idle-timer" <: float @-> nil_or float @-> Function.t @-> return t)
 ;;
 
-let run_with_timer ~idle ?repeat ~(here : [%call_pos]) span ~f ~name ~docstring =
-  Defun.defun_nullary_nil name here ~docstring f;
+let run_with_timer ~idle ?repeat span func =
   let make_timer = if idle then run_with_idle_timer else run_at_time in
-  make_timer (span |> to_seconds) (repeat |> Option.map ~f:to_seconds) name
+  make_timer (span |> to_seconds) (repeat |> Option.map ~f:to_seconds) func
 ;;
 
 let run_after = run_with_timer ~idle:false
-
-let run_after_i ?repeat ~(here : [%call_pos]) span ~f ~name ~docstring =
-  ignore (run_after ~here ?repeat span ~f ~name ~docstring : t)
-;;
-
+let run_after_i ?repeat span func = ignore (run_after ?repeat span func : t)
 let run_after_idle = run_with_timer ~idle:true
-
-let run_after_idle_i ?repeat ~(here : [%call_pos]) span ~f ~name ~docstring =
-  ignore (run_after_idle ~here ?repeat span ~f ~name ~docstring : t)
-;;
-
+let run_after_idle_i ?repeat span func = ignore (run_after_idle ?repeat span func : t)
 let cancel = Funcall.Wrap.("cancel-timer" <: t @-> return nil)
 
 let sit_for =

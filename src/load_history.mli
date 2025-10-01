@@ -7,7 +7,6 @@
 
 open! Core
 open! Import0
-module Face = Face0
 
 (** [(describe-function 'symbol-file)] *)
 val defining_file : Symbol.t -> string option
@@ -16,7 +15,7 @@ val defining_file : Symbol.t -> string option
 module Entry : sig
   type t =
     | Autoload of Symbol.t
-    | Face of Face.t
+    | Face of Symbol.t
     | Fun of Symbol.t
     | Previously_an_autoload of Symbol.t
     | Provide of Symbol.t

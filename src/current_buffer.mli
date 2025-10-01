@@ -183,9 +183,9 @@ val delete_region : start:Position.t -> end_:Position.t -> unit
 (** [(describe-function 'kill-region)] *)
 val kill_region : start:Position.t -> end_:Position.t -> unit
 
-(** - [(describe-function 'widen)]
+(** - [(describe-function 'narrow-to-region)]
     - [(Info-goto-node "(elisp)Narrowing")] *)
-val widen : unit -> unit
+val narrow_to_region : start:Position.t -> end_:Position.t -> unit
 
 (** [(describe-function 'save-current-buffer)] *)
 val save_current_buffer
@@ -249,6 +249,9 @@ val set_text_properties_staged
 (** [(describe-function 'get-text-property)] *)
 val get_text_property : Position.t -> 'a Text.Property_name.t -> 'a option
 
+(** [(describe-function 'get-char-property)] *)
+val get_char_property : Position.t -> 'a Text.Property_name.t -> 'a option
+
 (** - [(describe-function 'add-text-properties)]
     - [(Info-goto-node "(elisp)Changing Properties")]. *)
 val add_text_properties
@@ -309,18 +312,6 @@ val active_region : unit -> (Position.t * Position.t) option
     - [(Info-goto-node "(elisp)The Mark")] *)
 val deactivate_mark : unit -> unit
 
-(** - [(describe-function 'char-syntax)]
-    - [(Info-goto-node "(elisp)Syntax Table Functions")] *)
-val syntax_class : Char_code.t -> Syntax_table.Class.t
-
-(** - [(describe-function 'syntax-table)]
-    - [(Info-goto-node "(elisp)Syntax Table Functions")] *)
-val syntax_table : unit -> Syntax_table.t
-
-(** - [(describe-function 'set-syntax-table)]
-    - [(Info-goto-node "(elisp)Syntax Table Functions")] *)
-val set_syntax_table : Syntax_table.t -> unit
-
 (** [(describe-function 'flush-lines)] *)
 val delete_lines_matching
   :  ?start:Position.t (** default is [Point.min ()] *)
@@ -354,13 +345,6 @@ val indent_region
 (** - [(describe-function 'revert-buffer)]
     - [(Info-goto-node "(elisp)Reverting")] *)
 val revert : ?confirm:bool (** default is [false] *) -> unit -> unit Deferred.t
-
-(** [(describe-variable 'revert-buffer-function)] *)
-val set_revert_buffer_function
-  :  here:[%call_pos]
-  -> (unit, 'a) Defun.Returns.t
-  -> (confirm:bool -> 'a)
-  -> unit
 
 (** [(describe-function 'replace-buffer-contents)] *)
 val replace_buffer_contents

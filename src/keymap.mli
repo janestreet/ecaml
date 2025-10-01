@@ -14,14 +14,6 @@ type keymap := t
 
 include Equal.S with type t := t
 
-(** [(describe-function 'keymap-parent)]
-    [(Info-goto-node "(elisp)Inheritance and Keymaps")] *)
-val parent : t -> t option
-
-(** [(describe-function 'set-keymap-parent)]
-    [(Info-goto-node "(elisp)Inheritance and Keymaps")] *)
-val set_parent : t -> t option -> unit
-
 module Kind : sig
   type t =
     | Full
@@ -32,6 +24,9 @@ end
 (** [(describe-function 'make-sparse-keymap)] [(describe-function 'make-keymap)]
     [(Info-goto-node "(elisp) Creating Keymaps")] *)
 val create : ?kind:Kind.t (** default is [Sparse] *) -> ?menu_name:string -> unit -> t
+
+(** [(describe-function 'defvar-keymap)] *)
+val defvar : here:[%call_pos] -> Symbol.t -> docstring:string -> t Var.t
 
 (** [(describe-function 'copy-keymap)] [(Info-goto-node "(elisp) Creating Keymaps")] *)
 val deep_copy : t -> t
@@ -71,10 +66,16 @@ val lookup_key
 (** [(describe-function 'define-key)] [(Info-goto-node "(elisp)Functions for Key Lookup")] *)
 val define_key : t -> Key_sequence.t -> Entry.t -> unit
 
-(** [(describe-function 'keymap-set)] [(Info-goto-node "(elisp)Changing Key Bindings")] *)
-val set : t Var.t -> string -> Entry.t -> unit
+(** Bind this key sequence to this symbol in the passed keymap variable.
 
+    This requires a [Var.t] and [Symbol.t] because it's dumped with [Dump]. *)
+val set : here:[%call_pos] -> t Var.t -> string -> Symbol.t -> unit
+
+(** [(describe-function 'keymap-set)] [(Info-goto-node "(elisp)Changing Key Bindings")] *)
 val set_val : t -> string -> Entry.t -> unit
+
+(** Set the parent keymap for this keymap variable. *)
+val set_parent : here:[%call_pos] -> t Var.t -> parent:t Var.t -> unit
 
 (** [(describe-function 'keymap-global-set)]
     [(Info-goto-node "(elisp)Changing Key Bindings")] *)

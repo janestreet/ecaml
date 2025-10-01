@@ -67,7 +67,9 @@ let find_file_other_window =
   fun path -> Value.Private.run_outside_async (fun () -> find_file_other_window path)
 ;;
 
-let view_file =
-  let view_file = Funcall.Wrap.("view-file" <: string @-> return nil) in
-  fun path -> Value.Private.run_outside_async (fun () -> view_file path)
+let find_file_read_only =
+  let find_file_read_only =
+    Funcall.Wrap.("find-file-read-only" <: string @-> return nil)
+  in
+  fun path -> Value.Private.run_outside_async (fun () -> find_file_read_only path)
 ;;

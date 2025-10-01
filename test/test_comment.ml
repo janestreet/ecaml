@@ -39,7 +39,12 @@ let test ?position () =
   Point.goto_char position;
   match bounds_of_comment_at_point () with
   | None -> print_endline "  None"
-  | Some (start, end_) -> Buffer_helper.show_buffer ~block_out:[ start; end_ ]
+  | Some (start, end_) ->
+    Buffer_helper.show_buffer
+      ~block_out:
+        [ start, Buffer_helper.utf8_upper_left_U259B
+        ; end_, Buffer_helper.utf8_lower_right_U259F
+        ]
 ;;
 
 let%expect_test "goto_*_exn on multiline comment" =
@@ -107,9 +112,9 @@ let%expect_test "goto_*_exn on multiline comment" =
 
       comment bounds:
 
-      █!-- this is a comment
+      ▛!-- this is a comment
            it spans multiple lines
-           end of the comment -->█
+           end of the comment -->▟
       |}];
     test ~position:30 ();
     [%expect
@@ -142,9 +147,9 @@ let%expect_test "goto_*_exn on multiline comment" =
 
       comment bounds:
 
-      █!-- this is a comment
+      ▛!-- this is a comment
            it spans multiple lines
-           end of the comment -->█
+           end of the comment -->▟
       |}];
     test ~position:52 ();
     [%expect
@@ -177,9 +182,9 @@ let%expect_test "goto_*_exn on multiline comment" =
 
       comment bounds:
 
-      █!-- this is a comment
+      ▛!-- this is a comment
            it spans multiple lines
-           end of the comment -->█
+           end of the comment -->▟
       |}];
     return ())
 ;;
@@ -249,9 +254,9 @@ let%expect_test "goto_end_exn on single-line comment" =
 
       comment bounds:
 
-      # █his is a comment
+      # ▛his is a comment
       # it spans multiple lines
-      # end of the comment█
+      # end of the comment▟
       |}];
     test ~position:30 ();
     [%expect
@@ -284,9 +289,9 @@ let%expect_test "goto_end_exn on single-line comment" =
 
       comment bounds:
 
-      # █his is a comment
+      # ▛his is a comment
       # it spans multiple lines
-      # end of the comment█
+      # end of the comment▟
       |}];
     test ~position:52 ();
     [%expect
@@ -319,9 +324,9 @@ let%expect_test "goto_end_exn on single-line comment" =
 
       comment bounds:
 
-      # █his is a comment
+      # ▛his is a comment
       # it spans multiple lines
-      # end of the comment█
+      # end of the comment▟
       |}];
     return ())
 ;;
@@ -369,8 +374,8 @@ def hello():
       comment bounds:
 
       def hello():
-        print("Hello, world")      # █his is a comment
-        return 3                   # is this the same comment?█
+        print("Hello, world")      # ▛his is a comment
+        return 3                   # is this the same comment?▟
       |}];
     return ())
 ;;
@@ -405,7 +410,7 @@ let%expect_test "two comments on one line" =
 
       comment bounds:
 
-      █!-- comment 1 -->█ <!-- comment 2 -->
+      ▛!-- comment 1 -->▟ <!-- comment 2 -->
       |}];
     test ~position:21 ();
     [%expect
@@ -450,7 +455,7 @@ let%expect_test "two comments on one line" =
 
       comment bounds:
 
-      <!-- comment 1 -->  █!-- comment 2 -->█
+      <!-- comment 1 -->  ▛!-- comment 2 -->▟
       |}];
     return ())
 ;;

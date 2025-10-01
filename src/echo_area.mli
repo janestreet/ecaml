@@ -21,6 +21,7 @@ val clear : unit -> unit
 val wrap_message
   :  ?allow_in_background:bool (** default is [false] *)
   -> ?echo:bool (** default is [true] *)
+  -> ?show_in_tests:bool (** default is [true] *)
   -> here:[%call_pos]
   -> (_, 'a) Sync_or_async.t
   -> string

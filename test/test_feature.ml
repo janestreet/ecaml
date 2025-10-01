@@ -41,6 +41,7 @@ let%expect_test "[all_provided]" =
   [%expect
     {|
     (abbrev
+     ansi-color
      backquote
      base64
      bookmark

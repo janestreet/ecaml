@@ -4,7 +4,6 @@ open! Import
 module Q = struct
   include Q
 
-  let simple = "simple" |> Symbol.intern
   let text_property_search = "text-property-search" |> Symbol.intern
 end
 
@@ -12,6 +11,15 @@ module Current_buffer = Current_buffer0
 
 let get = Funcall.Wrap.("point" <: nullary @-> return Position.t)
 let goto_char = Funcall.Wrap.("goto-char" <: Position.t @-> return nil)
+
+let goto_char_maybe_widen pos =
+  goto_char pos;
+  if Position.( <> ) pos (get ())
+  then (
+    Current_buffer.widen ();
+    goto_char pos)
+;;
+
 let goto_first_non_blank = Funcall.Wrap.("back-to-indentation" <: nullary @-> return nil)
 let min = Funcall.Wrap.("point-min" <: nullary @-> return Position.t)
 let max = Funcall.Wrap.("point-max" <: nullary @-> return Position.t)
@@ -42,10 +50,20 @@ let forward_line_exn =
 let backward_line n = forward_line (-n)
 let count_lines = Funcall.Wrap.("count-lines" <: Position.t @-> Position.t @-> return int)
 let count_lines ~start ~end_ = count_lines start end_
+let goto_column = Funcall.Wrap.("move-to-column" <: int @-> return nil)
 
-let goto_line l =
-  goto_min ();
-  forward_line (l - 1)
+let position_of_line_and_column { Line_and_column.line; column } =
+  Save_wrappers.save_excursion Sync (fun () ->
+    Save_wrappers.save_restriction Sync (fun () ->
+      Current_buffer.widen ();
+      goto_min ();
+      forward_line (line - 1);
+      goto_column column;
+      get ()))
+;;
+
+let goto_line line =
+  goto_char_maybe_widen (position_of_line_and_column { line; column = 0 })
 ;;
 
 let forward_char_exn = Funcall.Wrap.("forward-char" <: int @-> return nil)
@@ -59,14 +77,15 @@ let backward_word = Funcall.Wrap.("backward-word" <: int @-> return nil)
 let following_char = Funcall.Wrap.("following-char" <: nullary @-> return Char_code.t)
 
 let line_number =
-  Ecaml_value.Feature.require Q.simple;
-  Funcall.Wrap.("line-number-at-pos" <: nullary @-> return int)
+  let line_number_at_pos =
+    Funcall.Wrap.("line-number-at-pos" <: unit @-> bool @-> return int)
+  in
+  fun () -> line_number_at_pos () true
 ;;
 
 let is_beginning_of_buffer = Funcall.Wrap.("bobp" <: nullary @-> return bool)
 let is_end_of_buffer = Funcall.Wrap.("eobp" <: nullary @-> return bool)
 let column_number = Funcall.Wrap.("current-column" <: nullary @-> return int)
-let goto_column = Funcall.Wrap.("move-to-column" <: int @-> return nil)
 
 let get_line_and_column () =
   { Line_and_column.line = line_number (); column = column_number () }

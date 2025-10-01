@@ -115,6 +115,10 @@ end = struct
   let wake_up t = critical_section t ~f:(fun () -> Condition.broadcast t.wake_up)
 end
 
+let with_lock scheduler f =
+  if Scheduler.am_holding_lock scheduler then f () else Scheduler.with_lock scheduler f
+;;
+
 (** The Cycle_requester is a mechanism for requesting emacs to run a cycle by writing a
     byte along a socket. Emacs passes this byte on to the process filter we define, which
     runs a cycle in the emacs thread.
@@ -200,14 +204,14 @@ end = struct
           ~name:"Async scheduler"
           ~socket_path
           ~filter:(fun client_process _ ->
-            assert (Scheduler.am_holding_lock (Scheduler.t ()));
-            t.exists_unread_byte <- false;
-            (match t.client_process with
-             | Some _ -> ()
-             | None ->
-               t.client_process <- Some client_process;
-               Process.set_query_on_exit client_process false);
-            run_cycle ())
+            with_lock (Scheduler.t ()) (fun () ->
+              t.exists_unread_byte <- false;
+              (match t.client_process with
+               | Some _ -> ()
+               | None ->
+                 t.client_process <- Some client_process;
+                 Process.set_query_on_exit client_process false);
+              run_cycle ()))
       in
       Process.set_query_on_exit server_process false;
       Unix.connect t.write_to_request_cycle ~addr:(ADDR_UNIX socket_path);
@@ -402,50 +406,55 @@ module Block_on_async = struct
       ?context
       ?(for_testing_allow_nested_block_on_async = false)
       f ->
-    assert (Scheduler.am_holding_lock t.scheduler);
-    Ref.set_temporarily
-      context_backtrace
-      (if for_testing_allow_nested_block_on_async
-       then []
-       else
-         { here
-         ; context = Option.value context ~default:(lazy [%message])
-         ; created_at = Time_ns.now ()
-         }
-         :: !context_backtrace)
-      ~f:(fun () ->
-        if t.am_running_async_cycle
-        then
-          raise_s
-            [%message.omit_nil
-              "Called [block_on_async] in the middle of an Async job!"
-                (context_backtrace : Context_backtrace.t ref)
-                ~profile_backtrace:
-                  (Nested_profile.Profile.backtrace () : Sexp.t list option)];
-        let rec run_cycles_until_filled deferred =
-          (match Value.Expert.process_input () with
-           | Continue -> ()
-           | Quit -> Value.Expert.raise_if_emacs_signaled ());
-          match Async.Deferred.peek deferred with
-          | Some result -> result
-          | None ->
-            (* [Thread.delay] gives the scheduler thread time to run before we run a
+    let with_lock f =
+      if Scheduler.am_holding_lock t.scheduler
+      then f ()
+      else Scheduler.with_lock t.scheduler f
+    in
+    with_lock (fun () ->
+      Ref.set_temporarily
+        context_backtrace
+        (if for_testing_allow_nested_block_on_async
+         then []
+         else
+           { here
+           ; context = Option.value context ~default:(lazy [%message])
+           ; created_at = Time_ns.now ()
+           }
+           :: !context_backtrace)
+        ~f:(fun () ->
+          if t.am_running_async_cycle
+          then
+            raise_s
+              [%message.omit_nil
+                "Called [block_on_async] in the middle of an Async job!"
+                  (context_backtrace : Context_backtrace.t ref)
+                  ~profile_backtrace:
+                    (Nested_profile.Profile.backtrace () : Sexp.t list option)];
+          let rec run_cycles_until_filled deferred =
+            (match Value.Expert.process_input () with
+             | Continue -> ()
+             | Quit -> Value.Expert.raise_if_emacs_signaled ());
+            match Async.Deferred.peek deferred with
+            | Some result -> result
+            | None ->
+              (* [Thread.delay] gives the scheduler thread time to run before we run a
                cycle. *)
-            Scheduler.unlock t.scheduler;
-            Thread.delay (Time.Span.of_us 10. |> Time.Span.to_sec);
-            Scheduler.lock t.scheduler;
-            in_emacs_have_lock_do_cycle ();
-            run_cycles_until_filled deferred
-        in
-        let deferred =
-          Async.(
-            Monitor.try_with ~rest:`Log ~extract_exn:true ~run:`Schedule f
-            >>| Or_error.of_exn_result)
-        in
-        let result = run_cycles_until_filled deferred in
-        match result with
-        | Ok x -> x
-        | Error error -> Error.raise error)
+              Scheduler.unlock t.scheduler;
+              Thread.delay (Time.Span.of_us 10. |> Time.Span.to_sec);
+              Scheduler.lock t.scheduler;
+              in_emacs_have_lock_do_cycle ();
+              run_cycles_until_filled deferred
+          in
+          let deferred =
+            Async.(
+              Monitor.try_with ~rest:`Log ~extract_exn:true ~run:`Schedule f
+              >>| Or_error.of_exn_result)
+          in
+          let result = run_cycles_until_filled deferred in
+          match result with
+          | Ok x -> x
+          | Error error -> Error.raise error))
   ;;
 end
 
@@ -519,7 +528,7 @@ until it can acquire the Async lock and then run a cycle.
       (Returns Value.Type.unit)
       (let open Defun.Let_syntax in
        let%map_open () = return () in
-       Block_on_async.in_emacs_have_lock_do_cycle ());
+       with_lock t.scheduler Block_on_async.in_emacs_have_lock_do_cycle);
     Cycle_requester.register_cycle_handler
       t.cycle_requester
       Block_on_async.in_emacs_have_lock_do_cycle;
@@ -532,23 +541,27 @@ until it can acquire the Async lock and then run a cycle.
          (Timer.run_after
             max_inter_cycle_timeout
             ~repeat:max_inter_cycle_timeout
-            ~name:("async-ecaml-keepalive-timer" |> Symbol.intern)
-            ~docstring:
-              {|
+            (Defun.defun_func
+               ("async-ecaml-keepalive-timer" |> Symbol.intern)
+               [%here]
+               ~docstring:
+                 {|
 Internal to Async Ecaml.
 
 Periodically request an Async cycle.
 |}
-            ~f:(fun () ->
-              try
-                if Time_ns.Span.( >= )
-                     (Time_ns.diff (Time_ns.now ()) t.last_cycle_finished_at)
-                     max_inter_cycle_timeout
-                then (
-                  Cycle_requester.byte_was_probably_lost t.cycle_requester;
-                  Block_on_async.in_emacs_have_lock_do_cycle ())
-              with
-              | exn -> message_s [%sexp "Error in async keepalive timer", (exn : exn)]));
+               (Returns Value.Type.unit)
+               (let%map_open.Defun () = return () in
+                with_lock t.scheduler (fun () ->
+                  try
+                    if Time_ns.Span.( >= )
+                         (Time_ns.diff (Time_ns.now ()) t.last_cycle_finished_at)
+                         max_inter_cycle_timeout
+                    then (
+                      Cycle_requester.byte_was_probably_lost t.cycle_requester;
+                      Block_on_async.in_emacs_have_lock_do_cycle ())
+                  with
+                  | exn -> message_s [%sexp "Error in async keepalive timer", (exn : exn)]))));
     (* The default [max_inter_cycle_timeout] is much smaller.  Setting it to 1s reduces
        load on emacs. *)
     Scheduler.set_max_inter_cycle_timeout
@@ -596,19 +609,19 @@ module Private = struct
     ?(raise_exceptions_to_monitor = Async.Monitor.main)
     f
     =
-    assert (Scheduler.am_holding_lock t.scheduler);
-    Queue.enqueue
-      t.pending_foreground_block_on_asyncs
-      { context
-      ; execution_context =
-          (* The current execution context's monitor may not be valid when [f] is run,
+    with_lock t.scheduler (fun () ->
+      Queue.enqueue
+        t.pending_foreground_block_on_asyncs
+        { context
+        ; execution_context =
+            (* The current execution context's monitor may not be valid when [f] is run,
              which might be long after that monitor has returned. *)
-          Async.Execution_context.create_like
-            (Scheduler.current_execution_context t.scheduler)
-            ~monitor:raise_exceptions_to_monitor
-      ; f
-      ; here
-      }
+            Async.Execution_context.create_like
+              (Scheduler.current_execution_context t.scheduler)
+              ~monitor:raise_exceptions_to_monitor
+        ; f
+        ; here
+        })
   ;;
 
   let run_outside_async ~(here : [%call_pos]) ?(allowed_in_background = false) f =
@@ -793,15 +806,9 @@ Check aspects of Async Ecaml's handling of execution contexts.
          Timer.run_after
            ~repeat:(sec_ns 0.1)
            (sec_ns 0.1)
-           ~f:check_execution_context
-           ~name:("check-execution-context-timer" |> Symbol.intern)
-           ~docstring:
-             {|
-Internal to Async Ecaml.
-
-Periodically check that the execution context in which Async jobs run is
-[Execution_context.main].
-|}
+           (Function.of_ocaml_func0 [%here] (fun () ->
+              check_execution_context ();
+              Value.nil))
        in
        don't_wait_for
          (let%map _ignored =
@@ -870,11 +877,12 @@ not preserve the current Async execution context.
        (* The key-value pair starts out absent. *)
        assert (Option.is_none (Async.Scheduler.find_local dummy_key));
        let print_data =
-         Function.create_nullary [%here] (fun () ->
-           match Async.Scheduler.find_local dummy_key with
-           | None -> Echo_area.message "BUG: execution context is not preserved"
-           | Some data ->
-             Echo_area.message_s [%message "Execution context preserved" (data : int)])
+         Function.of_ocaml_func0 [%here] (fun () ->
+           (match Async.Scheduler.find_local dummy_key with
+            | None -> Echo_area.message "BUG: execution context is not preserved"
+            | Some data ->
+              Echo_area.message_s [%message "Execution context preserved" (data : int)]);
+           Value.nil)
          |> Function.to_value
        in
        Async.Scheduler.with_local dummy_key (Some 42) ~f:(fun () ->
