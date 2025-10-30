@@ -6,6 +6,11 @@ module Q = struct
   include Q
 
   let default_value = "default-value" |> Symbol.intern
+  let minibuffer_with_setup_hook = "minibuffer-with-setup-hook" |> Symbol.intern
+
+  module K = struct
+    let append = ":append" |> Symbol.intern
+  end
 end
 
 module Y_or_n_with_timeout = struct
@@ -235,3 +240,30 @@ let exit =
 
 let depth = Funcall.Wrap.("minibuffer-depth" <: nullary @-> return int)
 let contents = Funcall.Wrap.("minibuffer-contents" <: nullary @-> return string)
+
+let with_setup_hook ?(append = false) ?(here = Stdlib.Lexing.dummy_pos) hook body =
+  let return_ref = Set_once.create () in
+  let body =
+    Defun.lambda_nullary here (Returns_deferred Value.Type.unit) (fun () ->
+      let%bind v = body () in
+      Set_once.set_exn return_ref v;
+      return ())
+  in
+  let%bind () =
+    Form.apply
+      Q.minibuffer_with_setup_hook
+      [ (match append with
+         | false -> Form.quote (Function.to_value hook)
+         | true ->
+           Form.list [ Form.symbol Q.K.append; Form.quote (Function.to_value hook) ])
+      ; Form.apply Q.funcall [ Form.quote (Function.to_value body) ]
+      ]
+    |> Form.eval_i
+  in
+  return (Set_once.get_exn return_ref)
+;;
+
+let message =
+  let f = Funcall.Wrap.("minibuffer-message" <: string @-> string @-> return nil) in
+  fun string -> f "%s" string
+;;

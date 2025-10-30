@@ -7,6 +7,7 @@ module Q = struct
   let undefined = "undefined" |> Symbol.intern
   let defvar_keymap = "defvar-keymap" |> Symbol.intern
   let set_keymap_parent = "set-keymap-parent" |> Symbol.intern
+  let make_composed_keymap = "make-composed-keymap" |> Symbol.intern
 end
 
 include Keymap0
@@ -39,6 +40,19 @@ let defvar ?(here = Stdlib.Lexing.dummy_pos) symbol ~docstring =
     Form.apply
       Q.defvar_keymap
       [ Form.symbol symbol; Form.symbol Q.K.doc; Form.string docstring ]);
+  Load_history.add_entry here (Var symbol);
+  Var.create symbol t
+;;
+
+let defvar_composed ?(here = Stdlib.Lexing.dummy_pos) symbol maps =
+  Dump.eval_and_dump ~here (fun () ->
+    Form.apply
+      Q.defvar
+      [ Form.symbol symbol
+      ; Form.apply
+          Q.make_composed_keymap
+          [ Form.apply Q.list (List.map ~f:(Var.symbol >> Form.symbol) maps) ]
+      ]);
   Load_history.add_entry here (Var symbol);
   Var.create symbol t
 ;;

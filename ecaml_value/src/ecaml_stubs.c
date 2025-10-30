@@ -808,3 +808,14 @@ CAMLprim value ecaml_project(value val) {
     caml_failwith("tried to project a NULL user pointer");
   CAMLreturn(*((value *)data));
 }
+
+CAMLprim value ecaml_open_channel(value lisp_pipe_process) {
+  CAMLparam1(lisp_pipe_process);
+  CAMLlocal1(ret);
+  emacs_env *env = ecaml_active_env_or_die();
+  emacs_value pipe_process = emacs_of_ocaml(env, lisp_pipe_process);
+  int infd = env->open_channel(env, pipe_process);
+  /* The fd range is much less than the entire OCaml integer range. */
+  ret = Val_long(infd);
+  CAMLreturn(ret);
+}

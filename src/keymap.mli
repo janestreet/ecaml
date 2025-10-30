@@ -28,6 +28,16 @@ val create : ?kind:Kind.t (** default is [Sparse] *) -> ?menu_name:string -> uni
 (** [(describe-function 'defvar-keymap)] *)
 val defvar : ?here:Stdlib.Lexing.position -> Symbol.t -> docstring:string -> t Var.t
 
+(** Call [(defvar SYMBOL (make-composed-keymap maps))]
+
+    Notably, setting a key sequence in a composed map will set the key sequence in one of
+    the passed maps, based on what map contains the prefix for that key sequence. This
+    differs from maps with a parent; setting a key sequence in a map with a parent never
+    sets that sequence in the parent.
+
+    [(describe-function 'make-composed-keymap)] *)
+val defvar_composed : ?here:Stdlib.Lexing.position -> Symbol.t -> t Var.t list -> t Var.t
+
 (** [(describe-function 'copy-keymap)] [(Info-goto-node "(elisp) Creating Keymaps")] *)
 val deep_copy : t -> t
 
