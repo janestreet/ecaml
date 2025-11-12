@@ -1,7 +1,7 @@
 (rule
  (targets ecaml.elc)
  (deps
-  (:first_dep ../../elisp/build-scripts/byte-compile-file.el)
+  (:first_dep ../../build-scripts/byte-compile-file.el)
   ecaml.el
   (alias ../../full-emacs-runtime-deps-without-elcs))
  (action

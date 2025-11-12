@@ -33,7 +33,7 @@ EOF
 EOF
     # Set ECAML_DUMPING so that whenever Ecaml evals a form to define
     # something, it also writes that form to stdout.
-    ECAML_DUMPING=true "$emacs" -q --no-site-file --batch -l jane-ecaml
+    ECAML_DUMPING=true "$emacs" -q --no-site-file --batch -l ./jane-ecaml.el
     cat << EOF
 (provide '$feature)
 EOF

@@ -22,10 +22,10 @@ let%expect_test "[press_and_show_minibuffer] with [save-some-buffers] shows prom
           {|
           Save file TMPDIR/BASENAME/foo.txt? (y, n, !, ., q, C-r, C-f, d or C-h)
           Save file TMPDIR/BASENAME/foo.txt? (y, n, !, ., q, C-r, C-f, d or C-h) C-u
-          Type C-h for help.
+          Type C-h for help
           Save file TMPDIR/BASENAME/foo.txt? (y, n, !, ., q, C-r, C-f, d or C-h)
           Save file TMPDIR/BASENAME/foo.txt? (y, n, !, ., q, C-r, C-f, d or C-h) <f14>
-          Type C-h for help.
+          Type C-h for help
           Save file TMPDIR/BASENAME/foo.txt? (y, n, !, ., q, C-r, C-f, d or C-h)
           Save file TMPDIR/BASENAME/foo.txt? (y, n, !, ., q, C-r, C-f, d or C-h) C-]
           

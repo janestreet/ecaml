@@ -71,6 +71,9 @@ val asm : t
 (** [(describe-function 'python-mode)] *)
 val python : t
 
+(** [(describe-function 'image-mode)] *)
+val image : t
+
 (** [(describe-function 'define-derived-mode)] [(Info-goto-node "(elisp)Derived Modes")]
 
     Additionally, each [key_sequence, symbol] in [define_keys] is added to the new major

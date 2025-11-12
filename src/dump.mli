@@ -14,6 +14,8 @@ val keymap_set
   -> (string * Symbol.t) list
   -> unit
 
+val declare_function : here:[%call_pos] -> Symbol.t -> file:string -> unit
+
 module For_testing : sig
   (** Allow further calls to [Dump] functions even after module initialization is done;
       always eval the the forms built by these calls rather than dumping them (since

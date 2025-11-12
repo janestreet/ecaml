@@ -59,6 +59,13 @@ val height : unit -> int
 (** [(describe-function 'window-width)] *)
 val width : unit -> int
 
+(** Return the number of screen lines in the selected window before the screen line where
+    point is displayed.
+
+    The return value can be passed to {!recenter} to restore the approximate vertical
+    position of point from when this function was called. *)
+val screen_line_at_point : unit -> int
+
 module Blocking : sig
   val pop_to_buffer : Buffer.t -> unit
 end

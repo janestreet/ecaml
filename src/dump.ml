@@ -5,6 +5,7 @@ module Q = struct
   let pp_emacs_lisp_code = "pp-emacs-lisp-code" |> Symbol.intern
   let keymap_set = "keymap-set" |> Symbol.intern
   let progn = "progn" |> Symbol.intern
+  let declare_function = "declare-function" |> Symbol.intern
 end
 
 let pp_default_function = Var.Wrap.("pp-default-function" <: Symbol.t)
@@ -71,6 +72,13 @@ let keymap_set ~here keymap keydefs =
   | keydefs ->
     eval_and_dump ~here (fun () ->
       Form.apply Q.progn (List.map keydefs ~f:(keymap_set_form keymap)))
+;;
+
+let declare_function ~(here : [%call_pos]) fn ~file =
+  dump_or_eval ~here (fun () ->
+    Form.apply
+      Q.declare_function
+      [ Form.symbol fn; Form.string file; Value.t |> Form.of_value_exn ])
 ;;
 
 let () =

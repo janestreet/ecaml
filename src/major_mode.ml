@@ -89,6 +89,7 @@ let scheme = wrap_existing "scheme-mode"
 let emacs_lisp = wrap_existing "emacs-lisp-mode"
 let asm = wrap_existing "asm-mode"
 let python = wrap_existing "python-mode"
+let image = wrap_existing "image-mode"
 let all_derived_modes = ref []
 
 module For_testing = struct

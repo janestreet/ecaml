@@ -53,7 +53,12 @@ let delete_other_windows =
 ;;
 
 let start = Funcall.Wrap.("window-start" <: t @-> return Position.t)
-let set_start = Funcall.Wrap.("set-window-start" <: t @-> Position.t @-> return nil)
+
+let set_start =
+  Funcall.Wrap.("set-window-start" <: t @-> Position.t @-> bool @-> return nil)
+;;
+
+let set_start ?(noforce = false) t pos = set_start t pos noforce
 
 let window_end =
   Funcall.Wrap.("window-end" <: t @-> Value.Type.bool @-> return Position.t)

@@ -100,6 +100,15 @@ val exit_hook : (Hook.normal, unit) Hook.t
     [(Info-goto-node "(elisp)Minibuffer Misc")] *)
 val setup_hook : (Hook.normal, unit) Hook.t
 
+(** - [(describe-function 'minibuffer-with-setup-hook)]
+    - [(Info-goto-node "(elisp)Minibuffer Misc")] *)
+val with_setup_hook
+  :  ?append:bool
+  -> here:[%call_pos]
+  -> Function.t
+  -> (unit -> 'a Deferred.t)
+  -> 'a Deferred.t
+
 (** [(describe-function 'active-minibuffer-window)] *)
 val active_window : unit -> Window.t option
 
@@ -119,3 +128,6 @@ val depth : unit -> int
 
     Note: if the current buffer is not a minibuffer, [contents] returns its contents too. *)
 val contents : unit -> string
+
+(** [(describe-function 'minibuffer-message)] *)
+val message : string -> unit

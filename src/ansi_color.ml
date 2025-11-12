@@ -24,6 +24,20 @@ let apply_on_region ~start ~end_ =
     ~f:(fun () -> ansi_color_apply_on_region start end_)
 ;;
 
+let ansi_color_apply = Funcall.Wrap.("ansi-color-apply" <: string @-> return Text.t)
+
+let ansi_color_context =
+  Buffer_local.wrap_existing (Symbol.intern "ansi-color-context") Value.Type.value
+;;
+
+let apply string =
+  Current_buffer.set_buffer_local_temporarily
+    Sync
+    ansi_color_context
+    Value.nil
+    ~f:(fun () -> ansi_color_apply string)
+;;
+
 let color_current_buffer () =
   let buffer_was_modified = Current_buffer.is_modified () in
   Current_buffer.(set_buffer_local read_only) false;

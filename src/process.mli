@@ -243,18 +243,14 @@ val shell_command_expect_no_output_exn
   -> string
   -> unit
 
-(** - [(Info-goto-node "(elisp)Network Servers")]
-    - [(describe-function 'make-network-process)]
-
-    The [t] returned by [create_unix_network_process] represents listening on the socket.
-    The [t] passed to [filter] represents a specific connection accepted on the socket. *)
-val create_unix_network_process
+(** [(describe-function 'make-pipe-process)] *)
+val make_pipe_process
   :  ?coding:[ `Decoding of Coding_system.t ] * [ `Encoding of Coding_system.t ]
   -> here:[%call_pos]
   -> unit
   -> filter:(t -> Text.t -> unit)
   -> name:string
-  -> socket_path:string
+  -> noquery:bool
   -> t
 
 (** - [(Info-goto-node "(elisp)Deleting Processes")]

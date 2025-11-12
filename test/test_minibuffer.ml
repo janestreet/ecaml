@@ -135,34 +135,36 @@ let%expect_test "[setup_hook]" =
 ;;
 
 let%expect_test "[setup_hook] [exit_hook]" =
-  Hook.add
-    setup_hook
-    (Hook.Function.create
-       ("test-setup" |> Symbol.intern)
-       [%here]
-       ~docstring:"<docstring>"
-       ~hook_type:Normal_hook
-       (Returns Value.Type.unit)
-       (fun () ->
-          print_s
-            [%message
-              "running setup hook"
-                (Minibuffer.prompt () : string option)
-                (Minibuffer.contents () : string)]));
-  Hook.add
-    exit_hook
-    (Hook.Function.create
-       ("test-exit" |> Symbol.intern)
-       [%here]
-       ~docstring:"<docstring>"
-       ~hook_type:Normal_hook
-       (Returns Value.Type.unit)
-       (fun () ->
-          print_s
-            [%message
-              "running exit hook"
-                (Minibuffer.prompt () : string option)
-                (Minibuffer.contents () : string)]));
+  let test_setup_hook =
+    Hook.Function.create
+      ("test-setup" |> Symbol.intern)
+      [%here]
+      ~docstring:"<docstring>"
+      ~hook_type:Normal_hook
+      (Returns Value.Type.unit)
+      (fun () ->
+         print_s
+           [%message
+             "running setup hook"
+               (Minibuffer.prompt () : string option)
+               (Minibuffer.contents () : string)])
+  in
+  let test_exit_hook =
+    Hook.Function.create
+      ("test-exit" |> Symbol.intern)
+      [%here]
+      ~docstring:"<docstring>"
+      ~hook_type:Normal_hook
+      (Returns Value.Type.unit)
+      (fun () ->
+         print_s
+           [%message
+             "running exit hook"
+               (Minibuffer.prompt () : string option)
+               (Minibuffer.contents () : string)])
+  in
+  Hook.add setup_hook test_setup_hook;
+  Hook.add exit_hook test_exit_hook;
   let%bind () =
     with_input_macro "foo RET" (fun () ->
       let%bind response =
@@ -181,5 +183,42 @@ let%expect_test "[setup_hook] [exit_hook]" =
       ("Minibuffer.contents ()" foo))
     foo
     |}];
+  Hook.remove setup_hook test_setup_hook;
+  Hook.remove exit_hook test_exit_hook;
   return ()
+;;
+
+let%expect_test "[with_setup_hook]" =
+  Current_buffer.set_value_temporarily
+    Async
+    Var.Wrap.("enable-recursive-minibuffers" <: bool)
+    true
+    ~f:(fun () ->
+      (* Unlike temporarily adding the hook to [minibuffer-setup-hook] with [add-hook] or
+         [Current_buffer.set_value_temporarily], [with_setup_hook] causes the hook to only
+         run once, for the outermost [read-from-minibuffer]. *)
+      let example_setup_hook =
+        Defun.lambda_nullary_nil [%here] (fun () -> message "running setup hook")
+      in
+      let%bind () =
+        with_input_macro "C-x C-f C-g C-g" (fun () ->
+          let%bind string =
+            with_setup_hook example_setup_hook (fun () ->
+              Minibuffer.read_string
+                ~prompt_no_colon:"input a string"
+                ~history:Minibuffer.history
+                ())
+          in
+          print_s [%sexp (string : string)];
+          return ())
+      in
+      [%expect
+        {|
+        [minibuffer-message] running setup hook
+
+        [minibuffer-message]  [Quit]
+
+        Quit
+        |}];
+      return ())
 ;;

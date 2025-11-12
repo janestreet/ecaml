@@ -145,41 +145,6 @@ let provide = Feature.provide
 let inhibit_read_only = Current_buffer.inhibit_read_only
 
 let () =
-  if not am_running_test
-  then
-    let module Unix = Core_unix in
-    let should_reopen_stdin = ref true in
-    Background.Clock.every Time_ns.Span.second (fun () ->
-      match Unix.fstat Unix.stdin with
-      | _ -> ()
-      | exception _ ->
-        if !should_reopen_stdin
-        then (
-          let new_fd = Unix.openfile "/dev/null" ~mode:[ O_RDONLY ] ~perm:0o666 in
-          should_reopen_stdin := Unix.File_descr.equal new_fd Unix.stdin;
-          message_s
-            ~echo:false
-            [%message.omit_nil
-              "stdin was closed"
-                (should_reopen_stdin : bool ref)
-                ~recent_keys:
-                  (Input_event.recent_commands_and_keys ()
-                   : Input_event.Command_or_key.t array)]))
-;;
-
-let () =
-  defun_nullary_nil
-    ("ecaml-close-stdin" |> Symbol.intern)
-    [%here]
-    ~docstring:
-      {|
-Close file descriptor zero, aka stdin.  For testing a bug in `call-process-region'.
-|}
-    ~interactive:No_arg
-    (fun () -> Core_unix.(close stdin))
-;;
-
-let () =
   let ecaml_test_raise_name = "ecaml-test-raise" in
   let ecaml_test_raise =
     Funcall.Wrap.(ecaml_test_raise_name <: nil_or int @-> return nil)

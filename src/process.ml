@@ -12,8 +12,7 @@ module Q = struct
   let exit_ = "exit" |> Symbol.intern
   let failed = "failed" |> Symbol.intern
   let listen = "listen" |> Symbol.intern
-  let local = "local" |> Symbol.intern
-  let make_network_process = "make-network-process" |> Symbol.intern
+  let make_pipe_process = "make-pipe-process" |> Symbol.intern
   let make_process = "make-process" |> Symbol.intern
   let open_ = "open" |> Symbol.intern
   let run = "run" |> Symbol.intern
@@ -140,25 +139,16 @@ let create ?buffer ?coding ?(query_before_exit = true) ?stderr prog args ~name (
 let kill = Funcall.Wrap.("kill-process" <: t @-> return nil)
 let delete = Funcall.Wrap.("delete-process" <: t @-> return nil)
 
-let create_unix_network_process
-  ?coding
-  ~(here : [%call_pos])
-  ()
-  ~filter
-  ~name
-  ~socket_path
-  =
+let make_pipe_process ?coding ~(here : [%call_pos]) () ~filter ~name ~noquery =
   of_value_exn
     (Symbol.funcallN
-       Q.make_network_process
+       Q.make_pipe_process
        ([ Q.K.name |> Symbol.to_value
         ; name |> Value.of_utf8_bytes
-        ; Q.K.family |> Symbol.to_value
-        ; Q.local |> Symbol.to_value
-        ; Q.K.server |> Symbol.to_value
-        ; Q.t |> Symbol.to_value
-        ; Q.K.service |> Symbol.to_value
-        ; socket_path |> Value.of_utf8_bytes
+        ; Q.K.noquery |> Symbol.to_value
+        ; noquery |> Value.of_bool
+        ; Q.K.buffer |> Symbol.to_value
+        ; Value.nil
         ; Q.K.filter |> Symbol.to_value
         ; Function.to_value
             (Defun.lambda

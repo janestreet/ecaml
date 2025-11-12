@@ -73,3 +73,18 @@ let find_file_read_only =
   in
   fun path -> Value.Private.run_outside_async (fun () -> find_file_read_only path)
 ;;
+
+let count_screen_lines =
+  Funcall.Wrap.("count-screen-lines" <: Position.t @-> Position.t @-> bool @-> return int)
+;;
+
+let screen_line_at_point () =
+  (* Pass COUNT-FINAL-NEWLINE=t so this returns 2 when point is at the beginning of the
+     second screen line. *)
+  match count_screen_lines (Window.start (get ())) (Point.get ()) true with
+  | 0 | 1 ->
+    0
+    (* count-screen-lines returns 0 when point is at the beginning of the first line in
+       the window, but 1 at other positions on that line. *)
+  | n -> n - 1
+;;
