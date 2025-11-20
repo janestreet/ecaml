@@ -27,8 +27,8 @@ end
 
 external process_input : unit -> Process_input.t = "ecaml_process_input"
 
-(* [Funcall_exit.t] values are only constructed by [ecaml_non_local_exit_get_and_clear]
-   in [ecaml_stubs.c]. *)
+(* [Funcall_exit.t] values are only constructed by [ecaml_non_local_exit_get_and_clear] in
+   [ecaml_stubs.c]. *)
 module Funcall_exit = struct
   type t =
     | Return
@@ -615,8 +615,8 @@ let non_local_exit_signal exn =
       | Atom string -> string
       | List _ as sexp -> Sexp.to_string_hum sexp
     in
-    (* For the [error] symbol, the error data should be a list whose car is a string.
-       See [(Info-goto-node "(elisp)Signaling Errors")]. *)
+    (* For the [error] symbol, the error data should be a list whose car is a string. See
+       [(Info-goto-node "(elisp)Signaling Errors")]. *)
     M.non_local_exit_signal Q.error (list [ message |> of_utf8_bytes ])
 ;;
 
@@ -672,7 +672,7 @@ let rec sexp_of_t_internal t ~print_length ~print_level : Sexp.t =
     in
     let sexp_string =
       (* Emacs prefixes some values (like buffers, markers, etc) with [#], which then
-         makes the sexp unparseable.  So in this case we strip the [#]. *)
+         makes the sexp unparseable. So in this case we strip the [#]. *)
       if String.is_prefix sexp_string ~prefix:"#("
       then String.chop_prefix_exn sexp_string ~prefix:"#"
       else sexp_string

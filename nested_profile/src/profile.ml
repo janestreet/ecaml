@@ -72,7 +72,7 @@ let now () = Clock.now !clock
 
 (* We don't support profiling for brief periods when profiler code calls user code,
    because doing so would be hard and could cause infinite regress, e.g. if that code in
-   turns asks to be profiled.  So, we have an internal bool ref, [profiling_is_allowed],
+   turns asks to be profiled. So, we have an internal bool ref, [profiling_is_allowed],
    that we use to disable profiling when calling user code. *)
 let profiling_is_allowed = ref true
 let with_profiling_disallowed f = Ref.set_temporarily profiling_is_allowed false ~f
@@ -207,7 +207,7 @@ module Record = struct
       let maybe_add_gap ts ~start ~stop =
         let gap_took = Time_ns.diff stop start in
         (* We hide the gap frame if it took less than [!hide_if_less_than], like all other
-           frames.  We also hide the gap frame if it took less than 1us, since a gap frame
+           frames. We also hide the gap frame if it took less than 1us, since a gap frame
            that says 0us would be noise. *)
         if Time_ns.Span.( < ) gap_took !hide_if_less_than
            || Time_ns.Span.( < ) gap_took Time_ns.Span.microsecond

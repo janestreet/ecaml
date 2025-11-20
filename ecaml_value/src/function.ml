@@ -35,7 +35,7 @@ let of_ocaml_funcN here ~nargs f =
   of_ocaml_funcN_M here ~min_args:nargs ~max_args:(Some nargs) f
 ;;
 
-(* This should basically never be called.  If it is called, that means [nargs] does not
+(* This should basically never be called. If it is called, that means [nargs] does not
    match the number of arguments that the function actually requires. *)
 let[@cold] raise_unexpected_arguments ~expected ~actual =
   let actual = Array.length actual in

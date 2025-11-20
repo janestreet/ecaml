@@ -7,8 +7,8 @@ module Entry : sig
   type t =
     { delete_suffix_and_recur : bool
     ; (* [filename_match] is an unanchored regexp matching the absolute path name of the
-         file.  If you want to match on a suffix, then you must anchor the regexp
-         yourself, e.g. using [Rx.(Line End)].*)
+         file. If you want to match on a suffix, then you must anchor the regexp yourself,
+         e.g. using [Rx.(Line End)]. *)
       filename_match : Regexp.t
     ; function_ : Symbol.t option
     }

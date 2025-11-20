@@ -4,7 +4,7 @@ open! Import
 
 (* When Emacs is no longer holding onto an embedded OCaml value, it is freed by C function
    [free_embedded_caml_values], which is called only in [acquire_ocaml_lock_from_emacs],
-   which in turn is only called in [Fdispatch].  The latter function is used when Emacs
+   which in turn is only called in [Fdispatch]. The latter function is used when Emacs
    wants to call into OCaml, for example to invoke an Elisp function whose underlying
    implementation is an OCaml function. *)
 let run_in_a_different_environment_staged f =

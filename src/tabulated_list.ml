@@ -293,13 +293,13 @@ type 'record t =
   { columns : 'record Column.t_internal list
   ; entries_var : 'record list Buffer_local.t
   ; original_record : 'record Text.Property_name.t
-  (* The original record is smuggled as a text property on the ID string of line.  The IDs
+  (* The original record is smuggled as a text property on the ID string of line. The IDs
      are compared with [equal], so including the original record as an opaque pointer in
      the normal way (e.g., in a cons) would cause the "same" IDs to always be considered
      not-equal.
 
      There's no place allotted in [tabulated-list-entries] to store any extra data like
-     this.  The alternative would be to keep a buffer-local map variable in OCaml and look
+     this. The alternative would be to keep a buffer-local map variable in OCaml and look
      up the original record by ID, but this solution has the nice property of not needing
      [find_exn]. *)
   }
@@ -323,8 +323,8 @@ let tabulated_list_print =
 
 let draw ?sort_by t rows =
   (* tabulated-list.el doesn't check that we're sorting by a sortable column, if we just
-     set [tabulated-list-sort-key].  Instead, it just displays the list unsorted.  We
-     prefer to raise instead.
+     set [tabulated-list-sort-key]. Instead, it just displays the list unsorted. We prefer
+     to raise instead.
 
      It only signals an error if you invoke [tabulated-list-sort] with point in an
      unsortable column. *)
@@ -373,8 +373,7 @@ let create (type a) (column_specs : a Column.t list) ~get_id =
         |> Option.value_exn ~message:"Tabulated list entry ID missing original record")
       ~to_:(fun record ->
         let id = get_id record in
-        (* If the ID were empty, the text property would not be applied to any
-           characters. *)
+        (* If the ID were empty, the text property would not be applied to any characters. *)
         if String.is_empty id
         then raise_s [%message "Tabulated list entry ID is not allowed to be empty"];
         ( Text.propertize (Text.of_utf8_bytes id) [ T (original_record, record) ]

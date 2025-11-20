@@ -78,8 +78,8 @@ let defstruct
   then (
     Dump.eval_and_dump ~here (fun () -> build_form ~name ~doc fields);
     (* This defstruct wrapper doesn't support customizing the predicate or constructor
-       names, or anything like that, so we can predict all of the names [cl-defstruct] will
-       define. *)
+       names, or anything like that, so we can predict all of the names [cl-defstruct]
+       will define. *)
     List.iter
       (List.concat
          [ [ [%string "make-%{name}"]; [%string "copy-%{name}"]; [%string "%{name}-p"] ]

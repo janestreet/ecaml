@@ -204,8 +204,7 @@ process.
      in
      if interactive then message_s sexp;
      sexp);
-  (* Replace [false] with [true] to define a function for testing
-     [Minibuffer.read_from]. *)
+  (* Replace [false] with [true] to define a function for testing [Minibuffer.read_from]. *)
   if false
   then (
     defun_nullary
@@ -297,16 +296,15 @@ Show the result of `recent-keys' rendered as Ecaml values.
            (Input_event.recent_commands_and_keys () : Input_event.Command_or_key.t array)])
 ;;
 
-(* Ppx_inline_test_lib runs inline tests immediately when the module defining
-   the tests gets loaded.  Therefore, it must be initialized before we load any
-   other modules.
+(* Ppx_inline_test_lib runs inline tests immediately when the module defining the tests
+   gets loaded. Therefore, it must be initialized before we load any other modules.
 
-   Normally this happens by Ppx_inline_test_lib looking for a magic keyword in
-   Sys.argv and configuring itself from the command line arguments if that magic
-   keyword is present.  That is unworkable for Ecaml and Emacs, since Emacs has
-   its own command line arguments which we want to pass.  So instead we call
-   Ppx_inline_test_lib.init directly with arguments taken from an elisp variable
-   set by the test runner to the arguments we should pass. *)
+   Normally this happens by Ppx_inline_test_lib looking for a magic keyword in Sys.argv
+   and configuring itself from the command line arguments if that magic keyword is
+   present. That is unworkable for Ecaml and Emacs, since Emacs has its own command line
+   arguments which we want to pass. So instead we call Ppx_inline_test_lib.init directly
+   with arguments taken from an elisp variable set by the test runner to the arguments we
+   should pass. *)
 let ppx_inline_test_args = Var.Wrap.("ecaml--ppx-inline-test-args" <: list string)
 
 let () =

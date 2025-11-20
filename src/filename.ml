@@ -69,8 +69,8 @@ let absolute_t =
     ~of_:(fun s ->
       if is_absolute s
       then (
-        (* Emacs considers paths like [~/src] to be acceptable "absolute" paths, so
-           we need to expand them. *)
+        (* Emacs considers paths like [~/src] to be acceptable "absolute" paths, so we
+           need to expand them. *)
         let s =
           if String.is_prefix s ~prefix:"~"
           then expand s ~in_dir:`Default_directory_in_current_buffer

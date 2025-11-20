@@ -39,8 +39,8 @@ include Value.Make_subtype (struct
     let name = "face"
     let here = [%here]
     let is_in_subtype = Value.is_symbol
-    (* We don't check [facep] here.  Some functions like [face-spec-set] may correctly be
-       called on faces that are not yet defined.  Other functions will simply fail if the
+    (* We don't check [facep] here. Some functions like [face-spec-set] may correctly be
+       called on faces that are not yet defined. Other functions will simply fail if the
        face isn't defined yet; that's fine. *)
   end)
 
@@ -93,7 +93,7 @@ module Color_or_unspecified = struct
   let of_value_exn value =
     if Value.eq value Value.unspecified
        (* Sometimes Emacs returns an unspecified color as the string "unspecified-fg" or
-       "unspecified-bg" rather than the symbol [unspecified]. *)
+          "unspecified-bg" rather than the symbol [unspecified]. *)
        || (Value.is_string value
            && String.is_prefix ~prefix:"unspecified" (Value.to_utf8_bytes_exn value))
     then Unspecified
@@ -481,7 +481,7 @@ module Attribute = struct
 
       let sexp_of_t (T a) = [%sexp (a : _ t)]
 
-      (* The type system doesn't guarantee that [all] is exhaustive.  But the tests of
+      (* The type system doesn't guarantee that [all] is exhaustive. But the tests of
          [Face.attributes] in [test_face.ml] do ensure this, because they convert
          attributes as symbols to [Face.Attribute.Packed.t] using [Packed.of_symbol_exn],
          which looks up attributes based on [all]. *)

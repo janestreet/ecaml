@@ -29,8 +29,8 @@ let is_minibuffer_open =
 
 let () =
   defun_nullary_nil
-    (* In emacs-inline-tests-runner.el, this command is bound to raise_if_in_minibuffer_key
-       globally and in query-replace-map. *)
+    (* In emacs-inline-tests-runner.el, this command is bound to
+       raise_if_in_minibuffer_key globally and in query-replace-map. *)
     ("ecaml-test-raise-if-in-minibuffer" |> Symbol.intern)
     [%here]
     ~docstring:"For testing."
@@ -98,7 +98,8 @@ let () =
         print_endline (Current_buffer.contents () |> Text.to_utf8_bytes)))
   in
   defun
-    (* In emacs-inline-tests-runner.el, this command is bound to show_minibuffer_key globally. *)
+    (* In emacs-inline-tests-runner.el, this command is bound to show_minibuffer_key
+       globally. *)
     ("ecaml-test-show-minibuffer" |> Symbol.intern)
     [%here]
     ~docstring:"For testing."
@@ -161,7 +162,7 @@ let raise_command_errors_through_minibuffer =
     let%map result =
       Monitor.try_with ~extract_exn:true (fun () ->
         (* Disable backtraces they contain nondeterministic things like memory addresses
-           of bytecode functions.  This only affects errors that we deliberately cause to
+           of bytecode functions. This only affects errors that we deliberately cause to
            exit uncleanly out of [execute-kbd-macro], namely, the [throw] in
            [ecaml-test-passthrough-command-error-function]. *)
         Current_buffer.set_value_temporarily

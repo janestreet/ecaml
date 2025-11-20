@@ -33,10 +33,9 @@ type t =
   | Word
 [@@deriving sexp_of]
 
-(* Not giving [t] a [type_] because it's not quite the same as what gets
-   passed to [thing-at-point]. In particular, [Custom_chars] means to pass
-   ['filename] to [thing-at-point] but set [thing-at-point-file-name-chars]
-   first. *)
+(* Not giving [t] a [type_] because it's not quite the same as what gets passed to
+   [thing-at-point]. In particular, [Custom_chars] means to pass ['filename] to
+   [thing-at-point] but set [thing-at-point-file-name-chars] first. *)
 
 let to_symbol = function
   | Defun -> Q.defun

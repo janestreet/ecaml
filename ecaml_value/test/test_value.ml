@@ -642,7 +642,7 @@ let%expect_test "rendering OCaml exceptions in Emacs and OCaml" =
             then print_endline string
             else
               (* The following format is based on how Emacs renders errors in the
-                 minibuffer.  E.g. [M-x eval-expression]:
+                 minibuffer. E.g. [M-x eval-expression]:
 
                  {v
                    (defun test-error-rendering ()

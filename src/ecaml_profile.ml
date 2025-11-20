@@ -196,8 +196,8 @@ let () =
   (Profile.output_profile
    := fun string ->
         (* If [output_profile] raises, then Nested_profile use [eprint_s] to print the
-        exception, which doesn't work well in Emacs.  So we do our own exception
-        handling. *)
+           exception, which doesn't work well in Emacs. So we do our own exception
+           handling. *)
         try
           match Profile_buffer.profile_buffer () with
           | None -> ()
@@ -229,7 +229,7 @@ Internal to the Ecaml profiler.
 Called by `post-gc-hook' to add Elisp GC information to the Ecaml profiler.
 |}
          (* We don't profile this hook so that the gc frame is attributed to the enclosing
-          frame that actually experienced the gc. *)
+            frame that actually experienced the gc. *)
        ~should_profile:false
        ~hook_type:Normal_hook
        (Returns Value.Type.unit)
@@ -363,8 +363,8 @@ Benchmark the Ecaml profiler's rendering of a large %{name}.
       ~interactive:No_arg
       (fun () ->
         (* We [Profile.disown] because we want to render the profile below under the
-            settings of our own choosing, rather than have it incorporated into
-            the profile of the outer command. *)
+           settings of our own choosing, rather than have it incorporated into the profile
+           of the outer command. *)
         Profile.disown (fun () ->
           let data = create () in
           Ref.set_temporarily Profile.should_profile true ~f:(fun () ->

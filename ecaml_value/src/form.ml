@@ -31,7 +31,7 @@ let read_from_string ?start string =
 ;;
 
 let read
-  (* This implementation is cribbed from [thingatpt.el]'s [read-from-whole-string].  That
+  (* This implementation is cribbed from [thingatpt.el]'s [read-from-whole-string]. That
      function was originally exported, but is actually an internal thingatpt function and
      is now obsolete. *)
     string

@@ -27,7 +27,7 @@ module Initial_input : sig
 
   (* completing-read takes 0-indexed positions, read-from-minibuffer takes (weirdly)
      1-indexed positions, so they have different Elisp-side types so Initial_input.t is
-     serialized differently.  *)
+     serialized differently. *)
   val completing_t : t Value.Type.t
   val minibuffer_t : t Value.Type.t
 end

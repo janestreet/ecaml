@@ -135,7 +135,7 @@ let%expect_test "[Value.sexp_of_t] respect [print_level] in profile records" =
 
    The fact that (3) is uncommon is probably the only reason we hadn't noticed this bug
    earlier, but (3) can happen when a user calls an Ecaml-implemented command whose
-   [interactive] form directly contains a [Value.funcall].  Since the Ecaml-implemented
+   [interactive] form directly contains a [Value.funcall]. Since the Ecaml-implemented
    command hasn't started yet (call-interactively is still computing its arguments), the
    [interactive] form is toplevel, and if it (a) signals and (b) takes enough time to
    trigger profiling, Profile.Record.to_string_hum will swallow the error (which gets

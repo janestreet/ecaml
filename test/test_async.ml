@@ -31,7 +31,7 @@ let%expect_test "[block_on_async] with a quit" =
   (* We want to test what happens when Emacs calls into Ecaml that does a
      [block_on_async], and a [quit] comes in while [block_on_async] is blocked.
      [let%expect] is already doing a [block_on_async], so we first need to
-     [run_outside_async].  We then call an Ecaml [defun]'d function that
+     [run_outside_async]. We then call an Ecaml [defun]'d function that
      [Returns_deferred], which, under the hood, does [block_on_async] that deferred. *)
   let fname = "async-ecaml-test-quit-in-block-on-async" in
   let () =

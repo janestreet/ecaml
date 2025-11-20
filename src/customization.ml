@@ -268,9 +268,8 @@ let defcustom
            (let%map_open.Defun symbol = required "symbol" Symbol.t
             and value = required "value" value in
             on_set (Value.Type.of_value_exn type_ value);
-            (* We set the Elisp variable after calling the user-supplied
-                [on_set] function, because we only want to do the set if that
-                succeeds. *)
+            (* We set the Elisp variable after calling the user-supplied [on_set]
+               function, because we only want to do the set if that succeeds. *)
             set_default_toplevel_value symbol value))
      in
      Dump.eval_and_dump ~here (fun () ->

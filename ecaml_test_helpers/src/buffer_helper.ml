@@ -77,7 +77,7 @@ let show_active_region () =
       Returns the concatenated string's length, and return the pointer to
       that string via PSTR, if that variable is non-NULL.  The storage of
       the concatenated strings may be overwritten by subsequent calls.  */
-    v} *)
+   v} *)
 let show_with_overlay_text () =
   Buffer.with_temp_buffer Sync (fun temp_buffer ->
     let write before text after =
@@ -148,7 +148,7 @@ let show_with_overlay_text () =
           List.iter overlays_starting_here ~f:(fun o ->
             write_text_property_if_present o Text.Property_name.before_string);
           (* Go to next overlay endpoint, or the end of the invisibility overlay if one
-             starts here.  If there is no invisibility overlay, write the buffer contents
+             starts here. If there is no invisibility overlay, write the buffer contents
              that we just skipped. *)
           let () =
             match

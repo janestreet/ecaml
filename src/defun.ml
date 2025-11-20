@@ -249,7 +249,7 @@ let defalias =
   Funcall.Wrap.("defalias" <: Symbol.t @-> value @-> nil_or string @-> return nil)
 ;;
 
-(* We use defalias for all function definitions, instead of fset.  The former correctly
+(* We use defalias for all function definitions, instead of fset. The former correctly
    handles things like advice that has already been defined for the symbol. *)
 let defalias symbol ~(here : [%call_pos]) ?docstring ~alias_of () =
   add_to_load_history symbol here;

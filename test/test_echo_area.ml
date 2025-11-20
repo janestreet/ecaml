@@ -4,7 +4,7 @@ open! Import
 open! Echo_area
 
 (* Expect tests run with [emacs -batch], which causes messages to go to stderr in addition
-   to the *Messages* buffer.  Since ppx_expect collects output on stderr, we get a second
+   to the *Messages* buffer. Since ppx_expect collects output on stderr, we get a second
    copy of the output. *)
 let show () =
   let buffer = Buffer.find_or_create ~name:"*Messages*" in
