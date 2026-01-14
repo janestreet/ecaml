@@ -41,8 +41,6 @@ module type Current_buffer0_public = sig
   (** [(describe-function 'set)] *)
   val set_value : 'a Var.t -> 'a -> unit
 
-  val set_values : Var.And_value.t list -> unit
-
   (** [(describe-function 'makunbound)] *)
   val clear_value : 'a Var.t -> unit
 

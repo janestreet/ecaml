@@ -129,8 +129,11 @@ let tag_function =
     [%here]
     ~docstring:
       {|
-If non-nil, ecaml-profile calls this function with 0 arguments when creating a profile
-frame.  The output is added to the profile frame. |}
+A function of no arguments called when creating a profile frame.
+
+The return value of this function is added to the profile frame, to
+provide additional context (e.g., the current buffer).
+|}
     ~type_:(Value.Type.nil_or Function.type_)
     ~initial_value:None
     ()
@@ -292,9 +295,10 @@ Called by `post-gc-hook' to add Elisp GC information to the Ecaml profiler.
       {|
 Call FUNCTION with ARGS inside a call to [Nested_profile.profile].
 
-FUNCTION-NAME should be the name of the function, to be used when rendering the profile.
-This is passed separately because advice combinators receive the function definition and
-not its name as input.
+FUNCTION-NAME should be the name of the function, to be used when
+rendering the profile.  This is passed separately because advice
+combinators receive the function definition and not its name as
+input.
 |}
     ~should_profile:false
     (Returns Value.Type.value)

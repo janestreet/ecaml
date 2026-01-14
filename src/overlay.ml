@@ -99,3 +99,4 @@ let in_filtered_by_property property ~start ~end_ =
 ;;
 
 let equal a b = Value.eq (a |> to_value) (b |> to_value)
+let delete_all = Funcall.Wrap.("delete-all-overlays" <: Buffer.t @-> return ignored)

@@ -26,7 +26,7 @@ let should_profile = ref false
 let hide_if_less_than = ref (Time_ns.Span.of_int_us 100)
 let hide_top_level_if_less_than = ref (Time_ns.Span.of_int_ms 10)
 let never_show_rendering_took = ref false
-let output_profile = ref print_string
+let output_profile = ref [%eta1 print_string]
 let sexp_of_time_ns = ref [%sexp_of: Time_ns.Alternate_sexp.t]
 let tag_frames_with : Frame_tagger.t option ref = ref None
 
@@ -516,7 +516,7 @@ let profile
                    [%lazy_message
                      "[Profile.profile] created frame with parent that already exited"
                        ~parent:(Message.force parent.message : Sexp.t)
-                       ~frame:(Message.force frame.message : Sexp.t)]);
+                       ~frame:(Message.force frame.message : Sexp.t)])
            ]} *)
         fun ~by ->
         parent.pending_children <- parent.pending_children + by;

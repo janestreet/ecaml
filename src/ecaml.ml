@@ -135,6 +135,7 @@ let message_s = Echo_area.message_s
 let message_text = Echo_area.message_text
 let print_s = print_s
 let raise_string = raise_string
+let raise_user_error = raise_user_error
 let sec_ns = sec_ns
 let warn = Warning.display ~level:Warning
 let wrap_message = Echo_area.wrap_message
@@ -188,8 +189,8 @@ Test [Process.set_sentinel] on a sentinel that raises.
       {|
 For testing Ecaml.
 
-List the Unix signals that are managed by the Async OCaml library in the running Emacs
-process.
+List the Unix signals that are managed by the Async OCaml library in
+the running Emacs process.
 |}
     ~interactive:(Defun.Interactive.list [ Value.t ])
     (Returns Ecaml_sexp.t)
@@ -389,7 +390,7 @@ let () =
   defun
     ("ecaml-dynlink-loadfile" |> Symbol.intern)
     [%here]
-    ~docstring:{|Using Dynlink.loadfile, load .cmxs FILE|}
+    ~docstring:{|Using Dynlink.loadfile, load .cmxs FILE.|}
       (* If this function did profiling, all profiling happening in tests would be part of
          this frame, and would never get output to the *profile* buffer. *)
     ~should_profile:false

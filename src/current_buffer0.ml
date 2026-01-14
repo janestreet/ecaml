@@ -52,11 +52,30 @@ let clear_value (var : _ Var.t) = makunbound var.symbol
 let elisp_set = Funcall.Wrap.("set" <: Symbol.t @-> value @-> return nil)
 let set_value (var : _ Var.t) a = elisp_set var.symbol (a |> Value.Type.to_value var.type_)
 
-let set_values vars_and_values =
-  List.iter vars_and_values ~f:(fun (Var.And_value.T (var, value)) -> set_value var value)
+let set_values_temporarily_assuming_all_vars_are_bound
+  (type a b)
+  (sync_or_async : (a, b) Sync_or_async.t)
+  (vars_and_values : Var.And_value.t list)
+  ~(f : unit -> b)
+  =
+  let old_buffer = get () in
+  let olds =
+    List.map vars_and_values ~f:(fun (Var.And_value.T (var, _)) ->
+      Var.And_value_option.T (var, value var))
+  in
+  List.iter vars_and_values ~f:(fun (Var.And_value.T (var, value)) -> set_value var value);
+  Sync_or_async.protect sync_or_async ~f ~finally:(fun () ->
+    let new_buffer = get () in
+    let buffer_changed = not (Buffer.equal old_buffer new_buffer) in
+    if buffer_changed && Buffer.is_live old_buffer then set old_buffer;
+    List.iter olds ~f:(fun (Var.And_value_option.T (var, value_opt)) ->
+      match value_opt with
+      | None -> clear_value var
+      | Some value -> set_value var value);
+    if buffer_changed then set new_buffer)
 ;;
 
-let set_values_temporarily
+let set_values_temporarily_generic
   (type a b)
   (sync_or_async : (a, b) Sync_or_async.t)
   (vars_and_values : Var.And_value.t list)
@@ -87,6 +106,18 @@ let set_values_temporarily
   | Async ->
     let%bind () = Form.eval_i form in
     return (Set_once.get_exn r)
+;;
+
+let set_values_temporarily sync_or_async (vars_and_values : Var.And_value.t list) ~f =
+  match
+    List.for_all vars_and_values ~f:(fun (T (var, _)) -> Var.default_value_is_defined var)
+  with
+  | true ->
+    (* When it is safe to do so, just use set/protect to simulate the dynamic extent of
+       the let binding. This is much less costly than allocating a lambda and some forms
+       and crossing the boundary twice. *)
+    set_values_temporarily_assuming_all_vars_are_bound sync_or_async vars_and_values ~f
+  | false -> set_values_temporarily_generic sync_or_async vars_and_values ~f
 ;;
 
 let set_value_temporarily sync_or_async var value ~f =

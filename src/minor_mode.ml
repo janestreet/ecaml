@@ -99,7 +99,7 @@ let define_minor_mode
       Defun.defun_func
         ([%string "%{Symbol.name name}--init"] |> Symbol.intern)
         here
-        ~docstring:[%string "Initializer for %{Symbol.name name}"]
+        ~docstring:Documentation.O.([%string "Initializer for %{symbol name}."])
         (Returns Value.Type.unit)
         (let%map_open.Defun () = return () in
          f t)

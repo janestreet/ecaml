@@ -21,14 +21,7 @@ let%expect_test "[press_and_show_minibuffer] with [save-some-buffers] shows prom
         [%expect
           {|
           Save file TMPDIR/BASENAME/foo.txt? (y, n, !, ., q, C-r, C-f, d or C-h)
-          Save file TMPDIR/BASENAME/foo.txt? (y, n, !, ., q, C-r, C-f, d or C-h) C-u
-          Type C-h for help
-          Save file TMPDIR/BASENAME/foo.txt? (y, n, !, ., q, C-r, C-f, d or C-h)
-          Save file TMPDIR/BASENAME/foo.txt? (y, n, !, ., q, C-r, C-f, d or C-h) <f14>
-          Type C-h for help
-          Save file TMPDIR/BASENAME/foo.txt? (y, n, !, ., q, C-r, C-f, d or C-h)
           Save file TMPDIR/BASENAME/foo.txt? (y, n, !, ., q, C-r, C-f, d or C-h) C-]
-          
           |}];
         return ()))
 ;;
@@ -47,7 +40,6 @@ let%expect_test "[press] with [save-some-buffers] times out instead of showing p
         print_string (replace [%expect.output] ~pattern:basename ~with_:"BASENAME/");
         [%expect
           {|
-          Save file TMPDIR/BASENAME/foo.txt? (y, n, !, ., q, C-r, C-f, d or C-h)
           Save file TMPDIR/BASENAME/foo.txt? (y, n, !, ., q, C-r, C-f, d or C-h) <f13>
           ("Minibuffer open" ((prompt ())))
           (user-error ("No recursive edit is in progress"))

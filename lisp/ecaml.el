@@ -9,8 +9,6 @@
 (require 'cl-lib)
 (require 'find-func)
 (require 'jane-ecaml nil t)
-(declare-function ecaml-profile--inner "ecaml_plugin" (function-name function &rest arguments) t)
-(require 'jane-ecaml nil t)
 
 (defmacro ecaml-profile (message &rest body)
   "Evaluate BODY, recording a profiling frame in the *profile* buffer.

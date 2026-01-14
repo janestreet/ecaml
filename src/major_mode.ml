@@ -144,7 +144,8 @@ let define_derived_mode
       Defun.defun_func
         ([%string "%{Symbol.name symbol}--init"] |> Symbol.intern)
         here
-        ~docstring:[%string "Initializer for %{Symbol.name symbol}"]
+        ~docstring:
+          [%string "Initializer for %{Documentation.Special_sequence.symbol symbol}."]
         returns
         (let%map_open.Defun () = return () in
          f ())

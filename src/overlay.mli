@@ -69,3 +69,4 @@ val in_filtered_by_property
   -> (t * 'a) list
 
 val equal : t -> t -> bool
+val delete_all : Buffer.t -> unit

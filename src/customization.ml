@@ -70,7 +70,7 @@ module Group = struct
   let emacs = of_string "emacs"
 
   let ecaml =
-    defgroup "ecaml" [%here] ~docstring:{| Customization of Ecaml |} ~parents:[ emacs ]
+    defgroup "ecaml" [%here] ~docstring:{| Customization of Ecaml. |} ~parents:[ emacs ]
   ;;
 end
 

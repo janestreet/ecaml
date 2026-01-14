@@ -448,8 +448,9 @@ let start_scheduler () =
       {|
 For testing Async Ecaml.
 
-This runs the same OCaml code that Async Ecaml uses for running an Async cycle.  It blocks
-until it can acquire the Async lock and then run a cycle.
+This runs the same OCaml code that Async Ecaml uses for running an
+Async cycle.  It blocks until it can acquire the Async lock and then
+run a cycle.
 |}
     ~interactive:No_arg
     (Returns Value.Type.unit)
@@ -459,8 +460,8 @@ until it can acquire the Async lock and then run a cycle.
   Cycle_requester.register_cycle_handler
     t.cycle_requester
     Block_on_async.in_emacs_have_lock_do_cycle;
-  (* The default [max_inter_cycle_timeout] is much too small (0.05s).  Setting it to 1s reduces
-     load on emacs. *)
+  (* The default [max_inter_cycle_timeout] is much too small (0.05s). Setting it to 1s
+     reduces load on emacs. *)
   Scheduler.set_max_inter_cycle_timeout
     (Time_ns.Span.second |> Time_ns.Span.to_span_float_round_nearest);
   (* [Async_unix] installs a handler for logging exceptions raised to try-with that has
@@ -614,8 +615,8 @@ This runs Async cycles for 10s and then shows how long the cycles took.
       {|
 For testing Async Ecaml.
 
-Run a benchmark that creates an Async TCP server and client and has the client ping the
-server 100 times.
+Run a benchmark that creates an Async TCP server and client and has
+the client ping the server 100 times.
 |}
     ~f:Ecaml_bench.Bench_async_ecaml.benchmark_small_pings;
   defun_benchmark
@@ -624,8 +625,8 @@ server 100 times.
       {|
 For testing Async Ecaml.
 
-Run a benchmark that creates an Async TCP server and client and has the server send 100M
-to the client.
+Run a benchmark that creates an Async TCP server and client and has
+the server send 100M to the client.
 |}
     ~f:Ecaml_bench.Bench_async_ecaml.benchmark_throughput;
   Defun.defun_nullary
@@ -636,11 +637,14 @@ to the client.
       {|
 For testing Async Ecaml.
 
-Block on [Deferred.never ()] until you press [C-g].
+Block on [Deferred.never ()] until you press \`C-g'.
 |}
     (Returns_deferred Value.Type.unit)
     (fun () ->
-       message_s [%message "blocking forever -- press C-g to interrupt"];
+       Echo_area.message_text
+         ("blocking forever -- press \\`C-g' to interrupt"
+          |> Text.of_utf8_bytes
+          |> Documentation.substitute_command_keys);
        Async.Deferred.never ());
   Defun.defun_nullary_nil
     ("ecaml-async-test-execution-context-handling" |> Symbol.intern)
@@ -733,8 +737,9 @@ Call [In_thread.run] a number of times and report on its performance.
       {|
 Demonstrate a bug in Async_ecaml's handling of execution contexts.
 
-In non-async Ecaml defuns, running some Elisp code that then calls back into Ecaml will
-not preserve the current Async execution context.
+In non-async Ecaml defuns, running some Elisp code that then calls
+back into Ecaml will not preserve the current Async execution
+context.
 |}
     ~interactive:No_arg
     (fun () ->
@@ -761,8 +766,9 @@ not preserve the current Async execution context.
       {|
 For testing Async Ecaml.
 
-Test [Background.schedule_foreground_block_on_async].  This should block for a couple
-seconds, and then open a buffer with a hello-world message.
+Test [Background.schedule_foreground_block_on_async].  This should
+block for a couple seconds, and then open a buffer with a hello-world
+message.
 |}
     ~interactive:No_arg
     (fun () ->

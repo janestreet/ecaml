@@ -189,6 +189,36 @@ let%expect_test "[set_values_temporarily]" =
   return ()
 ;;
 
+let%expect_test "[set_values_temporarily] behaves correctly when variable is defvar'd \
+                 during body"
+  =
+  let v1 = int_var "z1" in
+  let defvar () =
+    Form.Blocking.eval_i
+      (Form.apply
+         Q.defvar
+         [ Var.symbol v1 |> Form.symbol; Form.int 42; Form.string "Some int variable" ])
+  in
+  let show () = print_s [%message "" ~_:(value v1 : int option)] in
+  show ();
+  [%expect {| () |}];
+  set_values_temporarily
+    Sync
+    [ T (v1, 15) ]
+    ~f:(fun () ->
+      show ();
+      [%expect {| (15) |}];
+      defvar ();
+      show ();
+      (* The let-binding still shadows the default value from [defvar]. *)
+      [%expect {| (15) |}]);
+  (* When [set_values_temporarily] ends, the variable's default value from [defvar] is
+     unshadowed. *)
+  require_some (value v1) ~print_some:[%sexp_of: int];
+  [%expect {| 42 |}];
+  return ()
+;;
+
 let%expect_test "[file_name]" =
   let show_file_basename () =
     print_s [%sexp (file_name () |> Option.map ~f:Filename.nondirectory : string option)]

@@ -111,8 +111,7 @@ module Which_buffers = struct
     | These f ->
       Function.of_ocaml_func0 [%here] (fun () ->
         let buffer = Current_buffer0.get () in
-        try f buffer |> Value.of_bool with
-        | exn -> raise_s [%message "[Which_buffers.These]" (buffer : buffer) (exn : exn)])
+        f buffer |> Value.of_bool)
       |> Function.to_value
   ;;
 
@@ -133,8 +132,7 @@ let save_some =
   in
   fun ?(query = true) ?(which_buffers = Which_buffers.File_visiting) () ->
     Value.Private.run_outside_async (fun () ->
-      try save_some_buffers (not query) which_buffers with
-      | exn -> raise_s [%message "[Buffer.save_some]" (exn : exn)])
+      save_some_buffers (not query) which_buffers)
 ;;
 
 let with_temp_buffer ?(name = " *temp*") sync_or_async f =

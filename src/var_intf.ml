@@ -57,6 +57,9 @@ module type Var = sig
   (** [(describe-function 'set-default)] [(Info-goto-node "(elisp)Default Value")] *)
   val set_default_value : 'a t -> 'a -> unit
 
+  (** [(describe-function 'default-toplevel-value)] *)
+  val default_toplevel_value_is_defined : _ t -> bool
+
   (** [(describe-function 'make-variable-buffer-local)]
       [(Info-goto-node "(elisp)Creating Buffer-Local")] *)
   val make_buffer_local_always : _ t -> unit

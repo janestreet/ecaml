@@ -21,8 +21,7 @@ let advise_for_ocaml () =
        ("find-function-search-ocaml" |> Symbol.intern)
        ~docstring:
          {|
-Advice that makes `find-function' able to jump to the source code position of functions
-defined in Ecaml.
+Make `find-function' jump to the OCaml source of Ecaml functions.
 |}
        Async
        (fun inner values ->

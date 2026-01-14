@@ -31,9 +31,4 @@ module Format = struct
   ;;
 end
 
-let force_update =
-  let f = Funcall.Wrap.("force-mode-line-update" <: bool @-> return ignored) in
-  fun ?(all = false) () -> f all
-;;
-
 let text = Funcall.Wrap.("format-mode-line" <: Format.t @-> return Text.t)

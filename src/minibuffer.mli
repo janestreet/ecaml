@@ -99,6 +99,9 @@ val exit_hook : (Hook.normal, unit) Hook.t
 (** [(describe-variable 'minibuffer-setup-hook)]
     [(Info-goto-node "(elisp)Minibuffer Misc")] *)
 val setup_hook : (Hook.normal, unit) Hook.t
+[@@alert
+  prefer_with_setup_hook_instead
+    "You probably want to use [with_setup_hook] to avoid re-entrancy bugs."]
 
 (** - [(describe-function 'minibuffer-with-setup-hook)]
     - [(Info-goto-node "(elisp)Minibuffer Misc")] *)

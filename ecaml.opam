@@ -20,12 +20,12 @@ depends: [
   "core_unix"
   "expect_test_helpers_core"
   "file_path"
+  "memtrace"
   "ppx_expect"
   "ppx_jane"
   "sexp_pretty"
   "sexplib"
   "dune"                     {>= "3.17.0"}
-  "memtrace"                 {>= "0.2.1.2"}
   "uutf"                     {= "1.0.3+ox"}
 ]
 available: arch != "arm32" & arch != "x86_32"

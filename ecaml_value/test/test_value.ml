@@ -673,10 +673,9 @@ let%expect_test "rendering OCaml exceptions in Emacs and OCaml" =
   [%expect
     {|
     OCaml:
-    ((foo (backtrace ("<backtrace elided in test>")))
-     (backtrace "<backtrace elided in test>"))
+    ((foo (backtrace ("<backtrace elided in test>"))))
     Emacs:
-    (foo (backtrace ("<backtrace elided in test>"))): (backtrace "<backtrace elided in test>")
+    (foo (backtrace ("<backtrace elided in test>")))
     |}];
   test [%message "foo" "bar"];
   [%expect
@@ -690,10 +689,9 @@ let%expect_test "rendering OCaml exceptions in Emacs and OCaml" =
   [%expect
     {|
     OCaml:
-    (((foo bar) (backtrace ("<backtrace elided in test>")))
-     (backtrace "<backtrace elided in test>"))
+    (((foo bar) (backtrace ("<backtrace elided in test>"))))
     Emacs:
-    ((foo bar) (backtrace ("<backtrace elided in test>"))): (backtrace "<backtrace elided in test>")
+    ((foo bar) (backtrace ("<backtrace elided in test>")))
     |}];
   test (List (List.init 15 ~f:(fun i -> Sexp.Atom ("foobar" ^ Int.to_string i))));
   [%expect

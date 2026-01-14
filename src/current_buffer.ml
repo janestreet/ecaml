@@ -454,3 +454,5 @@ let write_region ?(start = Point.min ()) ?(end_ = Point.max ()) ?(append = false
   =
   write_region start end_ filename append Q.nomessage
 ;;
+
+let disable_undo = Funcall.Wrap.("buffer-disable-undo" <: nullary @-> return ignored)

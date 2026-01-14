@@ -402,3 +402,6 @@ val write_region
   -> ?append:bool (** default is [false] *)
   -> Filename.t
   -> unit
+
+(** [(describe-function 'buffer-disable-undo)] *)
+val disable_undo : unit -> unit
