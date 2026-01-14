@@ -22,9 +22,21 @@ let%expect_test "[create ~parents:true], [delete ~recursive:true]" =
 ;;
 
 let%expect_test "[create] raise" =
-  show_raise (fun () -> create "/zzz");
+  create "readonly";
+  Core_unix.chmod "readonly" ~perm:0o555;
+  print_s
+    ~templatize_current_directory:true
+    [%sexp (Or_error.try_with (fun () -> create "readonly/zzz") : unit Or_error.t)];
   [%expect
-    {| (raised (permission-denied ("Creating directory" "Permission denied" /zzz))) |}];
+    {|
+    (Error (
+      permission-denied (
+        "Creating directory"
+        "Permission denied"
+        <current-directory>/readonly/zzz)))
+    |}];
+  Core_unix.chmod "readonly" ~perm:0o755;
+  delete "readonly";
   return ()
 ;;
 

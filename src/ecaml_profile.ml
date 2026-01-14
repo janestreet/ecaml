@@ -129,8 +129,11 @@ let tag_function =
     [%here]
     ~docstring:
       {|
-If non-nil, ecaml-profile calls this function with 0 arguments when creating a profile
-frame.  The output is added to the profile frame. |}
+A function of no arguments called when creating a profile frame.
+
+The return value of this function is added to the profile frame, to
+provide additional context (e.g., the current buffer).
+|}
     ~type_:(Value.Type.nil_or Function.type_)
     ~initial_value:None
     ()
@@ -196,8 +199,8 @@ let () =
   (Profile.output_profile
    := fun string ->
         (* If [output_profile] raises, then Nested_profile use [eprint_s] to print the
-        exception, which doesn't work well in Emacs.  So we do our own exception
-        handling. *)
+           exception, which doesn't work well in Emacs. So we do our own exception
+           handling. *)
         try
           match Profile_buffer.profile_buffer () with
           | None -> ()
@@ -229,7 +232,7 @@ Internal to the Ecaml profiler.
 Called by `post-gc-hook' to add Elisp GC information to the Ecaml profiler.
 |}
          (* We don't profile this hook so that the gc frame is attributed to the enclosing
-          frame that actually experienced the gc. *)
+            frame that actually experienced the gc. *)
        ~should_profile:false
        ~hook_type:Normal_hook
        (Returns Value.Type.unit)
@@ -292,9 +295,10 @@ Called by `post-gc-hook' to add Elisp GC information to the Ecaml profiler.
       {|
 Call FUNCTION with ARGS inside a call to [Nested_profile.profile].
 
-FUNCTION-NAME should be the name of the function, to be used when rendering the profile.
-This is passed separately because advice combinators receive the function definition and
-not its name as input.
+FUNCTION-NAME should be the name of the function, to be used when
+rendering the profile.  This is passed separately because advice
+combinators receive the function definition and not its name as
+input.
 |}
     ~should_profile:false
     (Returns Value.Type.value)
@@ -363,8 +367,8 @@ Benchmark the Ecaml profiler's rendering of a large %{name}.
       ~interactive:No_arg
       (fun () ->
         (* We [Profile.disown] because we want to render the profile below under the
-            settings of our own choosing, rather than have it incorporated into
-            the profile of the outer command. *)
+           settings of our own choosing, rather than have it incorporated into the profile
+           of the outer command. *)
         Profile.disown (fun () ->
           let data = create () in
           Ref.set_temporarily Profile.should_profile true ~f:(fun () ->

@@ -3,7 +3,8 @@ open! Async_kernel
 open! Import
 
 module Q = struct
-  (* An arbitrarily-chosen feature distributed with emacs, but not loaded on emacs startup. *)
+  (* An arbitrarily-chosen feature distributed with emacs, but not loaded on emacs
+     startup. *)
   let array = "array" |> Symbol.intern
 end
 

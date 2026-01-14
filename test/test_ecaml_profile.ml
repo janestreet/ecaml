@@ -69,11 +69,7 @@ let%expect_test "tag-frame-function" =
             "hello world")))
       ~f:(fun () ->
         profile Sync [%lazy_sexp "nest"] (fun () -> Clock.advance clock ~by:(sec 0.3))));
-  [%expect
-    {|
-    (300_000us (eval (let ((ecaml-profile-tag-frame-function (quote ecaml-func-app/emacs/lib/ecaml/test/test_ecaml_profile.ml:68:31))) (funcall (quote ecaml-func-app/emacs/lib/ecaml/src/current_buffer0.ml:74:30)))) (19:00:00.000000000-05:00 1969-12-31) (
-       (100% 300_000us (nest "hello world"))))
-    |}];
+  [%expect {| (300_000us (nest "hello world") (19:00:00.000000000-05:00 1969-12-31)) |}];
   return ()
 ;;
 
@@ -135,7 +131,7 @@ let%expect_test "[Value.sexp_of_t] respect [print_level] in profile records" =
 
    The fact that (3) is uncommon is probably the only reason we hadn't noticed this bug
    earlier, but (3) can happen when a user calls an Ecaml-implemented command whose
-   [interactive] form directly contains a [Value.funcall].  Since the Ecaml-implemented
+   [interactive] form directly contains a [Value.funcall]. Since the Ecaml-implemented
    command hasn't started yet (call-interactively is still computing its arguments), the
    [interactive] form is toplevel, and if it (a) signals and (b) takes enough time to
    trigger profiling, Profile.Record.to_string_hum will swallow the error (which gets

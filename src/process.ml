@@ -389,8 +389,8 @@ let call_drop_stderr_if_ok_exn
         prog
         args
     in
-    (* Ignoring stderr in the OK case.
-       Stderr will be printed by [call_exn] in the error case. *)
+    (* Ignoring stderr in the OK case. Stderr will be printed by [call_exn] in the error
+       case. *)
     result)
 ;;
 

@@ -9,8 +9,8 @@ include File_path.Operators
 let concat = String.concat
 
 (* [ignore_stderr] is useful for tests where Emacs outputs on stderr, which would cause
-   jenga to view the test as failing.  [ignore_stderr] redirects stderr to [/dev/null],
-   and returns a function to restore stderr. *)
+   jenga to view the test as failing. [ignore_stderr] redirects stderr to [/dev/null], and
+   returns a function to restore stderr. *)
 let ignore_stderr () =
   let module Unix = Core_unix in
   let saved_stderr = Unix.dup Unix.stderr in
@@ -127,10 +127,9 @@ let with_input_macro =
          let minibuffer_contents =
            if Minibuffer.depth () > 0 then Some (Minibuffer.contents ()) else None
          in
-         (* If the [f] is stuck inside [read-from-minibuffer], any exceptions raised
-               here will be caught and not propagated past [read-from-minibuffer].
-               Instead, message and call [top-level] (which does a [throw] instead of
-               [signal]). *)
+         (* If the [f] is stuck inside [read-from-minibuffer], any exceptions raised here
+            will be caught and not propagated past [read-from-minibuffer]. Instead,
+            message and call [top-level] (which does a [throw] instead of [signal]). *)
          message_s
            [%message
              "[with_input_macro] provided full input but function is still running"

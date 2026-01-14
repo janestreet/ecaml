@@ -115,8 +115,8 @@ let%expect_test "[defstruct]" =
      : Host_and_port.t Defstruct.t);
   update_emacs_with_entries ~chop_prefix:"app/emacs/" ~in_dir:"<dir>";
   show_defining_file (fun sym ->
-    (* defstruct doesn't define anything for the base symbol.  Also ignore random internal
-       stuff that [cl-defstruct] defines.  *)
+    (* defstruct doesn't define anything for the base symbol. Also ignore random internal
+       stuff that [cl-defstruct] defines. *)
     String.is_substring sym ~substring:(Symbol.name base_symbol)
     && (not (String.equal sym (Symbol.name base_symbol)))
     && (not (String.is_prefix sym ~prefix:"--cl-block-"))

@@ -29,8 +29,8 @@ let is_minibuffer_open =
 
 let () =
   defun_nullary_nil
-    (* In emacs-inline-tests-runner.el, this command is bound to raise_if_in_minibuffer_key
-       globally and in query-replace-map. *)
+    (* In emacs-inline-tests-runner.el, this command is bound to
+       raise_if_in_minibuffer_key globally and in query-replace-map. *)
     ("ecaml-test-raise-if-in-minibuffer" |> Symbol.intern)
     [%here]
     ~docstring:"For testing."
@@ -98,7 +98,8 @@ let () =
         print_endline (Current_buffer.contents () |> Text.to_utf8_bytes)))
   in
   defun
-    (* In emacs-inline-tests-runner.el, this command is bound to show_minibuffer_key globally. *)
+    (* In emacs-inline-tests-runner.el, this command is bound to show_minibuffer_key
+       globally. *)
     ("ecaml-test-show-minibuffer" |> Symbol.intern)
     [%here]
     ~docstring:"For testing."
@@ -129,13 +130,13 @@ let ecaml_test_passthrough_command_error_function =
 ;;
 
 (* Normally, [read-from-minibuffer] doesn't pass command errors through to the caller, but
-   such errors still abort keyboard macro execution.  This means that the call to
+   such errors still abort keyboard macro execution. This means that the call to
    [execute-kbd-macro] can hang indefinitely without returning/raising if it triggers any
-   error while in a minibuffer prompt.  See [minibuffer-error-initialize] which arranges
+   error while in a minibuffer prompt. See [minibuffer-error-initialize] which arranges
    for this behavior in the minibuffer.
 
    We override this by appending to [minibuffer-setup-hook] and using a different
-   [command-error-function] which simply [throw]s the exception.  We don't want to use
+   [command-error-function] which simply [throw]s the exception. We don't want to use
    [command-error-default-function] here, because in batch mode it kills the Emacs process
    directly (exit code 255). *)
 let raise_command_errors_through_minibuffer =
@@ -157,11 +158,16 @@ let raise_command_errors_through_minibuffer =
            ecaml_test_passthrough_command_error_function)
   in
   fun f ->
-    Hook.add Minibuffer.setup_hook ~where:End hook_function;
+    (* Add to the global [minibuffer-setup-hook] because we want to affect all minibuffer
+       invocations during [f], not just the first one. *)
+    Hook.add
+      (Minibuffer.setup_hook [@alert "-prefer_with_setup_hook_instead"])
+      ~where:End
+      hook_function;
     let%map result =
       Monitor.try_with ~extract_exn:true (fun () ->
         (* Disable backtraces they contain nondeterministic things like memory addresses
-           of bytecode functions.  This only affects errors that we deliberately cause to
+           of bytecode functions. This only affects errors that we deliberately cause to
            exit uncleanly out of [execute-kbd-macro], namely, the [throw] in
            [ecaml-test-passthrough-command-error-function]. *)
         Current_buffer.set_value_temporarily
@@ -170,7 +176,9 @@ let raise_command_errors_through_minibuffer =
           false
           ~f)
     in
-    Hook.remove Minibuffer.setup_hook hook_function;
+    Hook.remove
+      (Minibuffer.setup_hook [@alert "-prefer_with_setup_hook_instead"])
+      hook_function;
     match result with
     | Error (Value.For_testing.Elisp_throw { tag; value } as exn)
       when Value.eq tag (Symbol.to_value Q.ecaml_test_error_in_minibuffer) ->

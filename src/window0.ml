@@ -1,5 +1,4 @@
-(* [window0.ml] is split out from [window.ml] so we can refer to [Window0] in
-   [Buffer]. *)
+(* [window0.ml] is split out from [window.ml] so we can refer to [Window0] in [Buffer]. *)
 
 open! Core
 open! Import0

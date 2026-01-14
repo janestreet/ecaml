@@ -110,12 +110,15 @@ let%expect_test "[exit_hook]" =
     ((symbol    minibuffer-exit-hook)
      (hook_type Normal_hook)
      (value ((
+       minibuffer--nonselected-exit
        minibuffer--regexp-exit
        minibuffer-exit-on-screen-keyboard
        minibuffer-restore-windows))))
     |}];
   return ()
 ;;
+
+let setup_hook = (setup_hook [@alert "-prefer_with_setup_hook_instead"])
 
 let%expect_test "[setup_hook]" =
   print_s [%sexp (setup_hook : (_, _) Hook.t)];
@@ -125,6 +128,7 @@ let%expect_test "[setup_hook]" =
      (hook_type Normal_hook)
      (value ((
        rfn-eshadow-setup-minibuffer
+       minibuffer--nonselected-setup
        minibuffer--regexp-setup
        minibuffer-setup-on-screen-keyboard
        minibuffer-error-initialize

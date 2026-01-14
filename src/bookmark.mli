@@ -88,7 +88,7 @@ module Make_record_function : sig
 
   type t = unit -> Return_type.t
 
-  (** The symbol should be a function of type [t]. **)
+  (** The symbol should be a function of type [t]. *)
   val in_buffer : Symbol.t Buffer_local.t
 
   (** [(describe-function 'bookmark-make-record-default)] *)

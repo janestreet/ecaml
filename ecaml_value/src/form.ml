@@ -2,7 +2,7 @@ open! Core
 open! Import
 
 module Q = struct
-  let end_of_file = "end-of-file" |> Symbol.intern
+  let end_of_file = "end-of-file" |> Value.intern
   let eval = "eval" |> Symbol.intern
   let let_ = "let" |> Symbol.intern
   let progn = "progn" |> Symbol.intern
@@ -31,7 +31,7 @@ let read_from_string ?start string =
 ;;
 
 let read
-  (* This implementation is cribbed from [thingatpt.el]'s [read-from-whole-string].  That
+  (* This implementation is cribbed from [thingatpt.el]'s [read-from-whole-string]. That
      function was originally exported, but is actually an internal thingatpt function and
      is now obsolete. *)
     string
@@ -39,16 +39,15 @@ let read
   let string_value = Value.of_utf8_bytes string in
   let value, end_of_first_read = read_from_string string_value in
   match read_from_string string_value ~start:end_of_first_read with
-  | exception Value.For_testing.Elisp_signal { symbol; data = _ }
-    when Value.eq symbol (Symbol.to_value Q.end_of_file) ->
+  | exception exn when Value.Expert.has_error_condition exn Q.end_of_file ->
     (* Unfortunately, we can't distinguish between these two reasons for the second read
-         signaling end-of-error:
+       signaling end-of-file:
 
-         1. There's nothing after the first form.
-         2. There's an unbalanced opening delimiter after the first form.
+       1. There's nothing after the first form.
+       2. There's an unbalanced opening delimiter after the first form.
 
-         E.g., [(read-from-string "")] and [(read-from-string "(")] do not produce
-         distinguishable results. *)
+       E.g., [(read-from-string "")] and [(read-from-string "(")] do not produce
+       distinguishable results. *)
     of_value_exn value
   | exception exn ->
     raise_s
@@ -78,6 +77,7 @@ let eval_i t = Value.Private.run_outside_async (fun () -> Blocking.eval_i t)
 let eval_string t = Value.Private.run_outside_async (fun () -> Blocking.eval_string t)
 let list ts = Value.list (ts : t list :> Value.t list) |> of_value_exn
 let nil = list []
+let bool b = if b then of_value_exn Value.t else nil
 let q value = Value.list [ Symbol.to_value Q.quote; value ]
 let quote value = q value |> of_value_exn
 let quoted_symbol sym = quote (Symbol.to_value sym)

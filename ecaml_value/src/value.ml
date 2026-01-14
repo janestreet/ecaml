@@ -27,8 +27,8 @@ end
 
 external process_input : unit -> Process_input.t = "ecaml_process_input"
 
-(* [Funcall_exit.t] values are only constructed by [ecaml_non_local_exit_get_and_clear]
-   in [ecaml_stubs.c]. *)
+(* [Funcall_exit.t] values are only constructed by [ecaml_non_local_exit_get_and_clear] in
+   [ecaml_stubs.c]. *)
 module Funcall_exit = struct
   type t =
     | Return
@@ -230,26 +230,32 @@ module Q = struct
   let commandp = "commandp" |> intern
   let cons = "cons" |> intern
   let consp = "consp" |> intern
+  let debug_ignored_errors = "debug-ignored-errors" |> intern
   let debug_on_error = "debug-on-error" |> intern
+  let debug_on_quit = "debug-on-quit" |> intern
   let equal = "equal" |> intern
   let equal_including_properties = "equal-including-properties" |> intern
   let error = "error" |> intern
+  let error_conditions = "error-conditions" |> intern
   let eventp = "eventp" |> intern
   let floatp = "floatp" |> intern
   let fontp = "fontp" |> intern
   let framep = "framep" |> intern
   let functionp = "functionp" |> intern
+  let get = "get" |> intern
   let hash_table_p = "hash-table-p" |> intern
   let keymapp = "keymapp" |> intern
   let length = "length" |> intern
   let list = "list" |> intern
   let markerp = "markerp" |> intern
+  let memq = "memq" |> intern
   let message = "message" |> intern
   let nil = "nil" |> intern
   let prin1_to_string = "prin1-to-string" |> intern
   let print_length = "print-length" |> intern
   let print_level = "print-level" |> intern
   let processp = "processp" |> intern
+  let quit = "quit" |> intern
   let set = "set" |> intern
   let string_as_multibyte = "string-as-multibyte" |> intern
   let stringp = "stringp" |> intern
@@ -258,6 +264,7 @@ module Q = struct
   let symbolp = "symbolp" |> intern
   let t = "t" |> intern
   let timerp = "timerp" |> intern
+  let user_error = "user-error" |> intern
   let vector = "vector" |> intern
   let vectorp = "vectorp" |> intern
   let window_configuration_p = "window-configuration-p" |> intern
@@ -439,7 +446,9 @@ let[@inline always] to_int_exn (t : t) =
 let get_var symbol = funcall1 Q.symbol_value symbol
 let set_var symbol value = funcall2_i Q.set symbol value
 let get_int_var string = get_var (string |> intern) |> to_int_exn
+let debug_ignored_errors () = funcall1 Q.symbol_value Q.debug_ignored_errors
 let debug_on_error () = is_not_nil (funcall1 Q.symbol_value Q.debug_on_error)
+let debug_on_quit () = is_not_nil (funcall1 Q.symbol_value Q.debug_on_quit)
 let emacs_min_int = get_int_var "most-negative-fixnum"
 let emacs_max_int = get_int_var "most-positive-fixnum"
 
@@ -459,8 +468,8 @@ let _multibyte_of_string = multibyte_of_string
 let unibyte_of_string = unibyte_of_string
 
 (* Unfortunately, there are lots of places where we can call of_utf8_bytes on things which
-   are not in fact UTF-8.  If we naively use multibyte_of_string here, we'll break Emacs
-   by creating broken multibyte strings.  So we want to try to parse the input string as
+   are not in fact UTF-8. If we naively use multibyte_of_string here, we'll break Emacs by
+   creating broken multibyte strings. So we want to try to parse the input string as
    UTF-8, but if there's any non-UTF-8 bytes, we want to escape them somehow.
 
    That's what string-as-multibyte does when passed a unibyte string.
@@ -580,6 +589,46 @@ let to_array_exn (t : t) ~f =
 
 let vector arr = funcallN_array Q.vector arr
 
+(* Sadly, error messages' text properties do not affect what is displayed in the echo
+   area, so there's no point trying to make this a [Text.t]. *)
+exception User_error of string
+
+let symbol_get_property symbol property = funcall2 Q.get symbol property
+let error_conditions signal = symbol_get_property signal Q.error_conditions
+let memq elt list = funcall2 Q.memq elt list
+
+(* Modeled after [maybe_call_debugger] in eval.c.
+
+   The only purpose of this function is to determine whether to add an OCaml backtrace to
+   the error message, to partially make up for the Lisp debugger not being able to read
+   the backtrace itself. Therefore, we only care about the values of user customizations,
+   and not the various other conditions in that function which are primarily used to
+   prevent unwanted recursion.
+
+   It doesn't have to be perfect, but we try to respect the following:
+   - Don't mangle quits unless debug-on-quit is non-nil
+   - Don't mangle user-errors
+
+   Our code doesn't handle the case where the signal is nil and the data contains the
+   error-symbol instead. That only happens for memory-full errors. *)
+let would_enter_debugger ~signal =
+  let error_conditions = error_conditions signal in
+  let debugger_is_wanted =
+    if eq signal Q.quit || (is_symbol signal && is_not_nil (memq Q.quit error_conditions))
+    then debug_on_quit ()
+    else debug_on_error ()
+    (* Not specially handling the case where debug-on-error may be a list of conditions *)
+  in
+  let condition_is_ignored =
+    debug_ignored_errors ()
+    |> to_list_exn ~f:Fn.id
+    |> List.exists ~f:(fun element ->
+      (* Not handling regexps that may match error-message-string. *)
+      is_symbol element && is_not_nil (memq element error_conditions))
+  in
+  debugger_is_wanted && not condition_is_ignored
+;;
+
 let non_local_exit_signal exn =
   let module M = struct
     (** [non_local_exit_signal] sets a [pending_error] flag in the Emacs environment that
@@ -597,7 +646,7 @@ let non_local_exit_signal exn =
   | Elisp_signal { symbol; data } ->
     (* This case preserves an Elisp signal as it crosses an OCaml boundary. *)
     let data =
-      match debug_on_error with
+      match would_enter_debugger ~signal:symbol with
       | false -> data
       | true ->
         funcall2
@@ -612,20 +661,33 @@ let non_local_exit_signal exn =
     in
     M.non_local_exit_signal symbol data
   | _ ->
-    let backtrace =
-      if debug_on_error then Some (Backtrace.Exn.most_recent ()) else None
+    (* Exceptions generated from OCaml *)
+    let error_symbol, message =
+      match exn with
+      | User_error message ->
+        (* User errors are treated specially in a few ways (debug-ignored-errors,
+           error-message-string, command-error-function, etc.) so make some effort to
+           distinguish them. The message is just a string, to encourage callers to format
+           them human-readably. *)
+        Q.user_error, message
+      | _ ->
+        ( Q.error
+        , let backtrace =
+            if debug_on_error then Some (Backtrace.Exn.most_recent ()) else None
+          in
+          let message =
+            [%message.omit_nil "" ~_:(exn : exn) (backtrace : Backtrace.t option)]
+          in
+          let message =
+            match message with
+            | Atom string -> string
+            | List _ as sexp -> Sexp.to_string_hum sexp
+          in
+          message )
     in
-    let message =
-      [%message.omit_nil "" ~_:(exn : exn) (backtrace : Backtrace.t option)]
-    in
-    let message =
-      match message with
-      | Atom string -> string
-      | List _ as sexp -> Sexp.to_string_hum sexp
-    in
-    (* For the [error] symbol, the error data should be a list whose car is a string.
-       See [(Info-goto-node "(elisp)Signaling Errors")]. *)
-    M.non_local_exit_signal Q.error (list [ message |> of_utf8_bytes ])
+    (* For the [error] symbol, the error data should be a list whose car is a string. See
+       [(Info-goto-node "(elisp)Signaling Errors")]. *)
+    M.non_local_exit_signal error_symbol (list [ message |> of_utf8_bytes ])
 ;;
 
 let prin1_to_string t = funcall1 Q.prin1_to_string t |> to_utf8_bytes_exn
@@ -680,7 +742,7 @@ let rec sexp_of_t_internal t ~print_length ~print_level : Sexp.t =
     in
     let sexp_string =
       (* Emacs prefixes some values (like buffers, markers, etc) with [#], which then
-         makes the sexp unparseable.  So in this case we strip the [#]. *)
+         makes the sexp unparseable. So in this case we strip the [#]. *)
       if String.is_prefix sexp_string ~prefix:"#("
       then String.chop_prefix_exn sexp_string ~prefix:"#"
       else sexp_string
@@ -710,16 +772,20 @@ let sexp_of_t t =
 ;;
 
 let () =
-  Sexplib.Conv.Exn_converter.add [%extension_constructor Elisp_signal] (function
-    | Elisp_signal { symbol; data } ->
-      if eq symbol Q.error
-      then [%sexp (data : t)]
-      else if is_nil data
-      then [%sexp (symbol : t)]
-      else [%message "" ~_:(symbol : t) ~_:(data : t)]
-    | _ ->
-      (* Reaching this branch indicates a bug in sexplib. *)
-      assert false);
+  Sexplib.Conv.Exn_converter.add
+    [%extension_constructor Elisp_signal]
+    (Obj.magic_portable (function
+      | Elisp_signal { symbol; data } ->
+        (* Omit the symbol for plain [error]s, but keep it for more specific error
+           conditions like [wrong-type-argument]. *)
+        if eq symbol Q.error
+        then [%sexp (data : t)]
+        else if is_nil data
+        then [%sexp (symbol : t)]
+        else [%message "" ~_:(symbol : t) ~_:(data : t)]
+      | _ ->
+        (* Reaching this branch indicates a bug in sexplib. *)
+        assert false));
   sexp_of_t_ref := sexp_of_t
 ;;
 
@@ -1036,10 +1102,19 @@ end
 module Expert = struct
   module Process_input = Process_input
 
+  exception User_error = User_error
+
   let process_input = process_input
   let raise_if_emacs_signaled = raise_if_emacs_signaled
   let have_active_env = have_active_env
   let non_local_exit_signal = non_local_exit_signal
+
+  let has_error_condition exn condition =
+    match exn with
+    | Elisp_signal { symbol; data = _ }
+      when is_not_nil (memq condition (error_conditions symbol)) -> true
+    | _ -> false
+  ;;
 end
 
 module For_testing = struct

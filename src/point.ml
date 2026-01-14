@@ -124,9 +124,6 @@ let kill_word = Funcall.Wrap.("kill-word" <: int @-> return nil)
 let marker_at = Funcall.Wrap.("point-marker" <: nullary @-> return Marker.t)
 let marker_at_min = Funcall.Wrap.("point-min-marker" <: nullary @-> return Marker.t)
 let marker_at_max = Funcall.Wrap.("point-max-marker" <: nullary @-> return Marker.t)
-let next_line = Funcall.Wrap.("next-line" <: nullary @-> return nil)
-let previous_line = Funcall.Wrap.("previous-line" <: nullary @-> return nil)
-let scroll_up = Funcall.Wrap.("scroll-up" <: int @-> return nil)
 let update_last_match_default = false
 
 let handle_last_match ?(update_last_match = update_last_match_default) f =

@@ -12,7 +12,7 @@ let define ?(here = Stdlib.Lexing.dummy_pos) symbol f =
       Defun.defun_func
         symbol
         here
-        ~docstring:"A revert-buffer-function."
+        ~docstring:"A `revert-buffer-function'."
         (Returns_deferred Value.Type.unit)
         (let%map_open.Defun () = return ()
          and () = required "ignore-auto" ignored

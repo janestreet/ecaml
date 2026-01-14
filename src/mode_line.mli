@@ -19,9 +19,6 @@ module Format : sig
   val propertize : t -> Text.Property.t list -> t
 end
 
-(** [(describe-function 'force-mode-line-update)] *)
-val force_update : ?all:bool -> unit -> unit
-
 (** [(describe-function 'format-mode-line)] Sadly, in test, which runs Emacs batch mode,
     [text] always returns the empty string. *)
 val text : Format.t -> Text.t

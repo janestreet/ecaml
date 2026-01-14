@@ -27,7 +27,7 @@ module Initial_input : sig
 
   (* completing-read takes 0-indexed positions, read-from-minibuffer takes (weirdly)
      1-indexed positions, so they have different Elisp-side types so Initial_input.t is
-     serialized differently.  *)
+     serialized differently. *)
   val completing_t : t Value.Type.t
   val minibuffer_t : t Value.Type.t
 end
@@ -99,6 +99,9 @@ val exit_hook : (Hook.normal, unit) Hook.t
 (** [(describe-variable 'minibuffer-setup-hook)]
     [(Info-goto-node "(elisp)Minibuffer Misc")] *)
 val setup_hook : (Hook.normal, unit) Hook.t
+[@@alert
+  prefer_with_setup_hook_instead
+    "You probably want to use [with_setup_hook] to avoid re-entrancy bugs."]
 
 (** - [(describe-function 'minibuffer-with-setup-hook)]
     - [(Info-goto-node "(elisp)Minibuffer Misc")] *)

@@ -48,7 +48,7 @@ module Programmed_completion : sig
     -> t
 end
 
-(** [(describe-function 'completing-read)] **)
+(** [(describe-function 'completing-read)] *)
 val read
   :  prompt_no_colon:string (** passed to [format-prompt] *)
   -> collection:string list
@@ -89,7 +89,7 @@ val read_variable_name
   -> history:Minibuffer.History.t
   -> string Deferred.t
 
-(** [(describe-function 'completing-read-multiple)] **)
+(** [(describe-function 'completing-read-multiple)] *)
 val read_multiple
   :  prompt_no_colon:string (** passed to [format-prompt] *)
   -> collection:string list
@@ -111,7 +111,7 @@ val read_multiple_map_keys
   -> unit
   -> 'a list Deferred.t
 
-(** [(describe-function 'completing-read)] **)
+(** [(describe-function 'completing-read)] *)
 val read_raw
   :  prompt_no_colon:string (** passed to [format-prompt] *)
   -> collection:Value.t

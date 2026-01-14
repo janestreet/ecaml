@@ -43,6 +43,16 @@ let default_value_is_defined t = default_boundp t.symbol
 let set_default = Funcall.Wrap.("set-default" <: Symbol.t @-> value @-> return nil)
 let set_default_value t a = set_default t.symbol (a |> Value.Type.to_value t.type_)
 
+let default_toplevel_value =
+  Funcall.Wrap.("default-toplevel-value" <: Symbol.t @-> return value)
+;;
+
+let default_toplevel_value_is_defined t =
+  match default_toplevel_value t.symbol with
+  | (_ : Value.t) -> true
+  | exception _ -> false
+;;
+
 let make_variable_buffer_local =
   Funcall.Wrap.("make-variable-buffer-local" <: Symbol.t @-> return nil)
 ;;

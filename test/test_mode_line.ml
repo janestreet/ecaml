@@ -29,8 +29,8 @@ let%expect_test _ =
       mode-line-misc-info
       mode-line-end-spaces)
     |}];
-  (* Emacs, when run non-interactively, makes [format-mode-line] return the empty
-     string.  So we can only test that we're calling it. *)
+  (* Emacs, when run non-interactively, makes [format-mode-line] return the empty string.
+     So we can only test that we're calling it. *)
   print_s [%sexp (text format : Text.t)];
   [%expect {| "" |}];
   return ()

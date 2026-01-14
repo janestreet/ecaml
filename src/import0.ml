@@ -23,6 +23,7 @@ let debug = false
 let print_s = Expect_test_helpers_core.print_s
 let eprint_s = Core.Debug.eprint_s
 let raise_string s = raise_s [%sexp (String.strip (concat s) : string)]
+let raise_user_error s = raise (Value.Expert.User_error (String.strip s))
 let sec_ns = Time_ns.Span.of_sec
 
 type 'a opaque_in_test = 'a

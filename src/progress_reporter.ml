@@ -43,8 +43,8 @@ let update_internal =
       | false -> progress_reporter_update
       | true ->
         (* [progress-reporter-force-update] has an additional optional argument,
-           [new-message], which allows one to change the message originally set at creation
-           time.  Rewrap this function to make the types match. *)
+           [new-message], which allows one to change the message originally set at
+           creation time. Rewrap this function to make the types match. *)
         fun reporter value suffix ->
         progress_reporter_force_update reporter value () suffix
     in

@@ -21,6 +21,7 @@ val read_buffer : Core.Buffer.t -> t
 val eval_string : string -> Value.t Deferred.t
 
 val nil : t
+val bool : bool -> t
 val string : string -> t
 val symbol : Symbol.t -> t
 val int : int -> t

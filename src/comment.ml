@@ -3,8 +3,8 @@ open! Import
 
 let normalize_vars =
   (* Note: this function must be called in a buffer before reading from any of the vars
-     below, or before calling any [comment-*] function.
-     See [(describe-function 'comment-normalize-vars)]. *)
+     below, or before calling any [comment-*] function. See
+     [(describe-function 'comment-normalize-vars)]. *)
   Funcall.Wrap.("comment-normalize-vars" <: nullary @-> return nil)
 ;;
 
@@ -77,10 +77,12 @@ let bounds_of_comment_at_point () =
         Option.try_with (fun () ->
           let check, search =
             (* If the point is in the middle of a comment beginning/ending sequence,
-               search_for/backward_regexp_exn won't find it.  For example (if | represents
+               search_for/backward_regexp_exn won't find it. For example (if | represents
                the point):
 
-               {v /|* some comment */ v}
+               {v
+                 /|* some comment */
+               v}
 
                To get around this, we jump to the beginning/end of line and search for the
                first match that ends on the opposite side of where the point originally

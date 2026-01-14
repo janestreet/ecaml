@@ -1,11 +1,11 @@
 (* This module adds support for running Async code in Ecaml.
 
-   We change the way the scheduler works.  The Async scheduler runs in its own thread, but
-   all Async cycles now run within the main emacs thread.  When the scheduler would run a
+   We change the way the scheduler works. The Async scheduler runs in its own thread, but
+   all Async cycles now run within the main emacs thread. When the scheduler would run a
    cycle, it instead sends a packet to a pipe that the emacs main thread listens to (which
-   notifies emacs that it should run a cycle), and waits for the cycle to be run.  This
+   notifies emacs that it should run a cycle), and waits for the cycle to be run. This
    way, whenever we run Ecaml code, we have both the Emacs [active_env] and the Async
-   lock.  This way, it is always safe to call Ecaml functions from Async, and to modify
+   lock. This way, it is always safe to call Ecaml functions from Async, and to modify
    Async data structures from Ecaml. *)
 
 open! Core
@@ -86,8 +86,8 @@ end = struct
   ;;
 
   let blocking_sleep t =
-    (* We unlock the Async lock while in a critical section rather than before
-       the critical section to avoid a race in which:
+    (* We unlock the Async lock while in a critical section rather than before the
+       critical section to avoid a race in which:
        - Thread 1 requests service from Thread 2
        - Thread 1 calls [blocking_sleep]
        - Thread 1 unlocks the Async lock
@@ -123,7 +123,7 @@ end = struct
   let create () = { write_to_request_cycle = Set_once.create () }
 
   let request_cycle =
-    (* We write a single ASCII ENQ byte to wake up Emacs.  It doesn't actually matter what
+    (* We write a single ASCII ENQ byte to wake up Emacs. It doesn't actually matter what
        we write, as the process filter ignores the actual input, but \x05 is at least
        somewhat distinctive in strace output. *)
     let bytes_to_write = Bytes.of_string "\x05" in
@@ -132,7 +132,7 @@ end = struct
       let write_to_request_cycle = Set_once.get_exn t.write_to_request_cycle in
       (* This code is based on the [Async_unix.Interruptor] idiom for notifying the
          interruptor pipe, which uses a nonblocking file descriptor, doesn't give up the
-         OCaml lock and raises if the write would block.  We don't explicitly handle
+         OCaml lock and raises if the write would block. We don't explicitly handle
          EWOULDBLOCK and EAGAIN, since we already discard all exceptions anyways. *)
       try
         ignore
@@ -172,7 +172,7 @@ end = struct
 end
 
 (* A [Pending_emacs_call.t] is a function that should be run outside of any Async job and
-   without the Async lock, but reports its result back into Async.  To ensure that pending
+   without the Async lock, but reports its result back into Async. To ensure that pending
    emacs calls are run in a timely manner, we run them whenever we run Async cycles, and
    we request Async cycles whenever we enqueue a pending emacs call. *)
 module Pending_emacs_call = struct
@@ -196,8 +196,7 @@ end
 
 type t =
   { (* [am_running_async_cycle] is set to [true] while we're running an Async cycle.
-       During an Async cycle, we avoid running nested Async cycles or
-       [block_on_async]s. *)
+       During an Async cycle, we avoid running nested Async cycles or [block_on_async]s. *)
     mutable am_running_async_cycle : bool
   ; cycle_done_sleeper : Thread_safe_sleeper.t
   ; cycle_requester : Cycle_requester.t
@@ -289,9 +288,9 @@ module Block_on_async = struct
        || not (Scheduler.am_holding_lock t.scheduler)
     then raise_s [%sexp "[in_emacs_have_lock_do_cycle] should only be called by emacs"];
     (* If we are already running an Async cycle, then we can't start a new one, so we do
-       nothing.  We can reach here with [t.am_running_async_cycle = true] if Ecaml calls a
-       blocking Elisp function without using [run_outside_async].  We are in the middle of a
-       long, possibly unending, code transition in which we are wrapping such calls with
+       nothing. We can reach here with [t.am_running_async_cycle = true] if Ecaml calls a
+       blocking Elisp function without using [run_outside_async]. We are in the middle of
+       a long, possibly unending, code transition in which we are wrapping such calls with
        [run_outside_async]. *)
     if not t.am_running_async_cycle
     then (
@@ -306,8 +305,8 @@ module Block_on_async = struct
         ~f:(fun () ->
           Async.Unix.Private.Wait.check_all ();
           let rec run_cycles max_cycles =
-            (* Pending emacs calls may have been enqueued from outside of Async. Run them so
-               their deferreds get filled. *)
+            (* Pending emacs calls may have been enqueued from outside of Async. Run them
+               so their deferreds get filled. *)
             let ran_pending_calls = run_pending_emacs_calls () in
             t.am_running_async_cycle <- true;
             let old_execution_context =
@@ -317,10 +316,10 @@ module Block_on_async = struct
               ~f:(fun () ->
                 Async_kernel.Async_kernel_scheduler.Private.(run_cycle (t ())))
               ~finally:(fun () ->
-                (* Restore the execution context effective before running cycles.  This
+                (* Restore the execution context effective before running cycles. This
                    prevents background jobs from raising exceptions to random monitors,
-                   because the execution context of whichever job happened to run last would
-                   have been left intact. *)
+                   because the execution context of whichever job happened to run last
+                   would have been left intact. *)
                 Async_kernel.Async_kernel_scheduler.Private.(
                   set_execution_context (t ()) old_execution_context);
                 t.am_running_async_cycle <- false);
@@ -383,7 +382,7 @@ module Block_on_async = struct
             | Some result -> result
             | None ->
               (* [Thread.delay] gives the scheduler thread time to run before we run a
-                   cycle. *)
+                 cycle. *)
               Scheduler.unlock t.scheduler;
               Thread.delay (Time.Span.of_us 10. |> Time.Span.to_sec);
               Scheduler.lock t.scheduler;
@@ -431,8 +430,8 @@ let start_scheduler () =
   Async.Unix.Private.Wait.do_not_handle_sigchld ();
   if debug
   then Debug.eprint_s [%message "initializing async" [%here] (Time.now () : Time.t)];
-  (* We hold the Async lock, so it should be impossible for the scheduler to try to run
-     a cycle. *)
+  (* We hold the Async lock, so it should be impossible for the scheduler to try to run a
+     cycle. *)
   t.scheduler.have_lock_do_cycle
   <- Some (fun () -> raise_s [%message "BUG in Async_ecaml" [%here]]);
   let scheduler_thread =
@@ -449,8 +448,9 @@ let start_scheduler () =
       {|
 For testing Async Ecaml.
 
-This runs the same OCaml code that Async Ecaml uses for running an Async cycle.  It blocks
-until it can acquire the Async lock and then run a cycle.
+This runs the same OCaml code that Async Ecaml uses for running an
+Async cycle.  It blocks until it can acquire the Async lock and then
+run a cycle.
 |}
     ~interactive:No_arg
     (Returns Value.Type.unit)
@@ -460,12 +460,12 @@ until it can acquire the Async lock and then run a cycle.
   Cycle_requester.register_cycle_handler
     t.cycle_requester
     Block_on_async.in_emacs_have_lock_do_cycle;
-  (* The default [max_inter_cycle_timeout] is much too small (0.05s).  Setting it to 1s reduces
-     load on emacs. *)
+  (* The default [max_inter_cycle_timeout] is much too small (0.05s). Setting it to 1s
+     reduces load on emacs. *)
   Scheduler.set_max_inter_cycle_timeout
     (Time_ns.Span.second |> Time_ns.Span.to_span_float_round_nearest);
   (* [Async_unix] installs a handler for logging exceptions raised to try-with that has
-     already returned.  That logs to stderr, which doesn't work well in Emacs.  So we
+     already returned. That logs to stderr, which doesn't work well in Emacs. So we
      install a handler that reports the error with [message_s]. *)
   (Async_kernel.Monitor.Expert.try_with_log_exn
    := fun exn ->
@@ -473,7 +473,7 @@ until it can acquire the Async lock and then run a cycle.
           [%message
             "Exception raised to [Monitor.try_with] that already returned." ~_:(exn : exn)]);
   (* Async would normally deal with errors that reach the main monitor by printing to
-     stderr and then exiting 1.  This would look like an emacs crash to the user, so we
+     stderr and then exiting 1. This would look like an emacs crash to the user, so we
      instead output the error to the minibuffer. *)
   Async_kernel.Monitor.detach_and_iter_errors Async_kernel.Monitor.main ~f:(fun exn ->
     if Value.Expert.have_active_env ()
@@ -541,8 +541,7 @@ module Private = struct
            ; result
            ; running_in_background = Background.currently_running_in_background ()
            });
-      (* We request an Async cycle to ensure the pending call is run in a timely
-         manner. *)
+      (* We request an Async cycle to ensure the pending call is run in a timely manner. *)
       Cycle_requester.request_cycle t.cycle_requester)
     >>| Result.ok_exn
   ;;
@@ -620,8 +619,8 @@ This runs Async cycles for 10s and then shows how long the cycles took.
       {|
 For testing Async Ecaml.
 
-Run a benchmark that creates an Async TCP server and client and has the client ping the
-server 100 times.
+Run a benchmark that creates an Async TCP server and client and has
+the client ping the server 100 times.
 |}
     ~f:Ecaml_bench.Bench_async_ecaml.benchmark_small_pings;
   defun_benchmark
@@ -630,8 +629,8 @@ server 100 times.
       {|
 For testing Async Ecaml.
 
-Run a benchmark that creates an Async TCP server and client and has the server send 100M
-to the client.
+Run a benchmark that creates an Async TCP server and client and has
+the server send 100M to the client.
 |}
     ~f:Ecaml_bench.Bench_async_ecaml.benchmark_throughput;
   Defun.defun_nullary
@@ -642,11 +641,14 @@ to the client.
       {|
 For testing Async Ecaml.
 
-Block on [Deferred.never ()] until you press [C-g].
+Block on [Deferred.never ()] until you press \`C-g'.
 |}
     (Returns_deferred Value.Type.unit)
     (fun () ->
-       message_s [%message "blocking forever -- press C-g to interrupt"];
+       Echo_area.message_text
+         ("blocking forever -- press \\`C-g' to interrupt"
+          |> Text.of_utf8_bytes
+          |> Documentation.substitute_command_keys);
        Async.Deferred.never ());
   Defun.defun_nullary_nil
     ("ecaml-async-test-execution-context-handling" |> Symbol.intern)
@@ -739,8 +741,9 @@ Call [In_thread.run] a number of times and report on its performance.
       {|
 Demonstrate a bug in Async_ecaml's handling of execution contexts.
 
-In non-async Ecaml defuns, running some Elisp code that then calls back into Ecaml will
-not preserve the current Async execution context.
+In non-async Ecaml defuns, running some Elisp code that then calls
+back into Ecaml will not preserve the current Async execution
+context.
 |}
     ~interactive:No_arg
     (fun () ->
@@ -767,8 +770,9 @@ not preserve the current Async execution context.
       {|
 For testing Async Ecaml.
 
-Test [Background.schedule_foreground_block_on_async].  This should block for a couple
-seconds, and then open a buffer with a hello-world message.
+Test [Background.schedule_foreground_block_on_async].  This should
+block for a couple seconds, and then open a buffer with a hello-world
+message.
 |}
     ~interactive:No_arg
     (fun () ->

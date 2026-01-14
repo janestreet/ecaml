@@ -345,10 +345,13 @@ module type Value = sig
         | Quit
     end
 
+    exception User_error of string
+
     val process_input : unit -> Process_input.t
     val raise_if_emacs_signaled : unit -> unit
     val have_active_env : unit -> bool
     val non_local_exit_signal : exn -> unit
+    val has_error_condition : exn -> t -> bool
   end
 
   module Stat : sig

@@ -1,11 +1,9 @@
 open! Core
 open! Import0
 
-module Z = struct
+open struct
   module Input_event = Input_event0
 end
-
-open Z
 
 include Value.Make_subtype (struct
     let name = "key-sequence"

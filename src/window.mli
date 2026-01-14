@@ -67,7 +67,7 @@ val delete_other_windows : t option -> unit
 val start : t -> Position.t
 
 (** [(describe-function 'set-window-start)] *)
-val set_start : t -> Position.t -> unit
+val set_start : ?noforce:bool (** default is [false] *) -> t -> Position.t -> unit
 
 (** [(describe-function 'window-end)] *)
 val end_ : ?update:bool (** default is [false] *) -> t -> Position.t

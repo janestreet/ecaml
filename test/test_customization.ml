@@ -52,7 +52,7 @@ let%expect_test "[Boolean] with default [t]" =
 ;;
 
 let%expect_test "[Const]" =
-  (* The customize UI doesn't know how to handle [Const _] outside [Choice].  *)
+  (* The customize UI doesn't know how to handle [Const _] outside [Choice]. *)
   test Value.Type.int (Choice [ Const (Value.Type.(to_value int) 13) ]) 13;
   [%expect
     {|

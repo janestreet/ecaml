@@ -276,7 +276,7 @@ let read_map_key
     (match choice with
      | "" ->
        (* [read] can return an empty string even if [~require_match:True] is passed and
-          the empty string is not in the collection.  This happens when [default] is not
+          the empty string is not in the collection. This happens when [default] is not
           supplied; otherwise, pressing RET at an empty minibuffer would return the
           default instead. *)
        raise_s [%message "Did not enter a valid choice"]

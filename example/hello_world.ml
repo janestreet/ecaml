@@ -1,11 +1,10 @@
 open! Core
 open! Ecaml
 
-(* To build this file, run
-   dune build hello_world.so
+(* To build this file, run dune build hello_world.so
 
-   To test, run
-   emacs -Q -L _build/default --batch --eval "(progn (require 'hello_world) (say-hello \"emacs\"))"
+   To test, run emacs -Q -L _build/default --batch --eval "(progn (require 'hello_world)
+   (say-hello \"emacs\"))"
 *)
 
 let () =

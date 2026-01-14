@@ -95,9 +95,9 @@ let transient_mark_mode = Customization.Wrap.("transient-mark-mode" <: bool)
 
 let () =
   (* Emacs, by default, turns [transient-mark-mode] off in batch mode and on in
-     interactive mode.  Who knows why.  The difference causes pointless rough edges in our
+     interactive mode. Who knows why. The difference causes pointless rough edges in our
      integration tests, which run in batch mode and where we expect behavior to match
-     interactive mode.  So, we turn [transient-mark-mode] on in tests. *)
+     interactive mode. So, we turn [transient-mark-mode] on in tests. *)
   if am_running_test then Customization.set_value transient_mark_mode true
 ;;
 
@@ -376,8 +376,8 @@ let replace_buffer_contents =
 
 let replace_buffer_contents ?max_duration ?max_costs buffer =
   (* [replace-buffer-contents] returns true if the replacement was performed
-     non-destructively, or false if that timed out and the delete-and-insert
-     algorithm was used. *)
+     non-destructively, or false if that timed out and the delete-and-insert algorithm was
+     used. *)
   ignore
     (replace_buffer_contents
        buffer
@@ -455,3 +455,5 @@ let write_region ?(start = Point.min ()) ?(end_ = Point.max ()) ?(append = false
   =
   write_region start end_ filename append Q.nomessage
 ;;
+
+let disable_undo = Funcall.Wrap.("buffer-disable-undo" <: nullary @-> return ignored)
