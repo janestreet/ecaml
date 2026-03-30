@@ -198,7 +198,7 @@ let () =
         | sexp -> sexp);
   (Profile.output_profile
    := fun string ->
-        (* If [output_profile] raises, then Nested_profile use [eprint_s] to print the
+        (* If [output_profile] raises, then Nested_profile uses [eprint_s] to print the
            exception, which doesn't work well in Emacs. So we do our own exception
            handling. *)
         try

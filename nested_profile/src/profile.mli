@@ -77,6 +77,18 @@ val tag_frames_with : Frame_tagger.t option ref
     [print_string] by default. *)
 val output_profile : (string -> unit) ref
 
+module Record : sig
+  type t
+
+  val start : t -> Time_ns.t
+  val stop : t -> Time_ns.t
+  val force_message : t -> Sexp.t
+  val children : t -> t list
+end
+
+(** Like [profile] but passes the raw profile. Defaults to [ignore]. *)
+val output_profile' : (Record.t -> unit) ref
+
 module Start_location : sig
   type t =
     | Line_preceding_profile

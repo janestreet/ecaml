@@ -310,6 +310,23 @@ let%expect_test "calling [profile] within [output_profile]" =
     return ())
 ;;
 
+let%expect_test "using [output_profile'] to log the record" =
+  with_clock (fun () ->
+    Ref.set_temporarily
+      output_profile'
+      (fun record ->
+        print_s [%sexp "with record", (Record.force_message record : Sexp.t)])
+      ~f:(fun () ->
+        Ref.set_temporarily hide_if_less_than Time_ns.Span.zero ~f:call_profile);
+    [%expect
+      {|
+      function supplied to [profile] ran
+      ("with record" context)
+      (1_000_000us context "1970-01-01 00:00:00Z")
+      |}];
+    return ())
+;;
+
 let%expect_test "calling [profile] within the [Sexp.t Lazy.t] supplied to [profile]" =
   with_clock (fun () ->
     profile
