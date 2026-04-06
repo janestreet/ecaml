@@ -112,6 +112,10 @@ module Record = struct
     ; pending_children : int
     }
 
+  let start t = t.start
+  let stop t = t.stop
+  let force_message t = Message.force t.message
+  let children t = t.children
   let took t = Time_ns.diff t.stop t.start
 
   let rec sexp_of_t
@@ -333,6 +337,8 @@ module Record = struct
   ;;
 end
 
+let output_profile' : (Record.t -> unit) ref = ref ignore
+
 module Frame = struct
   type t =
     { message : Message.t
@@ -387,6 +393,12 @@ module Profile_context = struct
       then (
         let profile = concat [ record |> Record.to_string_hum; "\n" ] in
         with_profiling_disallowed (fun () ->
+          (try !output_profile' record with
+           | exn ->
+             let backtrace = Backtrace.Exn.most_recent () in
+             eprint_s
+               [%message
+                 "[Profile.output_profile'] raised" (exn : exn) (backtrace : Backtrace.t)]);
           try !output_profile profile with
           | exn ->
             let backtrace = Backtrace.Exn.most_recent () in
@@ -455,7 +467,7 @@ let with_profile_context frame ~f =
   Async_kernel_scheduler.with_local profile_context_key frame ~f
 ;;
 
-let profile
+let[@inline never] profile_internal
   (type a)
   ?hide_if_less_than
   (sync_or_async : a Sync_or_async.t)
@@ -463,78 +475,81 @@ let profile
   (f : unit -> a)
   : a
   =
-  if not (!profiling_is_allowed && !should_profile)
-  then f ()
-  else (
-    let tag_thunk =
-      match !tag_frames_with with
-      | None -> None
-      | Some (T { capture; render }) ->
-        (match with_profiling_disallowed capture with
-         | exception exn ->
-           let backtrace = Backtrace.Exn.most_recent () in
-           Some
-             (fun () ->
+  let tag_thunk =
+    match !tag_frames_with with
+    | None -> None
+    | Some (T { capture; render }) ->
+      (match with_profiling_disallowed capture with
+       | exception exn ->
+         let backtrace = Backtrace.Exn.most_recent () in
+         Some
+           (fun () ->
+             Some
+               [%message
+                 "[Profile.tag_frames_with] raised while capturing context"
+                   (exn : exn)
+                   (backtrace : Backtrace.t)])
+       | None -> None
+       | Some context -> Some (fun () -> render context))
+  in
+  let message =
+    match tag_thunk with
+    | None -> message
+    | Some tag_thunk ->
+      lazy
+        (match
+           with_profiling_disallowed (fun () ->
+             try tag_thunk () with
+             | exn ->
+               let backtrace = Backtrace.Exn.most_recent () in
                Some
                  [%message
-                   "[Profile.tag_frames_with] raised while capturing context"
+                   "[Profile.tag_frames_with] raised while rendering"
                      (exn : exn)
                      (backtrace : Backtrace.t)])
-         | None -> None
-         | Some context -> Some (fun () -> render context))
-    in
-    let message =
-      match tag_thunk with
-      | None -> message
-      | Some tag_thunk ->
-        lazy
-          (match
+         with
+         | None -> force message
+         | Some tag -> List [ force message; tag ])
+  in
+  let parent = current_profile_context () in
+  let frame = Frame.create ~message ~parent in
+  let incr_pending_children =
+    match parent with
+    | None -> fun ~by:_ -> ()
+    | Some parent ->
+      (* {[
+           if parent.exited
+           then
              with_profiling_disallowed (fun () ->
-               try tag_thunk () with
-               | exn ->
-                 let backtrace = Backtrace.Exn.most_recent () in
-                 Some
-                   [%message
-                     "[Profile.tag_frames_with] raised while rendering"
-                       (exn : exn)
-                       (backtrace : Backtrace.t)])
-           with
-           | None -> force message
-           | Some tag -> List [ force message; tag ])
-    in
-    let parent = current_profile_context () in
-    let frame = Frame.create ~message ~parent in
-    let incr_pending_children =
-      match parent with
-      | None -> fun ~by:_ -> ()
-      | Some parent ->
-        (* {[
-             if parent.exited
-             then
-               with_profiling_disallowed (fun () ->
-                 !on_async_out_of_order
-                   [%lazy_message
-                     "[Profile.profile] created frame with parent that already exited"
-                       ~parent:(Message.force parent.message : Sexp.t)
-                       ~frame:(Message.force frame.message : Sexp.t)])
-           ]} *)
-        fun ~by ->
-        parent.pending_children <- parent.pending_children + by;
-        parent.max_pending_children
-        <- Int.max parent.max_pending_children parent.pending_children
-    in
-    incr_pending_children ~by:1;
-    let f () = with_profile_context (Some frame) ~f in
-    match sync_or_async with
-    | Sync ->
-      Exn.protect ~f ~finally:(fun () ->
-        record_profile ?hide_if_less_than frame;
-        incr_pending_children ~by:(-1))
-    | Async ->
-      Monitor.protect ~rest:`Log f ~finally:(fun () ->
-        record_profile ?hide_if_less_than frame;
-        incr_pending_children ~by:(-1);
-        return ()))
+               !on_async_out_of_order
+                 [%lazy_message
+                   "[Profile.profile] created frame with parent that already exited"
+                     ~parent:(Message.force parent.message : Sexp.t)
+                     ~frame:(Message.force frame.message : Sexp.t)])
+         ]} *)
+      fun ~by ->
+      parent.pending_children <- parent.pending_children + by;
+      parent.max_pending_children
+      <- Int.max parent.max_pending_children parent.pending_children
+  in
+  incr_pending_children ~by:1;
+  let f () = with_profile_context (Some frame) ~f in
+  match sync_or_async with
+  | Sync ->
+    Exn.protect ~f ~finally:(fun () ->
+      record_profile ?hide_if_less_than frame;
+      incr_pending_children ~by:(-1))
+  | Async ->
+    Monitor.protect ~rest:`Log f ~finally:(fun () ->
+      record_profile ?hide_if_less_than frame;
+      incr_pending_children ~by:(-1);
+      return ())
+;;
+
+let[@inline always] profile ?hide_if_less_than sync_or_async message f =
+  if not (!profiling_is_allowed && !should_profile)
+  then f ()
+  else profile_internal ?hide_if_less_than sync_or_async message f
 ;;
 
 let backtrace () =

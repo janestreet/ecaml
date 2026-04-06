@@ -428,6 +428,18 @@ This is an internal function of no use to most people.|}
     Dump.For_testing.allow_calls_after_module_initialization
 ;;
 
+let () =
+  defun_nullary_nil
+    ("ecaml-mlockall-current-onfault" |> Symbol.intern)
+    [%here]
+    ~docstring:
+      {|Call mlockall(MCL_CURRENT|MCL_ONFAULT).
+
+This prevents the current process's current memory from being swapped out,
+which improves interactive performance when the system is under load.|}
+    (fun () -> ok_exn Linux_ext.Mman.mlockall [ Current; Onfault ])
+;;
+
 let debug_embedded_caml_values () = Caml_embed.debug_sexp ()
 
 module Ref = struct

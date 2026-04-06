@@ -35,10 +35,12 @@ let lambda ~(here : [%call_pos]) f =
   }
 ;;
 
-let lambda_background_safe ~(here : [%call_pos]) f =
+let define_background_safe ~(here : [%call_pos]) symbol f =
   { func =
-      Defun.lambda
+      Defun.defun_func
+        symbol
         here
+        ~docstring:"A `revert-buffer-function'."
         (Returns_deferred Value.Type.unit)
         (let%map_open.Defun () = return ()
          and () = required "ignore-auto" ignored
@@ -73,12 +75,6 @@ the buffer to use, which should be passed when calling it in the background.|}
 let set buffer { func; background_safe } =
   Buffer_local.set revert_buffer_function func buffer;
   Buffer_local.set ecaml_revert_is_background_safe background_safe buffer
-;;
-
-let get buffer =
-  { func = Buffer_local.get revert_buffer_function buffer
-  ; background_safe = Buffer_local.get ecaml_revert_is_background_safe buffer
-  }
 ;;
 
 let revert_background_safe_exn buffer =

@@ -44,6 +44,15 @@ include Valueable.Make (struct
     ;;
   end)
 
+let sexp_pretty_config =
+  { (Sexp_pretty.Config.create ~color:false ()) with
+    atom_printing =
+      Minimal_escaping
+      (* Allow verbatim newlines in sexp output. Elisp's sexp reader can handle this, and
+         it makes large sexps easier to read. *)
+  }
+;;
+
 let () =
   Defun.defun
     ("ecaml-sexp-pp-to-string" |> Symbol.intern)
@@ -51,7 +60,7 @@ let () =
     ~docstring:"Pretty-print SEXP and return the result as a string."
     (Returns Value.Type.string)
     (let%map_open.Defun sexp = required "sexp" t in
-     Sexp_pretty.sexp_to_string sexp)
+     Sexp_pretty.pretty_string sexp_pretty_config sexp)
 ;;
 
 let () =

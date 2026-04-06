@@ -4,6 +4,8 @@
 
 ;; Keywords: extensions
 
+;;; Commentary:
+
 ;;; Code:
 
 (require 'cl-lib)

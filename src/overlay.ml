@@ -84,10 +84,6 @@ let filter_map_by_property property =
     | exception _ -> None)
 ;;
 
-let at_filtered_by_property property position =
-  at position |> filter_map_by_property property
-;;
-
 let overlays_in =
   Funcall.Wrap.("overlays-in" <: Position.t @-> Position.t @-> return (list t))
 ;;
