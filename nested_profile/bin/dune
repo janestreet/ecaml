@@ -1,6 +1,0 @@
-(executables
- (modes byte exe)
- (names render_unified_test_profile)
- (libraries async core_unix.command_unix core nested_profile)
- (preprocess
-  (pps ppx_jane)))

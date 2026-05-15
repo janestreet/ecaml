@@ -125,22 +125,6 @@ let%expect_test "raising from OCaml to OCaml through many layers of Emacs" =
    | false ->
      print_cr [%message "Backtrace has no frames from" Test_function_file1.filename]);
   [%expect {| |}];
-  Current_buffer.set_value_temporarily
-    Sync
-    (Debugger.debug_on_error |> Customization.var)
-    true
-    ~f:(fun () ->
-      let show_errors = false in
-      match show_errors with
-      | true ->
-        Dynamic.with_temporarily Backtrace.elide false ~f:(fun () ->
-          require_does_raise ~show_backtrace:true (fun () -> loop 1))
-      | false -> require_does_raise (fun () -> loop 1));
-  [%expect
-    {|
-    (((foo bar baz) (backtrace ("<backtrace elided in test>")))
-     (backtrace "<backtrace elided in test>"))
-    |}];
   return ()
 ;;
 

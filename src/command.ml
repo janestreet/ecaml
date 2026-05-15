@@ -39,11 +39,13 @@ module Raw_prefix_argument = struct
         [%message "[Raw_prefix_argument.of_value] got unexpected value" (value : Value.t)]
   ;;
 
-  let type_ =
-    Value.Type.create [%message "raw_prefix_arg"] [%sexp_of: t] of_value_exn to_value
-  ;;
+  include Valueable.Make (struct
+      type nonrec t = t
 
-  let t = type_
+      let type_ =
+        Value.Type.create [%message "raw_prefix_arg"] [%sexp_of: t] of_value_exn to_value
+      ;;
+    end)
 
   let for_current_command =
     let current_prefix_arg = Var.Wrap.("current-prefix-arg" <: t) in

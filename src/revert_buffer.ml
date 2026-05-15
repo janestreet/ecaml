@@ -12,7 +12,13 @@ let define ?(here = Stdlib.Lexing.dummy_pos) symbol f =
       Defun.defun_func
         symbol
         here
-        ~docstring:"A `revert-buffer-function'."
+        ~docstring:
+          {|
+A `revert-buffer-function'.
+
+See the documentation of that variable for the meaning of
+IGNORE-AUTO and NOCONFIRM.
+|}
         (Returns_deferred Value.Type.unit)
         (let%map_open.Defun () = return ()
          and () = required "ignore-auto" ignored
@@ -40,7 +46,15 @@ let define_background_safe ?(here = Stdlib.Lexing.dummy_pos) symbol f =
       Defun.defun_func
         symbol
         here
-        ~docstring:"A `revert-buffer-function'."
+        ~docstring:
+          {|
+A `revert-buffer-function' that may safely be called in the background.
+
+If BUFFER is non-nil, revert it instead of the current buffer.
+
+See the documentation of `revert-buffer-function' for the meaning of
+IGNORE-AUTO and NOCONFIRM.
+|}
         (Returns_deferred Value.Type.unit)
         (let%map_open.Defun () = return ()
          and () = required "ignore-auto" ignored

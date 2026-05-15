@@ -2,10 +2,14 @@ open! Core
 open! Async_kernel
 open! Import
 
-let c_source_directory = Var.Wrap.("find-function-C-source-directory" <: string)
+let invocation_directory = Var.Wrap.("invocation-directory" <: string)
 
 let%expect_test "[emacs-module.h] is up to date" =
-  let expected_file = Current_buffer.value_exn c_source_directory ^/ "emacs-module.h" in
+  (* emacs-module.h is installed in $prefix/include/ alongside the binary in $prefix/bin/.
+     invocation-directory is $prefix/bin/. *)
+  let invocation_dir = Current_buffer.value_exn invocation_directory in
+  let prefix = Filename.directory_exn (Filename.of_directory invocation_dir) in
+  let expected_file = prefix ^/ "include" ^/ "emacs-module.h" in
   let expected_contents = In_channel.read_all expected_file in
   let actual_contents = In_channel.read_all "../src/emacs-module.h" in
   require

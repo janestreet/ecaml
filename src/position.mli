@@ -20,11 +20,11 @@ val to_int : t -> int
 
 (** [(describe-function 'position-bytes)].
     [(Info-goto-node "(elisp)Text Representations")] *)
-val to_byte_position : t -> int
+val to_byte_position_exn : t -> int
 
 (** [(describe-function 'byte-to-position)].
     [(Info-goto-node "(elisp)Text Representations")] *)
-val of_byte_position : int -> t
+val of_byte_position_exn : int -> t
 
 val add : t -> int -> t
 val sub : t -> int -> t

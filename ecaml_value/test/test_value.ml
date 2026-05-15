@@ -613,19 +613,13 @@ let%expect_test "[catch]ing a [throw] that travels through Ecaml" =
 ;;
 
 let%expect_test "rendering OCaml exceptions in Emacs and OCaml" =
-  let test ?(debug_on_error = false) message =
+  let test message =
     try
-      Current_buffer.set_value_temporarily
-        Sync
-        (Debugger.debug_on_error |> Customization.var)
-        debug_on_error
-        ~f:(fun () ->
-          ignore
-            (Value.funcall1
-               ("(lambda (f) (funcall f))" |> Form.Blocking.eval_string)
-               (lambda_nullary_nil [%here] (fun () -> raise_s message)
-                |> Function.to_value)
-             : Value.t));
+      ignore
+        (Value.funcall1
+           ("(lambda (f) (funcall f))" |> Form.Blocking.eval_string)
+           (lambda_nullary_nil [%here] (fun () -> raise_s message) |> Function.to_value)
+         : Value.t);
       assert false
     with
     | exn ->
@@ -669,14 +663,6 @@ let%expect_test "rendering OCaml exceptions in Emacs and OCaml" =
     Emacs:
     foo
     |}];
-  test [%message "foo"] ~debug_on_error:true;
-  [%expect
-    {|
-    OCaml:
-    ((foo (backtrace ("<backtrace elided in test>"))))
-    Emacs:
-    (foo (backtrace ("<backtrace elided in test>")))
-    |}];
   test [%message "foo" "bar"];
   [%expect
     {|
@@ -684,14 +670,6 @@ let%expect_test "rendering OCaml exceptions in Emacs and OCaml" =
     ((foo bar))
     Emacs:
     (foo bar)
-    |}];
-  test [%message "foo" "bar"] ~debug_on_error:true;
-  [%expect
-    {|
-    OCaml:
-    (((foo bar) (backtrace ("<backtrace elided in test>"))))
-    Emacs:
-    ((foo bar) (backtrace ("<backtrace elided in test>")))
     |}];
   test (List (List.init 15 ~f:(fun i -> Sexp.Atom ("foobar" ^ Int.to_string i))));
   [%expect

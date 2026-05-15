@@ -263,7 +263,7 @@ let defcustom
          Defun.defun_func
            (Symbol.intern (Symbol.name symbol ^ "--setter"))
            here
-           ~docstring:"The :set function for a defcustom."
+           ~docstring:"The :set function for a defcustom (set SYMBOL to VALUE)."
            (Returns Value.Type.unit)
            (let%map_open.Defun symbol = required "symbol" Symbol.t
             and value = required "value" value in

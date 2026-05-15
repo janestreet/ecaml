@@ -66,19 +66,4 @@ let window_end =
 
 let end_ ?(update = false) t = window_end t update
 let frame = Funcall.Wrap.("window-frame" <: t @-> return Frame.t)
-
-let fit_window_to_buffer =
-  Funcall.Wrap.(
-    "fit-window-to-buffer"
-    <: t
-       @-> nil_or int
-       @-> nil_or int
-       @-> nil_or int
-       @-> nil_or int
-       @-> nil_or bool
-       @-> return nil)
-;;
-
-let fit_to_buffer ?max_columns ?max_lines ?min_columns ?min_lines ?preserve_size t =
-  fit_window_to_buffer t max_lines min_lines max_columns min_columns preserve_size
-;;
+let is_minibuffer = Funcall.Wrap.("window-minibuffer-p" <: t @-> return bool)

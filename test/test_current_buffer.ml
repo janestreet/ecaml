@@ -1151,25 +1151,31 @@ let%expect_test "[save]" =
 ;;
 
 let%expect_test "[bury]" =
-  print_s [%sexp (Buffer.all_live () : Buffer.t list)];
+  (* The *profile* buffer may or may not exist at this point depending on whether any
+     profiled call exceeded [ecaml-profile-hide-top-level-if-less-than] before this test.
+     Filter it out to make the test output deterministic. *)
+  let all_live_excluding_profile () =
+    Buffer.all_live ()
+    |> List.filter ~f:(fun buffer ->
+      not ([%equal: string option] (Buffer.name buffer) (Some "*profile*")))
+  in
+  print_s [%sexp (all_live_excluding_profile () : Buffer.t list)];
   [%expect
     {|
     ("#<buffer  *Minibuf-0*>"
      "#<buffer *Messages*>"
      "#<buffer b1>"
      "#<buffer b2>"
-     "#<buffer *profile*>"
      "#<buffer zzz>"
      "#<buffer z>")
     |}];
   bury ();
-  print_s [%sexp (Buffer.all_live () : Buffer.t list)];
+  print_s [%sexp (all_live_excluding_profile () : Buffer.t list)];
   [%expect
     {|
     ("#<buffer  *Minibuf-0*>"
      "#<buffer b1>"
      "#<buffer b2>"
-     "#<buffer *profile*>"
      "#<buffer zzz>"
      "#<buffer z>"
      "#<buffer *Messages*>")
