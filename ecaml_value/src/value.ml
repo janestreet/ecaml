@@ -220,9 +220,7 @@ let intern string =
 ;;
 
 module Q = struct
-  let append = "append" |> intern
   let arrayp = "arrayp" |> intern
-  let backtrace = "backtrace" |> intern
   let bufferp = "bufferp" |> intern
   let car = "car" |> intern
   let cadr = "cadr" |> intern
@@ -230,9 +228,7 @@ module Q = struct
   let commandp = "commandp" |> intern
   let cons = "cons" |> intern
   let consp = "consp" |> intern
-  let debug_ignored_errors = "debug-ignored-errors" |> intern
   let debug_on_error = "debug-on-error" |> intern
-  let debug_on_quit = "debug-on-quit" |> intern
   let equal = "equal" |> intern
   let equal_including_properties = "equal-including-properties" |> intern
   let error = "error" |> intern
@@ -255,7 +251,6 @@ module Q = struct
   let print_length = "print-length" |> intern
   let print_level = "print-level" |> intern
   let processp = "processp" |> intern
-  let quit = "quit" |> intern
   let set = "set" |> intern
   let string_as_multibyte = "string-as-multibyte" |> intern
   let stringp = "stringp" |> intern
@@ -438,9 +433,7 @@ let[@inline always] to_int_exn (t : t) =
 let get_var symbol = funcall1 Q.symbol_value symbol
 let set_var symbol value = funcall2_i Q.set symbol value
 let get_int_var string = get_var (string |> intern) |> to_int_exn
-let debug_ignored_errors () = funcall1 Q.symbol_value Q.debug_ignored_errors
 let debug_on_error () = is_not_nil (funcall1 Q.symbol_value Q.debug_on_error)
-let debug_on_quit () = is_not_nil (funcall1 Q.symbol_value Q.debug_on_quit)
 let emacs_min_int = get_int_var "most-negative-fixnum"
 let emacs_max_int = get_int_var "most-positive-fixnum"
 
@@ -589,38 +582,6 @@ let symbol_get_property symbol property = funcall2 Q.get symbol property
 let error_conditions signal = symbol_get_property signal Q.error_conditions
 let memq elt list = funcall2 Q.memq elt list
 
-(* Modeled after [maybe_call_debugger] in eval.c.
-
-   The only purpose of this function is to determine whether to add an OCaml backtrace to
-   the error message, to partially make up for the Lisp debugger not being able to read
-   the backtrace itself. Therefore, we only care about the values of user customizations,
-   and not the various other conditions in that function which are primarily used to
-   prevent unwanted recursion.
-
-   It doesn't have to be perfect, but we try to respect the following:
-   - Don't mangle quits unless debug-on-quit is non-nil
-   - Don't mangle user-errors
-
-   Our code doesn't handle the case where the signal is nil and the data contains the
-   error-symbol instead. That only happens for memory-full errors. *)
-let would_enter_debugger ~signal =
-  let error_conditions = error_conditions signal in
-  let debugger_is_wanted =
-    if eq signal Q.quit || (is_symbol signal && is_not_nil (memq Q.quit error_conditions))
-    then debug_on_quit ()
-    else debug_on_error ()
-    (* Not specially handling the case where debug-on-error may be a list of conditions *)
-  in
-  let condition_is_ignored =
-    debug_ignored_errors ()
-    |> to_list_exn ~f:Fn.id
-    |> List.exists ~f:(fun element ->
-      (* Not handling regexps that may match error-message-string. *)
-      is_symbol element && is_not_nil (memq element error_conditions))
-  in
-  debugger_is_wanted && not condition_is_ignored
-;;
-
 let non_local_exit_signal exn =
   let module M = struct
     (** [non_local_exit_signal] sets a [pending_error] flag in the Emacs environment that
@@ -635,23 +596,7 @@ let non_local_exit_signal exn =
   let debug_on_error = debug_on_error () in
   match exn with
   | Elisp_throw { tag; value } -> M.non_local_exit_throw tag value
-  | Elisp_signal { symbol; data } ->
-    (* This case preserves an Elisp signal as it crosses an OCaml boundary. *)
-    let data =
-      match would_enter_debugger ~signal:symbol with
-      | false -> data
-      | true ->
-        funcall2
-          Q.append
-          data
-          (list
-             [ list
-                 [ Q.backtrace
-                 ; Backtrace.Exn.most_recent () |> Backtrace.to_string |> of_utf8_bytes
-                 ]
-             ])
-    in
-    M.non_local_exit_signal symbol data
+  | Elisp_signal { symbol; data } -> M.non_local_exit_signal symbol data
   | _ ->
     (* Exceptions generated from OCaml *)
     let error_symbol, message =
@@ -665,7 +610,15 @@ let non_local_exit_signal exn =
       | _ ->
         ( Q.error
         , let backtrace =
-            if debug_on_error then Some (Backtrace.Exn.most_recent ()) else None
+            (* In our tests, [Expect_test_helpers_base] normally elides backtraces for
+               exceptions that get raised up to [require_does_raise], but that only
+               happens once the exception actually makes it all the way back to the expect
+               test machinery; since we're explicitly rendering and adding the backtrace
+               so that it can be preserved as we go back through Emacs stack frames, we
+               need to do it ourselves. *)
+            if debug_on_error && not am_running_test
+            then Some (Backtrace.Exn.most_recent ())
+            else None
           in
           let message =
             [%message.omit_nil "" ~_:(exn : exn) (backtrace : Backtrace.t option)]

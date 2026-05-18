@@ -203,8 +203,14 @@ let emacs_startup = Wrap.("emacs-startup-hook" <: Normal_hook)
 let kill_buffer = Wrap.("kill-buffer-hook" <: Normal_hook)
 let kill_emacs = Wrap.("kill-emacs-hook" <: Normal_hook)
 let focus_in = Wrap.("focus-in-hook" <: Normal_hook)
+let window_buffer_change_functions = Wrap.("window-buffer-change-functions" <: Frame_hook)
 let window_configuration_change = Wrap.("window-configuration-change-hook" <: Normal_hook)
 let window_scroll_functions = Wrap.("window-scroll-functions" <: Window_hook)
+
+let window_selection_change_functions =
+  Wrap.("window-selection-change-functions" <: Frame_hook)
+;;
+
 let post_command = Wrap.("post-command-hook" <: Normal_hook)
 let pre_command = Wrap.("pre-command-hook" <: Normal_hook)
 let project_find_functions = Wrap.("project-find-functions" <: File_hook)

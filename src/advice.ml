@@ -24,7 +24,9 @@ let defun_internal
   Defun.defun
     advice_name
     here
-    ~docstring
+    ~docstring:
+      (String.rstrip docstring
+       ^ "\n\nINNER is the advised function, and REST contains its arguments.")
     ?interactive
     ?should_profile
     (Defun.Returns.returns sync_or_async Value.Type.value)

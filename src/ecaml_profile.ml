@@ -209,7 +209,11 @@ let () =
               Current_buffer.inhibit_read_only Sync (fun () ->
                 Current_buffer.append_to string))
         with
-        | exn -> message_s [%message "unable to output profile" ~_:(exn : exn)]);
+        | exn ->
+          let bt = Backtrace.Exn.most_recent_for_exn exn in
+          message_s
+            [%message.omit_nil
+              "unable to output profile" [%here] (exn : exn) (bt : Backtrace.t option)]);
   Profile.tag_frames_with
   := Some
        (T
@@ -346,6 +350,9 @@ module Benchmarks = struct
 For testing the Ecaml profiler.
 
 Benchmark the Ecaml profiler's rendering of a large value.
+
+LARGE-DATA-STRUCTURE may be any Lisp value, but preferably one whose printed
+representation is quite large.
 |}
       (Returns Value.Type.unit)
       (let%map_open.Defun () = return ()

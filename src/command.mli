@@ -16,8 +16,7 @@ module Raw_prefix_argument : sig
     | Nested of int
   [@@deriving sexp_of]
 
-  val of_value_exn : Value.t -> t
-  val to_value : t -> Value.t
+  include Valueable.S with type t := t
 
   (** [(describe-variable 'current-prefix-arg)]
       [(Info-goto-node "(elisp)Prefix Command Arguments")] *)

@@ -43,6 +43,7 @@ let%expect_test "[all_provided]" =
     (abbrev
      ansi-color
      backquote
+     backtrace
      base64
      bookmark
      button
@@ -97,6 +98,7 @@ let%expect_test "[all_provided]" =
      hashtable-print-readable
      hebrew
      help
+     help-mode
      image
      indian
      indonesian

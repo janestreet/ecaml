@@ -13,6 +13,7 @@
 #include <caml/fail.h>
 #include <caml/memory.h>
 #include <caml/mlvalues.h>
+#include <caml/printexc.h>
 #include <caml/threads.h>
 /* For Int63 macros */
 #include "ocaml_utils.h"
@@ -57,6 +58,8 @@ static thread_local emacs_env *active_env = NULL;
     __attribute__((unused)) value bogus;                                                 \
     CAML_NAMED_CALLBACK(bogus, name, arity_exn, __VA_ARGS__);                            \
   } while (0)
+
+#define EMACS_STRING(env, s) (env->make_string(env, s, sizeof(s) - 1))
 
 emacs_env *ecaml_active_env_or_die() {
   if (active_env == NULL) {
@@ -272,6 +275,42 @@ CAMLprim value ecaml_non_local_exit_throw(value tag, value throw_value) {
   CAMLreturn(Val_unit);
 }
 
+static void define_ocaml_exception_error(emacs_env *env) {
+  emacs_value args[] = {env->intern(env, "uncaught-ocaml-exception"),
+                        EMACS_STRING(env, "Uncaught OCaml exception")};
+  env->funcall(env, env->intern(env, "define-error"), 2, args);
+}
+
+/* Format an OCaml exception as an Emacs string.  Tries to use the registered
+   [format_ocaml_exception] callback first (which calls [Exn.to_string_mach] and
+   uses custom exception printers for nice sexp output with [@@deriving sexp_of]
+   exceptions), falling back to [caml_format_exception] (which only uses the
+   built-in OCaml exception formatter and produces unhelpful output like
+   [Base__Info.Exn(_)] for such exceptions).
+
+   The fallback is needed because the callback may not be available: if the
+   exception happened during [caml_startup_exn] before [ecaml_callback.ml]
+   initialized and registered the callback, [caml_named_value] returns NULL.
+   It's also possible for [caml_callback_exn] itself to raise (e.g. out of
+   memory). */
+static emacs_value format_exception(emacs_env *env, value exn) {
+  static const value *format_ocaml_exception = NULL;
+  if (format_ocaml_exception == NULL) {
+    format_ocaml_exception = caml_named_value("format_ocaml_exception");
+  }
+  if (format_ocaml_exception != NULL) {
+    value result = CAML_CALLBACK_1_exn(*format_ocaml_exception, exn);
+    if (!Is_exception_result(result)) {
+      return env->make_string(env, String_val(result), caml_string_length(result));
+    }
+  }
+  /* Fallback to the built-in OCaml exception formatter. */
+  char *msg = caml_format_exception(exn);
+  emacs_value emacs_msg = env->make_string(env, msg, strlen(msg));
+  free(msg);
+  return emacs_msg;
+}
+
 /* This should be used in every place where Emacs calls OCaml and we use
    [caml_callback] (i.e. the place where we start by acquiring the OCaml lock)
    along with using the _exn variant of [caml_callback] (which is the one that
@@ -283,11 +322,15 @@ CAMLprim value ecaml_non_local_exit_throw(value tag, value throw_value) {
 static void if_exception_signal_emacs_and_use_ecaml_nil(emacs_env *env,
                                                         char *symbol_string, value *ret) {
   if (Is_exception_result(*ret)) {
+    value exn = Extract_exception(*ret);
+    /* Set [*ret] to a valid OCaml value before [format_exception] below, which
+       may trigger OCaml GC.  If [*ret] is a [CAMLlocal], leaving the exception
+       result in it could confuse the GC. */
     *ret = ecaml_nil(env);
-    /* We ignore the exception here, but there is code in [ecaml_callback.ml]
-       that attempts to report the exception before raising it. */
+    emacs_value data_args[] = {env->intern(env, symbol_string),
+                               format_exception(env, exn)};
     env->non_local_exit_signal(env, env->intern(env, "uncaught-ocaml-exception"),
-                               env->intern(env, symbol_string));
+                               env->funcall(env, env->intern(env, "list"), 2, data_args));
   }
 }
 
@@ -403,10 +446,16 @@ int emacs_module_init(struct emacs_runtime *ert) {
   assert(active_env == NULL);
   active_env = env;
 
-  char *argv[2] = {"emacs", NULL};
-  caml_startup(argv);
+  define_ocaml_exception_error(env);
 
-  CAML_NAMED_CALLBACK_I(end_of_module_initialization, 1, Val_unit);
+  char *argv[2] = {"emacs", NULL};
+  value res = caml_startup_exn(argv);
+  if_exception_signal_emacs_and_use_ecaml_nil(env, "caml_startup_exn", &res);
+
+  value end_of_init_res;
+  CAML_NAMED_CALLBACK(end_of_init_res, end_of_module_initialization, 1_exn, Val_unit);
+  if_exception_signal_emacs_and_use_ecaml_nil(env, "end_of_module_initialization",
+                                              &end_of_init_res);
 
   active_env = NULL;
   caml_release_runtime_system();

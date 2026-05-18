@@ -158,6 +158,8 @@ let () =
 For testing Ecaml.
 
 Test raising from a deep call stack of a function defined by an Ecaml [defun].
+
+NUMBER specifies the number of nested recursive calls of this function to perform.
 |}
     ~interactive:No_arg
     (Returns Value.Type.unit)
@@ -167,6 +169,21 @@ Test raising from a deep call stack of a function defined by an Ecaml [defun].
      if n <= 0
      then raise_s [%message "foo" "bar" "baz"]
      else ecaml_test_raise (Some (n - 1)));
+  defun
+    ("ecaml-test-funcall" |> Symbol.intern)
+    [%here]
+    ~docstring:
+      {|
+For testing Ecaml.
+
+Call FUNCTION through the Emacs module API boundary.  This is useful for
+testing that errors signaled inside FUNCTION interact correctly with the
+module error-handling machinery (e.g. `debug-on-error').
+|}
+    (Returns Value.Type.unit)
+    (let open Defun.Let_syntax in
+     let%map_open function_ = required "function" Symbol.t in
+     Symbol.funcall0_i function_);
   defun_nullary_nil
     ("ecaml-test-sentinel-raise" |> Symbol.intern)
     [%here]
@@ -191,6 +208,9 @@ For testing Ecaml.
 
 List the Unix signals that are managed by the Async OCaml library in
 the running Emacs process.
+
+When invoked interactively, or when INTERACTIVE is non-nil, the results are
+displayed in the echo area.
 |}
     ~interactive:(Defun.Interactive.list [ Value.t ])
     (Returns Ecaml_sexp.t)
@@ -205,6 +225,25 @@ the running Emacs process.
      in
      if interactive then message_s sexp;
      sexp);
+  defun
+    ("ecaml-test-performance-of-funcall" |> Symbol.intern)
+    [%here]
+    ~docstring:
+      {|
+For testing Ecaml performance.
+
+Calls `vectorp' N times on t, throwing away the result.
+
+`vectorp' is chosen to be a fairly arbitrary simple function.  The
+places where we care about funcall overhead, we are calling many
+small Elisp functions.
+|}
+    ~interactive:Prefix
+    (Returns Value.Type.unit)
+    (let%map_open.Defun n = required "n" int in
+     for _ = 1 to n do
+       ignore (Value.is_vector Value.t : bool)
+     done);
   (* Replace [false] with [true] to define a function for testing [Minibuffer.read_from]. *)
   if false
   then (

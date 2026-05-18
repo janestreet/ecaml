@@ -254,7 +254,7 @@ let%expect_test "goto_end_exn on single-line comment" =
 
       comment bounds:
 
-      # ▛his is a comment
+      ▛ this is a comment
       # it spans multiple lines
       # end of the comment▟
       |}];
@@ -289,7 +289,7 @@ let%expect_test "goto_end_exn on single-line comment" =
 
       comment bounds:
 
-      # ▛his is a comment
+      ▛ this is a comment
       # it spans multiple lines
       # end of the comment▟
       |}];
@@ -324,7 +324,7 @@ let%expect_test "goto_end_exn on single-line comment" =
 
       comment bounds:
 
-      # ▛his is a comment
+      ▛ this is a comment
       # it spans multiple lines
       # end of the comment▟
       |}];
@@ -374,7 +374,7 @@ def hello():
       comment bounds:
 
       def hello():
-        print("Hello, world")      # ▛his is a comment
+        print("Hello, world")      ▛ this is a comment
         return 3                   # is this the same comment?▟
       |}];
     return ())
@@ -456,6 +456,249 @@ let%expect_test "two comments on one line" =
       comment bounds:
 
       <!-- comment 1 -->  ▛!-- comment 2 -->▟
+      |}];
+    return ())
+;;
+
+let%expect_test "two block comments on one line in C" =
+  Current_buffer.set_temporarily_to_temp_buffer Sync (fun () ->
+    mode "c";
+    Point.insert
+      {|
+/* comment 1 */  /* comment 2 */
+|};
+    test ~position:5 ();
+    [%expect
+      {|
+      goto_end_exn:
+
+      /* █omment 1 */  /* comment 2 */
+
+      =>
+
+      /* comment 1█*/  /* comment 2 */
+
+
+      goto_beginning_exn:
+
+      /* █omment 1 */  /* comment 2 */
+
+      =>
+
+      /* █omment 1 */  /* comment 2 */
+
+
+      comment bounds:
+
+      ▛* comment 1 */▟ /* comment 2 */
+      |}];
+    test ~position:18 ();
+    [%expect
+      {|
+      goto_end_exn:
+
+      /* comment 1 */ █/* comment 2 */
+
+      =>
+      (raised "not in a comment")
+
+      goto_beginning_exn:
+
+      /* comment 1 */ █/* comment 2 */
+
+      =>
+      (raised "not in a comment")
+
+      comment bounds:
+        None
+      |}];
+    test ~position:28 ();
+    [%expect
+      {|
+      goto_end_exn:
+
+      /* comment 1 */  /* commen█ 2 */
+
+      =>
+
+      /* comment 1 */  /* comment 2█*/
+
+
+      goto_beginning_exn:
+
+      /* comment 1 */  /* commen█ 2 */
+
+      =>
+
+      /* comment 1 */  /* █omment 2 */
+
+
+      comment bounds:
+
+      /* comment 1 */  ▛* comment 2 */▟
+      |}];
+    return ())
+;;
+
+let%expect_test "mixed line and block comments in C" =
+  Current_buffer.set_temporarily_to_temp_buffer Sync (fun () ->
+    mode "c";
+    Point.insert
+      {|// line comment
+
+/* block comment
+   spanning lines */
+
+/* another comment */
+|};
+    test ~position:37 ();
+    [%expect
+      {|
+      goto_end_exn:
+      // line comment
+
+      /* block comment
+        █spanning lines */
+
+      /* another comment */
+
+      =>
+      // line comment
+
+      /* block comment
+         spanning lines█*/
+
+      /* another comment */
+
+
+      goto_beginning_exn:
+      // line comment
+
+      /* block comment
+        █spanning lines */
+
+      /* another comment */
+
+      =>
+      // line comment
+
+      /* █lock comment
+         spanning lines */
+
+      /* another comment */
+
+
+      comment bounds:
+      // line comment
+
+      ▛* block comment
+         spanning lines */▟
+
+      /* another comment */
+      |}];
+    (* inside the line comment *)
+    test ~position:10 ();
+    [%expect
+      {|
+      goto_end_exn:
+      // line c█mment
+
+      /* block comment
+         spanning lines */
+
+      /* another comment */
+
+      =>
+      // line comment█
+
+      /* block comment
+         spanning lines */
+
+      /* another comment */
+
+
+      goto_beginning_exn:
+      // line c█mment
+
+      /* block comment
+         spanning lines */
+
+      /* another comment */
+
+      =>
+      // █ine comment
+
+      /* block comment
+         spanning lines */
+
+      /* another comment */
+
+
+      comment bounds:
+      ▛/ line comment
+      ▟
+      /* block comment
+         spanning lines */
+
+      /* another comment */
+      |}];
+    (* between the line comment and block comment (empty line) *)
+    test ~position:18 ();
+    [%expect
+      {|
+      goto_end_exn:
+      // line comment
+
+      █* block comment
+         spanning lines */
+
+      /* another comment */
+
+      =>
+      (raised "not in a comment")
+
+      goto_beginning_exn:
+      // line comment
+
+      █* block comment
+         spanning lines */
+
+      /* another comment */
+
+      =>
+      (raised "not in a comment")
+
+      comment bounds:
+        None
+      |}];
+    (* between the two block comments (empty line) *)
+    test ~position:57 ();
+    [%expect
+      {|
+      goto_end_exn:
+      // line comment
+
+      /* block comment
+         spanning lines */
+
+      █* another comment */
+
+      =>
+      (raised "not in a comment")
+
+      goto_beginning_exn:
+      // line comment
+
+      /* block comment
+         spanning lines */
+
+      █* another comment */
+
+      =>
+      (raised "not in a comment")
+
+      comment bounds:
+        None
       |}];
     return ())
 ;;

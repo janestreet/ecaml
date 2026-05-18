@@ -182,6 +182,10 @@ val post_command : (normal, unit) t
     - [(Info-goto-node "(elisp)Command Overview")] *)
 val pre_command : (normal, unit) t
 
+(** - [(describe-variable 'window-buffer-change-functions)]
+    - [(Info-goto-node "(elisp)Window Hooks")] *)
+val window_buffer_change_functions : (frame, unit) t
+
 (** - [(describe-variable 'window-configuration-change-hook)]
     - [(Info-goto-node "(elisp)Window Hooks")] *)
 val window_configuration_change : (normal, unit) t
@@ -189,6 +193,10 @@ val window_configuration_change : (normal, unit) t
 (** - [(describe-variable 'window-scroll-functions)]
     - [(Info-goto-node "(elisp)Window Hooks")] *)
 val window_scroll_functions : (window, unit) t
+
+(** - [(describe-variable 'window-selection-change-functions)]
+    - [(Info-goto-node "(elisp)Window Hooks")] *)
+val window_selection_change_functions : (frame, unit) t
 
 (** [(Info-goto-node "(elisp)Major Mode Conventions")] *)
 val major_mode_hook : Major_mode.t -> (normal, unit) t

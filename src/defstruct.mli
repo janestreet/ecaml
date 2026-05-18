@@ -1,8 +1,9 @@
 (** Wrapper for [cl-defstruct]. See [(Info-goto-node "(cl) Structures")].
 
     This module's interface is geared towards constructing structured Lisp values from
-    closely-corresponding OCaml values. In particular, all fields of a need to decide
-    ahead-of-time how to extract the Lisp value for a given slot from some OCaml value.
+    closely-corresponding OCaml values. In particular, all fields of a struct need to
+    decide ahead of time how to extract the Lisp value for a given slot from some OCaml
+    value.
 
     For example,
 
@@ -39,6 +40,7 @@ module Field : sig
       [type_] is then used to convert that value into an Elisp value. *)
   val field : string -> ('a -> 'b) -> 'b Value.Type.t -> 'a t
 
+  (** This module re-exports the basic [Value.Type.t] constructors. *)
   include Value.Type.S
 end
 

@@ -55,15 +55,38 @@ let beginning =
     comment_beginning ()
 ;;
 
-let find_start_of_single_line_comment_at_point () =
-  Point.end_of_line ();
-  Option.is_some (beginning ())
-;;
-
 let am_in_single_line_comment () =
   Current_buffer.save_excursion Sync (fun () ->
-    find_start_of_single_line_comment_at_point ())
+    Point.end_of_line ();
+    Option.is_some (beginning ()))
 ;;
+
+module Syntax = struct
+  (* These functions all require that [comment-use-syntax] is non-nil, i.e., the syntax
+     table for the major mode can be reliably used to distinguish comments. (That is not
+     the case, for, e.g., org-mode). *)
+
+  let forward_comment = Funcall.Wrap.("forward-comment" <: int @-> return bool)
+  let syntax_ppss = Funcall.Wrap.("syntax-ppss" <: nullary @-> return value)
+
+  let ppss_comment_or_string_start =
+    Funcall.Wrap.("ppss-comment-or-string-start" <: value @-> return (nil_or Position.t))
+  ;;
+
+  let syntax_ppss_comment_start () = ppss_comment_or_string_start (syntax_ppss ())
+
+  let bounds_of_comment_at_point () =
+    (* Use [syntax-ppss] to find the comment start, and [forward-comment] from there to
+       find the end. *)
+    let%bind.Option comment_start = syntax_ppss_comment_start () in
+    let%bind.Option comment_end =
+      Current_buffer.save_excursion Sync (fun () ->
+        Point.goto_char comment_start;
+        if forward_comment 1 then Some (Point.get ()) else None)
+    in
+    Some (comment_start, comment_end)
+  ;;
+end
 
 let bounds_of_comment_at_point () =
   (* Try to find the bounds of the comment at point by searching both backwards and
@@ -71,58 +94,10 @@ let bounds_of_comment_at_point () =
   normalize_vars ();
   match Terminated_by.in_current_buffer () with
   | Comment_end ->
-    let search dir for_ =
-      let point = Point.get () in
-      Current_buffer.save_excursion Sync (fun () ->
-        Option.try_with (fun () ->
-          let check, search =
-            (* If the point is in the middle of a comment beginning/ending sequence,
-               search_for/backward_regexp_exn won't find it. For example (if | represents
-               the point):
-
-               {v
-                 /|* some comment */
-               v}
-
-               To get around this, we jump to the beginning/end of line and search for the
-               first match that ends on the opposite side of where the point originally
-               was. *)
-            match dir with
-            | `Forward ->
-              Point.beginning_of_line ();
-              ( (fun () -> Position.( <= ) (Point.get ()) point)
-              , fun () -> Point.search_forward_regexp_exn for_ )
-            | `Backward ->
-              Point.end_of_line ();
-              ( (fun () -> Position.( >= ) (Point.get ()) point)
-              , fun () -> Point.search_backward_regexp_exn for_ )
-          in
-          while check () do
-            search ()
-          done;
-          Point.get ()))
-    in
-    let start_regexp = Current_buffer.value_exn Vars.start_regexp in
-    let end_regexp = Current_buffer.value_exn Vars.end_regexp in
-    (match
-       ( search `Backward end_regexp
-       , search `Backward start_regexp
-       , search `Forward end_regexp
-       , search `Forward start_regexp )
-     with
-     | _, None, _, _ | _, _, None, _ ->
-       (* In this case, we're not actually in a comment *)
-       None
-     | Some previous_end, Some comment_start, Some comment_end, Some next_start
-       when Position.( >= ) previous_end comment_start
-            || Position.( <= ) next_start comment_end ->
-       (* We're between two comments. For example:
-          {v /* comment 1 */ POINT /* comment 2 */ v} *)
-       None
-     | _, Some comment_start, Some comment_end, _ ->
-       (* Otherwise, we must be in a comment, and [comment_start] and [comment_end] are
-          the bounds of that comment. *)
-       Some (comment_start, comment_end))
+    (* This [Comment_end] branch is not reached for known modes where [comment-use-syntax]
+       is nil (e.g., org-mode), since those modes have [comment-end = ""] and use the
+       [End_of_line] branch. Therefore, it's fine to rely on the syntax table-based logic. *)
+    Syntax.bounds_of_comment_at_point ()
   | End_of_line ->
     (match am_in_single_line_comment () with
      | false -> None
@@ -144,8 +119,13 @@ let bounds_of_comment_at_point () =
        let comment_start =
          Current_buffer.save_excursion Sync (fun () ->
            Point.goto_char (search `Backward ~last_point:(Point.get ()));
-           ignore (find_start_of_single_line_comment_at_point () : bool);
-           Point.get ())
+           Point.end_of_line ();
+           (* [beginning] moves point inside the comment (after the comment-start marker)
+              but returns the position of the comment-starter itself. We use the returned
+              position so that the start marker is included in the bounds. *)
+           match beginning () with
+           | Some pos -> pos
+           | None -> Point.get ())
        in
        let comment_end =
          Current_buffer.save_excursion Sync (fun () ->
