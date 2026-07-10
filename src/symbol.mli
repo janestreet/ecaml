@@ -27,29 +27,6 @@ val compare_name : t -> t -> int
 (** [(describe-function 'gensym)]. *)
 val gensym : ?prefix:string -> unit -> t
 
-(** [Automatic_migration] supports migrating from one symbol-naming convention to another.
-    Use [Automatic_migration.add] to add a function that maps names from the old
-    convention to the new. Once you've done that, the following functions will
-    automatically migrate their symbol argument, and and an obsolete alias pointing from
-    the old name to the new.
-
-    - defcustom
-    - defun
-    - define_minor_mode
-    - defvar *)
-module Automatic_migration : sig
-  module New : sig
-    type nonrec t =
-      { new_ : t
-      ; since : string
-      }
-    [@@deriving sexp_of]
-  end
-
-  val add : (old:t -> New.t option) -> unit
-  val migrate : old:t -> New.t option
-end
-
 module Property : sig
   type 'a t [@@deriving sexp_of]
 
@@ -109,7 +86,7 @@ module Make_subtype (Arg : sig
   end) : Subtype with type t := Arg.t
 
 module Compare_name : sig
-  type t = symbol [@@deriving compare, sexp_of]
+  type t = symbol [@@deriving compare, hash, sexp_of]
 
   include Comparator.S with type t := t
 end

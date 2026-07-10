@@ -138,6 +138,7 @@ let raise_string = raise_string
 let raise_user_error = raise_user_error
 let sec_ns = sec_ns
 let warn = Warning.display ~level:Warning
+let warn_text = Warning.display_text ~level:Warning
 let wrap_message = Echo_area.wrap_message
 
 module Returns = Defun.Returns

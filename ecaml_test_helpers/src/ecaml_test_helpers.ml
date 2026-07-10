@@ -217,6 +217,11 @@ let eval string =
   print_s [%sexp (value : Value.t)]
 ;;
 
+let eval_i string =
+  let%map (_ : Value.t) = Form.eval_string string in
+  ()
+;;
+
 let tmpdir_var = "TMPDIR"
 
 let set_tmpdir_temporarily tmpdir ~f =

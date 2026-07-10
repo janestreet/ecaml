@@ -2,7 +2,6 @@ open! Core
 open! Import0
 include Ecaml_value.Symbol
 
-let name = Funcall.Wrap.("symbol-name" <: t @-> return string)
 let compare_name t1 t2 = String.compare (name t1) (name t2)
 let function_is_defined = Funcall.Wrap.("fboundp" <: t @-> return bool)
 let symbol_function = Funcall.Wrap.("symbol-function" <: t @-> return value)
@@ -17,22 +16,6 @@ let function_exn t =
 
 let gensym = Funcall.Wrap.("gensym" <: nil_or string @-> return t)
 let gensym ?prefix () = gensym prefix
-
-module Automatic_migration = struct
-  module New = struct
-    type nonrec t =
-      { new_ : t
-      ; since : string
-      }
-    [@@deriving sexp_of]
-  end
-
-  type one = old:t -> New.t option
-
-  let all = ref []
-  let add (one : one) = all := !all @ [ one ]
-  let migrate ~old = List.find_map !all ~f:(fun f -> f ~old)
-end
 
 type symbol = t [@@deriving sexp_of]
 
@@ -118,4 +101,10 @@ module Compare_name = struct
 
   include T
   include Comparator.Make (T)
+
+  include Hashable.Make_plain_and_derive_hash_fold_t (struct
+      type nonrec t = t [@@deriving compare, sexp_of]
+
+      let hash = name >> String.hash
+    end)
 end

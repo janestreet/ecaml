@@ -13,7 +13,7 @@ basename=$(basename "$filename")
 # site lisp is loaded at dump time.  To make that work, we make this stub jane-ecaml.el
 # which just loads the ecaml plugin without having an associated dump.
 cat <<EOF > $filename
-;; Temporary wrapper for the ecaml module, overwritten by the real dump after dumping.
+;; Temporary wrapper for the ecaml module, overwritten by the real dump after dumping.  -*- lexical-binding: t; -*-
 (load (concat (file-name-directory load-file-name) "$plugin_so") nil t)
 (provide '$feature)
 EOF

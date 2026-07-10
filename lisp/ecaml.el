@@ -53,5 +53,30 @@ rendered, MESSAGE is also included therein."
   (setq ecaml-profiled-functions (delq function ecaml-profiled-functions))
   (message "You just removed Ecaml profiling of %s" function))
 
+;; This startup is coupled with `start_scheduler' in async_ecaml.ml: the OCaml
+;; side leaves the Async scheduler lock held until this code registers the pipe
+;; process that Elisp uses to run Async cycles.
+(defvar ecaml-async-scheduler-process nil
+  "The pipe process which handles running Async cycles when OCaml needs it.")
+
+(defun ecaml-async-scheduler--filter (_proc _data)
+  (ecaml-async-take-lock-do-cycle))
+
+(defun ecaml-async-scheduler-start ()
+  "Start the Elisp side of the Ecaml Async scheduler."
+  (cl-assert (null ecaml-async-scheduler-process) nil
+             "Can only start the Ecaml async scheduler once.")
+  (let ((proc (make-pipe-process
+               :name "Async scheduler"
+               :buffer nil
+               :coding '(binary . binary)
+               :noquery t
+               :filter #'ecaml-async-scheduler--filter)))
+    (ecaml-async--register-cycle-requester proc)
+    (setq ecaml-async-scheduler-process proc)))
+
+(unless ecaml-async-scheduler-process
+  (ecaml-async-scheduler-start))
+
 (provide 'ecaml)
 ;;; ecaml.el ends here

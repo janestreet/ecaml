@@ -5,7 +5,7 @@
 
 set -e -u -o pipefail
 
-cd $(hg root)/lib/async_kernel/test
+cd "$(hg root)"/lib/async_kernel/test
 
 query='
 (if (pipe (index 0) (equals library))
