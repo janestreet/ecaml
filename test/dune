@@ -6,3 +6,10 @@
    core_unix.time_ns_unix core_kernel.weak_pointer)
  (preprocess
   (pps ppx_jane)))
+
+(rule
+ (alias default)
+ (deps
+  (glob_files *.sh))
+ (action
+  (bash "%{bin:shellcheck} -x *.sh")))

@@ -16,6 +16,7 @@ module Q = struct
   let light = "light" |> Symbol.intern
   let normal = "normal" |> Symbol.intern
   let oblique = "oblique" |> Symbol.intern
+  let reset = "reset" |> Symbol.intern
   let reverse_italic = "reverse-italic" |> Symbol.intern
   let reverse_oblique = "reverse-oblique" |> Symbol.intern
   let semi_bold = "semi-bold" |> Symbol.intern
@@ -32,6 +33,7 @@ end
 module Value = struct
   include Value
 
+  let reset = Q.reset |> Symbol.to_value
   let unspecified = Q.unspecified |> Symbol.to_value
 end
 
@@ -66,6 +68,11 @@ module type Attribute_value = sig
   val symbol : Symbol.t
   val of_value_exn : Value.t -> t
   val to_value : t -> Value.t
+
+  (** Use the value of the corresponding attribute of the [default] face. *)
+  val reset : t
+
+  (** Inherit from the corresponding attribute of an ancestor face. *)
   val unspecified : t
 end
 
@@ -74,28 +81,35 @@ module Unimplemented = struct
 
   let of_value_exn = Fn.id
   let to_value = Fn.id
+  let reset = Value.reset
   let unspecified = Value.unspecified
 end
 
 module Color_or_unspecified = struct
   type t =
     | Color of Color.t
+    | Reset
     | Unspecified
   [@@deriving sexp_of]
 
+  let reset = Reset
   let unspecified = Unspecified
 
   let to_value = function
     | Color c -> c |> Color.to_value
+    | Reset -> Value.reset
     | Unspecified -> Value.unspecified
   ;;
 
   let of_value_exn value =
-    if Value.eq value Value.unspecified
-       (* Sometimes Emacs returns an unspecified color as the string "unspecified-fg" or
-          "unspecified-bg" rather than the symbol [unspecified]. *)
-       || (Value.is_string value
-           && String.is_prefix ~prefix:"unspecified" (Value.to_utf8_bytes_exn value))
+    if Value.eq value Value.reset
+    then Reset
+    else if Value.eq value Value.unspecified
+            (* Sometimes Emacs returns an unspecified color as the string "unspecified-fg"
+               or "unspecified-bg" rather than the symbol [unspecified]. *)
+            || (Value.is_string value
+                && String.is_prefix ~prefix:"unspecified" (Value.to_utf8_bytes_exn value)
+               )
     then Unspecified
     else Color (value |> Color.of_value_exn)
   ;;
@@ -104,19 +118,24 @@ end
 module String_name = struct
   type t =
     | Name of string
+    | Reset
     | Unspecified
   [@@deriving sexp_of]
 
+  let reset = Reset
   let unspecified = Unspecified
 
   let of_value_exn value =
-    if Value.eq value Value.unspecified
+    if Value.eq value Value.reset
+    then Reset
+    else if Value.eq value Value.unspecified
     then Unspecified
     else Name (value |> Value.to_utf8_bytes_exn)
   ;;
 
   let to_value = function
     | Name s -> s |> Value.of_utf8_bytes
+    | Reset -> Value.reset
     | Unspecified -> Value.unspecified
   ;;
 end
@@ -167,14 +186,18 @@ module Height = struct
   type t =
     | Scale_underlying_face of float
     | Tenths_of_point of int
+    | Reset
     | Unspecified
   [@@deriving sexp_of]
 
+  let reset = Reset
   let unspecified = Unspecified
   let symbol = Q.K.height
 
   let of_value_exn value =
-    if Value.eq value Value.unspecified
+    if Value.eq value Value.reset
+    then Reset
+    else if Value.eq value Value.unspecified
     then Unspecified
     else (
       match Value.to_int_exn value with
@@ -191,6 +214,7 @@ module Height = struct
   let to_value = function
     | Scale_underlying_face f -> f |> Value.of_float
     | Tenths_of_point i -> i |> Value.of_int_exn
+    | Reset -> Value.reset
     | Unspecified -> Value.unspecified
   ;;
 end
@@ -200,12 +224,17 @@ module Inherit = struct
 
   type nonrec t =
     | Face of t list
+    | Reset
     | Unspecified
   [@@deriving sexp_of]
 
+  (* It's not clear that [reset] is actually a meaningful value for [:inherit], but
+     include it anyway to make the module signatures uniform. *)
+  let reset = Reset
   let unspecified = Unspecified
 
   let to_value = function
+    | Reset -> Value.reset
     | Face [] | Unspecified -> Value.unspecified
     | Face [ face ] -> to_value face
     | Face faces -> Value.Type.to_value list_type faces
@@ -216,6 +245,8 @@ module Inherit = struct
        the nil face and inheriting from the nil face have no effect. *)
     if Value.eq value Value.unspecified || Value.eq value Value.nil
     then Unspecified
+    else if Value.eq value Value.reset
+    then Reset
     else if Value.is_cons value
     then Face (Value.Type.of_value_exn list_type value)
     else Face [ of_value_exn value ]
@@ -228,14 +259,17 @@ module Inverse_video = struct
   type t =
     | No
     | Yes
+    | Reset
     | Unspecified
   [@@deriving sexp_of]
 
+  let reset = Reset
   let unspecified = Unspecified
 
   let to_value = function
     | No -> Value.nil
     | Yes -> Value.t
+    | Reset -> Value.reset
     | Unspecified -> Value.unspecified
   ;;
 
@@ -244,6 +278,8 @@ module Inverse_video = struct
     then No
     else if Value.eq value Value.t
     then Yes
+    else if Value.eq value Value.reset
+    then Reset
     else if Value.eq value Value.unspecified
     then Unspecified
     else
@@ -258,13 +294,17 @@ module Line = struct
     | Absent
     | Color of Color.t
     | Foreground
+    | Reset
     | Unspecified
   [@@deriving sexp_of]
 
+  let reset = Reset
   let unspecified = Unspecified
 
   let of_value_exn value =
-    if Value.eq value Value.unspecified
+    if Value.eq value Value.reset
+    then Reset
+    else if Value.eq value Value.unspecified
     then Unspecified
     else if Value.is_nil value
     then Absent
@@ -282,6 +322,7 @@ module Line = struct
     | Absent -> Value.nil
     | Color c -> c |> Color.to_value
     | Foreground -> Value.t
+    | Reset -> Value.reset
     | Unspecified -> Value.unspecified
   ;;
 end
@@ -303,9 +344,11 @@ module Slant = struct
       | Normal
       | Reverse_italic
       | Reverse_oblique
+      | Reset
       | Unspecified
     [@@deriving enumerate, sexp_of]
 
+    let reset = Reset
     let unspecified = Unspecified
 
     let to_symbol = function
@@ -314,6 +357,7 @@ module Slant = struct
       | Normal -> Q.normal
       | Reverse_italic -> Q.reverse_italic
       | Reverse_oblique -> Q.reverse_oblique
+      | Reset -> Q.reset
       | Unspecified -> Q.unspecified
     ;;
   end
@@ -355,9 +399,11 @@ module Weight = struct
       | Light
       | Extra_light
       | Ultra_light
+      | Reset
       | Unspecified
     [@@deriving enumerate, sexp_of]
 
+    let reset = Reset
     let unspecified = Unspecified
 
     let to_symbol = function
@@ -370,6 +416,7 @@ module Weight = struct
       | Light -> Q.light
       | Extra_light -> Q.extra_light
       | Ultra_light -> Q.ultra_light
+      | Reset -> Q.reset
       | Unspecified -> Q.unspecified
     ;;
   end
@@ -393,9 +440,11 @@ module Width = struct
       | Expanded
       | Extra_expanded
       | Ultra_expanded
+      | Reset
       | Unspecified
     [@@deriving enumerate, sexp_of]
 
+    let reset = Reset
     let unspecified = Unspecified
 
     let to_symbol = function
@@ -408,6 +457,7 @@ module Width = struct
       | Expanded -> Q.expanded
       | Extra_expanded -> Q.extra_expanded
       | Ultra_expanded -> Q.ultra_expanded
+      | Reset -> Q.reset
       | Unspecified -> Q.unspecified
     ;;
   end
@@ -457,6 +507,11 @@ module Attribute = struct
     | Underline -> (module Underline)
     | Weight -> (module Weight)
     | Width -> (module Width)
+  ;;
+
+  let reset_value (type a) (t : a t) : a =
+    let module Value = (val value_module t) in
+    Value.reset
   ;;
 
   let unspecified_value (type a) (t : a t) : a =

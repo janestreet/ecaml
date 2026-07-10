@@ -116,7 +116,7 @@ module Cycle_requester : sig
 
   val create : unit -> t
   val request_cycle : t -> unit
-  val register_cycle_handler : t -> (unit -> unit) -> unit
+  val register_cycle_handler : t -> Process.t -> unit
 end = struct
   type t = { mutable write_to_request_cycle : Unix.File_descr.t Set_once.t }
 
@@ -154,16 +154,8 @@ end = struct
     Unix.File_descr.of_int fd
   ;;
 
-  let register_cycle_handler t run_cycle =
-    let server_process =
-      Process.make_pipe_process
-        ()
-        ~coding:(`Decoding Coding_system.binary, `Encoding Coding_system.binary)
-        ~name:"Async scheduler"
-        ~noquery:true
-        ~filter:(fun _ _ -> with_lock (Scheduler.t ()) (fun () -> run_cycle ()))
-    in
-    let fd = open_channel server_process in
+  let register_cycle_handler t pipe_process =
+    let fd = open_channel pipe_process in
     (* If the scheduler blocks trying to write to this pipe, emacs will deadlock. Making
        the pipe nonblocking prevents this. *)
     Unix.set_nonblock fd;
@@ -416,50 +408,42 @@ let request_emacs_run_cycle scheduler_thread_id () =
     Cycle_report.report_cycle diff)
 ;;
 
-let unlock_async_after_module_initialization () =
-  (* Release the Async scheduler lock once module initialization is done.
-
-     It is acquired automatically by the main thread during the module initialization of
-     [Async_unix.Raw_scheduler]. *)
-  Ecaml_callback.on_end_of_module_initialization (fun `Not_holding_the_async_lock ->
-    Scheduler.unlock t.scheduler)
-;;
-
 let start_scheduler () =
   assert (Scheduler.am_holding_lock t.scheduler);
   Async.Unix.Private.Wait.do_not_handle_sigchld ();
   if debug
   then Debug.eprint_s [%message "initializing async" [%here] (Time.now () : Time.t)];
-  (* We hold the Async lock, so it should be impossible for the scheduler to try to run a
-     cycle. *)
-  t.scheduler.have_lock_do_cycle
-  <- Some (fun () -> raise_s [%message "BUG in Async_ecaml" [%here]]);
-  let scheduler_thread =
-    Thread.create (fun () -> Scheduler.go () ~raise_unhandled_exn:true) ()
-  in
-  (* We set [have_lock_do_cycle] as early as possible so that the Async scheduler runs
-     cycles in the desired way, even if later parts of initialization raise. *)
-  t.scheduler.have_lock_do_cycle
-  <- Some (request_emacs_run_cycle (Thread.id scheduler_thread));
-  Defun.defun
+  Defun.defun_nullary_nil
     Q.ecaml_async_take_lock_do_cycle
     [%here]
     ~docstring:
       {|
-For testing Async Ecaml.
-
-This runs the same OCaml code that Async Ecaml uses for running an
-Async cycle.  It blocks until it can acquire the Async lock and then
-run a cycle.
+Acquire the Async lock and then run an Async cycle.
 |}
-    ~interactive:No_arg
+    (fun () -> with_lock t.scheduler Block_on_async.in_emacs_have_lock_do_cycle);
+  Defun.defun
+    ("ecaml-async--register-cycle-requester" |> Symbol.intern)
+    [%here]
+    ~docstring:
+      {|Make Ecaml send a byte on PIPE-PROCESS to request an Async cycle.
+
+Whenever the Async scheduler wants to run an Async cycle, it will write a byte
+to PIPE-PROCESS, which can be picked up by the filter for PIPE-PROCESS.
+
+PIPE-PROCESS should of course be a pipe process made by `make-pipe-process'.
+
+This must be called before any async Ecaml functions are called from Elisp.
+|}
     (Returns Value.Type.unit)
     (let open Defun.Let_syntax in
-     let%map_open () = return () in
-     with_lock t.scheduler Block_on_async.in_emacs_have_lock_do_cycle);
-  Cycle_requester.register_cycle_handler
-    t.cycle_requester
-    Block_on_async.in_emacs_have_lock_do_cycle;
+     let%map_open pipe_process = required "pipe-process" Process.t in
+     Cycle_requester.register_cycle_handler t.cycle_requester pipe_process;
+     let scheduler_thread =
+       Thread.create (fun () -> Scheduler.go () ~raise_unhandled_exn:true) ()
+     in
+     t.scheduler.have_lock_do_cycle
+     <- Some (request_emacs_run_cycle (Thread.id scheduler_thread));
+     Scheduler.unlock t.scheduler);
   (* The default [max_inter_cycle_timeout] is much too small (0.05s). Setting it to 1s
      reduces load on emacs. *)
   Scheduler.set_max_inter_cycle_timeout
@@ -586,7 +570,6 @@ end
 
 let () =
   start_scheduler ();
-  unlock_async_after_module_initialization ();
   Defun.defun_nullary_nil
     ("ecaml-async-generate-cycle-report" |> Symbol.intern)
     [%here]

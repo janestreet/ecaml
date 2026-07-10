@@ -3,7 +3,7 @@
 retval=0
 declare -a files
 while read -r symbol; do
-  files=($(grep -l "Q.${symbol}\b" -- *.ml || true))
+  readarray files < <(grep -l "Q.${symbol}\b" -- *.ml || true)
   loc=$(grep -Hn " $symbol " q.ml | sed -rn 's/^([^:]+):([^:]+):.*$/File "\1", line \2, characters 0-0:/p')
   case "${#files[@]}" in
     0)

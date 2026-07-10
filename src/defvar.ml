@@ -44,13 +44,6 @@ let defvar_internal
   ?(include_in_all_defvar_symbols = true)
   ()
   =
-  let symbol =
-    match Symbol.Automatic_migration.migrate ~old:symbol with
-    | None -> symbol
-    | Some { new_; since } ->
-      define_obsolete_alias symbol ~here ~alias_of:new_ ~since ();
-      new_
-  in
   let docstring = docstring |> String.strip in
   require_nonempty_docstring here ~docstring;
   Dump.eval_and_dump ~here (fun () ->

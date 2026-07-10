@@ -211,9 +211,14 @@ let () =
         with
         | exn ->
           let bt = Backtrace.Exn.most_recent_for_exn exn in
+          let output_profile_bt = Backtrace.get () in
           message_s
             [%message.omit_nil
-              "unable to output profile" [%here] (exn : exn) (bt : Backtrace.t option)]);
+              "unable to output profile"
+                [%here]
+                (exn : exn)
+                (bt : Backtrace.t option)
+                (output_profile_bt : Backtrace.t)]);
   Profile.tag_frames_with
   := Some
        (T

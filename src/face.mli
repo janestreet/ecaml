@@ -25,6 +25,7 @@ val to_name : t -> string
 module Background : sig
   type t =
     | Color of Color.t
+    | Reset
     | Unspecified
   [@@deriving sexp_of]
 end
@@ -49,6 +50,7 @@ end
 module Font_family : sig
   type t =
     | Name of string
+    | Reset
     | Unspecified
   [@@deriving sexp_of]
 end
@@ -59,6 +61,7 @@ end
 module Font_foundry : sig
   type t =
     | Name of string
+    | Reset
     | Unspecified
   [@@deriving sexp_of]
 end
@@ -67,6 +70,7 @@ end
 module Foreground : sig
   type t =
     | Color of Color.t
+    | Reset
     | Unspecified
   [@@deriving sexp_of]
 end
@@ -76,6 +80,7 @@ module Height : sig
   type t =
     | Scale_underlying_face of float
     | Tenths_of_point of int
+    | Reset
     | Unspecified
   [@@deriving sexp_of]
 end
@@ -84,6 +89,7 @@ end
 module Inherit : sig
   type nonrec t =
     | Face of t list
+    | Reset
     | Unspecified
   [@@deriving sexp_of]
 end
@@ -93,6 +99,7 @@ module Inverse_video : sig
   type t =
     | No
     | Yes
+    | Reset
     | Unspecified
   [@@deriving sexp_of]
 end
@@ -103,6 +110,7 @@ module Overline : sig
     | Absent
     | Color of Color.t
     | Foreground
+    | Reset
     | Unspecified
   [@@deriving sexp_of]
 end
@@ -115,6 +123,7 @@ module Slant : sig
     | Normal
     | Reverse_italic
     | Reverse_oblique
+    | Reset
     | Unspecified
   [@@deriving sexp_of]
 end
@@ -130,6 +139,7 @@ module Strike_through : sig
     | Absent
     | Color of Color.t
     | Foreground
+    | Reset
     | Unspecified
   [@@deriving sexp_of]
 end
@@ -140,6 +150,7 @@ module Underline : sig
     | Absent
     | Color of Color.t
     | Foreground
+    | Reset
     | Unspecified
   [@@deriving sexp_of]
 end
@@ -156,6 +167,7 @@ module Weight : sig
     | Light
     | Extra_light
     | Ultra_light
+    | Reset
     | Unspecified
   [@@deriving sexp_of]
 end
@@ -172,6 +184,7 @@ module Width : sig
     | Expanded
     | Extra_expanded
     | Ultra_expanded
+    | Reset
     | Unspecified
   [@@deriving sexp_of]
 end
@@ -203,6 +216,7 @@ module Attribute : sig
   val to_symbol : _ t -> Symbol.t
   val of_value_exn : 'a t -> Value.t -> 'a
   val to_value : 'a t -> 'a -> Value.t
+  val reset_value : 'a t -> 'a
   val unspecified_value : 'a t -> 'a
 
   module Packed : sig

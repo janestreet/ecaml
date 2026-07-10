@@ -15,3 +15,10 @@
  (deps unnecessarily-global-symbols.sh glob_files *.ml)
  (action
   (bash ./unnecessarily-global-symbols.sh)))
+
+(rule
+ (alias default)
+ (deps
+  (glob_files *.sh))
+ (action
+  (bash "%{bin:shellcheck} -x *.sh")))

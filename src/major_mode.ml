@@ -118,25 +118,6 @@ let define_derived_mode
   ?(initialize : ((unit, a) Defun.Returns.t * (unit -> a)) option)
   ()
   =
-  let symbol =
-    match Symbol.Automatic_migration.migrate ~old:symbol with
-    | None -> symbol
-    | Some { new_; since } ->
-      Defun.define_obsolete_alias symbol ~here ~alias_of:new_ ~since ();
-      List.iter
-        [ "abbrev-table"; "hook"; "map"; "syntax-table" ]
-        ~f:
-          (let old_prefix = Symbol.name symbol in
-           let new_prefix = Symbol.name new_ in
-           fun suffix ->
-             Defvar.define_obsolete_alias
-               ([%string "%{old_prefix}-%{suffix}"] |> Symbol.intern)
-               ~here
-               ~alias_of:([%string "%{new_prefix}-%{suffix}"] |> Symbol.intern)
-               ~since
-               ());
-      new_
-  in
   let docstring = docstring |> String.strip in
   require_nonempty_docstring here ~docstring;
   let initialize =

@@ -27,9 +27,12 @@ depends: [
   "sexp_pretty"
   "sexplib"
   "dune"                     {>= "3.17.0"}
-  "uutf"                     {= "1.0.4+ox"}
+  "uutf"                     {>= "1.0.2"}
 ]
 available: arch != "x86_32"
+conflicts: [
+  "oxcaml-compiler" {< "5.2.0minus39"}
+]
 synopsis: "Library for writing Emacs plugin in OCaml"
 description: "
 Ecaml is a library for writing Emacs plugins in OCaml. It uses Emacs

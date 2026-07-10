@@ -26,6 +26,9 @@ val show : ?show_point:bool (** default: [true] *) -> unit -> unit
 (** Evaluate an elisp expression and display the resulting value. *)
 val eval : string -> unit Deferred.t
 
+(** Evaluate an elisp expression, without outputting anything. *)
+val eval_i : string -> unit Deferred.t
+
 (** Set [$TMPDIR] and [temporary-file-directory] to the provided path for the duration of
     [f]. *)
 val set_tmpdir_temporarily : string -> f:(unit -> unit Deferred.t) -> unit Deferred.t
