@@ -49,7 +49,7 @@ As of Emacs version 25, Emacs supports plugins.  Here is the API:
 
 Here's a tutorial:
 
-  http://diobla.info/blog-archive/modules-tut.html
+  [(archived) http://diobla.info/blog-archive/modules-tut.html](https://web.archive.org/web/20241230042716/https://diobla.info/blog-archive/modules-tut.html)
 
 Here's an example plugin:
 
