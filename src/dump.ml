@@ -43,7 +43,7 @@ let assert_can_dump here =
 let dump_or_eval ~(here : Source_code_position.t) make_form =
   if ecaml_dumping
   then (
-    princ [%string "; defined by %{here.pos_fname}\n"];
+    princ [%string ";; defined by %{here.pos_fname}\n"];
     pp (make_form ()))
   else if (not !in_module_initialization)
           || should_eval_when_dumping

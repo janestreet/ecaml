@@ -13,7 +13,7 @@ let%expect_test "[to_byte_position_exn], [of_byte_position_exn]" =
         "" (position : Position.t) (byte_position : int) (round_trip : Position.t)];
     require_equal (module Position) position round_trip
   in
-  Current_buffer.set_temporarily_to_temp_buffer Sync (fun () ->
+  Current_buffer.set_temporarily_to_temp_buffer (fun () ->
     show ();
     [%expect
       {|

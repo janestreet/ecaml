@@ -3,4 +3,4 @@
  (public_name ecaml.nested_profile)
  (libraries async_kernel core)
  (preprocess
-  (pps ppx_jane)))
+  (pps ppx_jane -compare-require-explicit-locality)))

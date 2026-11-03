@@ -75,9 +75,7 @@ val undo : int -> unit
 (** [set_temporarily_to_temp_buffer f] creates a temporary buffer and runs [f] with the
     current buffer set to the temporary buffer. [(describe-function 'with-temp-buffer)]. *)
 val set_temporarily_to_temp_buffer
-  :  ?here:Stdlib.Lexing.position
-  -> ?name:string (** passed to [generate-new-buffer] *)
-  -> (_, 'a) Sync_or_async.t
+  :  ?name:string (** passed to [generate-new-buffer] *)
   -> (unit -> 'a)
   -> 'a
 
@@ -119,7 +117,7 @@ val transient_mark_mode : bool Customization.t
     - [(Info-goto-node "(elisp)Auto Major Mode")] *)
 val major_mode : unit -> Major_mode.t
 
-val change_major_mode : Major_mode.t -> unit Deferred.t
+val change_major_mode : Major_mode.t -> unit
 
 (** [(describe-function 'set-auto-mode)] *)
 val set_auto_mode : ?keep_mode_if_same:bool -> unit -> unit Deferred.t
@@ -169,10 +167,6 @@ val contents
     - [(describe-function 'kill-buffer)] *)
 val kill : unit -> unit Deferred.t
 
-(** - [(Info-goto-node "(elisp)Saving Buffers")]
-    - [(describe-function 'save-buffer)] *)
-val save : unit -> unit Deferred.t
-
 (** [(describe-function 'erase-buffer)] *)
 val erase : unit -> unit
 
@@ -187,33 +181,11 @@ val kill_region : start:Position.t -> end_:Position.t -> unit
     - [(Info-goto-node "(elisp)Narrowing")] *)
 val narrow_to_region : start:Position.t -> end_:Position.t -> unit
 
-(** [(describe-function 'save-current-buffer)] *)
-val save_current_buffer
-  :  ?here:Stdlib.Lexing.position
-  -> (_, 'a) Sync_or_async.t
-  -> (unit -> 'a)
-  -> 'a
-
 (** [(describe-function 'save-excursion)] *)
-val save_excursion
-  :  ?here:Stdlib.Lexing.position
-  -> (_, 'a) Sync_or_async.t
-  -> (unit -> 'a)
-  -> 'a
-
-(** [(describe-function 'save-mark-and-excursion)] *)
-val save_mark_and_excursion
-  :  ?here:Stdlib.Lexing.position
-  -> (_, 'a) Sync_or_async.t
-  -> (unit -> 'a)
-  -> 'a
+val save_excursion : ?here:Stdlib.Lexing.position -> (unit -> 'a) -> 'a
 
 (** [(describe-function 'save-restriction)] *)
-val save_restriction
-  :  ?here:Stdlib.Lexing.position
-  -> (_, 'a) Sync_or_async.t
-  -> (unit -> 'a)
-  -> 'a
+val save_restriction : ?here:Stdlib.Lexing.position -> (unit -> 'a) -> 'a
 
 (** - [(describe-function 'set-buffer-multibyte)]
     - [(Info-goto-node "(elisp)Selecting a Representation")] *)
@@ -354,11 +326,33 @@ val indent_region
     - [(Info-goto-node "(elisp)Reverting")] *)
 val revert : ?confirm:bool (** default is [false] *) -> unit -> unit Deferred.t
 
-(** [(describe-function 'replace-buffer-contents)] *)
-val replace_buffer_contents
-  :  ?max_duration:Time_ns.Span.t
+module Blocking : sig
+  (** [revert] is [revert] above, for callers that are already running outside of Async. *)
+  val revert : ?confirm:bool (** default is [false] *) -> unit -> unit
+
+  (** [kill] is [kill] above, for callers that are already running outside of Async. *)
+  val kill : unit -> unit
+end
+
+module Replace_source : sig
+  type t =
+    | Buffer of Buffer.t
+    | Text of Text.t
+    | Buffer_substring of Buffer.t * Position.t * Position.t
+end
+
+(** [(describe-function 'replace-region-contents)]
+
+    [max_duration] is required so callers must explicitly choose how long to wait for an
+    optimal result. A suggested value is [Time_ns.Span.second], if
+    [replace_region_contents] is called O(1) times during an interactive command. *)
+val replace_region_contents
+  :  ?start:Position.t (** default is [Point.min ()] *)
+  -> ?end_:Position.t (** default is [Point.max ()] *)
   -> ?max_costs:int
-  -> Buffer.t
+  -> ?inherit_adjacent_text_properties:bool
+  -> Replace_source.t
+  -> max_duration:Time_ns.Span.t
   -> unit
 
 (** [replace_string ~from ~to_] replaces all occurrences of [from] with [to_]. It is like
@@ -391,7 +385,7 @@ val chars_modified_tick : unit -> Modified_tick.t
     point-at-max for windows that display it. *)
 val append_to : string -> unit
 
-val inhibit_read_only : (_, 'a) Sync_or_async.t -> (unit -> 'a) -> 'a
+val inhibit_read_only : (unit -> 'a) -> 'a
 val line_and_column_of_position : Position.t -> Line_and_column.t
 val position_of_line_and_column : Line_and_column.t -> Position.t
 

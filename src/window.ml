@@ -1,5 +1,4 @@
 open! Core
-open! Async_kernel
 open! Import
 include Window0
 
@@ -21,18 +20,14 @@ let is_live = Funcall.Wrap.("window-live-p" <: t @-> return bool)
 let point_exn = Funcall.Wrap.("window-point" <: t @-> return Position.t)
 let width_exn = Funcall.Wrap.("window-width" <: t @-> return int)
 
-module Blocking = struct
-  let set_buffer_exn =
-    let set_window_buffer =
-      Funcall.Wrap.("set-window-buffer" <: t @-> Buffer.t @-> bool @-> return nil)
-    in
-    fun ?(keep_margins = false) t buffer -> set_window_buffer t buffer keep_margins
-  ;;
-end
-
-let set_buffer_exn ?keep_margins t buffer =
-  Value.Private.run_outside_async (fun () ->
-    Blocking.set_buffer_exn ?keep_margins t buffer)
+(* [set-window-buffer] synchronously runs [window-scroll-functions] and
+   [buffer-list-update-hook], but we don't add anything implemented in Async to these
+   hooks, so it is fine to call this from Async without [run_outside_async]. *)
+let set_buffer_exn =
+  let set_window_buffer =
+    Funcall.Wrap.("set-window-buffer" <: t @-> Buffer.t @-> bool @-> return nil)
+  in
+  fun ?(keep_margins = false) t buffer -> set_window_buffer t buffer keep_margins
 ;;
 
 let set_point_exn = Funcall.Wrap.("set-window-point" <: t @-> Position.t @-> return nil)

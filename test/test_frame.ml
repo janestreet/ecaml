@@ -55,7 +55,7 @@ let%expect_test "accessors" =
   [%expect
     {|
     ((num_cols     80)
-     (num_rows     25)
+     (num_rows     24)
      (pixel_height 25)
      (pixel_width  25))
     |}];
@@ -68,24 +68,24 @@ let%expect_test "accessors" =
   [%expect
     {|
     (parameters (
+      (no-accept-focus    nil)
+      (visibility         t)
       (tab-bar-lines      0)
       (menu-bar-lines     1)
       (buried-buffer-list nil)
       (buffer-list ("#<buffer *scratch*>"))
-      (unsplittable          nil)
-      (modeline              t)
-      (width                 80)
-      (height                25)
-      (name                  F1)
-      (font                  tty)
-      (background-color      unspecified-bg)
-      (foreground-color      unspecified-fg)
-      (cursor-color          white)
-      (scroll-bar-background nil)
-      (scroll-bar-foreground nil)
-      (background-mode       dark)
-      (display-type          mono)
-      (minibuffer            t)))
+      (unsplittable     nil)
+      (modeline         t)
+      (width            80)
+      (height           24)
+      (name             F1)
+      (font             tty)
+      (background-color unspecified-bg)
+      (foreground-color unspecified-fg)
+      (cursor-color     white)
+      (background-mode  dark)
+      (display-type     mono)
+      (minibuffer       t)))
     |}];
   return ()
 ;;

@@ -9,4 +9,4 @@
  (libraries async_kernel async_unix core core_kernel.enum nested_profile
    sexplib core_kernel.univ uutf)
  (preprocess
-  (pps ppx_jane)))
+  (pps ppx_jane -compare-require-explicit-locality)))

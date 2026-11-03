@@ -19,9 +19,9 @@ let sexp_of_t = function
     Sexp.List [ Sexp.Atom "This"; Sexp.Atom (File_path.Absolute.to_string path ^ "/") ]
 ;;
 
-let within t sync_or_async ~f =
+let within t ~f =
   Current_buffer.set_value_temporarily
-    sync_or_async
+    Sync
     (Buffer_local.var Current_buffer.directory)
     (Some (t |> to_filename))
     ~f

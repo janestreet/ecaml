@@ -11,7 +11,7 @@ let define_mode sym here =
     here
     ~docstring:"docstring"
     ~mode_line:"<test-mode mode line>"
-    ~initialize:(Returns Value.Type.unit, fun () -> print_s [%message "initialized"])
+    ~initialize:(fun () -> print_s [%message "initialized"])
     ()
 ;;
 
@@ -48,7 +48,7 @@ let%expect_test "[define_derived_mode]" =
   let show_major_mode () =
     print_s [%sexp (Current_buffer.major_mode () : t)] ~hide_positions:true
   in
-  Current_buffer.set_temporarily_to_temp_buffer Async (fun () ->
+  Current_buffer.set_temporarily_to_temp_buffer (fun () ->
     show_major_mode ();
     [%expect
       {|
@@ -59,7 +59,7 @@ let%expect_test "[define_derived_mode]" =
          Error
          "fundamental-mode has no mode hook. [(Info-goto-node \"(elisp) Major Modes\")]")))
       |}];
-    let%bind () = Current_buffer.change_major_mode major_mode in
+    change_to major_mode ~in_:(Current_buffer.get ());
     [%expect {| initialized |}];
     show_major_mode ();
     [%expect
@@ -72,8 +72,8 @@ let%expect_test "[define_derived_mode]" =
            (symbol    test-major-mode-hook)
            (hook_type Normal_hook)
            (value (()))))))
-      |}];
-    return ())
+      |}]);
+  return ()
 ;;
 
 let%expect_test "[hook]" =
@@ -87,15 +87,14 @@ let%expect_test "[hook]" =
        ~hook_type:Normal_hook
        (Returns Value.Type.unit)
        (fun () -> print_s [%message "hook ran"]));
-  let%bind () =
-    Current_buffer.set_temporarily_to_temp_buffer Async (fun () ->
-      Current_buffer.change_major_mode t)
-  in
+  let buffer = Buffer.create ~name:"for-testing-mode-hook" in
+  change_to t ~in_:buffer;
   [%expect
     {|
     initialized
     "hook ran"
     |}];
+  let%bind () = Buffer.kill buffer in
   return ()
 ;;
 
@@ -113,24 +112,5 @@ let%expect_test "[is_derived]" =
   in
   print_s [%sexp (is_derived major_mode ~from:text : bool)];
   [%expect {| true |}];
-  return ()
-;;
-
-let%expect_test "Async initialization function" =
-  let major_mode =
-    define_derived_mode
-      ("test-major-mode-async-init-function" |> Symbol.intern)
-      [%here]
-      ~docstring:"docstring"
-      ~mode_line:"<test-mode mode line>"
-      ~initialize:
-        ( Returns_deferred Value.Type.unit
-        , fun () ->
-            let%map () = Clock_ns.after (Time_ns.Span.of_ms 1.) in
-            print_s [%message "initialized"] )
-      ()
-  in
-  let%bind () = Current_buffer.change_major_mode major_mode in
-  [%expect {| initialized |}];
   return ()
 ;;

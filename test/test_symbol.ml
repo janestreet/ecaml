@@ -46,16 +46,16 @@ let%expect_test "[gensym]" =
   print_s [%message (s1 : Symbol.t) (s2 : Symbol.t)];
   [%expect
     {|
-    ((s1 g0)
-     (s2 g1))
+    ((s1 g6)
+     (s2 g7))
     |}];
   let s1 = gensym ~prefix:"jane-ecaml-test-" () in
   let s2 = gensym ~prefix:"jane-ecaml-test-" () in
   print_s [%message (s1 : Symbol.t) (s2 : Symbol.t)];
   [%expect
     {|
-    ((s1 jane-ecaml-test-2)
-     (s2 jane-ecaml-test-3))
+    ((s1 jane-ecaml-test-8)
+     (s2 jane-ecaml-test-9))
     |}];
   return ()
 ;;

@@ -32,16 +32,6 @@ val defvaralias
   -> unit
   -> unit
 
-(** [(describe-function 'define-obsolete-variable-alias)] *)
-val define_obsolete_alias
-  :  Symbol.t
-  -> ?here:Stdlib.Lexing.position
-  -> ?docstring:string
-  -> alias_of:Symbol.t
-  -> since:string
-  -> unit
-  -> unit
-
 module Private : sig
   val all_defvar_symbols : unit -> Symbol.t list
 end

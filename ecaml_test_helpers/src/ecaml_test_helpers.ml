@@ -12,6 +12,7 @@ module Env = Env
 
 module Q = struct
   let ecaml_test_error_in_minibuffer = "ecaml-test-error-in-minibuffer" |> Symbol.intern
+  let quit = "quit" |> Symbol.intern
 end
 
 let show ?(show_point = true) () =
@@ -30,7 +31,7 @@ let is_minibuffer_open =
 let () =
   defun_nullary_nil
     (* In emacs-inline-tests-runner.el, this command is bound to
-       raise_if_in_minibuffer_key globally and in query-replace-map. *)
+       raise_if_in_minibuffer_key globally. *)
     ("ecaml-test-raise-if-in-minibuffer" |> Symbol.intern)
     [%here]
     ~docstring:"For testing."
@@ -94,7 +95,7 @@ let () =
     Option.iter (Buffer.find ~name) ~f:(fun buffer ->
       print_endline "";
       print_endline [%string {|Contents of %{name} buffer:|}];
-      Current_buffer.set_temporarily Sync buffer ~f:(fun () ->
+      Current_buffer.set_temporarily buffer ~f:(fun () ->
         print_endline (Current_buffer.contents () |> Text.to_utf8_bytes)))
   in
   defun
@@ -164,18 +165,7 @@ let raise_command_errors_through_minibuffer =
       (Minibuffer.setup_hook [@alert "-prefer_with_setup_hook_instead"])
       ~where:End
       hook_function;
-    let%map result =
-      Monitor.try_with ~extract_exn:true (fun () ->
-        (* Disable backtraces they contain nondeterministic things like memory addresses
-           of bytecode functions. This only affects errors that we deliberately cause to
-           exit uncleanly out of [execute-kbd-macro], namely, the [throw] in
-           [ecaml-test-passthrough-command-error-function]. *)
-        Current_buffer.set_value_temporarily
-          Async
-          Var.Wrap.("backtrace-on-error-noninteractive" <: bool)
-          false
-          ~f)
-    in
+    let%map result = Monitor.try_with ~extract_exn:true f in
     Hook.remove
       (Minibuffer.setup_hook [@alert "-prefer_with_setup_hook_instead"])
       hook_function;
@@ -204,12 +194,20 @@ let press_and_show_minibuffer ?(show_contents = true) key_sequence =
     | Some buffer -> Buffer.kill buffer
   in
   match%map
-    try_with (fun () ->
+    try_with ~extract_exn:true (fun () ->
       raise_command_errors_through_minibuffer (fun () ->
         execute_keys [ key_sequence; show_minibuffer_key_sequence ~show_contents; "C-]" ]))
   with
-  | Error _ -> ()
-  | Ok () -> require false
+  (* [C-]] aborts the recursive edit by signaling [quit].  Minibuffer command errors use
+     our distinguished throw after printing the error.  Do not swallow any other error. *)
+  | Error (Value.For_testing.Elisp_signal { symbol; data = _ })
+    when Value.eq symbol (Symbol.to_value Q.quit) -> ()
+  | Error (Value.For_testing.Elisp_throw { tag; value = _ })
+    when Value.eq tag (Symbol.to_value Q.ecaml_test_error_in_minibuffer) -> ()
+  | Error exn -> raise exn
+  | Ok () ->
+    print_cr
+      [%message "BUG: [press_and_show_minibuffer] unexpectedly did not signal [quit]"]
 ;;
 
 let eval string =
@@ -224,23 +222,8 @@ let eval_i string =
 
 let tmpdir_var = "TMPDIR"
 
-let set_tmpdir_temporarily tmpdir ~f =
+let set_tmpdir tmpdir =
   let tmpdir = Filename.to_directory tmpdir in
-  let old_tmpdir = Env.getenv tmpdir_var in
-  let old_temp_file_directory =
-    Customization.value Directory.for_temp_files_customization
-  in
-  Monitor.protect
-    (fun () ->
-      Env.putenv ~key:tmpdir_var ~data:tmpdir;
-      Customization.set_value Directory.for_temp_files_customization tmpdir;
-      f ())
-    ~finally:(fun () ->
-      (match old_tmpdir with
-       | None -> Env.unsetenv tmpdir_var
-       | Some old_tmpdir -> Env.putenv ~key:tmpdir_var ~data:old_tmpdir);
-      Customization.set_value
-        Directory.for_temp_files_customization
-        old_temp_file_directory;
-      return ())
+  Env.putenv ~key:tmpdir_var ~data:tmpdir;
+  Customization.set_value Directory.for_temp_files_customization tmpdir
 ;;

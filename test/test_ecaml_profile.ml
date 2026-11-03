@@ -9,9 +9,9 @@ let sec = Time_ns.Span.of_sec
 module Clock = Profile.Private.Clock
 
 let show_profile_and_flush () =
-  Current_buffer.set_temporarily Sync (Buffer.find_exn ~name:"*profile*") ~f:(fun () ->
+  Current_buffer.set_temporarily (Buffer.find_exn ~name:"*profile*") ~f:(fun () ->
     let contents = Current_buffer.contents () in
-    Current_buffer.inhibit_read_only Sync (fun () -> Current_buffer.erase ());
+    Current_buffer.inhibit_read_only (fun () -> Current_buffer.erase ());
     contents)
   |> Text.to_utf8_bytes
   |> print_endline
@@ -19,7 +19,9 @@ let show_profile_and_flush () =
 
 let test_setup_minimal ~f =
   let clock = Clock.create ~now:Time_ns.epoch in
-  Ref.sets_temporarily [ T (Profile.Private.clock, clock) ] ~f:(fun () -> f clock);
+  Ref.sets_temporarily
+    [ T (Profile.should_profile, true); T (Profile.Private.clock, clock) ]
+    ~f:(fun () -> f clock);
   show_profile_and_flush ()
 ;;
 
@@ -60,16 +62,37 @@ let%expect_test _ =
 ;;
 
 let%expect_test "tag-frame-function" =
+  (* Frames are untagged while [ecaml-profile-tag-frame-function] is nil, which is the
+     default. *)
+  test_setup_minimal ~f:(fun clock ->
+    profile Sync [%lazy_sexp "nest"] (fun () -> Clock.advance clock ~by:(sec 0.3)));
+  [%expect {| (300_000us nest (19:00:00.000000000-05:00 1969-12-31)) |}];
+  let count_tag_function_calls = ref 0 in
+  (* [ecaml-profile-tag-frame] is called with NEW-PROFILE non-nil only for the frame that
+     starts the profile, and returns nil when the context is unchanged since the previous
+     frame, so only the outermost frame is tagged here. *)
   test_setup_minimal ~f:(fun clock ->
     Current_buffer.set_value_temporarily
       Sync
       Ecaml_profile.Private.tag_function
       (Some
          (Defun.lambda_nullary [%here] (Returns Value.Type.string) (fun () ->
+            incr count_tag_function_calls;
             "hello world")))
       ~f:(fun () ->
-        profile Sync [%lazy_sexp "nest"] (fun () -> Clock.advance clock ~by:(sec 0.3))));
-  [%expect {| (300_000us (nest "hello world") (19:00:00.000000000-05:00 1969-12-31)) |}];
+        profile Sync [%lazy_sexp "outer"] (fun () ->
+          profile Sync [%lazy_sexp "inner"] (fun () -> Clock.advance clock ~by:(sec 0.3));
+          Clock.advance clock ~by:(sec 0.1))));
+  [%expect
+    {|
+    (400_000us (outer "hello world") (19:00:00.000000000-05:00 1969-12-31) (
+       ( 75% 300_000us inner)
+       ( 25% 100_000us gap)))
+    |}];
+  (* The tag function is still called multiple times, in case the output would have
+     changed. *)
+  print_s [%sexp (!count_tag_function_calls : int)];
+  [%expect {| 5 |}];
   return ()
 ;;
 

@@ -101,6 +101,34 @@ val read_multiple
   -> unit
   -> string list Deferred.t
 
+module Blocking : sig
+  (** [read] is [read] above, for callers that are already running outside of Async. *)
+  val read
+    :  prompt_no_colon:string (** passed to [format-prompt] *)
+    -> collection:string list
+    -> ?annotation_function:(string -> string)
+    -> ?display_sort_function:(string list -> string list)
+    -> ?require_match:Require_match.t (** default is [Require_match.default] *)
+    -> ?initial_input:Minibuffer.Initial_input.t (** default is Empty *)
+    -> ?default:string
+    -> history:Minibuffer.History.t
+    -> unit
+    -> string
+
+  (** [read_multiple] is [read_multiple] above, for callers that are already running
+      outside of Async. *)
+  val read_multiple
+    :  prompt_no_colon:string (** passed to [format-prompt] *)
+    -> collection:string list
+    -> ?require_match:Require_match.t (** default is False *)
+    -> ?separator_regexp:string (** default is "[ \t]*,[ \t]*" *)
+    -> ?initial_input:Minibuffer.Initial_input.t (** default is Empty *)
+    -> ?default:string
+    -> history:Minibuffer.History.t
+    -> unit
+    -> string list
+end
+
 val read_multiple_map_keys
   :  prompt_no_colon:string (** passed to [format-prompt] *)
   -> collection:'a String.Map.t

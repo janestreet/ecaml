@@ -17,6 +17,12 @@ val browser_function : Symbol.t Customization.t
 (** [(describe-function 'browse-url)] *)
 val browse_url : Url.t -> unit Deferred.t
 
+module Blocking : sig
+  (** [browse_url] is [browse_url] above, for callers that are already running outside of
+      Async. *)
+  val browse_url : Url.t -> unit
+end
+
 (** [(describe-function 'browse-url-chrome)] *)
 val browse_url_chrome : Url.t -> unit
 

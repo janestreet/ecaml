@@ -65,12 +65,11 @@ let register
   (Stdlib.Callback.register [@ocaml.alert "-unsafe_multidomain"]) t.name callback
 ;;
 
-(* [format_ocaml_exception] is called from the C code in
-   [if_exception_signal_emacs_and_use_ecaml_nil] to format an OCaml exception into a
-   string. We register this callback so the C code can use [Exn.to_string_mach], which
-   uses custom-registered exception printers and produces nice sexp output for exceptions
-   with [@@deriving sexp_of], rather than [caml_format_exception], which only uses the
-   built-in OCaml exception formatter. *)
+(* [format_ocaml_exception] is called from the C code in [format_exception] to format an
+   OCaml exception into a string. We register this callback so the C code can use
+   [Exn.to_string_mach], which uses custom-registered exception printers and produces nice
+   sexp output for exceptions with [@@deriving sexp_of], rather than
+   [caml_format_exception], which only uses the built-in OCaml exception formatter. *)
 let () =
   (Stdlib.Callback.register [@ocaml.alert "-unsafe_multidomain"])
     "format_ocaml_exception"

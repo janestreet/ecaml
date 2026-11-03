@@ -53,8 +53,8 @@ let count_lines ~start ~end_ = count_lines start end_
 let goto_column = Funcall.Wrap.("move-to-column" <: int @-> return nil)
 
 let position_of_line_and_column { Line_and_column.line; column } =
-  Save_wrappers.save_excursion Sync (fun () ->
-    Save_wrappers.save_restriction Sync (fun () ->
+  Save_wrappers.save_excursion (fun () ->
+    Save_wrappers.save_restriction (fun () ->
       Current_buffer.widen ();
       goto_min ();
       forward_line (line - 1);

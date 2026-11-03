@@ -40,7 +40,7 @@ let%expect_test "[defcustom], [defvar], [defun], [update_emacs_with_entries], \
     (defvar var [%here] ~docstring:"foo" ~type_:Value.Type.bool ~initial_value:false ()
      : _ Var.t);
   defun_nullary_nil fun_ [%here] ~docstring:"<docstring>" Fn.id;
-  update_emacs_with_entries ~chop_prefix:"app/emacs/" ~in_dir:"<dir>";
+  Find_function.update_emacs_with_entries ~chop_prefix:"app/emacs/" ~in_dir:"<dir>";
   let show_defining_file symbol =
     print_s [%sexp (defining_file symbol : string option)]
   in
@@ -50,6 +50,94 @@ let%expect_test "[defcustom], [defvar], [defun], [update_emacs_with_entries], \
   [%expect {| (<dir>/lib/ecaml/test/test_load_history.ml) |}];
   show_defining_file fun_;
   [%expect {| (<dir>/lib/ecaml/test/test_load_history.ml) |}];
+  return ()
+;;
+
+let%expect_test "[find-function] and [find-variable] jump to the Ecaml definition" =
+  let fun_ = "test-load-history-find-function-target" |> Symbol.intern in
+  let var = "test-load-history-find-variable-target" |> Symbol.intern in
+  let mode = "test-load-history-find-mode" |> Symbol.intern in
+  (* The box-drawing characters below are multibyte, so the byte and character offsets of
+     the definitions that follow differ; [Find_function] must treat [pos_cnum] as a byte
+     offset. [find-function-search-for-symbol] moves to the beginning of the line after
+     finding the definition, so the difference has to exceed a line's length to be
+     visible.
+     ────────────────────────────────────────────────────────────────────────────── *)
+  defun_nullary_nil fun_ [%here] ~docstring:"<docstring>" Fn.id;
+  ignore
+    (defvar var [%here] ~docstring:"foo" ~type_:Value.Type.bool ~initial_value:false ()
+     : _ Var.t);
+  ignore
+    (define_derived_mode
+       mode
+       [%here]
+       ~docstring:"derived major mode docstring"
+       ~mode_line:"test-load-history-find"
+       ()
+     : Major_mode.t);
+  (* Point [load-history] at the copy of this file in the build sandbox, so that
+     [find-function] can actually visit it. *)
+  Find_function.update_emacs_with_entries
+    ~chop_prefix:"app/emacs/"
+    ~in_dir:(Core_unix.getcwd () ^ "/../../..");
+  let find_function = Funcall.Wrap.("find-function" <: Symbol.t @-> return nil) in
+  let find_variable = Funcall.Wrap.("find-variable" <: Symbol.t @-> return nil) in
+  let test find symbol =
+    Current_buffer.set_temporarily_to_temp_buffer (fun () ->
+      Echo_area.inhibit_messages (fun () -> find symbol);
+      let buffer = Current_buffer.get () in
+      let line_and_column = Point.get_line_and_column () in
+      let line =
+        Current_buffer.contents
+          ~start:(Point.beginning_of_line_position ())
+          ~end_:(Point.end_of_line_position ())
+          ()
+      in
+      print_s
+        [%sexp { buffer : Buffer.t; line_and_column : Line_and_column.t; line : Text.t }])
+  in
+  test find_function fun_;
+  [%expect
+    {|
+    ((buffer "#<buffer test_load_history.ml>")
+     (line_and_column (
+       (line   66)
+       (column 0)))
+     (line "  defun_nullary_nil fun_ [%here] ~docstring:\"<docstring>\" Fn.id;"))
+    |}];
+  test find_variable var;
+  [%expect
+    {|
+    ((buffer "#<buffer test_load_history.ml>")
+     (line_and_column (
+       (line   68)
+       (column 0)))
+     (line
+      "    (defvar var [%here] ~docstring:\"foo\" ~type_:Value.Type.bool ~initial_value:false ()"))
+    |}];
+  (* [define-derived-mode] gives the keymap and syntax table (but not the hook) a
+     [definition-name] property naming the mode, which [find-function-search-for-symbol]
+     follows before looking for the definition. *)
+  List.iter [ "map"; "syntax-table"; "hook" ] ~f:(fun suffix ->
+    test find_variable ([%string "%{Symbol.name mode}-%{suffix}"] |> Symbol.intern));
+  [%expect
+    {|
+    ((buffer "#<buffer test_load_history.ml>")
+     (line_and_column (
+       (line   73)
+       (column 0)))
+     (line "       [%here]"))
+    ((buffer "#<buffer test_load_history.ml>")
+     (line_and_column (
+       (line   73)
+       (column 0)))
+     (line "       [%here]"))
+    ((buffer "#<buffer test_load_history.ml>")
+     (line_and_column (
+       (line   73)
+       (column 0)))
+     (line "       [%here]"))
+    |}];
   return ()
 ;;
 
@@ -63,7 +151,7 @@ let%expect_test "[define_derived_mode]" =
        ~mode_line:"test-load-history"
        ()
      : Major_mode.t);
-  update_emacs_with_entries ~chop_prefix:"app/emacs/" ~in_dir:"<dir>";
+  Find_function.update_emacs_with_entries ~chop_prefix:"app/emacs/" ~in_dir:"<dir>";
   show_defining_file (String.is_prefix ~prefix:(Symbol.name base_symbol));
   [%expect
     {|
@@ -88,7 +176,7 @@ let%expect_test "[define_minor_mode]" =
        ~docstring:"minor mode docstring"
        ()
      : Minor_mode.t);
-  update_emacs_with_entries ~chop_prefix:"app/emacs/" ~in_dir:"<dir>";
+  Find_function.update_emacs_with_entries ~chop_prefix:"app/emacs/" ~in_dir:"<dir>";
   show_defining_file (String.is_prefix ~prefix:(Symbol.name base_symbol));
   [%expect
     {|
@@ -113,7 +201,7 @@ let%expect_test "[defstruct]" =
        Defstruct.Field.
          [ field "host" Host_and_port.host string; field "port" Host_and_port.port int ]
      : Host_and_port.t Defstruct.t);
-  update_emacs_with_entries ~chop_prefix:"app/emacs/" ~in_dir:"<dir>";
+  Find_function.update_emacs_with_entries ~chop_prefix:"app/emacs/" ~in_dir:"<dir>";
   show_defining_file (fun sym ->
     (* defstruct doesn't define anything for the base symbol. Also ignore random internal
        stuff that [cl-defstruct] defines. *)
@@ -121,7 +209,8 @@ let%expect_test "[defstruct]" =
     && (not (String.equal sym (Symbol.name base_symbol)))
     && (not (String.is_prefix sym ~prefix:"--cl-block-"))
     && (not (String.is_suffix sym ~suffix:"--cmacro"))
-    && not (String.is_suffix sym ~suffix:"-struct-tags"));
+    && (not (String.is_suffix sym ~suffix:"-struct-tags"))
+    && not (String.is_suffix sym ~suffix:"--inliner"));
   [%expect
     {|
     (copy-test-load-history-struct <dir>/lib/ecaml/test/test_load_history.ml)

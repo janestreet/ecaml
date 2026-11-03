@@ -27,17 +27,12 @@ module Entry : sig
 end
 
 (** [add_entry] is called by ([defcustom], [defun], [defvar]) and adds the entry to a
-    [list ref], for later use by [update_emacs_with_entries]. *)
+    [list ref], for later use by [Find_function.update_emacs_with_entries]. *)
 val add_entry : Source_code_position.t -> Entry.t -> unit
 
-(** [update_emacs_with_entries] updates [load-history] with the information supplied to
-    [add_entry], which make it possible to, within Emacs, jump from a symbol defined by
-    Ecaml to the Ecaml source. Each source-file name is adjusted by:
-
-    {[
-      Filename.concat in_dir (String.chop_prefix_exn file ~prefix:chop_prefix)
-    ]} *)
-val update_emacs_with_entries : chop_prefix:string -> in_dir:string -> unit
+(** [take_entries] returns the entries recorded by [add_entry] since the last call to
+    [take_entries]. *)
+val take_entries : unit -> (Source_code_position.t * Entry.t) list
 
 (** [Type] represents the type of symbol being searched for, corresponding to the [TYPE]
     argument of [find-function-search-for-symbol]. *)
@@ -46,9 +41,11 @@ module Type : sig
     | Face
     | Fun
     | Var
-  [@@deriving sexp_of]
+  [@@deriving enumerate, sexp_of]
 
   include Valueable.S with type t := t
 end
 
+(** [location_exn symbol type_] is the position passed to [add_entry] for the definition
+    of [symbol] as a [type_]. Unlike [take_entries], this remembers all definitions. *)
 val location_exn : Symbol.t -> Type.t -> Source_code_position.t

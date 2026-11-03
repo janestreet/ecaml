@@ -31,14 +31,42 @@ int plugin_is_GPL_compatible;
    thread-local. */
 static thread_local emacs_env *active_env = NULL;
 
+/* [thread_holds_runtime_lock] tracks whether the current thread already holds
+   the OCaml runtime lock because it is inside a call from Emacs to OCaml.  The
+   OCaml runtime lock is not recursive, so a nested attempt to acquire it would
+   deadlock.
+
+   Normally Emacs cannot call into OCaml while the lock is held, because we
+   release the lock around [env->funcall].  However, Emacs runs the debugger for
+   errors signaled inside module API primitives (e.g.  [copy_string_contents]
+   applied to a non-string) when [debug-on-error] is non-nil.  The debugger runs
+   arbitrary Elisp while the primitive's caller (an Ecaml trampoline) still
+   holds the lock, and that Elisp can call back into an Ecaml function.  In that
+   case the nested trampoline must not try to acquire the lock again; the thread
+   already holds it. */
+static thread_local bool thread_holds_runtime_lock = false;
+
+/* Wrappers around releasing/re-acquiring the OCaml runtime lock while calling
+   from OCaml into Emacs (e.g. around [env->funcall]), keeping
+   [thread_holds_runtime_lock] accurate. */
+static void release_runtime_lock_around_elisp_call(void) {
+  thread_holds_runtime_lock = false;
+  caml_release_runtime_system();
+}
+
+static void acquire_runtime_lock_after_elisp_call(void) {
+  caml_acquire_runtime_system();
+  thread_holds_runtime_lock = true;
+}
+
 #define CAML_CALLBACK_1 caml_callback
 #define CAML_CALLBACK_2 caml_callback2
 #define CAML_CALLBACK_3 caml_callback3
-#define CAML_CALLBACK_1_exn caml_callback_exn
-#define CAML_CALLBACK_2_exn caml_callback2_exn
-#define CAML_CALLBACK_3_exn caml_callback3_exn
+#define CAML_CALLBACK_1_res caml_callback_res
+#define CAML_CALLBACK_2_res caml_callback2_res
+#define CAML_CALLBACK_3_res caml_callback3_res
 
-#define CAML_NAMED_CALLBACK(val, name, arity_exn, ...)                                   \
+#define CAML_NAMED_CALLBACK(val, name, arity_and_return, ...)                            \
   do {                                                                                   \
     static const value *name = NULL;                                                     \
     if (name == NULL) {                                                                  \
@@ -48,15 +76,15 @@ static thread_local emacs_env *active_env = NULL;
         exit(1);                                                                         \
       }                                                                                  \
     }                                                                                    \
-    val = CAML_CALLBACK_##arity_exn(*name, __VA_ARGS__);                                 \
+    val = CAML_CALLBACK_##arity_and_return(*name, __VA_ARGS__);                          \
   } while (0)
 
 // We don't use the CAML macros here we don't care about the returned
 // value so it's not an issue if it gets moved/collected.
-#define CAML_NAMED_CALLBACK_I(name, arity_exn, ...)                                      \
+#define CAML_NAMED_CALLBACK_I(name, arity_and_return, ...)                               \
   do {                                                                                   \
     __attribute__((unused)) value bogus;                                                 \
-    CAML_NAMED_CALLBACK(bogus, name, arity_exn, __VA_ARGS__);                            \
+    CAML_NAMED_CALLBACK(bogus, name, arity_and_return, __VA_ARGS__);                     \
   } while (0)
 
 #define EMACS_STRING(env, s) (env->make_string(env, s, sizeof(s) - 1))
@@ -291,42 +319,42 @@ static void define_ocaml_exception_error(emacs_env *env) {
    The fallback is needed because the callback may not be available: if the
    exception happened during [caml_startup_exn] before [ecaml_callback.ml]
    initialized and registered the callback, [caml_named_value] returns NULL.
-   It's also possible for [caml_callback_exn] itself to raise (e.g. out of
+   It's also possible for [caml_callback_res] itself to raise (e.g. out of
    memory). */
 static emacs_value format_exception(emacs_env *env, value exn) {
+  /* The formatting callback may move [exn] before the fallback uses it. */
+  CAMLparam1(exn);
   static const value *format_ocaml_exception = NULL;
   if (format_ocaml_exception == NULL) {
     format_ocaml_exception = caml_named_value("format_ocaml_exception");
   }
   if (format_ocaml_exception != NULL) {
-    value result = CAML_CALLBACK_1_exn(*format_ocaml_exception, exn);
-    if (!Is_exception_result(result)) {
-      return env->make_string(env, String_val(result), caml_string_length(result));
+    caml_result result = CAML_CALLBACK_1_res(*format_ocaml_exception, exn);
+    if (!caml_result_is_exception(result)) {
+      emacs_value emacs_result =
+          env->make_string(env, String_val(result.data), caml_string_length(result.data));
+      CAMLreturnT(emacs_value, emacs_result);
     }
   }
   /* Fallback to the built-in OCaml exception formatter. */
   char *msg = caml_format_exception(exn);
   emacs_value emacs_msg = env->make_string(env, msg, strlen(msg));
   free(msg);
-  return emacs_msg;
+  CAMLreturnT(emacs_value, emacs_msg);
 }
 
 /* This should be used in every place where Emacs calls OCaml and we use
    [caml_callback] (i.e. the place where we start by acquiring the OCaml lock)
-   along with using the _exn variant of [caml_callback] (which is the one that
+   along with using the _res variant of [caml_callback] (which is the one that
    doesn't raise), so that on exception, OCaml doesn't unwind the stack past the
    Emacs code, or just exit without giving Emacs a chance to do whatever cleanup
    it needs to do.  Regardless of this we could still raise [Out_of_memory] with
    every allocation, but there is no documented way to either allocate OCaml
    blocks without raising [Out_of_memory] or catch OCaml exceptions from C. */
-static void if_exception_signal_emacs_and_use_ecaml_nil(emacs_env *env,
-                                                        char *symbol_string, value *ret) {
-  if (Is_exception_result(*ret)) {
-    value exn = Extract_exception(*ret);
-    /* Set [*ret] to a valid OCaml value before [format_exception] below, which
-       may trigger OCaml GC.  If [*ret] is a [CAMLlocal], leaving the exception
-       result in it could confuse the GC. */
-    *ret = ecaml_nil(env);
+static void if_exception_signal_emacs(emacs_env *env, char *symbol_string,
+                                      caml_result result) {
+  if (caml_result_is_exception(result)) {
+    value exn = result.data;
     emacs_value data_args[] = {env->intern(env, symbol_string),
                                format_exception(env, exn)};
     env->non_local_exit_signal(env, env->intern(env, "uncaught-ocaml-exception"),
@@ -339,7 +367,8 @@ static emacs_value ecaml_function_trampoline_assuming_lock_is_held(emacs_env *en
                                                                    emacs_value args[],
                                                                    void *func_root) {
   CAMLparam0();
-  CAMLlocal4(func, arg_array, ret, tmp);
+  CAMLlocal2(arg_array, tmp);
+  caml_result ret;
 
   if (nargs == 0) {
     // A zero-length array.  The OCaml manual says not to use [caml_alloc] to
@@ -354,8 +383,8 @@ static emacs_value ecaml_function_trampoline_assuming_lock_is_held(emacs_env *en
   }
 
   emacs_value ret_val = emacs_nil(env);
-  ret = caml_callback_exn(*((value *)func_root), arg_array);
-  if (Is_exception_result(ret)) {
+  ret = caml_callback_res(*((value *)func_root), arg_array);
+  if (caml_result_is_exception(ret)) {
     /* We rely on the callback to handle exceptions and call non_local_exit_signal itself,
        rather than doing it here.  This is so that the Async scheduler lock can be held
        the whole time, and we don't have the non_local_exit_signal calls for different
@@ -364,7 +393,7 @@ static emacs_value ecaml_function_trampoline_assuming_lock_is_held(emacs_env *en
                                env->intern(env, "ecaml_make_function"));
 
   } else {
-    ret_val = emacs_of_ocaml(env, ret);
+    ret_val = emacs_of_ocaml(env, ret.data);
   }
 
   CAMLreturnT(emacs_value, ret_val);
@@ -375,15 +404,25 @@ static void free_embedded_caml_values(emacs_env *);
 
 typedef struct {
   emacs_env *old_env;
+  bool acquired_runtime_lock;
 } acquire_lock;
 
 static acquire_lock acquire_ocaml_lock_from_emacs(emacs_env *env) {
-  caml_c_thread_register();
-  caml_acquire_runtime_system();
+  /* If this thread already holds the runtime lock, we are in a nested call
+     from Emacs to OCaml (e.g. the debugger running inside a module API
+     primitive; see [thread_holds_runtime_lock]).  Acquiring the non-recursive
+     lock again would deadlock, so skip it and remember not to release it. */
+  bool acquired_runtime_lock = !thread_holds_runtime_lock;
+  if (acquired_runtime_lock) {
+    caml_c_thread_register();
+    caml_acquire_runtime_system();
+    thread_holds_runtime_lock = true;
+  }
   free_emacs_values_assuming_in_emacs_thread(env);
   free_embedded_caml_values(env);
 
-  acquire_lock acquire_lock = {.old_env = active_env};
+  acquire_lock acquire_lock = {.old_env = active_env,
+                               .acquired_runtime_lock = acquired_runtime_lock};
 
   active_env = env;
 
@@ -393,7 +432,10 @@ static acquire_lock acquire_ocaml_lock_from_emacs(emacs_env *env) {
 static void release_ocaml_lock_from_emacs(acquire_lock acquire_lock, emacs_env *env) {
   active_env = acquire_lock.old_env;
   free_emacs_values_assuming_in_emacs_thread(env);
-  caml_release_runtime_system();
+  if (acquire_lock.acquired_runtime_lock) {
+    thread_holds_runtime_lock = false;
+    caml_release_runtime_system();
+  }
 }
 
 static void ecaml_function_finalizer(void *func_root) {
@@ -403,11 +445,12 @@ static void ecaml_function_finalizer(void *func_root) {
 
 static emacs_value ecaml_function_trampoline(emacs_env *env, ptrdiff_t nargs,
                                              emacs_value args[], void *func_root) {
-  /* We take the OCaml lock unconditionally at the start of every Ecaml function.  The
-   * OCaml lock is not recursive, so it's important that we don't already hold it when an
-   * Ecaml function is called.  That in turn means we must make sure to release the OCaml
-   * lock around calls into Emacs which might call an Ecaml function.  At the moment,
-   * that's probably just env->funcall (with arbitrary functions).  */
+  /* We take the OCaml lock at the start of every Ecaml function, unless this thread
+   * already holds it because we are in a nested call from Emacs to OCaml (see
+   * [thread_holds_runtime_lock]).  The OCaml lock is not recursive, so we must make sure
+   * to release the OCaml lock around calls into Emacs which might call an Ecaml
+   * function.  At the moment, that's env->funcall (with arbitrary functions), plus the
+   * debugger running inside any module API primitive that signals. */
   acquire_lock lock_state = acquire_ocaml_lock_from_emacs(env);
   emacs_value ret;
 
@@ -449,15 +492,20 @@ int emacs_module_init(struct emacs_runtime *ert) {
   define_ocaml_exception_error(env);
 
   char *argv[2] = {"emacs", NULL};
-  value res = caml_startup_exn(argv);
-  if_exception_signal_emacs_and_use_ecaml_nil(env, "caml_startup_exn", &res);
+  value startup_encoded = caml_startup_exn(argv);
+  /* [caml_startup_exn] leaves the runtime lock held by this thread. */
+  thread_holds_runtime_lock = true;
+  caml_result startup_res = Is_exception_result(startup_encoded)
+                                ? Result_exception(Extract_exception(startup_encoded))
+                                : Result_value(startup_encoded);
+  if_exception_signal_emacs(env, "caml_startup_exn", startup_res);
 
-  value end_of_init_res;
-  CAML_NAMED_CALLBACK(end_of_init_res, end_of_module_initialization, 1_exn, Val_unit);
-  if_exception_signal_emacs_and_use_ecaml_nil(env, "end_of_module_initialization",
-                                              &end_of_init_res);
+  caml_result end_of_init_res;
+  CAML_NAMED_CALLBACK(end_of_init_res, end_of_module_initialization, 1_res, Val_unit);
+  if_exception_signal_emacs(env, "end_of_module_initialization", end_of_init_res);
 
   active_env = NULL;
+  thread_holds_runtime_lock = false;
   caml_release_runtime_system();
   return 0;
 }
@@ -469,9 +517,9 @@ value ecaml_funcall(emacs_env *env, value fun, emacs_value *args, size_t nargs,
   emacs_value the_fun = emacs_of_ocaml(env, fun);
   /* We release the OCaml runtime lock around arbitrary calls into Lisp to allow other
    * OCaml threads to run in parallel with Lisp evaluation.  */
-  caml_release_runtime_system();
+  release_runtime_lock_around_elisp_call();
   emacs_value ret_val = env->funcall(env, the_fun, nargs, args);
-  caml_acquire_runtime_system();
+  acquire_runtime_lock_after_elisp_call();
   if (Bool_val(should_return_result)) {
     ret = ocaml_of_emacs(env, ret_val);
   } else {
@@ -778,10 +826,10 @@ CAMLprim value ecaml_text_to_char_array(value text) {
   CAMLlocal1(arr);
   emacs_env *env = ecaml_active_env_or_die();
   emacs_value string = emacs_of_ocaml(env, text);
-  caml_release_runtime_system();
+  release_runtime_lock_around_elisp_call();
   emacs_value vector =
       env->funcall(env, env->intern(env, "string-to-vector"), 1, &string);
-  caml_acquire_runtime_system();
+  acquire_runtime_lock_after_elisp_call();
   ptrdiff_t size = env->vec_size(env, vector);
   arr = caml_alloc(size, 0);
   for (ptrdiff_t i = 0; i < size; i++) {
@@ -814,14 +862,15 @@ static void finalize_caml_embedded(void *data) {
 
 void free_embedded_caml_values(emacs_env *env) {
   CAMLparam0();
-  CAMLlocal2(ids, ret);
+  CAMLlocal1(ids);
+  caml_result ret;
   if (caml_embedded_ids_to_free_index > 0) {
     ids = caml_alloc(caml_embedded_ids_to_free_index, 0);
     memcpy(Op_val(ids), caml_embedded_ids_to_free,
            caml_embedded_ids_to_free_index * sizeof(value));
     caml_embedded_ids_to_free_index = 0;
-    CAML_NAMED_CALLBACK(ret, free_embedded_caml_values, 1_exn, ids);
-    if_exception_signal_emacs_and_use_ecaml_nil(env, "free_embedded_caml_values", &ret);
+    CAML_NAMED_CALLBACK(ret, free_embedded_caml_values, 1_res, ids);
+    if_exception_signal_emacs(env, "free_embedded_caml_values", ret);
   }
   CAMLreturn0;
 }
@@ -840,9 +889,9 @@ CAMLprim value ecaml_inject(value caml_embedded_id) {
 bool user_ptrp(emacs_env *env, emacs_value val) {
   static emacs_value cache = NULL;
   emacs_value function = ecaml_cache_symbol_and_keep_alive(env, &cache, "user-ptrp");
-  caml_release_runtime_system();
+  release_runtime_lock_around_elisp_call();
   emacs_value result = env->funcall(env, function, 1, &val);
-  caml_acquire_runtime_system();
+  acquire_runtime_lock_after_elisp_call();
   return (env->is_not_nil(env, result));
 }
 

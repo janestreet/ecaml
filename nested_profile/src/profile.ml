@@ -204,6 +204,11 @@ module Record = struct
       (List.fold t.children ~init:0 ~f:(fun ac child -> Int.max ac (max_took_width child)))
   ;;
 
+  (* Millisecond precision, so that the prefixes are fixed-width and lines stay aligned. *)
+  let start_time_string start =
+    Time_ns.to_string_iso8601_extended start ~zone:(force Timezone.local) ~precision:`ms
+  ;;
+
   let rec insert_gap_frames t =
     if List.is_empty t.children
     then t
@@ -239,16 +244,25 @@ module Record = struct
       { t with children = List.rev rev_children })
   ;;
 
-  let to_string_hum t =
+  let to_string_hum ?(prefix_lines_with_start_times = false) t =
     let rendering_started = now () in
-    let start_location = !start_location in
+    (* [None] when every line is prefixed with its start time, which makes rendering the
+       start time separately redundant. *)
+    let start_location =
+      if prefix_lines_with_start_times then None else Some !start_location
+    in
+    let line_prefix start =
+      if prefix_lines_with_start_times
+      then concat [ start_time_string start; " " ]
+      else ""
+    in
     let t = insert_gap_frames t in
     let took_total_width = max_took_width t in
     let paren strings = concat [ "("; concat strings; ")" ] in
     let shift_right =
       match start_location with
-      | End_of_profile_first_line -> 0
-      | Line_preceding_profile -> 1
+      | None | Some End_of_profile_first_line -> 0
+      | Some Line_preceding_profile -> 1
     in
     let start = [%sexp (t.start : Time_ns.t)] |> Sexp.to_string in
     let rec loop
@@ -281,7 +295,8 @@ module Record = struct
               "[Profile.profile] message raised" (exn : exn) (backtrace : Backtrace.t)])
       in
       concat
-        [ String.make (shift_right + (3 * depth)) ' '
+        [ line_prefix t.start
+        ; String.make (shift_right + (3 * depth)) ' '
         ; paren
             [ percentage
             ; took
@@ -295,8 +310,8 @@ module Record = struct
                | n -> sprintf "[%d pending children] " n)
             ; message |> sexp_to_string_on_one_line
             ; (match start_location with
-               | Line_preceding_profile -> ""
-               | End_of_profile_first_line ->
+               | None | Some Line_preceding_profile -> ""
+               | Some End_of_profile_first_line ->
                  if depth = 0 then concat [ " "; start ] else "")
             ; (if List.is_empty children
                then ""
@@ -330,10 +345,13 @@ module Record = struct
              ])
     in
     match start_location, rendering_took with
-    | End_of_profile_first_line, None -> profile
-    | End_of_profile_first_line, Some r -> paren [ r; "\n "; profile ]
-    | Line_preceding_profile, None -> paren [ start; "\n"; profile ]
-    | Line_preceding_profile, Some r -> paren [ start; "\n "; r; "\n"; profile ]
+    | (None | Some End_of_profile_first_line), None -> profile
+    (* In the line-by-line format, [rendering_took] gets a line of its own, prefixed with
+       the time rendering started rather than the time the profile started. *)
+    | None, Some r -> concat [ line_prefix rendering_started; r; "\n"; profile ]
+    | Some End_of_profile_first_line, Some r -> paren [ r; "\n "; profile ]
+    | Some Line_preceding_profile, None -> paren [ start; "\n"; profile ]
+    | Some Line_preceding_profile, Some r -> paren [ start; "\n "; r; "\n"; profile ]
   ;;
 end
 
@@ -568,6 +586,7 @@ module Private = struct
   module Clock = Clock
 
   let clock = clock
+  let has_current_frame () = Option.is_some (current_profile_context ())
   let on_async_out_of_order = on_async_out_of_order
 
   let record_frame ~start ~stop ~message =

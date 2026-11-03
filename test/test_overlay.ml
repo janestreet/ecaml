@@ -5,7 +5,7 @@ open! Overlay
 
 let with_buffer f =
   let buffer = Buffer.create ~name:"test-buffer" in
-  Current_buffer.set_temporarily Sync buffer ~f:(fun () ->
+  Current_buffer.set_temporarily buffer ~f:(fun () ->
     Point.insert
       {|
       Lorem ipsum dolor sit amet,

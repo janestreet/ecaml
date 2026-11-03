@@ -109,19 +109,17 @@ module Private : sig
       Async, i.e. not during an Async cycle and without holding the Async lock.
 
       This is necessary so that Emacs will run timers and network handlers while waiting
-      for [f], and hence will request and run the Async cycles needed by [f]. *)
-  val run_outside_async
-    :  ?here:Stdlib.Lexing.position
-    -> ?allowed_in_background:bool (** default is [false] *)
-    -> (unit -> 'a)
-    -> 'a Deferred.t
+      for [f], and hence will request and run the Async cycles needed by [f].
+
+      [run_outside_async] may only be called from a foreground job, and raises otherwise.
+      Background jobs should generally not call into Elisp. *)
+  val run_outside_async : ?here:Stdlib.Lexing.position -> (unit -> 'a) -> 'a Deferred.t
 
   (** [run_outside_asyncN] are convenience wrappers around [run_outside_async] for common
       function arities. Feel free to add more as necessary. *)
 
   val run_outside_async1
     :  ?here:Stdlib.Lexing.position
-    -> ?allowed_in_background:bool (** default is [false] *)
     -> ('a -> 'r)
     -> 'a
     -> 'r Deferred.t

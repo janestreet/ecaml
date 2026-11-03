@@ -133,9 +133,49 @@ end
 
 let history_length = Customization.Wrap.("history-length" <: History_length.t)
 
-let y_or_n =
-  let y_or_n_p = Funcall.Wrap.("y-or-n-p" <: string @-> return bool) in
-  fun ~prompt -> Async_ecaml.Private.run_outside_async (fun () -> y_or_n_p prompt)
+let format_prompt =
+  let f = Funcall.Wrap.("format-prompt" <: string @-> nil_or string @-> return string) in
+  fun ~prompt_no_colon ~default ->
+    (* Safe to pass [prompt_no_colon] directly into a format string because
+       [format-prompt] treats it verbatim if there are no FORMAT-ARGS passed. *)
+    f prompt_no_colon default
+;;
+
+module Blocking = struct
+  let y_or_n =
+    let y_or_n_p = Funcall.Wrap.("y-or-n-p" <: string @-> return bool) in
+    fun ~prompt -> y_or_n_p prompt
+  ;;
+
+  let read_string =
+    let read_string =
+      Funcall.Wrap.(
+        "read-string"
+        <: string
+           @-> Initial_input.minibuffer_t
+           @-> value
+           @-> nil_or string
+           @-> return string)
+    in
+    fun ~prompt_no_colon
+      ?(initial_contents = Initial_input.Empty)
+      ?default_value
+      ~history
+      ?history_pos
+      () ->
+      let history = History.symbol history |> Symbol.to_value in
+      read_string
+        (format_prompt ~prompt_no_colon ~default:default_value)
+        initial_contents
+        (match history_pos with
+         | None -> history
+         | Some i -> Value.cons history (i |> Value.of_int_exn))
+        default_value
+  ;;
+end
+
+let y_or_n ~prompt =
+  Async_ecaml.Private.run_outside_async (fun () -> Blocking.y_or_n ~prompt)
 ;;
 
 include struct
@@ -164,39 +204,16 @@ let yes_or_no =
   fun ~prompt -> Async_ecaml.Private.run_outside_async (fun () -> yes_or_no_p prompt)
 ;;
 
-let format_prompt =
-  let f = Funcall.Wrap.("format-prompt" <: string @-> nil_or string @-> return string) in
-  fun ~prompt_no_colon ~default ->
-    (* Safe to pass [prompt_no_colon] directly into a format string because
-       [format-prompt] treats it verbatim if there are no FORMAT-ARGS passed. *)
-    f prompt_no_colon default
-;;
-
-let read_string =
-  let read_string =
-    Funcall.Wrap.(
-      "read-string"
-      <: string
-         @-> Initial_input.minibuffer_t
-         @-> value
-         @-> nil_or string
-         @-> return string)
-  in
-  fun ~prompt_no_colon
-    ?(initial_contents = Initial_input.Empty)
-    ?default_value
-    ~history
-    ?history_pos
-    () ->
-    Async_ecaml.Private.run_outside_async (fun () ->
-      let history = History.symbol history |> Symbol.to_value in
-      read_string
-        (format_prompt ~prompt_no_colon ~default:default_value)
-        initial_contents
-        (match history_pos with
-         | None -> history
-         | Some i -> Value.cons history (i |> Value.of_int_exn))
-        default_value)
+let read_string ~prompt_no_colon ?initial_contents ?default_value ~history ?history_pos ()
+  =
+  Async_ecaml.Private.run_outside_async (fun () ->
+    Blocking.read_string
+      ~prompt_no_colon
+      ?initial_contents
+      ?default_value
+      ~history
+      ?history_pos
+      ())
 ;;
 
 let read_file_name =

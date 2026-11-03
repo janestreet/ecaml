@@ -198,9 +198,6 @@ val window_scroll_functions : (window, unit) t
     - [(Info-goto-node "(elisp)Window Hooks")] *)
 val window_selection_change_functions : (frame, unit) t
 
-(** [(Info-goto-node "(elisp)Major Mode Conventions")] *)
-val major_mode_hook : Major_mode.t -> (normal, unit) t
-
 (** [(describe-variable 'project-find-functions)] *)
 val project_find_functions : (file, unit) t
 

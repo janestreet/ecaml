@@ -10,11 +10,10 @@ end
 let get = Funcall.Wrap.("current-buffer" <: nullary @-> return Buffer.t)
 let set = Funcall.Wrap.("set-buffer" <: Buffer.t @-> return nil)
 
-let set_temporarily ?(here = Stdlib.Lexing.dummy_pos) sync_or_async buffer ~f =
+let set_temporarily buffer ~f =
   let old = get () in
   set buffer;
-  Sync_or_async.protect ~here sync_or_async ~f ~finally:(fun () ->
-    if Buffer.is_live old then set old)
+  Exn.protect ~f ~finally:(fun () -> if Buffer.is_live old then set old)
 ;;
 
 let boundp = Funcall.Wrap.("boundp" <: Symbol.t @-> return bool)

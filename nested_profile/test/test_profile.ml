@@ -375,6 +375,74 @@ let%expect_test "zero time" =
     return ())
 ;;
 
+let with_log_format_output f =
+  Ref.set_temporarily
+    output_profile
+    (fun (_ : string) -> ())
+    ~f:(fun () ->
+      Ref.set_temporarily
+        output_profile'
+        (fun record ->
+          print_string
+            (Record.to_string_hum ~prefix_lines_with_start_times:true record ^ "\n"))
+        ~f)
+;;
+
+let%expect_test "[prefix_lines_with_start_times]" =
+  with_clock (fun () ->
+    with_log_format_output (fun () -> Test_profile.test ());
+    [%expect
+      {|
+      1969-12-31T19:00:00.000-05:00 (1_000_000us foo (
+      1969-12-31T19:00:00.000-05:00    ( 20%   200_000us bar)
+      1969-12-31T19:00:00.200-05:00    ( 50%   500_000us baz (
+      1969-12-31T19:00:00.200-05:00       ( 40%   200_000us bar)
+      1969-12-31T19:00:00.400-05:00       ( 20%   100_000us non_async_profile)
+      1969-12-31T19:00:00.500-05:00       ( 40%   200_000us gap)))
+      1969-12-31T19:00:00.700-05:00    ( 20%   200_000us bar)
+      1969-12-31T19:00:00.900-05:00    ( 10%   100_000us gap)))
+      |}];
+    return ())
+;;
+
+let%expect_test "[prefix_lines_with_start_times] with [rendering_took]" =
+  with_clock (fun () ->
+    with_log_format_output (fun () ->
+      Ref.set_temporarily hide_top_level_if_less_than (sec 0.) ~f:(fun () ->
+        profile Sync (lazy [%sexp "foo"]) (fun () -> advance_clock_by (sec 1.))));
+    [%expect
+      {|
+      1969-12-31T19:00:01.000-05:00 (rendering_took 0us)
+      1969-12-31T19:00:00.000-05:00 (1_000_000us foo)
+      |}];
+    return ())
+;;
+
+let%expect_test "re-rendering a [Record.t] via [output_profile'] and \
+                 [Record.to_string_hum]"
+  =
+  with_clock (fun () ->
+    Ref.set_temporarily
+      output_profile'
+      (fun record ->
+        print_string
+          (Record.to_string_hum ~prefix_lines_with_start_times:true record ^ "\n"))
+      ~f:(fun () ->
+        profile
+          Sync
+          (lazy [%sexp "foo"])
+          (fun () ->
+            profile Sync (lazy [%sexp "bar"]) (fun () -> advance_clock_by (sec 1.))));
+    [%expect
+      {|
+      1969-12-31T19:00:00.000-05:00 (1_000_000us foo (
+      1969-12-31T19:00:00.000-05:00    (100% 1_000_000us bar)))
+      (1_000_000us foo "1970-01-01 00:00:00Z" (
+         (100% 1_000_000us bar)))
+      |}];
+    return ())
+;;
+
 let%expect_test "[start_location := Line_preceding_profile]" =
   with_clock (fun () ->
     Ref.set_temporarily start_location Line_preceding_profile ~f:(fun () ->

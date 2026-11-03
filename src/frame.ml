@@ -77,11 +77,7 @@ let window_list =
 
 let window_list ?include_minibuffer ?frame () = window_list frame include_minibuffer None
 let set_selected = Funcall.Wrap.("select-frame" <: t @-> return nil)
-
-let set_selected_temporarily sync_or_async t ~f =
-  Save_wrappers.with_selected_frame sync_or_async (to_value t) f
-;;
-
+let set_selected_temporarily t ~f = Save_wrappers.with_selected_frame (to_value t) f
 let is_live = Funcall.Wrap.("frame-live-p" <: t @-> return bool)
 let terminal = Funcall.Wrap.("frame-terminal" <: t @-> return Terminal.t)
 let inherited_parameters = Var.Wrap.("frame-inherited-parameters" <: list Symbol.t)

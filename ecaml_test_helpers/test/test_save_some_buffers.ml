@@ -20,13 +20,14 @@ let%expect_test "[press_and_show_minibuffer] with [save-some-buffers] shows prom
         print_string (replace [%expect.output] ~pattern:basename ~with_:"BASENAME/");
         [%expect
           {|
-          Save file TMPDIR/BASENAME/foo.txt? (y, n, !, ., q, C-r, C-f, d or C-h)
-          Save file TMPDIR/BASENAME/foo.txt? (y, n, !, ., q, C-r, C-f, d or C-h) C-]
+          Save file TMPDIR/BASENAME/foo.txt? (y, n, !, ., q, M-~, C-r, C-f, d or C-h)
+
+          Save file TMPDIR/BASENAME/foo.txt? (y, n, !, ., q, M-~, C-r, C-f, d or C-h) C-]
           |}];
         return ()))
 ;;
 
-let%expect_test "[press] with [save-some-buffers] times out instead of showing prompt" =
+let%expect_test "[press] with [save-some-buffers] reports the minibuffer prompt" =
   with_temp_dir (fun tmpdir ->
     Current_buffer.set_buffer_local_temporarily
       Async
@@ -36,13 +37,22 @@ let%expect_test "[press] with [save-some-buffers] times out instead of showing p
         let%bind () = press "C-x C-f foo.txt RET asdf" in
         [%expect {| asdf█ |}];
         let basename = Filename.nondirectory tmpdir in
+        (* Validate that quitting explicitly works, and shows the prompt only once. *)
+        let%bind () = require_does_raise_async (fun () -> press "C-x s C-]") in
+        print_string (replace [%expect.output] ~pattern:basename ~with_:"BASENAME/");
+        [%expect
+          {|
+          Save file TMPDIR/BASENAME/foo.txt? (y, n, !, ., q, M-~, C-r, C-f, d or C-h) C-]
+          quit
+          |}];
         let%bind () = require_does_raise_async (fun () -> press "C-x s") in
         print_string (replace [%expect.output] ~pattern:basename ~with_:"BASENAME/");
         [%expect
           {|
-          Save file TMPDIR/BASENAME/foo.txt? (y, n, !, ., q, C-r, C-f, d or C-h) <f13>
-          ("Minibuffer open" ((prompt ())))
-          (user-error ("No recursive edit is in progress"))
+          ("Minibuffer open"
+           ((prompt
+             ("Save file TMPDIR/BASENAME/foo.txt? (y, n, !, ., q, M-~, C-r, C-f, d or C-h) "))))
+          quit
           |}];
         return ()))
 ;;

@@ -84,6 +84,19 @@ module Record : sig
   val stop : t -> Time_ns.t
   val force_message : t -> Sexp.t
   val children : t -> t list
+
+  (** Renders [t] as [profile] does when producing the string passed to [output_profile],
+      without the trailing newline; useful in [output_profile'] to re-render a profile
+      with different settings.
+
+      If [prefix_lines_with_start_times] is set, each line is prefixed with the start time
+      of the frame rendered on that line, in ISO 8601 extended format in the machine's
+      local zone at millisecond precision, and the [start_location] start time is omitted
+      as redundant. *)
+  val to_string_hum
+    :  ?prefix_lines_with_start_times:bool (** default [false] *)
+    -> t
+    -> string
 end
 
 (** Like [profile] but passes the raw profile. Defaults to [ignore]. *)
@@ -121,5 +134,11 @@ module Private : sig
 
   val record_frame : start:Time_ns.t -> stop:Time_ns.t -> message:Sexp.t Lazy.t -> unit
   val clock : Clock.t ref
+
+  (** Whether the code currently running is inside a [profile] frame. In particular, when
+      called from a [Frame_tagger] capture function, this says whether the frame being
+      created has a parent frame. *)
+  val has_current_frame : unit -> bool
+
   val on_async_out_of_order : (Sexp.t Lazy.t -> unit) ref
 end

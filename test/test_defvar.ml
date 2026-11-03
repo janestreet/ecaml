@@ -89,26 +89,3 @@ let%expect_test "[defvaralias]" =
     |}];
   return ()
 ;;
-
-let%expect_test "[define_obsolete_alias]" =
-  let x = "x" |> Symbol.intern in
-  define_obsolete_alias
-    x
-    ~docstring:"some docs"
-    ~alias_of:("y" |> Symbol.intern)
-    ~since:"then"
-    ();
-  print_endline (Help.describe_variable_text x);
-  [%expect
-    {|
-    x's value is 13
-
-    This variable is obsolete since then; use `y' instead.
-
-    some docs
-
-      This variable is an alias for `y'.
-      Probably introduced at or before Emacs version 1.4.
-    |}];
-  return ()
-;;

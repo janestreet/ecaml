@@ -6,7 +6,7 @@ open! Point
 let show () = print_s [%message "" ~point:(get () : Position.t)]
 
 let%expect_test "[get]" =
-  Current_buffer.set_temporarily_to_temp_buffer Sync (fun () ->
+  Current_buffer.set_temporarily_to_temp_buffer (fun () ->
     show ();
     [%expect {| (point 1) |}];
     print_s [%sexp (Current_buffer.get () : Buffer.t)];
@@ -24,7 +24,7 @@ let%expect_test "[min], [max]" =
   let show_min_max () =
     print_s [%message "" ~min:(min () : Position.t) ~max:(max () : Position.t)]
   in
-  Current_buffer.set_temporarily_to_temp_buffer Sync (fun () ->
+  Current_buffer.set_temporarily_to_temp_buffer (fun () ->
     show_min_max ();
     [%expect
       {|
@@ -43,20 +43,20 @@ let%expect_test "[min], [max]" =
 
 let%expect_test "[backward_char_exn] raise" =
   show_raise (fun () ->
-    Current_buffer.set_temporarily_to_temp_buffer Sync (fun () -> backward_char_exn 1));
+    Current_buffer.set_temporarily_to_temp_buffer (fun () -> backward_char_exn 1));
   [%expect {| (raised beginning-of-buffer) |}];
   return ()
 ;;
 
 let%expect_test "[forward_char_exn] raise" =
   show_raise (fun () ->
-    Current_buffer.set_temporarily_to_temp_buffer Sync (fun () -> forward_char_exn 1));
+    Current_buffer.set_temporarily_to_temp_buffer (fun () -> forward_char_exn 1));
   [%expect {| (raised end-of-buffer) |}];
   return ()
 ;;
 
 let%expect_test "[forward_char_exn], [backward_char_exn]" =
-  Current_buffer.set_temporarily_to_temp_buffer Sync (fun () ->
+  Current_buffer.set_temporarily_to_temp_buffer (fun () ->
     forward_char_exn 0;
     backward_char_exn 0;
     insert "foo";
@@ -87,7 +87,7 @@ let%expect_test "[backward_line], [forward_line], [line_number]" =
     forward_line n;
     show_line_num ()
   in
-  Current_buffer.set_temporarily_to_temp_buffer Sync (fun () ->
+  Current_buffer.set_temporarily_to_temp_buffer (fun () ->
     backward_line 1;
     [%expect {| (line_number 1) |}];
     forward_line 1;
@@ -109,7 +109,7 @@ let%expect_test "[backward_line], [forward_line], [line_number]" =
 ;;
 
 let%expect_test "[forward_sexp_exn], [backward_sexp_exn]" =
-  Current_buffer.set_temporarily_to_temp_buffer Sync (fun () ->
+  Current_buffer.set_temporarily_to_temp_buffer (fun () ->
     insert "(a b c) d (ef)";
     let backward_sexp_exn i =
       backward_sexp_exn i;
@@ -131,7 +131,7 @@ let%expect_test "[forward_sexp_exn], [backward_sexp_exn]" =
 ;;
 
 let%expect_test "[forward_sexp_exn], [backward_sexp_exn] raise" =
-  Current_buffer.set_temporarily_to_temp_buffer Sync (fun () ->
+  Current_buffer.set_temporarily_to_temp_buffer (fun () ->
     insert "a b c) d (ef)";
     let backward_sexp_exn i =
       backward_sexp_exn i;
@@ -154,7 +154,7 @@ let%expect_test "[forward_sexp_exn], [backward_sexp_exn] raise" =
 ;;
 
 let%expect_test "[forward_word], [backward_word]" =
-  Current_buffer.set_temporarily_to_temp_buffer Sync (fun () ->
+  Current_buffer.set_temporarily_to_temp_buffer (fun () ->
     insert "word1 word2 word3";
     let backward_word i =
       backward_word i;
@@ -176,7 +176,7 @@ let%expect_test "[forward_word], [backward_word]" =
 ;;
 
 let%expect_test "[kill_word]" =
-  Current_buffer.set_temporarily_to_temp_buffer Sync (fun () ->
+  Current_buffer.set_temporarily_to_temp_buffer (fun () ->
     insert "word1 word2 word3";
     let kill_word i =
       kill_word i;
@@ -191,7 +191,7 @@ let%expect_test "[kill_word]" =
 ;;
 
 let%expect_test "[column_number], [goto_column]" =
-  Current_buffer.set_temporarily_to_temp_buffer Sync (fun () ->
+  Current_buffer.set_temporarily_to_temp_buffer (fun () ->
     insert "foo";
     show_raise (fun () -> goto_column (-1));
     [%expect {| (raised (wrong-type-argument (wholenump -1))) |}];
@@ -211,7 +211,7 @@ let%expect_test "[column_number], [goto_column]" =
 ;;
 
 let%expect_test "[insert_file_contents_exn ~replace:false]" =
-  Current_buffer.set_temporarily_to_temp_buffer Sync (fun () ->
+  Current_buffer.set_temporarily_to_temp_buffer (fun () ->
     insert "foo";
     insert_file_contents_exn ~replace:false "test_point.ml";
     print_s
@@ -221,7 +221,7 @@ let%expect_test "[insert_file_contents_exn ~replace:false]" =
 ;;
 
 let%expect_test "[insert_file_contents_exn ~replace:true]" =
-  Current_buffer.set_temporarily_to_temp_buffer Sync (fun () ->
+  Current_buffer.set_temporarily_to_temp_buffer (fun () ->
     insert "foo";
     insert_file_contents_exn "test_point.ml" ~replace:true;
     print_s
@@ -232,7 +232,7 @@ let%expect_test "[insert_file_contents_exn ~replace:true]" =
 
 let%expect_test "[insert_file_contents_exn] raise" =
   show_raise (fun () ->
-    Current_buffer.set_temporarily_to_temp_buffer Sync (fun () ->
+    Current_buffer.set_temporarily_to_temp_buffer (fun () ->
       insert_file_contents_exn "/zzz";
       print_s
         [%sexp (Current_buffer.contents () ~end_:(11 |> Position.of_int_exn) : Text.t)]));
@@ -243,7 +243,7 @@ let%expect_test "[insert_file_contents_exn] raise" =
 
 let%expect_test "[marker_at*]" =
   let show marker = print_s [%sexp (marker : Marker.t)] in
-  Current_buffer.set_temporarily_to_temp_buffer Sync (fun () ->
+  Current_buffer.set_temporarily_to_temp_buffer (fun () ->
     Point.insert "foo";
     Point.goto_char (2 |> Position.of_int_exn);
     show (marker_at ());
@@ -256,7 +256,7 @@ let%expect_test "[marker_at*]" =
 ;;
 
 let%expect_test "[search_{back,for}ward]" =
-  Current_buffer.set_temporarily_to_temp_buffer Sync (fun () ->
+  Current_buffer.set_temporarily_to_temp_buffer (fun () ->
     insert "abc";
     goto_char (min ());
     show ();
@@ -281,7 +281,7 @@ let%expect_test "[search_{back,for}ward]" =
 ;;
 
 let%expect_test "[search_{back,for}ward_exn]" =
-  Current_buffer.set_temporarily_to_temp_buffer Sync (fun () ->
+  Current_buffer.set_temporarily_to_temp_buffer (fun () ->
     insert "abc";
     goto_char (min ());
     show ();
@@ -304,7 +304,7 @@ let%expect_test "[search_{back,for}ward_exn]" =
 ;;
 
 let%expect_test "[search_forward]_exn] and [Regexp.Last_match]" =
-  Current_buffer.set_temporarily_to_temp_buffer Sync (fun () ->
+  Current_buffer.set_temporarily_to_temp_buffer (fun () ->
     insert "abcdef";
     goto_char (min ());
     show_raise (fun () -> search_forward_exn "zz" ~update_last_match:true);
@@ -328,7 +328,7 @@ let%expect_test "[search_forward]_exn] and [Regexp.Last_match]" =
 ;;
 
 let%expect_test "[search_{back,for}ward_regexp]" =
-  Current_buffer.set_temporarily_to_temp_buffer Sync (fun () ->
+  Current_buffer.set_temporarily_to_temp_buffer (fun () ->
     insert "abc";
     goto_char (min ());
     show ();
@@ -353,7 +353,7 @@ let%expect_test "[search_{back,for}ward_regexp]" =
 ;;
 
 let%expect_test "[search_{back,for}ward_regexp_exn]" =
-  Current_buffer.set_temporarily_to_temp_buffer Sync (fun () ->
+  Current_buffer.set_temporarily_to_temp_buffer (fun () ->
     insert "abc";
     goto_char (min ());
     show ();
@@ -376,7 +376,7 @@ let%expect_test "[search_{back,for}ward_regexp_exn]" =
 ;;
 
 let%expect_test "[search_forward_regexp] and [Regexp.Last_match]" =
-  Current_buffer.set_temporarily_to_temp_buffer Sync (fun () ->
+  Current_buffer.set_temporarily_to_temp_buffer (fun () ->
     insert "abc";
     goto_char (min ());
     print_s
@@ -413,7 +413,7 @@ let%expect_test "[search_forward_regexp] and [Regexp.Last_match]" =
 ;;
 
 let%expect_test "[Regexp.Last_match] in wrong buffer" =
-  Current_buffer.set_temporarily_to_temp_buffer Sync (fun () ->
+  Current_buffer.set_temporarily_to_temp_buffer (fun () ->
     insert "abc";
     search_backward_exn "b" ~update_last_match:true;
     show_last_match ();
@@ -438,7 +438,7 @@ let%expect_test "[Regexp.Last_match] in wrong buffer" =
 ;;
 
 let%expect_test "[looking_at]" =
-  Current_buffer.set_temporarily_to_temp_buffer Sync (fun () ->
+  Current_buffer.set_temporarily_to_temp_buffer (fun () ->
     insert "abc";
     goto_char (min ());
     let looking_at s = print_s [%sexp (looking_at (s |> Regexp.quote) : bool)] in
@@ -450,7 +450,7 @@ let%expect_test "[looking_at]" =
 ;;
 
 let%expect_test "[looking_at ~update_last_match:true]" =
-  Current_buffer.set_temporarily_to_temp_buffer Sync (fun () ->
+  Current_buffer.set_temporarily_to_temp_buffer (fun () ->
     insert "abc";
     goto_char (min ());
     let looking_at s =
@@ -477,7 +477,7 @@ let%expect_test "[looking_at ~update_last_match:true]" =
 ;;
 
 let%expect_test "[goto_line]" =
-  Current_buffer.set_temporarily_to_temp_buffer Sync (fun () ->
+  Current_buffer.set_temporarily_to_temp_buffer (fun () ->
     insert
       {|
 a
@@ -505,7 +505,7 @@ let%expect_test "[Property_search.forward]" =
   let property_name =
     Text.Property_name.Create.("jane-test-text-property" <: Value.Type.int)
   in
-  Current_buffer.set_temporarily_to_temp_buffer Sync (fun () ->
+  Current_buffer.set_temporarily_to_temp_buffer (fun () ->
     (* Insert some text with no properties, then 10 digits, each with the property set to
        the value of the digit. *)
     insert "text with no properties\n";

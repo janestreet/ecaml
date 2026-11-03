@@ -37,4 +37,4 @@ val message_s : ?echo:bool (** default is [true] *) -> Sexp.t -> unit
 val message_text : ?echo:bool (** default is [true] *) -> Text.t -> unit
 
 (** [(describe-variable 'inhibit-message)] *)
-val inhibit_messages : (_, 'a) Sync_or_async.t -> (unit -> 'a) -> 'a
+val inhibit_messages : (unit -> 'a) -> 'a

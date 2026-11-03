@@ -7,6 +7,7 @@ module Q = struct
   include Q
 
   let apply = "apply" |> Symbol.intern
+  let define_obsolete_function_alias = "define-obsolete-function-alias" |> Symbol.intern
   let interactive = "interactive" |> Symbol.intern
   let ecaml_module_function = "ecaml-module-function" |> Symbol.intern
   let get = "get" |> Symbol.intern
@@ -256,18 +257,6 @@ let defalias symbol ?(here = Stdlib.Lexing.dummy_pos) ?docstring ~alias_of () =
   defalias symbol alias_of (docstring |> Option.map ~f:String.strip)
 ;;
 
-let define_obsolete_alias
-  obsolete
-  ?(here = Stdlib.Lexing.dummy_pos)
-  ?docstring
-  ~alias_of
-  ~since
-  ()
-  =
-  defalias obsolete ~here ?docstring ~alias_of:(alias_of |> Symbol.to_value) ();
-  Obsolete.make_function_obsolete obsolete ~current:(Some alias_of) ~since
-;;
-
 module Interactive = struct
   type t =
     | Args of Function.t
@@ -377,7 +366,11 @@ let defun_internal
   List.iter define_keys ~f:(fun (keymap, keys) ->
     Dump.keymap_set ~here keymap [ keys, symbol ]);
   Option.iter obsoletes ~f:(fun (obsolete, Since since) ->
-    define_obsolete_alias obsolete ~here ~alias_of:symbol ~since ());
+    Dump.eval_and_dump ~here (fun () ->
+      Form.apply
+        Q.define_obsolete_function_alias
+        [ Form.quoted_symbol obsolete; Form.quoted_symbol symbol; Form.string since ]);
+    add_to_load_history obsolete here);
   func
 ;;
 

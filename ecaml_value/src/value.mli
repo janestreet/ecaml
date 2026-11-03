@@ -1,1 +1,1 @@
-include Value_intf.Value
+include Value_intf.Value (** @inline *)

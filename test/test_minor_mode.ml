@@ -17,7 +17,7 @@ let%expect_test "[is_enabled], [enable], [disable]" =
 ;;
 
 let%expect_test "[read_only]" =
-  Current_buffer.set_temporarily_to_temp_buffer Sync (fun () ->
+  Current_buffer.set_temporarily_to_temp_buffer (fun () ->
     let is_enabled () = print_s [%sexp (is_enabled read_only : bool)] in
     is_enabled ();
     [%expect {| false |}];
@@ -55,7 +55,7 @@ let%expect_test "custom minor mode, [temporarily_disable]" =
   [%expect {| ("Minor mode initialization function called" (enabled true)) |}];
   is_enabled ();
   [%expect {| true |}];
-  temporarily_disable Sync custom_minor_mode ~f:(fun () -> print_endline "f called");
+  temporarily_disable custom_minor_mode ~f:(fun () -> print_endline "f called");
   [%expect
     {|
     ("Minor mode initialization function called" (enabled false))
@@ -66,7 +66,7 @@ let%expect_test "custom minor mode, [temporarily_disable]" =
   [%expect {| ("Minor mode initialization function called" (enabled false)) |}];
   is_enabled ();
   [%expect {| false |}];
-  temporarily_disable Sync custom_minor_mode ~f:(fun () -> print_endline "f called");
+  temporarily_disable custom_minor_mode ~f:(fun () -> print_endline "f called");
   [%expect {| f called |}];
   return ()
 ;;

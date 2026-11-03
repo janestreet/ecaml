@@ -73,7 +73,7 @@ let defvar_embedded
 let set_in_current_buffer t a = Current_buffer.set_value t a
 
 let set t a buffer =
-  Current_buffer.set_temporarily Sync buffer ~f:(fun () -> set_in_current_buffer t a)
+  Current_buffer.set_temporarily buffer ~f:(fun () -> set_in_current_buffer t a)
 ;;
 
 let set_temporarily_in_current_buffer sync_or_async t a ~f =
@@ -126,7 +126,7 @@ let get_exn t buffer =
 ;;
 
 let update_exn t buffer ~f =
-  Current_buffer.set_temporarily Sync buffer ~f:(fun () ->
+  Current_buffer.set_temporarily buffer ~f:(fun () ->
     set_in_current_buffer t (Some (f (get_in_current_buffer_exn t))))
 ;;
 

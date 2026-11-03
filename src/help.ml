@@ -2,9 +2,10 @@ open! Core
 open! Import
 
 let get_text_of_help ~invoke_help =
-  Echo_area.inhibit_messages Sync invoke_help;
+  Echo_area.inhibit_messages (fun () ->
+    Selected_window.save_window_excursion (fun () -> invoke_help ()));
   let help_buf = Buffer.find ~name:"*Help*" |> Option.value_exn in
-  Current_buffer.set_temporarily Sync help_buf ~f:(fun () ->
+  Current_buffer.set_temporarily help_buf ~f:(fun () ->
     Current_buffer.contents ()
     |> Text.to_utf8_bytes
     |> String.split_lines
@@ -24,6 +25,12 @@ let describe_function_text ?(obscure_symbol = false) symbol =
       ~in_:s
       ~with_:"<SYMBOL>"
   else s
+;;
+
+let describe_keymap = Funcall.Wrap.("describe-keymap" <: Symbol.t @-> return nil)
+
+let describe_keymap_text symbol =
+  get_text_of_help ~invoke_help:(fun () -> describe_keymap symbol)
 ;;
 
 let describe_key = Funcall.Wrap.("describe-key" <: Key_sequence.t @-> return nil)

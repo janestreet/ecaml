@@ -4,6 +4,7 @@ open! Import
 open! Buffer
 
 let show t = print_s [%sexp (t : t)]
+let all_live = Ecaml_test_helpers.Buffer_helper.all_live
 let num_live () = List.length (all_live ())
 let num_live_at_start = num_live ()
 
@@ -121,7 +122,7 @@ let%expect_test "[find_or_create]" =
 ;;
 
 let%expect_test "[displayed_in]" =
-  Current_buffer.set_temporarily_to_temp_buffer Sync (fun () ->
+  Current_buffer.set_temporarily_to_temp_buffer (fun () ->
     let t = Current_buffer.get () in
     let show_displayed_in () = print_s [%sexp (displayed_in t : Window.t list)] in
     show_displayed_in ();
@@ -136,7 +137,7 @@ let%expect_test "[displayed_in]" =
 ;;
 
 let%expect_test "[display]" =
-  Current_buffer.set_temporarily_to_temp_buffer Sync (fun () ->
+  Current_buffer.set_temporarily_to_temp_buffer (fun () ->
     let t = Current_buffer.get () in
     let show_displayed_in () = print_s [%sexp (displayed_in t : Window.t list)] in
     show_displayed_in ();
@@ -153,7 +154,7 @@ let%expect_test "[buffer_local_value]" =
   let var = int_var "v" in
   Var.make_buffer_local_always var;
   Current_buffer.set_value var 13;
-  Current_buffer.set_temporarily Sync t ~f:(fun () -> Current_buffer.set_value var 14);
+  Current_buffer.set_temporarily t ~f:(fun () -> Current_buffer.set_value var 14);
   print_s [%sexp (buffer_local_value (Current_buffer.get ()) var : int)];
   [%expect {| 13 |}];
   print_s [%sexp (buffer_local_value t var : int)];
@@ -164,7 +165,7 @@ let%expect_test "[buffer_local_value]" =
 let%expect_test "[buffer_local_variables]" =
   let var = int_var "s" in
   Var.make_buffer_local_always var;
-  Current_buffer.set_temporarily_to_temp_buffer Sync (fun () ->
+  Current_buffer.set_temporarily_to_temp_buffer (fun () ->
     show_current_buffer_local_variables ();
     [%expect
       {|
@@ -264,6 +265,28 @@ let%expect_test "[save_some]" =
   return ()
 ;;
 
+let%expect_test "[save] saves the given buffer, even when it is not current" =
+  Directory.with_temp_dir Async ~prefix:"test-save" ~suffix:"" ~f:(fun dir ->
+    let file = concat [ dir; "/file" ] in
+    let%bind () = Selected_window.find_file file in
+    let t = Current_buffer.get () in
+    Point.insert "foobar";
+    (* Show some other buffer, to show that [save] does not depend on [t] being current
+       when [save-buffer] eventually runs. *)
+    let other = find_or_create ~name:"test-save-other" in
+    let%bind () = Selected_window.pop_to_buffer other in
+    let%bind () = save t in
+    print_s [%sexp (is_modified t : bool)];
+    [%expect {| false |}];
+    Current_buffer.set_temporarily_to_temp_buffer (fun () ->
+      Point.insert_file_contents_exn file;
+      print_s [%sexp (Current_buffer.contents () : Text.t)]);
+    [%expect {| foobar |}];
+    let%bind () = kill other in
+    let%bind () = kill t in
+    return ())
+;;
+
 let%expect_test "[revert]" =
   Directory.with_temp_dir Async ~prefix:"test-revert" ~suffix:"" ~f:(fun dir ->
     let%bind () = Selected_window.find_file (concat [ dir; "/file" ]) in
@@ -280,7 +303,7 @@ let%expect_test "[revert]" =
 ;;
 
 let%expect_test "[modified_tick], [chars_modified_tick]" =
-  Current_buffer.set_temporarily_to_temp_buffer Sync (fun () ->
+  Current_buffer.set_temporarily_to_temp_buffer (fun () ->
     let t = Current_buffer.get () in
     let tick1 = modified_tick t in
     let chars_tick1 = chars_modified_tick t in

@@ -59,11 +59,11 @@ let is_enabled t =
 let disable t = Symbol.funcall1_i t.function_name (0 |> Value.of_int_exn)
 let enable t = Symbol.funcall1_i t.function_name (1 |> Value.of_int_exn)
 
-let temporarily_disable sync_or_async t ~f =
+let temporarily_disable t ~f =
   if is_enabled t
   then (
     disable t;
-    Sync_or_async.protect sync_or_async ~f ~finally:(fun () -> enable t))
+    Exn.protect ~f ~finally:(fun () -> enable t))
   else f ()
 ;;
 

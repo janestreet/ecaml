@@ -29,6 +29,6 @@ val eval : string -> unit Deferred.t
 (** Evaluate an elisp expression, without outputting anything. *)
 val eval_i : string -> unit Deferred.t
 
-(** Set [$TMPDIR] and [temporary-file-directory] to the provided path for the duration of
-    [f]. *)
-val set_tmpdir_temporarily : string -> f:(unit -> unit Deferred.t) -> unit Deferred.t
+(** Set [$TMPDIR] and [temporary-file-directory] to the provided path. This state is
+    process-global and is never restored, so call it when setting up a test. *)
+val set_tmpdir : string -> unit

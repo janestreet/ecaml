@@ -367,7 +367,7 @@ let%expect_test "[of_rx]" =
     ((input   bar)
      (matches false))
     |}];
-  Current_buffer.set_temporarily_to_temp_buffer Sync (fun () ->
+  Current_buffer.set_temporarily_to_temp_buffer (fun () ->
     Point.insert "foobar";
     Point.goto_min ();
     let matches = Point.search_forward_regexp (of_rx (Seq [ Point; Exactly "foobar" ])) in

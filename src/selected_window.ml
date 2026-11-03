@@ -16,6 +16,9 @@ module Blocking = struct
   let pop_to_buffer =
     Funcall.Wrap.("pop-to-buffer-same-window" <: Buffer.t @-> return nil)
   ;;
+
+  let find_file = Funcall.Wrap.("find-file" <: string @-> return nil)
+  let find_file_read_only = Funcall.Wrap.("find-file-read-only" <: string @-> return nil)
 end
 
 let pop_to_buffer buffer =
@@ -45,20 +48,9 @@ let quit =
   fun () -> Value.Private.run_outside_async quit
 ;;
 
-let save_window_excursion sync_or_async f =
-  Save_wrappers.save_window_excursion sync_or_async f
-;;
-
+let save_window_excursion f = Save_wrappers.save_window_excursion f
 let save_selected_window f = Save_wrappers.save_selected_window f
-
-let set_temporarily sync_or_async window ~f =
-  Save_wrappers.with_selected_window sync_or_async (window |> Window.to_value) f
-;;
-
-let find_file =
-  let find_file = Funcall.Wrap.("find-file" <: string @-> return nil) in
-  fun path -> Value.Private.run_outside_async (fun () -> find_file path)
-;;
+let find_file path = Value.Private.run_outside_async (fun () -> Blocking.find_file path)
 
 let find_file_other_window =
   let find_file_other_window =
@@ -67,11 +59,8 @@ let find_file_other_window =
   fun path -> Value.Private.run_outside_async (fun () -> find_file_other_window path)
 ;;
 
-let find_file_read_only =
-  let find_file_read_only =
-    Funcall.Wrap.("find-file-read-only" <: string @-> return nil)
-  in
-  fun path -> Value.Private.run_outside_async (fun () -> find_file_read_only path)
+let find_file_read_only path =
+  Value.Private.run_outside_async (fun () -> Blocking.find_file_read_only path)
 ;;
 
 let count_screen_lines =

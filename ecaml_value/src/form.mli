@@ -14,7 +14,9 @@ val eval_i : t -> unit Deferred.t
 (** [(describe-function 'read)] *)
 val read : string -> t
 
-(** Read the first complete Elisp form out of this buffer. *)
+(** Read the first complete Elisp form out of this buffer, decoding its contents as UTF-8.
+    String literals holding valid UTF-8 read as multibyte text; any non-UTF-8 bytes read
+    as raw bytes. *)
 val read_buffer : Core.Buffer.t -> t
 
 (** [eval_string string] = [eval (read string)] *)

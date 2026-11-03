@@ -6,7 +6,8 @@
    base.composition_infix core core_unix dynlink ecaml_bench ecaml_value
    core_kernel.enum core_unix.error_checking_mutex ppx_expect.config_types
    expect_test_helpers_core file_path core_unix.linux_ext memtrace
-   nested_profile sexp_pretty core_unix.signal_unix core_unix.time_ns_unix)
+   nested_profile core_kernel.reversed_list sexp_pretty core_unix.signal_unix
+   core_unix.time_ns_unix)
  (preprocess
   (pps ppx_jane)))
 

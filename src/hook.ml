@@ -221,8 +221,3 @@ let post_command = Wrap.("post-command-hook" <: Normal_hook)
 let pre_command = Wrap.("pre-command-hook" <: Normal_hook)
 let project_find_functions = Wrap.("project-find-functions" <: File_hook)
 let write_contents_functions = Wrap.("write-contents-functions" <: Query_function)
-
-let major_mode_hook major_mode =
-  let mode_name = major_mode |> Major_mode.symbol |> Symbol.name in
-  Wrap.(mode_name ^ "-hook" <: Normal_hook)
-;;

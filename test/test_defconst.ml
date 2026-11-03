@@ -8,7 +8,7 @@ let%expect_test "defconst" =
   let var =
     defconst symbol [%here] ~docstring:"_" ~type_:Value.Type.string ~value:"foo-value"
   in
-  Load_history.update_emacs_with_entries ~chop_prefix:"app/emacs/" ~in_dir:"<dir>";
+  Find_function.update_emacs_with_entries ~chop_prefix:"app/emacs/" ~in_dir:"<dir>";
   print_endline (Help.describe_variable_text symbol);
   [%expect
     {|

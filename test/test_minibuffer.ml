@@ -25,6 +25,36 @@ let%expect_test "[y_or_n]" =
   return ()
 ;;
 
+let%expect_test "[Blocking.y_or_n]" =
+  let test input =
+    with_input_macro input (fun () ->
+      Async_ecaml.Private.run_outside_async (fun () ->
+        print_s [%sexp (Blocking.y_or_n ~prompt:"" : bool)]))
+  in
+  let%bind () = test "y RET" in
+  [%expect {| true |}];
+  let%bind () = test "n RET" in
+  [%expect {| false |}];
+  return ()
+;;
+
+let%expect_test "[Blocking.read_string]" =
+  let%bind () =
+    with_input_macro "RET" (fun () ->
+      Async_ecaml.Private.run_outside_async (fun () ->
+        print_s
+          [%sexp
+            (Blocking.read_string
+               ~prompt_no_colon:""
+               ~default_value:"default"
+               ~history:Minibuffer.history
+               ()
+             : string)]))
+  in
+  [%expect {| default |}];
+  return ()
+;;
+
 let%expect_test "[y_or_n_with_timeout]" =
   let test input =
     with_input_macro input (fun () ->
@@ -110,8 +140,8 @@ let%expect_test "[exit_hook]" =
     ((symbol    minibuffer-exit-hook)
      (hook_type Normal_hook)
      (value ((
-       minibuffer--nonselected-exit
        minibuffer--regexp-exit
+       minibuffer--nonselected-exit
        minibuffer-exit-on-screen-keyboard
        minibuffer-restore-windows))))
     |}];
@@ -128,8 +158,8 @@ let%expect_test "[setup_hook]" =
      (hook_type Normal_hook)
      (value ((
        rfn-eshadow-setup-minibuffer
-       minibuffer--nonselected-setup
        minibuffer--regexp-setup
+       minibuffer--nonselected-setup
        minibuffer-setup-on-screen-keyboard
        minibuffer-error-initialize
        minibuffer-history-isearch-setup
@@ -182,6 +212,10 @@ let%expect_test "[setup_hook] [exit_hook]" =
     ("running setup hook"
       ("Minibuffer.prompt ()" ("prompt: "))
       ("Minibuffer.contents ()" ""))
+
+
+
+
     ("running exit hook"
       ("Minibuffer.prompt ()" ("prompt: "))
       ("Minibuffer.contents ()" foo))
@@ -220,7 +254,12 @@ let%expect_test "[with_setup_hook]" =
         {|
         [minibuffer-message] running setup hook
 
+
+
         [minibuffer-message]  [Quit]
+
+
+
 
         Quit
         |}];

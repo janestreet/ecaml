@@ -14,7 +14,7 @@ module%test _ = struct
   ;;
 
   let%expect_test "[pop_to_buffer]" =
-    Current_buffer.set_temporarily_to_temp_buffer Sync (fun () ->
+    Current_buffer.set_temporarily_to_temp_buffer (fun () ->
       Blocking.pop_to_buffer (Current_buffer.get ());
       show ());
     [%expect {| "#<window 1 on  *temp*>" |}];
@@ -40,26 +40,14 @@ module%test _ = struct
   ;;
 
   let%expect_test "[set]" =
-    let window1, window4 =
+    let window4 =
       match Frame.window_list () with
-      | [ x; y ] -> x, y
+      | [ (_ : Window.t); window4 ] -> window4
       | _ -> raise_s [%message [%here]]
     in
     show ();
     [%expect {| "#<window 1 on *scratch*>" |}];
     set window4;
-    show ();
-    [%expect {| "#<window 4 on *scratch*>" |}];
-    set_temporarily Sync window1 ~f:show;
-    [%expect {| "#<window 1 on *scratch*>" |}];
-    show ();
-    [%expect {| "#<window 4 on *scratch*>" |}];
-    let%bind () =
-      set_temporarily Async window1 ~f:(fun () ->
-        let%map () = Clock_ns.after (sec_ns 0.001) in
-        show ())
-    in
-    [%expect {| "#<window 1 on *scratch*>" |}];
     show ();
     [%expect {| "#<window 4 on *scratch*>" |}];
     return ()

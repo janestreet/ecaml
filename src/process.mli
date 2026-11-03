@@ -267,8 +267,7 @@ val kill : t -> unit
 val extend_sentinel
   :  ?here:Stdlib.Lexing.position
   -> t
-  -> (unit, 'a) Defun.Returns.t
-  -> sentinel:(event:string -> 'a)
+  -> sentinel:(event:string -> unit)
   -> unit
 
 (** Prefer [extend_sentinel], which doesn't clobber existing sentinels.
@@ -277,6 +276,5 @@ val extend_sentinel
 val set_sentinel
   :  ?here:Stdlib.Lexing.position
   -> t
-  -> (unit, 'a) Defun.Returns.t
-  -> sentinel:(event:string -> 'a)
+  -> sentinel:(event:string -> unit)
   -> unit

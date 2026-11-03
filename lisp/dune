@@ -6,3 +6,12 @@
   (alias ../../full-emacs-runtime-deps-without-elcs))
  (action
   (bash "../../bin/emacs --batch -Q -l %{first_dep} ecaml.el")))
+
+(rule
+ (targets ecaml-early.elc)
+ (deps
+  (:first_dep ../../build-scripts/byte-compile-file.el)
+  ecaml-early.el
+  (alias ../../full-emacs-runtime-deps-without-elcs))
+ (action
+  (bash "../../bin/emacs --batch -Q -l %{first_dep} ecaml-early.el")))

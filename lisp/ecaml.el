@@ -53,6 +53,20 @@ rendered, MESSAGE is also included therein."
   (setq ecaml-profiled-functions (delq function ecaml-profiled-functions))
   (message "You just removed Ecaml profiling of %s" function))
 
+(defun ecaml-ansi-color-apply-face-text-property (beg end face)
+  "Apply FACE to BEG..END as a `face' text property.
+
+Intended as a value for `ansi-color-apply-face-function'.  Like
+`ansi-color-apply-text-property-face', but uses the `face' property
+rather than `font-lock-face'.  The `face' property renders even in
+buffers where `font-lock-mode' is disabled, and merges with faces
+added by `add-face-text-property', whereas a `face' property added by
+other code would entirely hide colors stored in `font-lock-face'.
+Only use this in buffers that don't use font-lock fontification,
+since fontification overwrites the `face' property."
+  (when face
+    (put-text-property beg end 'face face)))
+
 ;; This startup is coupled with `start_scheduler' in async_ecaml.ml: the OCaml
 ;; side leaves the Async scheduler lock held until this code registers the pipe
 ;; process that Elisp uses to run Async cycles.

@@ -57,21 +57,18 @@ val find_or_create : name:string -> t
 (** [kill t] kills [t], so that [not (is_live t)]. [(describe-function 'kill-buffer)]. *)
 val kill : t -> unit Deferred.t
 
-module Blocking : sig
-  val kill : t -> unit
-end
-
 (** Return a list of all windows on the current terminal that are displaying the given
     buffer.
 
     [(describe-function 'get-buffer-window-list)] *)
 val displayed_in : ?current_frame_only:bool -> t -> Window0.t list
 
-(** [(Info-goto-node "(elisp)Choosing Window")] [(describe-function 'display-buffer)] *)
-val display : t -> Window0.t option
+(** [(Info-goto-node "(elisp)Choosing Window")] [(describe-function 'display-buffer)].
+    [inhibit_same_window:true] keeps [t] out of the selected window. *)
+val display : ?inhibit_same_window:bool (** default is [false] *) -> t -> Window0.t option
 
 (** Like [display], but ignores the result. *)
-val display_i : t -> unit
+val display_i : ?inhibit_same_window:bool -> t -> unit
 
 (** [(describe-function 'view-buffer)] *)
 val view : t -> unit Deferred.t
@@ -89,6 +86,22 @@ val buffer_local_variables : t -> (Symbol.t * Value.t option) list
 
     See also [Selected_window.find_file]. *)
 val find_file_noselect : Filename.t -> t Deferred.t
+
+module Blocking : sig
+  val kill : t -> unit
+
+  (** [save] is [save] below, for callers that are already running outside of Async, e.g.
+      in [Async_ecaml.Private.run_outside_async]. *)
+  val save : t -> unit
+
+  (** [find_file_noselect] is [find_file_noselect] above, for callers that are already
+      running outside of Async. *)
+  val find_file_noselect : Filename.t -> t
+
+  (** [rename_kill_existing] is [rename_kill_existing] below, for callers that are already
+      running outside of Async. *)
+  val rename_kill_existing : t -> name:string -> unit
+end
 
 (** From [(Info-goto-node "(emacs)Select Buffer")]:
 
@@ -113,9 +126,11 @@ val save_some
   -> unit
   -> unit Deferred.t
 
+(** [(describe-function 'save-buffer)] [(Info-goto-node "(elisp)Saving Buffers")] *)
+val save : t -> unit Deferred.t
+
 val with_temp_buffer
   :  ?name:string (** passed to [generate-new-buffer] *)
-  -> (_, 'a) Sync_or_async.t
   -> (t -> 'a)
   -> 'a
 

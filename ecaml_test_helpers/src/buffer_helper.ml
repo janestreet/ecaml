@@ -1,14 +1,30 @@
 open! Core
 open! Import
 
-let with_buffer sync_or_async contents ~f =
-  Current_buffer.set_temporarily_to_temp_buffer sync_or_async (fun () ->
+(* Emacs creates these buffers lazily, at times that don't depend on the test at hand:
+
+   - [ *code-conversion-work*] is created the first time Emacs decodes process output,
+     which can happen whenever [block_on_async] waits.
+   - [*profile*] is created the first time a profiled call takes longer than
+     [ecaml-profile-hide-top-level-if-less-than]. *)
+let nondeterministic_buffer_names = [ " *code-conversion-work*"; "*profile*" ]
+
+let all_live () =
+  Buffer.all_live ()
+  |> List.filter ~f:(fun buffer ->
+    match Buffer.name buffer with
+    | None -> true
+    | Some name -> not (List.mem nondeterministic_buffer_names name ~equal:String.equal))
+;;
+
+let with_buffer contents ~f =
+  Current_buffer.set_temporarily_to_temp_buffer (fun () ->
     Point.insert_text (contents |> Text.of_utf8_bytes);
     f ())
 ;;
 
-let with_buffer_and_point sync_or_async contents line_and_column ~f =
-  with_buffer sync_or_async contents ~f:(fun () ->
+let with_buffer_and_point contents line_and_column ~f =
+  with_buffer contents ~f:(fun () ->
     Point.goto_line_and_column line_and_column;
     f ())
 ;;
@@ -20,14 +36,14 @@ let utf8_lower_right_U259F = "▟"
 let show_buffer ~block_out =
   let start, end_ = Point.min (), Point.max () in
   let all_contents =
-    Current_buffer.save_restriction Sync (fun () ->
+    Current_buffer.save_restriction (fun () ->
       Current_buffer.widen ();
       Current_buffer.contents () |> Text.to_utf8_bytes)
   in
   let start_marker = Marker.create () in
   let end_marker = Marker.create () in
   Marker.set_insertion_type end_marker After_inserted_text;
-  Current_buffer.set_temporarily_to_temp_buffer Sync (fun () ->
+  Current_buffer.set_temporarily_to_temp_buffer (fun () ->
     Point.insert all_contents;
     Marker.set start_marker (Current_buffer.get ()) start;
     Marker.set end_marker (Current_buffer.get ()) end_;
@@ -79,9 +95,9 @@ let show_active_region () =
       the concatenated strings may be overwritten by subsequent calls.  */
    v} *)
 let show_with_overlay_text () =
-  Buffer.with_temp_buffer Sync (fun temp_buffer ->
+  Buffer.with_temp_buffer (fun temp_buffer ->
     let write before text after =
-      Current_buffer.set_temporarily Sync temp_buffer ~f:(fun () ->
+      Current_buffer.set_temporarily temp_buffer ~f:(fun () ->
         Point.insert before;
         Point.insert_text text;
         Point.insert after)
@@ -91,7 +107,7 @@ let show_with_overlay_text () =
       | exception _ -> ()
       | s -> write "<overlay>" s "</overlay>"
     in
-    Current_buffer.save_excursion Sync (fun () ->
+    Current_buffer.save_excursion (fun () ->
       Point.goto_min ();
       let all_overlays = Overlay.in_ ~start:(Point.min ()) ~end_:(Point.max ()) in
       let all_endpoints =
@@ -195,8 +211,7 @@ let show_with_overlay_text () =
           loop ())
       in
       loop ();
-      Current_buffer.set_temporarily Sync temp_buffer ~f:(fun () ->
-        show_buffer ~block_out:[])))
+      Current_buffer.set_temporarily temp_buffer ~f:(fun () -> show_buffer ~block_out:[])))
 ;;
 
 module Sample_input = struct

@@ -4,7 +4,7 @@ open! Import
 open Buffer_helper
 
 let%expect_test "[show_point] does not modify buffer" =
-  Current_buffer.set_temporarily_to_temp_buffer Sync (fun () ->
+  Current_buffer.set_temporarily_to_temp_buffer (fun () ->
     Point.insert "Foo bar baz.";
     Point.forward_char_exn (-3);
     let old = Current_buffer.chars_modified_tick () in
@@ -16,7 +16,7 @@ let%expect_test "[show_point] does not modify buffer" =
 ;;
 
 let%expect_test "[show_point] works at beginning and end of buffer." =
-  Current_buffer.set_temporarily_to_temp_buffer Sync (fun () ->
+  Current_buffer.set_temporarily_to_temp_buffer (fun () ->
     Point.insert "Foo bar baz.";
     Point.goto_min ();
     show_point ();
@@ -35,7 +35,7 @@ let%expect_test "[show_point] works at beginning and end of buffer." =
 ;;
 
 let%expect_test "[show_active_region]" =
-  Current_buffer.set_temporarily_to_temp_buffer Sync (fun () ->
+  Current_buffer.set_temporarily_to_temp_buffer (fun () ->
     Point.insert "Foo bar baz.\nHam, spam, and eggs.";
     Point.goto_min ();
     show_point ();
@@ -60,7 +60,7 @@ let%expect_test "[show_active_region]" =
 ;;
 
 let%expect_test "[show_point] works correctly when the buffer is narrowed" =
-  Current_buffer.set_temporarily_to_temp_buffer Sync (fun () ->
+  Current_buffer.set_temporarily_to_temp_buffer (fun () ->
     Point.insert "Foo bar baz.\nSecond line.";
     Point.goto_min ();
     Point.forward_char_exn 7;

@@ -9,11 +9,6 @@ module Q = struct
   let require = "require" |> Symbol.intern
 end
 
-module Current_buffer = Current_buffer0
-
-type t = Value.t [@@deriving sexp_of]
-
-let load_history = Var.Wrap.("load-history" <: value)
 let defining_file = Funcall.Wrap.("symbol-file" <: Symbol.t @-> return (nil_or string))
 
 module Entry = struct
@@ -102,23 +97,8 @@ let add_entry here (entry : Entry.t) =
   | _ -> ()
 ;;
 
-let append = Funcall.Wrap.("append" <: value @-> value @-> return value)
-
-let update_emacs_with_entries ~chop_prefix ~in_dir =
-  let addition =
-    !entries
-    |> List.map ~f:(fun ((source_code_position : Source_code_position.t), entry) ->
-      String.chop_prefix_exn source_code_position.pos_fname ~prefix:chop_prefix, entry)
-    |> String.Table.of_alist_multi
-    |> Hashtbl.to_alist
-    |> List.map ~f:(fun (file, entries) ->
-      Value.cons
-        (Stdlib.Filename.concat in_dir file |> Value.of_utf8_bytes)
-        (Value.list (entries |> List.map ~f:Entry.to_value)))
-    |> Value.list
-  in
+let take_entries () =
+  let result = !entries in
   entries := [];
-  Current_buffer.set_value
-    load_history
-    (append addition (Current_buffer.value_exn load_history))
+  result
 ;;

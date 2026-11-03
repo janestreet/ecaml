@@ -49,7 +49,7 @@ let%expect_test "[set_insertion_type]" =
 ;;
 
 let%expect_test "[set]" =
-  Current_buffer.set_temporarily_to_temp_buffer Sync (fun () ->
+  Current_buffer.set_temporarily_to_temp_buffer (fun () ->
     let t = create () in
     Point.insert "foo";
     set t (Current_buffer.get ()) (2 |> Position.of_int_exn);
@@ -75,7 +75,7 @@ let%expect_test "[set]" =
 ;;
 
 let%expect_test "[copy]" =
-  Current_buffer.set_temporarily_to_temp_buffer Sync (fun () ->
+  Current_buffer.set_temporarily_to_temp_buffer (fun () ->
     let t1 = create () in
     let t2 = copy t1 in
     Point.insert "foo";

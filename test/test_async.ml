@@ -66,8 +66,7 @@ let%expect_test "Nested calls to block_on_async raise" =
          (created_at _))
         ((here app/emacs/lib/ecaml/src/async_ecaml.ml:LINE:COL)
          (context    Expect_test_config.run)
-         (created_at _))))
-      (profile_backtrace ())))
+         (created_at _))))))
     |}];
   return ()
 ;;
@@ -75,9 +74,15 @@ let%expect_test "Nested calls to block_on_async raise" =
 let%expect_test "Nested calls to block_on_async include Nested_profile backtraces" =
   show_raise ~hide_positions:true (fun () ->
     let clock = Nested_profile.Profile.Private.Clock.create ~now:Time_ns.epoch in
-    Ref.set_temporarily Nested_profile.Profile.Private.clock clock ~f:(fun () ->
-      Nested_profile.profile Sync [%lazy_message "Some badly-behaved function"] (fun () ->
-        Async_ecaml.Private.block_on_async (fun () -> Deferred.unit))));
+    Ref.sets_temporarily
+      [ T (Nested_profile.Profile.should_profile, true)
+      ; T (Nested_profile.Profile.Private.clock, clock)
+      ]
+      ~f:(fun () ->
+        Nested_profile.profile
+          Sync
+          [%lazy_message "Some badly-behaved function"]
+          (fun () -> Async_ecaml.Private.block_on_async (fun () -> Deferred.unit))));
   [%expect
     {|
     (raised (
@@ -178,10 +183,7 @@ let%expect_test "Nested calls to block_on_async raise, even via elisp" =
          (created_at _))
         ((here app/emacs/lib/ecaml/src/async_ecaml.ml:LINE:COL)
          (context    Expect_test_config.run)
-         (created_at _))))
-      (profile_backtrace (
-        (block-on-async)
-        (block-on-async))))))
+         (created_at _)))))))
     |}];
   return ()
 ;;
@@ -246,36 +248,13 @@ let%expect_test "raise in run_outside_async" =
   return ()
 ;;
 
-let%expect_test "assert_foreground in run_outside_async" =
-  let%bind () =
-    Deferred.create (fun background_job_complete ->
-      Background.don't_wait_for (fun () ->
-        let%bind () =
-          Async_ecaml.Private.run_outside_async ~allowed_in_background:true (fun () ->
-            require_does_raise ~hide_positions:true (fun () ->
-              Background.assert_foreground ~message:[%message "should raise"] ()))
-        in
-        Ivar.fill_exn background_job_complete ();
-        return ()))
-  in
-  [%expect
-    {|
-    ("Assertion failed -- running in background job"
-     ((background_job_started_at app/emacs/lib/ecaml/test/test_async.ml:LINE:COL)
-      (assertion_failed_at app/emacs/lib/ecaml/test/test_async.ml:LINE:COL))
-     "should raise")
-    |}];
-  return ()
-;;
-
-let%expect_test "[run_outside_async ~allowed_in_background:false]" =
+let%expect_test "[run_outside_async] in a background job" =
   let%bind () =
     Deferred.create (fun background_job_complete ->
       Background.don't_wait_for (fun () ->
         let%bind () =
           require_does_raise_async ~hide_positions:true (fun () ->
-            Async_ecaml.Private.run_outside_async ~allowed_in_background:false (fun () ->
-              ()))
+            Async_ecaml.Private.run_outside_async (fun () -> ()))
         in
         Ivar.fill_exn background_job_complete ();
         return ()))

@@ -38,14 +38,10 @@ val find_file_other_window : string -> unit Deferred.t
 val find_file_read_only : string -> unit Deferred.t
 
 (** [(describe-function 'save-selected-window)] *)
-val save_selected_window : (_, 'a) Sync_or_async.t -> (unit -> 'a) -> 'a
-
-(** [(describe-function 'with-selected-window)]. Avoid using [set_temporarily], which can
-    have visual artifacts that annoy the user, like flicker of the mode line or cursor. *)
-val set_temporarily : (_, 'a) Sync_or_async.t -> Window.t -> f:(unit -> 'a) -> 'a
+val save_selected_window : (unit -> 'a) -> 'a
 
 (** [(describe-function 'save-window-excursion)] *)
-val save_window_excursion : (_, 'a) Sync_or_async.t -> (unit -> 'a) -> 'a
+val save_window_excursion : (unit -> 'a) -> 'a
 
 (** [(describe-function 'quit-window)] *)
 val quit : unit -> unit Deferred.t
@@ -68,4 +64,6 @@ val screen_line_at_point : unit -> int
 
 module Blocking : sig
   val pop_to_buffer : Buffer.t -> unit
+  val find_file : string -> unit
+  val find_file_read_only : string -> unit
 end

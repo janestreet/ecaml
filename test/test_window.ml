@@ -31,9 +31,9 @@ let%expect_test "accessors" =
   show t;
   [%expect
     {|
-    ((body_height (Ok 23))
+    ((body_height (Ok 22))
      (buffer      (Ok "#<buffer *scratch*>"))
-     (height      (Ok 24))
+     (height      (Ok 23))
      (is_live     (Ok true))
      (point       (Ok 1))
      (width       (Ok 80)))
