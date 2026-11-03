@@ -65,11 +65,12 @@ let%expect_test "[get]" =
 ;;
 
 let%expect_test "[execute]" =
-  Current_buffer.set_temporarily_to_temp_buffer Async (fun () ->
-    let%bind () = execute (create_exn "foo RET bar RET") in
-    print_s [%sexp (Current_buffer.contents () : Text.t)];
-    [%expect {| "foo\nbar\n" |}];
-    return ())
+  let buffer = Buffer.create ~name:"test-execute" in
+  let%bind () = Selected_window.pop_to_buffer buffer in
+  let%bind () = execute (create_exn "foo RET bar RET") in
+  print_s [%sexp (Current_buffer.contents () : Text.t)];
+  [%expect {| "foo\nbar\n" |}];
+  Buffer.kill buffer
 ;;
 
 let print_am_executing () = print_s [%sexp (Current_buffer.value_exn am_executing : bool)]

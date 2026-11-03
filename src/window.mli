@@ -10,7 +10,6 @@
     [(Info-goto-node "(elisp)Windows")]. *)
 
 open! Core
-open! Async_kernel
 open! Import
 
 type t = Window0.t [@@deriving sexp_of]
@@ -45,11 +44,7 @@ val point_exn : t -> Position.t
 val width_exn : t -> int
 
 (** [(describe-function 'set-window-buffer)] *)
-val set_buffer_exn
-  :  ?keep_margins:bool (** default is [false] *)
-  -> t
-  -> Buffer.t
-  -> unit Deferred.t
+val set_buffer_exn : ?keep_margins:bool (** default is [false] *) -> t -> Buffer.t -> unit
 
 (** [(describe-function 'set-window-point)] *)
 val set_point_exn : t -> Position.t -> unit
@@ -77,11 +72,3 @@ val frame : t -> Frame.t
 
 (** [(describe-function 'window-minibuffer-p)] *)
 val is_minibuffer : t -> bool
-
-module Blocking : sig
-  val set_buffer_exn
-    :  ?keep_margins:bool (** default is [false] *)
-    -> t
-    -> Buffer.t
-    -> unit
-end

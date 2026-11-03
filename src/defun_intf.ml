@@ -121,18 +121,6 @@ module type Defun = sig
     -> unit
     -> unit
 
-  (** [(describe-function 'define-obsolete-function-alias)]
-
-      N.B. Load order matters. A subsequent [defun] will override the aliasing. *)
-  val define_obsolete_alias
-    :  Symbol.t
-    -> here:[%call_pos]
-    -> ?docstring:string
-    -> alias_of:Symbol.t
-    -> since:string
-    -> unit
-    -> unit
-
   val lambda : Source_code_position.t -> (_, 'a) Returns.t -> 'a t -> Function.t
 
   val lambda_nullary

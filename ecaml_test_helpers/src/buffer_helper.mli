@@ -1,14 +1,14 @@
 open! Core
 open! Import
 
+(** [Buffer.all_live], excluding buffers that Emacs creates lazily, at times that don't
+    depend on the test at hand. Tests that look at the whole buffer list should use this
+    rather than [Buffer.all_live] so that their output is deterministic. *)
+val all_live : unit -> Buffer.t list
+
 (** [with_buffer_and_point contents { col; row } ~f] runs [f] in a temp buffer with
     [contents] and point at [row] and [col]. *)
-val with_buffer_and_point
-  :  (_, 'a) Sync_or_async.t
-  -> string
-  -> Line_and_column.t
-  -> f:(unit -> 'a)
-  -> 'a
+val with_buffer_and_point : string -> Line_and_column.t -> f:(unit -> 'a) -> 'a
 
 val utf8_full_block_U2588 : string
 val utf8_upper_left_U259B : string

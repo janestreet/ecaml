@@ -5,6 +5,7 @@ open! Import0
 module Q = struct
   include Q
 
+  let inhibit_same_window = "inhibit-same-window" |> Symbol.intern
   let visible = "visible" |> Symbol.intern
 end
 
@@ -65,8 +66,27 @@ let displayed_in ?(current_frame_only = false) t =
     (if current_frame_only then Value.nil else Q.visible |> Symbol.to_value)
 ;;
 
-let display = Funcall.Wrap.("display-buffer" <: t @-> return (nil_or Window.t))
-let display_i t = ignore (display t : Window0.t option)
+let display =
+  let inhibit_same_window_action =
+    let action = Value.nil in
+    let alist =
+      Value.list [ Value.cons (Symbol.to_value Q.inhibit_same_window) Value.t ]
+    in
+    Value.cons action alist
+  in
+  let display_buffer =
+    Funcall.Wrap.("display-buffer" <: t @-> value @-> return (nil_or Window.t))
+  in
+  fun ?(inhibit_same_window = false) t ->
+    display_buffer
+      t
+      (if inhibit_same_window then inhibit_same_window_action else Value.nil)
+;;
+
+let display_i ?inhibit_same_window t =
+  ignore (display ?inhibit_same_window t : Window0.t option)
+;;
+
 let view t = Value.Private.run_outside_async (fun () -> Blocking.view t)
 
 let buffer_local_value =
@@ -87,11 +107,6 @@ let buffer_local_variables t =
     if Value.is_symbol value
     then value |> Symbol.of_value_exn, None
     else Value.car_exn value |> Symbol.of_value_exn, Some (Value.cdr_exn value))
-;;
-
-let find_file_noselect =
-  let f = Funcall.Wrap.("find-file-noselect" <: string @-> return t) in
-  fun filename -> Value.Private.run_outside_async (fun () -> f filename)
 ;;
 
 let is_internal_or_dead t =
@@ -135,12 +150,38 @@ let save_some =
       save_some_buffers (not query) which_buffers)
 ;;
 
-let with_temp_buffer ?(name = " *temp*") sync_or_async f =
+let save_buffer = Funcall.Wrap.("save-buffer" <: nullary @-> return nil)
+
+module Blocking = struct
+  include Blocking
+
+  let save t = Current_buffer0.set_temporarily t ~f:save_buffer
+  let find_file_noselect = Funcall.Wrap.("find-file-noselect" <: string @-> return t)
+
+  let rename_kill_existing buffer ~name:new_name =
+    match name buffer with
+    | None ->
+      (* buffer is dead, don't bother *)
+      ()
+    | Some old_name ->
+      if not (String.equal old_name new_name)
+      then (
+        Option.iter (find ~name:new_name) ~f:kill;
+        Current_buffer0.set_temporarily buffer ~f:(fun () ->
+          Current_buffer0.rename_exn ~name:new_name ()))
+  ;;
+end
+
+let find_file_noselect filename =
+  Value.Private.run_outside_async (fun () -> Blocking.find_file_noselect filename)
+;;
+
+(* [save-buffer] can prompt the user, e.g. when the file has changed on disk. *)
+let save t = Value.Private.run_outside_async (fun () -> Blocking.save t)
+
+let with_temp_buffer ?(name = " *temp*") f =
   let temp_buffer = create ~name in
-  Sync_or_async.protect
-    sync_or_async
-    ~f:(fun () -> f temp_buffer)
-    ~finally:(fun () -> Blocking.kill temp_buffer)
+  Exn.protect ~f:(fun () -> f temp_buffer) ~finally:(fun () -> Blocking.kill temp_buffer)
 ;;
 
 let revert =
@@ -149,8 +190,8 @@ let revert =
   in
   fun ?(confirm = false) t ->
     let noconfirm = not confirm in
-    Value.Private.run_outside_async ~allowed_in_background:noconfirm (fun () ->
-      Current_buffer0.set_temporarily Sync t ~f:(fun () ->
+    Value.Private.run_outside_async (fun () ->
+      Current_buffer0.set_temporarily t ~f:(fun () ->
         ignore (revert_buffer false noconfirm false : bool)))
 ;;
 
@@ -166,22 +207,8 @@ let chars_modified_tick =
 
 let is_modified = Funcall.Wrap.("buffer-modified-p" <: t @-> return bool)
 
-let rename_kill_existing buffer ~name:new_name =
-  match name buffer with
-  | None ->
-    (* buffer is dead, don't bother *)
-    return ()
-  | Some old_name ->
-    if not (String.equal old_name new_name)
-    then (
-      let%map () =
-        match find ~name:new_name with
-        | Some buffer -> kill buffer
-        | None -> return ()
-      in
-      Current_buffer0.set_temporarily Sync buffer ~f:(fun () ->
-        Current_buffer0.rename_exn ~name:new_name ()))
-    else return ()
+let rename_kill_existing buffer ~name =
+  Value.Private.run_outside_async (fun () -> Blocking.rename_kill_existing buffer ~name)
 ;;
 
 let disable_undo = Funcall.Wrap.("buffer-disable-undo" <: t @-> return nil)

@@ -32,11 +32,7 @@ val wrap_existing : here:[%call_pos] -> string -> t
     previous call to [wrap_existing] or creates one with the [Undistinguished] name. *)
 val find_or_wrap_existing : here:[%call_pos] -> Symbol.t -> t
 
-val change_to : t -> in_:Buffer.t -> unit Deferred.t
-
-module Blocking : sig
-  val change_to : t -> in_:Buffer.t -> unit
-end
+val change_to : t -> in_:Buffer.t -> unit
 
 (** [(describe-function 'fundamental-mode)] [(Info-goto-node "(elisp)Major Modes")] *)
 val fundamental : t
@@ -86,7 +82,7 @@ val define_derived_mode
   -> ?define_keys:(string * Symbol.t) list
   -> mode_line:string
   -> ?parent:t
-  -> ?initialize:(unit, 'a) Defun.Returns.t * (unit -> 'a)
+  -> ?initialize:(unit -> unit)
   -> unit
   -> t
 

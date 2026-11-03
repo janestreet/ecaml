@@ -8,6 +8,7 @@ module Q = struct
   let progn = "progn" |> Symbol.intern
   let quote = "quote" |> Symbol.intern
   let read_from_string = "read-from-string" |> Symbol.intern
+  let string_as_multibyte = "string-as-multibyte" |> Symbol.intern
 end
 
 include Value.Make_subtype (struct
@@ -62,7 +63,14 @@ let read
 ;;
 
 let read_buffer buffer =
-  let value, _ = read_from_string (Value.of_buffer_contents buffer) in
+  (* Read from a multibyte string, for consistency with [read]. If we read from a unibyte
+     string, then (since Emacs 31) string literals containing non-ASCII bytes would read
+     as unibyte strings of raw bytes rather than as text. [string-as-multibyte] decodes
+     the buffer's contents as UTF-8, turning any non-UTF-8 bytes into raw bytes. *)
+  let contents_as_multibyte =
+    Symbol.funcall1 Q.string_as_multibyte (Value.of_buffer_contents buffer)
+  in
+  let value, _ = read_from_string contents_as_multibyte in
   of_value_exn value
 ;;
 

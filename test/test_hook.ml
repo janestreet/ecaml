@@ -173,7 +173,7 @@ let%expect_test "[after_load] hooks" =
   add after_load f_one_shot;
   add after_load f2;
   let file = Stdlib.Filename.temp_file "ecamltest" ".el" in
-  Out_channel.write_all file ~data:"'()";
+  Out_channel.write_all file ~data:";; -*- lexical-binding: t; -*-\n'()";
   let%bind () = Load.load ~message:false file in
   [%expect
     {|
@@ -207,7 +207,7 @@ let%expect_test "Blocking async hook" =
     in
     add after_load f1;
     let file = Stdlib.Filename.temp_file "ecamltest" ".el" in
-    Out_channel.write_all file ~data:"'()";
+    Out_channel.write_all file ~data:";; -*- lexical-binding: t; -*-\n'()";
     let%bind () = Load.load ~message:false file in
     remove after_load f1;
     return ()
@@ -241,7 +241,7 @@ let%expect_test "[after_save], [kill_buffer]" =
        (Returns Value.Type.unit)
        (fun () -> print_s [%message "kill-buffer hook ran"]));
   Point.insert "foo";
-  let%bind () = Current_buffer.save () in
+  let%bind () = Buffer.save (Current_buffer.get ()) in
   [%expect {| "after-save hook ran" |}];
   let%bind () = Current_buffer.kill () in
   [%expect {| "kill-buffer hook ran" |}];

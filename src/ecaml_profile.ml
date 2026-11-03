@@ -71,12 +71,8 @@ The major mode for the *profile* buffer, which holds a log of Ecaml profile outp
 |}
     ~parent:Major_mode.special
     ~mode_line:"ecaml-profile"
-    ~initialize:
-      ( Returns Value.Type.unit
-      , fun () ->
-          Hook.add_local
-            Buffer.kill_buffer_query_functions
-            profile_kill_buffer_query_function )
+    ~initialize:(fun () ->
+      Hook.add_local Buffer.kill_buffer_query_functions profile_kill_buffer_query_function)
     ()
 ;;
 
@@ -105,7 +101,7 @@ end = struct
   let initialize_profile_buffer () =
     profile_buffer := Initializing;
     let buffer = Buffer.create ~name:"*profile*" in
-    Major_mode.Blocking.change_to major_mode ~in_:buffer;
+    Major_mode.change_to major_mode ~in_:buffer;
     Buffer_local.set Current_buffer.truncate_lines true buffer;
     (* Force it to be in ~ to avoid inheriting the default-directory from wherever we
        first called into the profiler. *)
@@ -123,20 +119,15 @@ end = struct
   ;;
 end
 
-let tag_function =
-  Defvar.defvar
-    ("ecaml-profile-tag-frame-function" |> Symbol.intern)
-    [%here]
-    ~docstring:
-      {|
-A function of no arguments called when creating a profile frame.
+(* [ecaml-profile-tag-frame] is defined in ecaml-early.el, which jane-ecaml.el loads
+   before the Ecaml plugin, so it is defined before any profile frame is created. It
+   dispatches to [ecaml-profile-tag-frame-function], also defined in ecaml-early.el. *)
+let tag_frame = Funcall.Wrap.("ecaml-profile-tag-frame" <: bool @-> return (nil_or value))
 
-The return value of this function is added to the profile frame, to
-provide additional context (e.g., the current buffer).
-|}
-    ~type_:(Value.Type.nil_or Function.type_)
-    ~initial_value:None
-    ()
+let tag_function =
+  Var.create
+    ("ecaml-profile-tag-frame-function" |> Symbol.intern)
+    Value.Type.(nil_or Function.type_)
 ;;
 
 let () =
@@ -159,7 +150,8 @@ let () =
       ~group:Customization.Group.ecaml
       ~type_:Value.Type.bool
       ~customization_type:Boolean
-      ~standard_value:true
+      ~standard_value:false
+        (* jane-customization enables profiling at runtime, but not in batch invocations. *)
       ~on_set:(fun bool -> Profile.should_profile := bool)
       ()
   in
@@ -190,7 +182,7 @@ let () =
       ()
   in
   (Profile.Private.on_async_out_of_order
-   := fun (lazy sexp) -> Echo_area.inhibit_messages Sync (fun () -> message_s sexp));
+   := fun (lazy sexp) -> Echo_area.inhibit_messages (fun () -> message_s sexp));
   (Profile.sexp_of_time_ns
    := fun time_ns ->
         match [%sexp (time_ns : Time_ns_unix.t)] with
@@ -205,9 +197,8 @@ let () =
           match Profile_buffer.profile_buffer () with
           | None -> ()
           | Some buffer ->
-            Current_buffer.set_temporarily Sync buffer ~f:(fun () ->
-              Current_buffer.inhibit_read_only Sync (fun () ->
-                Current_buffer.append_to string))
+            Current_buffer.set_temporarily buffer ~f:(fun () ->
+              Current_buffer.inhibit_read_only (fun () -> Current_buffer.append_to string))
         with
         | exn ->
           let bt = Backtrace.Exn.most_recent_for_exn exn in
@@ -224,9 +215,8 @@ let () =
        (T
           { capture =
               (fun () ->
-                match Current_buffer.value_exn tag_function with
-                | None -> None
-                | Some f -> Some (f |> Function.to_value |> Value.funcall0))
+                let new_profile = not (Profile.Private.has_current_frame ()) in
+                tag_frame new_profile)
           ; render = Option.return << [%sexp_of: Value.t]
           });
   Hook.add
@@ -297,6 +287,23 @@ Called by `post-gc-hook' to add Elisp GC information to the Ecaml profiler.
       "Disable logging of elisp->ecaml calls and durations in the `*profile*' buffer."
     ~interactive:No_arg
     (fun () -> set_should_profile false);
+  Defun.defun_nullary_nil
+    ("ecaml-profile-display" |> Symbol.intern)
+    [%here]
+    ~docstring:"View the log of elisp->ecaml calls and durations: the `*profile*' buffer."
+    ~interactive:No_arg
+    (fun () ->
+       match Profile_buffer.profile_buffer () with
+       | None -> ()
+       | Some buffer ->
+         Current_buffer.set_temporarily buffer ~f:(fun () ->
+           Point.goto_max ();
+           (* If the buffer is already displayed, [Buffer.display] doesn't move the
+              window's point, so we set it explicitly, like [view-echo-area-messages]
+              does. *)
+           match Buffer.display buffer with
+           | None -> ()
+           | Some window -> Window.set_point_exn window (Point.get ())));
   Defun.defun
     ("ecaml-profile--inner" |> Symbol.intern)
     [%here]
@@ -344,11 +351,11 @@ Test how the Ecaml profiler handles two Async jobs running in parallel.
 [@@@warning "-unused-module"]
 
 module Benchmarks = struct
-  let helper_name = "ecaml-profile-benchmark-rendering-helper"
+  let helper_name = "ecaml-profile-benchmark-rendering-helper" |> Symbol.intern
 
   let () =
     Defun.defun
-      (helper_name |> Symbol.intern)
+      helper_name
       [%here]
       ~docstring:
         {|
@@ -388,7 +395,7 @@ Benchmark the Ecaml profiler's rendering of a large %{name}.
               Ref.set_temporarily
                 Profile.hide_top_level_if_less_than
                 Time_ns.Span.zero
-                ~f:(fun () -> Funcall.Wrap.(helper_name <: value @-> return nil) data)))))
+                ~f:(fun () -> Symbol.funcall1_i helper_name data)))))
   ;;
 
   let large_string = lazy (String.make 1024 'a' |> Value.of_utf8_bytes)

@@ -8,4 +8,8 @@ type t =
 [@@deriving sexp_of]
 
 val to_filename : t -> string
-val within : t -> (_, 'r) Sync_or_async.t -> f:(unit -> 'r) -> 'r
+
+(** [within t ~f] runs [f] with [default-directory] bound to [t]. [f] must be synchronous:
+    binding [default-directory] across an [await] would leak the temporary value to
+    concurrently running Async jobs. *)
+val within : t -> f:(unit -> 'r) -> 'r

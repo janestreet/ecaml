@@ -45,7 +45,7 @@ let%expect_test "[defun]" =
   print_endline (Help.describe_function_text ~obscure_symbol:true symbol);
   [%expect
     {|
-    <SYMBOL> is a interpreted-function.
+    <SYMBOL> is an interpreted-function.
 
     (<SYMBOL> INT STRING &optional STRING-OPTIONAL &rest REST)
 
@@ -117,7 +117,7 @@ let%expect_test "[defun] tuple ordering" =
   print_endline (Help.describe_function_text ~obscure_symbol:true symbol);
   [%expect
     {|
-    <SYMBOL> is a interpreted-function.
+    <SYMBOL> is an interpreted-function.
 
     (<SYMBOL> MINUEND SUBTRAHEND)
 

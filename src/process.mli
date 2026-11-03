@@ -264,19 +264,9 @@ val kill : t -> unit
 
     Register [sentinel] as a process sentinel for the specified process. [sentinel] runs
     after any other processes sentinels set for that process. *)
-val extend_sentinel
-  :  here:[%call_pos]
-  -> t
-  -> (unit, 'a) Defun.Returns.t
-  -> sentinel:(event:string -> 'a)
-  -> unit
+val extend_sentinel : here:[%call_pos] -> t -> sentinel:(event:string -> unit) -> unit
 
 (** Prefer [extend_sentinel], which doesn't clobber existing sentinels.
 
     [(describe-function 'set-process-sentinel)] *)
-val set_sentinel
-  :  here:[%call_pos]
-  -> t
-  -> (unit, 'a) Defun.Returns.t
-  -> sentinel:(event:string -> 'a)
-  -> unit
+val set_sentinel : here:[%call_pos] -> t -> sentinel:(event:string -> unit) -> unit

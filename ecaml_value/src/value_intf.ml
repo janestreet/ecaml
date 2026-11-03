@@ -420,14 +420,7 @@ module type Value = sig
     end
 
     module Run_outside_async : sig
-      type t =
-        { f :
-            'a.
-            here:[%call_pos]
-            -> ?allowed_in_background:bool
-            -> (unit -> 'a)
-            -> 'a Deferred.t
-        }
+      type t = { f : 'a. here:[%call_pos] -> (unit -> 'a) -> 'a Deferred.t }
 
       val set_once : t Set_once.t
     end
@@ -445,12 +438,7 @@ module type Value = sig
       -> (unit -> unit Deferred.t)
       -> unit
 
-    val run_outside_async
-      :  here:[%call_pos]
-      -> ?allowed_in_background:bool
-      -> (unit -> 'a)
-      -> 'a Deferred.t
-
+    val run_outside_async : here:[%call_pos] -> (unit -> 'a) -> 'a Deferred.t
     val message_zero_alloc : t -> unit
 
     (** [message_t t] is equivalent to the elisp expression [(message "%s" t)]. *)

@@ -40,68 +40,64 @@ let entries =
 ;;
 
 let draw_and_print' t ?sort_by entries =
-  let%bind () = Current_buffer.change_major_mode major_mode in
+  Major_mode.change_to major_mode ~in_:(Current_buffer.get ());
   draw ?sort_by t entries;
-  printf "%s" (Current_buffer.contents () |> Text.to_utf8_bytes);
-  return ()
+  printf "%s" (Current_buffer.contents () |> Text.to_utf8_bytes)
 ;;
 
 let draw_and_print = draw_and_print' t
 
 (* The header is drawn in an overlay, and so is not part of the buffer contents. *)
 let%expect_test "draw table" =
-  Current_buffer.set_temporarily_to_temp_buffer Async (fun () ->
-    let%bind () = draw_and_print entries in
+  Current_buffer.set_temporarily_to_temp_buffer (fun () ->
+    draw_and_print entries;
     [%expect
       {|
       b    1   y
       a    2   z
       c    3   x
-      |}];
-    return ())
+      |}]);
+  return ()
 ;;
 
 let%expect_test "sort" =
-  Current_buffer.set_temporarily_to_temp_buffer Async (fun () ->
-    let%bind () = draw_and_print ~sort_by:("s1", `Ascending) entries in
+  Current_buffer.set_temporarily_to_temp_buffer (fun () ->
+    draw_and_print ~sort_by:("s1", `Ascending) entries;
     [%expect
       {|
       a    2   z
       b    1   y
       c    3   x
       |}];
-    let%bind () = draw_and_print ~sort_by:("s1", `Descending) entries in
+    draw_and_print ~sort_by:("s1", `Descending) entries;
     [%expect
       {|
       c    3   x
       b    1   y
       a    2   z
       |}];
-    let%bind () = draw_and_print ~sort_by:("s3", `Ascending) entries in
+    draw_and_print ~sort_by:("s3", `Ascending) entries;
     [%expect
       {|
       c    3   x
       b    1   y
       a    2   z
       |}];
-    let%bind () = draw_and_print ~sort_by:("s3", `Descending) entries in
+    draw_and_print ~sort_by:("s3", `Descending) entries;
     [%expect
       {|
       a    2   z
       b    1   y
       c    3   x
       |}];
-    let%bind () =
-      require_does_raise_async (fun () ->
-        draw_and_print ~sort_by:("i2", `Ascending) entries)
-    in
-    [%expect {| ("Column is not sortable" i2) |}];
-    return ())
+    require_does_raise (fun () -> draw_and_print ~sort_by:("i2", `Ascending) entries);
+    [%expect {| ("Column is not sortable" i2) |}]);
+  return ()
 ;;
 
 let%expect_test "id at point" =
-  Current_buffer.set_temporarily_to_temp_buffer Async (fun () ->
-    let%bind () = draw_and_print entries in
+  Current_buffer.set_temporarily_to_temp_buffer (fun () ->
+    draw_and_print entries;
     [%expect
       {|
       b    1   y
@@ -127,7 +123,7 @@ let%expect_test "id at point" =
         (s3 z)))
       |}];
     (* Point is preserved when list is redrawn. *)
-    let%bind () = draw_and_print entries in
+    draw_and_print entries;
     [%expect
       {|
       b    1   y
@@ -144,13 +140,13 @@ let%expect_test "id at point" =
       |}];
     Point.goto_max ();
     print_s [%sexp (get_record_at_point_exn t : entry option)];
-    [%expect {| () |}];
-    return ())
+    [%expect {| () |}]);
+  return ()
 ;;
 
 let%expect_test "move_point_to_record" =
-  Current_buffer.set_temporarily_to_temp_buffer Async (fun () ->
-    let%bind () = draw_and_print entries in
+  Current_buffer.set_temporarily_to_temp_buffer (fun () ->
+    draw_and_print entries;
     [%expect
       {|
       b    1   y
@@ -183,8 +179,8 @@ let%expect_test "move_point_to_record" =
         (s1 c)
         (i2 3)
         (s3 x)))
-      |}];
-    return ())
+      |}]);
+  return ()
 ;;
 
 let%expect_test "generic sortable column" =
@@ -228,12 +224,11 @@ let%expect_test "generic sortable column" =
     let sort_by = sort_by, `Ascending in
     let draw_and_print t = draw_and_print' ~sort_by t data in
     print_endline "Columns with default emacs compare:";
-    let%bind () = draw_and_print t_regular in
+    draw_and_print t_regular;
     print_endline "\nColumns with custom compare:";
-    let%bind () = draw_and_print t_with_sort in
-    return ()
+    draw_and_print t_with_sort
   in
-  let%bind () = compare ~sort_by:"idx" in
+  compare ~sort_by:"idx";
   [%expect
     {|
     Sorting by idx
@@ -252,7 +247,7 @@ let%expect_test "generic sortable column" =
      11 file11.txt
      20 file20.txt
     |}];
-  let%bind () = compare ~sort_by:"file" in
+  compare ~sort_by:"file";
   [%expect
     {|
     Sorting by file

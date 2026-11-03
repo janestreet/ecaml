@@ -97,7 +97,7 @@ let defun_around_funcall
                       ~_:(exn : exn)]
             | Call_inner_function ->
               fun exn ->
-                Echo_area.inhibit_messages Sync (fun () ->
+                Echo_area.inhibit_messages (fun () ->
                   message_s
                     [%message
                       "Ignoring advice that failed to parse its arguments"

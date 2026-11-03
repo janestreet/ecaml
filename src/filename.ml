@@ -81,6 +81,21 @@ let absolute_t =
     ~to_:File_path.Absolute.to_string
 ;;
 
+let file_path_t =
+  Value.Type.(map t)
+    ~name:[%message "file path"]
+    ~of_:(fun s ->
+      (* Emacs considers paths like [~/src] to be acceptable "absolute" paths, so we need
+         to expand them. *)
+      let s =
+        if String.is_prefix s ~prefix:"~"
+        then expand s ~in_dir:`Default_directory_in_current_buffer
+        else s
+      in
+      File_path.of_string s)
+    ~to_:File_path.to_string
+;;
+
 let relative_t =
   Value.Type.(map t)
     ~name:[%message "relative filename"]

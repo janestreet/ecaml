@@ -7,7 +7,7 @@ open! Ecaml_test_helpers
 let mode lang = Funcall.Wrap.(lang ^ "-mode" <: nullary @-> return nil) ()
 
 let%expect_test "options" =
-  Current_buffer.set_temporarily_to_temp_buffer Sync (fun () ->
+  Current_buffer.set_temporarily_to_temp_buffer (fun () ->
     mode "c";
     let show var sexp_of_a = print_s [%sexp (var () : a)] in
     show start String.sexp_of_t;
@@ -48,7 +48,7 @@ let test ?position () =
 ;;
 
 let%expect_test "goto_*_exn on multiline comment" =
-  Current_buffer.set_temporarily_to_temp_buffer Sync (fun () ->
+  Current_buffer.set_temporarily_to_temp_buffer (fun () ->
     mode "html";
     Point.insert
       {|
@@ -190,7 +190,7 @@ let%expect_test "goto_*_exn on multiline comment" =
 ;;
 
 let%expect_test "goto_end_exn on single-line comment" =
-  Current_buffer.set_temporarily_to_temp_buffer Sync (fun () ->
+  Current_buffer.set_temporarily_to_temp_buffer (fun () ->
     mode "org";
     Point.insert
       {|
@@ -332,7 +332,7 @@ let%expect_test "goto_end_exn on single-line comment" =
 ;;
 
 let%expect_test "single-line-comments on the same line as code" =
-  Current_buffer.set_temporarily_to_temp_buffer Sync (fun () ->
+  Current_buffer.set_temporarily_to_temp_buffer (fun () ->
     mode "python";
     [%expect {| Can't guess python-indent-offset, using defaults: 4 |}];
     Point.insert
@@ -381,7 +381,7 @@ def hello():
 ;;
 
 let%expect_test "two comments on one line" =
-  Current_buffer.set_temporarily_to_temp_buffer Sync (fun () ->
+  Current_buffer.set_temporarily_to_temp_buffer (fun () ->
     mode "html";
     Point.insert
       {|
@@ -461,7 +461,7 @@ let%expect_test "two comments on one line" =
 ;;
 
 let%expect_test "two block comments on one line in C" =
-  Current_buffer.set_temporarily_to_temp_buffer Sync (fun () ->
+  Current_buffer.set_temporarily_to_temp_buffer (fun () ->
     mode "c";
     Point.insert
       {|
@@ -541,7 +541,7 @@ let%expect_test "two block comments on one line in C" =
 ;;
 
 let%expect_test "mixed line and block comments in C" =
-  Current_buffer.set_temporarily_to_temp_buffer Sync (fun () ->
+  Current_buffer.set_temporarily_to_temp_buffer (fun () ->
     mode "c";
     Point.insert
       {|// line comment

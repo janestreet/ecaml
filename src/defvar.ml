@@ -29,11 +29,6 @@ let defvaralias symbol ~(here : [%call_pos]) ?docstring ~alias_of () =
   add_to_load_history symbol here
 ;;
 
-let define_obsolete_alias obsolete ~(here : [%call_pos]) ?docstring ~alias_of ~since () =
-  defvaralias obsolete ~here ?docstring ~alias_of ();
-  Obsolete.make_variable_obsolete obsolete ~current:(Some alias_of) ~since
-;;
-
 let defvar_internal
   defvar_symbol
   symbol

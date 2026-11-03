@@ -70,7 +70,7 @@ let%expect_test "finalization of embedded ocaml values" =
     Var.make_buffer_local_always var;
     let v1 : A.t = { a = "V1"; b = 1 } in
     let v2 : A.t = { a = "V2"; b = 2 } in
-    Current_buffer.set_temporarily_to_temp_buffer Sync (fun () ->
+    Current_buffer.set_temporarily_to_temp_buffer (fun () ->
       Current_buffer.set_value var v1;
       Current_buffer.set_value var v2;
       dump_embedded_values ());
@@ -96,9 +96,9 @@ let%expect_test "Emacs objects no longer referenced from OCaml can be gc'ed by E
   print_s [%sexp (Value.Stat.diff after before : Value.Stat.t)];
   [%expect
     {|
-    ((free_performed 6)
-     (free_scheduled 6)
-     (root_allocated 6))
+    ((free_performed 2)
+     (free_scheduled 2)
+     (root_allocated 2))
     |}];
   return ()
 ;;

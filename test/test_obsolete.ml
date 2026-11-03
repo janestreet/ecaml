@@ -5,123 +5,28 @@ open! Obsolete
 
 let report symbol () = print_s [%message "Called" (symbol : Symbol.t)]
 
-let alias_of =
-  let symbol = "current-function" |> Symbol.intern in
-  defun_nullary_nil symbol [%here] ~docstring:"<docstring>" (report symbol);
-  symbol
-;;
-
-let%expect_test "obsolete functions already defined" =
-  let obsolete = "foobar-2" |> Symbol.intern in
-  defun_nullary_nil obsolete [%here] ~docstring:"_" ~interactive:No_arg (report obsolete);
+let%expect_test "[defun ~obsoletes]" =
+  let symbol = "brand-new-function" |> Symbol.intern in
+  let obsolete = "crusty-old-function" |> Symbol.intern in
+  defun_nullary_nil
+    symbol
+    [%here]
+    ~docstring:"<docstring>"
+    ~obsoletes:(obsolete, Since "now")
+    (report symbol);
   print_endline (Help.describe_function_text obsolete);
   [%expect
     {|
-    foobar-2 is an interactive interpreted-function.
+    crusty-old-function is an alias for `brand-new-function'.
 
-    (foobar-2)
+    This function is obsolete since now; use `brand-new-function' instead.
 
-    _
-    |}];
-  Defun.define_obsolete_alias obsolete ~alias_of ~since:"now" ();
-  print_endline (Help.describe_function_text obsolete);
-  [%expect
-    {|
-    foobar-2 is an alias for `current-function'.
-
-    This function is obsolete since now; use `current-function' instead.
-
-    (foobar-2)
+    (crusty-old-function)
 
     <docstring>
     |}];
   Symbol.funcall0_i obsolete;
-  [%expect {| (Called (symbol current-function)) |}];
-  return ()
-;;
-
-let%expect_test "documentation for obsolete functions" =
-  let obsolete = "foobar-2" |> Symbol.intern in
-  Defun.define_obsolete_alias obsolete ~alias_of ~since:"version X.Y" ();
-  print_endline (Help.describe_function_text obsolete);
-  [%expect
-    {|
-    foobar-2 is an alias for `current-function'.
-
-    This function is obsolete since version X.Y; use `current-function'
-    instead.
-
-    (foobar-2)
-
-    <docstring>
-    |}];
-  Defun.define_obsolete_alias
-    obsolete
-    ~docstring:"arbitrary docstring"
-    ~alias_of
-    ~since:"version X.Y"
-    ();
-  print_endline (Help.describe_function_text obsolete);
-  [%expect
-    {|
-    foobar-2 is an alias for `current-function'.
-
-    This function is obsolete since version X.Y; use `current-function'
-    instead.
-
-    (foobar-2)
-
-    arbitrary docstring
-    |}];
-  Defun.define_obsolete_alias
-    obsolete
-    ~docstring:"arbitrary docstring"
-    ~alias_of
-    ~since:"now"
-    ();
-  print_endline (Help.describe_function_text obsolete);
-  [%expect
-    {|
-    foobar-2 is an alias for `current-function'.
-
-    This function is obsolete since now; use `current-function' instead.
-
-    (foobar-2)
-
-    arbitrary docstring
-    |}];
-  return ()
-;;
-
-let%expect_test "obsolete functions not yet defined" =
-  let obsolete = "foobar" |> Symbol.intern in
-  Defun.define_obsolete_alias obsolete ~alias_of ~since:"now" ();
-  print_endline (Help.describe_function_text obsolete);
-  [%expect
-    {|
-    foobar is an alias for `current-function'.
-
-    This function is obsolete since now; use `current-function' instead.
-
-    (foobar)
-
-    <docstring>
-    |}];
-  (* Later definitions override our obsolete. *)
-  defun_nullary_nil obsolete [%here] ~docstring:"_" ~interactive:No_arg (report obsolete);
-  print_endline (Help.describe_function_text obsolete);
-  [%expect
-    {|
-    foobar is an interactive interpreted-function.
-
-    This function is obsolete since now; use `current-function' instead.
-
-    (foobar)
-
-    _
-    |}];
-  Symbol.funcall0_i obsolete;
-  [%expect {| (Called (symbol foobar)) |}];
+  [%expect {| (Called (symbol brand-new-function)) |}];
   return ()
 ;;
 

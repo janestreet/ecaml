@@ -24,6 +24,7 @@ module Current_buffer = Current_buffer
 module Customization = Customization
 module Debugger = Debugger
 module Defconst = Defconst
+module Deferred_value = Deferred_value
 module Defstruct = Defstruct
 module Defun = Defun
 module Defvar = Defvar
@@ -198,7 +199,6 @@ Test [Process.set_sentinel] on a sentinel that raises.
     (fun () ->
        Ecaml_process.Process.set_sentinel
          (Ecaml_process.Process.create "true" [] ~name:"true" ())
-         (Returns Value.Type.unit)
          ~sentinel:(fun ~event:_ -> failwith "some error message"));
   defun
     ("ecaml-test-async-signal-handlers" |> Symbol.intern)

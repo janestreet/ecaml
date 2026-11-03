@@ -165,7 +165,7 @@ module Programmed_completion = struct
   ;;
 end
 
-let read_raw =
+let read_raw_blocking =
   let completing_read =
     Funcall.Wrap.(
       "completing-read"
@@ -186,16 +186,37 @@ let read_raw =
     ?default
     ~history
     () ->
-    Async_ecaml.Private.run_outside_async (fun () ->
-      let formatted_prompt = Minibuffer.format_prompt ~prompt_no_colon ~default in
-      completing_read
-        formatted_prompt
-        collection
-        predicate
-        require_match
-        initial_input
-        history
-        default)
+    let formatted_prompt = Minibuffer.format_prompt ~prompt_no_colon ~default in
+    completing_read
+      formatted_prompt
+      collection
+      predicate
+      require_match
+      initial_input
+      history
+      default
+;;
+
+let read_raw
+  ~prompt_no_colon
+  ~collection
+  ?predicate
+  ?require_match
+  ?initial_input
+  ?default
+  ~history
+  ()
+  =
+  Async_ecaml.Private.run_outside_async (fun () ->
+    read_raw_blocking
+      ~prompt_no_colon
+      ~collection
+      ?predicate
+      ?require_match
+      ?initial_input
+      ?default
+      ~history
+      ())
 ;;
 
 let completing_read
@@ -219,6 +240,74 @@ let completing_read
     ()
 ;;
 
+let crm_separator = Var.Wrap.("crm-separator" <: string)
+
+module Blocking = struct
+  let read
+    ~prompt_no_colon
+    ~collection
+    ?annotation_function
+    ?display_sort_function
+    ?require_match
+    ?initial_input
+    ?default
+    ~history
+    ()
+    =
+    read_raw_blocking
+      ~prompt_no_colon
+      ~collection:
+        (Programmed_completion.create
+           collection
+           ~annotation_function
+           ~display_sort_function
+         |> Programmed_completion.to_value)
+      ?require_match
+      ?initial_input
+      ?default
+      ~history:(Minibuffer.History.symbol history)
+      ()
+  ;;
+
+  let read_multiple =
+    let completing_read_multiple =
+      Funcall.Wrap.(
+        "completing-read-multiple"
+        <: string
+           @-> list string
+           @-> value
+           @-> Require_match.t
+           @-> Initial_input.t
+           @-> Symbol.t
+           @-> nil_or string
+           @-> return (list string))
+    in
+    fun ~prompt_no_colon
+      ~collection
+      ?(require_match = Require_match.False)
+      ?(separator_regexp = "[ \t]*,[ \t]*")
+      ?(initial_input = Initial_input.Empty)
+      ?default
+      ~history
+      () ->
+      let predicate = Value.nil in
+      let formatted_prompt = Minibuffer.format_prompt ~prompt_no_colon ~default in
+      Current_buffer.set_value_temporarily
+        Sync
+        crm_separator
+        separator_regexp
+        ~f:(fun () ->
+          completing_read_multiple
+            formatted_prompt
+            collection
+            predicate
+            require_match
+            initial_input
+            (Minibuffer.History.symbol history)
+            default)
+  ;;
+end
+
 let read
   ~prompt_no_colon
   ~collection
@@ -230,18 +319,17 @@ let read
   ~history
   ()
   =
-  completing_read
-    ~prompt_no_colon
-    ~programmed_completion:
-      (Programmed_completion.create
-         collection
-         ~annotation_function
-         ~display_sort_function)
-    ?require_match
-    ?initial_input
-    ?default
-    ~history
-    ()
+  Async_ecaml.Private.run_outside_async (fun () ->
+    Blocking.read
+      ~prompt_no_colon
+      ~collection
+      ?annotation_function
+      ?display_sort_function
+      ?require_match
+      ?initial_input
+      ?default
+      ~history
+      ())
 ;;
 
 let read_map_key
@@ -288,45 +376,26 @@ let read_map_key
              ~keys:(Map.keys collection : string list)])
 ;;
 
-let crm_separator = Var.Wrap.("crm-separator" <: string)
-
-let read_multiple =
-  let completing_read_multiple =
-    Funcall.Wrap.(
-      "completing-read-multiple"
-      <: string
-         @-> list string
-         @-> value
-         @-> Require_match.t
-         @-> Initial_input.t
-         @-> Symbol.t
-         @-> nil_or string
-         @-> return (list string))
-  in
-  fun ~prompt_no_colon
-    ~collection
-    ?(require_match = Require_match.False)
-    ?(separator_regexp = "[ \t]*,[ \t]*")
-    ?(initial_input = Initial_input.Empty)
-    ?default
-    ~history
-    () ->
-    Async_ecaml.Private.run_outside_async (fun () ->
-      let predicate = Value.nil in
-      let formatted_prompt = Minibuffer.format_prompt ~prompt_no_colon ~default in
-      Current_buffer.set_value_temporarily
-        Sync
-        crm_separator
-        separator_regexp
-        ~f:(fun () ->
-          completing_read_multiple
-            formatted_prompt
-            collection
-            predicate
-            require_match
-            initial_input
-            (Minibuffer.History.symbol history)
-            default))
+let read_multiple
+  ~prompt_no_colon
+  ~collection
+  ?require_match
+  ?separator_regexp
+  ?initial_input
+  ?default
+  ~history
+  ()
+  =
+  Async_ecaml.Private.run_outside_async (fun () ->
+    Blocking.read_multiple
+      ~prompt_no_colon
+      ~collection
+      ?require_match
+      ?separator_regexp
+      ?initial_input
+      ?default
+      ~history
+      ())
 ;;
 
 let read_multiple_map_keys

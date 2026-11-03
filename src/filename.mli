@@ -66,5 +66,11 @@ val read : prompt:string -> t Deferred.t
     conversion. *)
 val absolute_t : File_path.Absolute.t Value.Type.t
 
+(** A file name that may be absolute or relative.
+
+    As with [absolute_t], absolute Elisp values may begin with [~/] instead of [/], so
+    they are automatically expanded on conversion. *)
+val file_path_t : File_path.t Value.Type.t
+
 (** A relative file name. *)
 val relative_t : File_path.Relative.t Value.Type.t

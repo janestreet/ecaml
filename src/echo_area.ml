@@ -4,20 +4,10 @@ open! Import0
 module Current_buffer = Current_buffer0
 
 let inhibit_message = Var.Wrap.("inhibit-message" <: bool)
-
-let inhibit_messages (type a b) (sync_or_async : (a, b) Sync_or_async.t) (f : unit -> b) =
-  (match sync_or_async with
-   | Sync -> ()
-   | Async ->
-     Background.assert_foreground
-       ~message:
-         [%sexp "Echo_area.inhibit_messages called asynchronously in background job"]
-       ());
-  Current_buffer.set_value_temporarily sync_or_async inhibit_message true ~f
-;;
+let inhibit_messages f = Current_buffer.set_value_temporarily Sync inhibit_message true ~f
 
 let maybe_echo ~echo f =
-  if Option.value echo ~default:true then f () else inhibit_messages Sync f
+  if Option.value echo ~default:true then f () else inhibit_messages f
 ;;
 
 let message ?echo s = maybe_echo ~echo (fun () -> Value.message s)

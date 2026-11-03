@@ -31,6 +31,49 @@ let%expect_test "UTF-8" =
   return ()
 ;;
 
+let%expect_test "[to_utf8_bytes_exn] inverts [of_utf8_bytes] on non-UTF-8 bytes" =
+  (* [of_utf8_bytes] turns non-UTF-8 bytes into raw bytes; in a string that also holds
+     multibyte text, the module API's [copy_string_contents] refuses to encode them, and
+     [to_utf8_bytes_exn] falls back to [encode-coding-string]. *)
+  let test string =
+    let t = string |> of_utf8_bytes in
+    require_equal (module String) (t |> to_utf8_bytes_exn) string
+  in
+  test "\xff";
+  test "\xff\xfe";
+  test "\xff sparkles \xe2\x9c\xa8";
+  test "┌\xc0┐";
+  (* Emacs represents a raw byte in a multibyte string as an overlong two-byte sequence,
+     but reads such a sequence back as two raw bytes rather than as one. *)
+  test "\xc0\x80";
+  test "\xc1\xbf";
+  (* the UTF-8 encoding of the surrogate U+D800, which is not a unicode scalar value *)
+  test "\xed\xa0\x80";
+  [%expect {| |}];
+  return ()
+;;
+
+let%expect_test "[to_utf8_bytes_exn] inverts [of_utf8_bytes] on arbitrary bytes" =
+  let generator =
+    (* Mix uniformly random bytes, most sequences of which are not well-formed UTF-8, with
+       the UTF-8 encodings of unicode scalar values, so that we generate strings that
+       Emacs represents as multibyte strings containing raw bytes. *)
+    Quickcheck.Generator.union
+      [ Quickcheck.Generator.map
+          (Char.gen_uniform_inclusive Char.min_value Char.max_value)
+          ~f:String.of_char
+      ; Quickcheck.Generator.map Uchar.quickcheck_generator ~f:(fun uchar ->
+          (String.Utf8.of_list [ uchar ] :> string))
+      ]
+    |> Quickcheck.Generator.list
+    |> Quickcheck.Generator.map ~f:String.concat
+  in
+  Quickcheck.test generator ~sexp_of:[%sexp_of: string] ~f:(fun string ->
+    require_equal (module String) (string |> of_utf8_bytes |> to_utf8_bytes_exn) string);
+  [%expect {| |}];
+  return ()
+;;
+
 let%expect_test "[sexp_of_t] on a hash table respects [Print.length]" =
   let test size =
     let htbl = Hash_table.create () in

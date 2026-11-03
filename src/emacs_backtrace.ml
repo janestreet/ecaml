@@ -5,7 +5,7 @@ let standard_output = Var.Wrap.("standard-output" <: value)
 let backtrace = Funcall.Wrap.("backtrace" <: nullary @-> return nil)
 
 let get () =
-  Current_buffer.set_temporarily_to_temp_buffer Sync (fun () ->
+  Current_buffer.set_temporarily_to_temp_buffer (fun () ->
     Current_buffer.set_value_temporarily
       Sync
       standard_output

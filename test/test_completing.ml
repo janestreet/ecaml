@@ -6,6 +6,36 @@ open! Completing
 let collection = [ "foo"; "bar"; "baz" ]
 let prompt_no_colon = ""
 
+let%expect_test "[Blocking.read]" =
+  let%bind () =
+    with_input_macro "f TAB RET" (fun () ->
+      Async_ecaml.Private.run_outside_async (fun () ->
+        print_s
+          [%sexp
+            (Blocking.read ~prompt_no_colon ~collection ~history:Minibuffer.history ()
+             : string)]))
+  in
+  [%expect {| foo |}];
+  return ()
+;;
+
+let%expect_test "[Blocking.read_multiple]" =
+  let%bind () =
+    with_input_macro "bar,f TAB RET" (fun () ->
+      Async_ecaml.Private.run_outside_async (fun () ->
+        print_s
+          [%sexp
+            (Blocking.read_multiple
+               ~prompt_no_colon
+               ~collection
+               ~history:Minibuffer.history
+               ()
+             : string list)]))
+  in
+  [%expect {| (bar foo) |}];
+  return ()
+;;
+
 let%expect_test "completing_read" =
   let%bind () =
     with_input_macro "bar TAB RET" (fun () ->
@@ -18,6 +48,7 @@ let%expect_test "completing_read" =
   [%expect
     {|
     [minibuffer-message] Sole completion
+
 
     bar
     |}];

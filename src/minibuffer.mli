@@ -92,6 +92,22 @@ val y_or_n_with_timeout
 (** [(describe-function 'yes-or-no-p)] [(Info-goto-node "(elisp)Yes-or-No Queries")] *)
 val yes_or_no : prompt:string -> bool Deferred.t
 
+module Blocking : sig
+  (** [y_or_n] is [y_or_n] above, for callers that are already running outside of Async. *)
+  val y_or_n : prompt:string -> bool
+
+  (** [read_string] is [read_string] above, for callers that are already running outside
+      of Async. *)
+  val read_string
+    :  prompt_no_colon:string
+    -> ?initial_contents:Initial_input.t
+    -> ?default_value:string
+    -> history:History.t
+    -> ?history_pos:int
+    -> unit
+    -> string
+end
+
 (** [(describe-variable 'minibuffer-exit-hook)]
     [(Info-goto-node "(elisp)Minibuffer Misc")] *)
 val exit_hook : (Hook.normal, unit) Hook.t

@@ -171,7 +171,6 @@ module Pending_emacs_call = struct
   type 'a call =
     { f : unit -> 'a
     ; result : ('a, exn) Result.t Ivar.t
-    ; running_in_background : Source_code_position.t option
     }
 
   type t = T : 'a call -> t
@@ -224,14 +223,10 @@ let run_pending_emacs_calls () =
       Scheduler.unlock t.scheduler;
       let run_job () = Result.try_with pending_emacs_call.f in
       let result =
-        match pending_emacs_call.running_in_background with
-        | Some location ->
-          Background.Private.mark_running_in_background ~here:location run_job
-        | None ->
-          (* If we're in this branch, that means this job was enqueued in the foreground,
-             and so the foreground is blocking on the result of this job. So we make sure
-             this job sees that it is running in the foreground. *)
-          Background.Private.mark_running_in_foreground run_job
+        (* Pending emacs calls can only be enqueued in the foreground, and so the
+           foreground is blocking on the result of this job. So we make sure this job sees
+           that it is running in the foreground. *)
+        Background.Private.mark_running_in_foreground run_job
       in
       Scheduler.lock t.scheduler;
       Ivar.fill_exn pending_emacs_call.result result));
@@ -505,29 +500,21 @@ module Private = struct
         })
   ;;
 
-  let run_outside_async ~(here : [%call_pos]) ?(allowed_in_background = false) f =
-    if not allowed_in_background
-    then
-      Background.assert_foreground
-        ~message:[%sexp "[run_outside_async] called unsafely in background"]
-        ~here
-        ();
+  let run_outside_async ~(here : [%call_pos]) f =
+    Background.assert_foreground
+      ~message:[%sexp "[run_outside_async] called unsafely in background"]
+      ~here
+      ();
     let open Async in
     Deferred.create (fun result ->
-      Queue.enqueue
-        t.pending_emacs_calls
-        (T
-           { f
-           ; result
-           ; running_in_background = Background.currently_running_in_background ()
-           });
+      Queue.enqueue t.pending_emacs_calls (T { f; result });
       (* We request an Async cycle to ensure the pending call is run in a timely manner. *)
       Cycle_requester.request_cycle t.cycle_requester)
     >>| Result.ok_exn
   ;;
 
-  let run_outside_async1 ~(here : [%call_pos]) ?allowed_in_background f a =
-    run_outside_async ~here ?allowed_in_background (fun () -> f a)
+  let run_outside_async1 ~(here : [%call_pos]) f a =
+    run_outside_async ~here (fun () -> f a)
   ;;
 
   let () =

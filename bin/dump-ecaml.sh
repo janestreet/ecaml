@@ -12,7 +12,7 @@ basename=$(basename "$filename")
 # In our site lisp, the ecaml plugin is loaded by running (require 'jane-ecaml), and our
 # site lisp is loaded at dump time.  To make that work, we make this stub jane-ecaml.el
 # which just loads the ecaml plugin without having an associated dump.
-cat <<EOF > $filename
+cat <<EOF > "$filename"
 ;; Temporary wrapper for the ecaml module, overwritten by the real dump after dumping.  -*- lexical-binding: t; -*-
 (load (concat (file-name-directory load-file-name) "$plugin_so") nil t)
 (provide '$feature)
@@ -26,6 +26,7 @@ EOF
 
 ;;; Code:
 (require 'cl-lib)
+(require 'ecaml-early)
 (defconst ecaml-dumped t
   "If non-nil, Ecaml definitions were loaded from a pregenerated dump.")
 (if (equal (getenv "TESTING_FRAMEWORK") "inline-test")
@@ -38,9 +39,14 @@ EOF
 EOF
     # Set ECAML_DUMPING so that whenever Ecaml evals a form to define
     # something, it also writes that form to stdout.
-    ECAML_DUMPING=true "$emacs" -q --no-site-file --batch -l ./jane-ecaml.el
+    ECAML_DUMPING=true \
+      "$emacs" -q --no-site-file --batch \
+      --eval "(setq-default pp-max-width 240)" \
+      --eval "(setq-default indent-tabs-mode nil)" \
+      -l ./jane-ecaml.el
+
     cat << EOF
 (provide '$feature)
 ;;; $basename ends here
 EOF
-} | sponge $filename
+} | sponge "$filename"

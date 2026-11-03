@@ -30,16 +30,8 @@ let compare_name t1 t2 = Symbol.compare_name t1.symbol t2.symbol
 let t_by_symbol : t String.Table.t = Hashtbl.create (module String)
 let major_mode_var = Buffer_local.Wrap.("major-mode" <: Symbol.t)
 
-module Blocking = struct
-  let change_to t ~in_:buffer =
-    Current_buffer.set_temporarily Sync buffer ~f:(fun () ->
-      Funcall.Wrap.(symbol t |> Symbol.name <: nullary @-> return nil) ())
-  ;;
-end
-
-let change_to t ~in_ =
-  Value.Private.run_outside_async ~allowed_in_background:true (fun () ->
-    Blocking.change_to t ~in_)
+let change_to t ~in_:buffer =
+  Current_buffer.set_temporarily buffer ~f:(fun () -> Symbol.funcall0_i (symbol t))
 ;;
 
 let add wrapped_at symbol =
@@ -107,7 +99,6 @@ let add_auto_mode auto_mode ~symbol =
 ;;
 
 let define_derived_mode
-  (type a)
   ?auto_mode
   symbol
   here
@@ -115,19 +106,19 @@ let define_derived_mode
   ?(define_keys = [])
   ~mode_line
   ?parent
-  ?(initialize : ((unit, a) Defun.Returns.t * (unit -> a)) option)
+  ?initialize
   ()
   =
   let docstring = docstring |> String.strip in
   require_nonempty_docstring here ~docstring;
   let initialize =
-    Option.map initialize ~f:(fun (returns, f) ->
+    Option.map initialize ~f:(fun f ->
       Defun.defun_func
         ([%string "%{Symbol.name symbol}--init"] |> Symbol.intern)
         here
         ~docstring:
           [%string "Initializer for %{Documentation.Special_sequence.symbol symbol}."]
-        returns
+        (Returns Value.Type.unit)
         (let%map_open.Defun () = return () in
          f ())
       |> Function.to_value
@@ -148,6 +139,12 @@ let define_derived_mode
        | None -> []
        | Some fn -> [ Form.apply fn [] ]));
   Load_history.add_entry here (Fun symbol);
+  (* [define-derived-mode] gives the keymap, syntax table, and abbrev table a
+     [definition-name] property naming the mode, which [find-function-search-for-symbol]
+     follows before looking for the variable's definition. So also record the mode as a
+     variable defined here, even though it isn't one. This is a total hack, but we're
+     abusing the load history by dumping [define-derived-mode] anyway, so this is fine. *)
+  Load_history.add_entry here (Var symbol);
   List.iter [ "abbrev-table"; "hook"; "map"; "syntax-table" ] ~f:(fun suffix ->
     Load_history.add_entry
       here

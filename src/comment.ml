@@ -56,7 +56,7 @@ let beginning =
 ;;
 
 let am_in_single_line_comment () =
-  Current_buffer.save_excursion Sync (fun () ->
+  Current_buffer.save_excursion (fun () ->
     Point.end_of_line ();
     Option.is_some (beginning ()))
 ;;
@@ -80,7 +80,7 @@ module Syntax = struct
        find the end. *)
     let%bind.Option comment_start = syntax_ppss_comment_start () in
     let%bind.Option comment_end =
-      Current_buffer.save_excursion Sync (fun () ->
+      Current_buffer.save_excursion (fun () ->
         Point.goto_char comment_start;
         if forward_comment 1 then Some (Point.get ()) else None)
     in
@@ -117,7 +117,7 @@ let bounds_of_comment_at_point () =
            else Point.get ()
        in
        let comment_start =
-         Current_buffer.save_excursion Sync (fun () ->
+         Current_buffer.save_excursion (fun () ->
            Point.goto_char (search `Backward ~last_point:(Point.get ()));
            Point.end_of_line ();
            (* [beginning] moves point inside the comment (after the comment-start marker)
@@ -128,7 +128,7 @@ let bounds_of_comment_at_point () =
            | None -> Point.get ())
        in
        let comment_end =
-         Current_buffer.save_excursion Sync (fun () ->
+         Current_buffer.save_excursion (fun () ->
            Point.goto_char (search `Forward ~last_point:(Point.get ()));
            Point.end_of_line ();
            Point.get ())
@@ -145,7 +145,7 @@ let goto_beginning_exn () =
   Point.goto_char comment_beginning;
   try
     let eol =
-      Current_buffer.save_excursion Sync (fun () ->
+      Current_buffer.save_excursion (fun () ->
         Point.end_of_line ();
         Point.get ())
     in

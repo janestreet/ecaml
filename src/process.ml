@@ -272,7 +272,7 @@ let call_region_exn
   prog
   args
   =
-  Working_directory.within working_directory Sync ~f:(fun () ->
+  Working_directory.within working_directory ~f:(fun () ->
     let start, end_, delete =
       match input with
       | Region { start; end_; delete } ->
@@ -300,7 +300,7 @@ let call_result_exn
   prog
   args
   =
-  Working_directory.within working_directory Sync ~f:(fun () ->
+  Working_directory.within working_directory ~f:(fun () ->
     Symbol.funcallN
       Q.call_process
       ([ prog |> Value.of_utf8_bytes
@@ -328,7 +328,7 @@ let call_exn
   args
   =
   let strip_if_requested s = if strip_whitespace then String.strip s else s in
-  Current_buffer.set_temporarily_to_temp_buffer Sync (fun () ->
+  Current_buffer.set_temporarily_to_temp_buffer (fun () ->
     match
       call_result_exn
         prog
@@ -466,88 +466,47 @@ let set_process_sentinel =
   Funcall.Wrap.("set-process-sentinel" <: t @-> Function.t @-> return nil)
 ;;
 
-let wrap_sentinel
-  (type a)
-  here
-  t
-  (returns : (unit, a) Defun.Returns.t)
-  ~(sentinel : event:string -> a)
-  ~event
-  =
-  let log_exn exn =
+let wrap_sentinel here t ~(sentinel : event:string -> unit) ~event =
+  try sentinel ~event with
+  | exn ->
     message_s
       [%message
         "process sentinel raised"
           ~sentinel_created_at:(here : Source_code_position.t)
           ~process:(t : t)
           (exn : exn)]
-  in
-  match returns with
-  | Returns _ ->
-    ((try sentinel ~event with
-      | exn -> log_exn exn)
-     : a)
-  | Returns_deferred _ ->
-    (match%map Monitor.try_with ~extract_exn:true (fun () -> sentinel ~event) with
-     | Ok () -> ()
-     | Error exn -> log_exn exn)
 ;;
 
-let set_sentinel
-  (type a)
-  ~(here : [%call_pos])
-  t
-  (returns : (unit, a) Defun.Returns.t)
-  ~(sentinel : event:string -> a)
-  =
-  let sentinel = wrap_sentinel here t returns ~sentinel in
+let set_sentinel ~(here : [%call_pos]) t ~sentinel =
+  let sentinel = wrap_sentinel here t ~sentinel in
   set_process_sentinel
     t
     (Defun.lambda
        here
-       returns
+       (Returns Value.Type.unit)
        (let%map_open.Defun () = return ()
         and _process = required "process" type_
         and event = required "event" string in
         sentinel ~event))
 ;;
 
-let extend_sentinel
-  (type a)
-  ~(here : [%call_pos])
-  t
-  (returns : (unit, a) Defun.Returns.t)
-  ~(sentinel : event:string -> a)
-  =
-  let sentinel = wrap_sentinel here t returns ~sentinel in
+let extend_sentinel ~(here : [%call_pos]) t ~sentinel =
+  let sentinel = wrap_sentinel here t ~sentinel in
   let previous_sentinel = process_sentinel t in
   set_process_sentinel
     t
     (Defun.lambda
        here
-       returns
+       (Returns Value.Type.unit)
        (let%map_open.Defun () = return ()
         and process = required "process" value
         and event = required "event" value in
-        let run_previous_sentinel () =
-          match previous_sentinel with
-          | None -> ()
-          | Some previous_sentinel ->
-            Value.funcall2_i (previous_sentinel |> Function.to_value) process event
-        in
-        match returns with
-        | Returns _ ->
-          run_previous_sentinel ();
-          Background.Private.mark_running_in_background (fun () : a ->
-            sentinel ~event:(event |> Value.to_utf8_bytes_exn))
-        | Returns_deferred _ ->
-          let%bind.Deferred () =
-            Value.Private.run_outside_async
-              ~allowed_in_background:true
-              run_previous_sentinel
-          in
-          Background.Private.mark_running_in_background (fun () ->
-            sentinel ~event:(event |> Value.to_utf8_bytes_exn))))
+        (match previous_sentinel with
+         | None -> ()
+         | Some previous_sentinel ->
+           Value.funcall2_i (previous_sentinel |> Function.to_value) process event);
+        Background.Private.mark_running_in_background (fun () ->
+          sentinel ~event:(event |> Value.to_utf8_bytes_exn))))
 ;;
 
 module Exited = struct
@@ -582,7 +541,7 @@ let exited =
        | Some x -> return x
        | None ->
          let ivar : Exited.t Ivar.t = Ivar.create () in
-         extend_sentinel ~here t (Returns Value.Type.unit) ~sentinel:(fun ~event:_ ->
+         extend_sentinel ~here t ~sentinel:(fun ~event:_ ->
            Option.iter (check_status ()) ~f:(Ivar.fill_if_empty ivar));
          let exited = Ivar.read ivar in
          set_property t property (exited |> Value.Type.to_value type_);

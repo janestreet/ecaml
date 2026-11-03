@@ -230,6 +230,7 @@ module Q = struct
   let consp = "consp" |> intern
   let debug_on_error = "debug-on-error" |> intern
   let equal = "equal" |> intern
+  let encode_coding_string = "encode-coding-string" |> intern
   let equal_including_properties = "equal-including-properties" |> intern
   let error = "error" |> intern
   let error_conditions = "error-conditions" |> intern
@@ -260,6 +261,7 @@ module Q = struct
   let t = "t" |> intern
   let timerp = "timerp" |> intern
   let user_error = "user-error" |> intern
+  let utf_8 = "utf-8" |> intern
   let vector = "vector" |> intern
   let vectorp = "vectorp" |> intern
   let window_configuration_p = "window-configuration-p" |> intern
@@ -288,11 +290,7 @@ module Enqueue_foreground_block_on_async = struct
 end
 
 module Run_outside_async = struct
-  type t =
-    { f :
-        'a.
-        here:[%call_pos] -> ?allowed_in_background:bool -> (unit -> 'a) -> 'a Deferred.t
-    }
+  type t = { f : 'a. here:[%call_pos] -> (unit -> 'a) -> 'a Deferred.t }
 
   let set_once : t Set_once.t = Set_once.create ()
 end
@@ -461,6 +459,21 @@ let unibyte_of_string = unibyte_of_string
 *)
 let of_utf8_bytes s = funcall1 Q.string_as_multibyte (unibyte_of_string s)
 let of_buffer_contents buf = of_buffer_contents buf
+
+(* [Must_check_exit.to_utf8_bytes_exn] uses the module API's [copy_string_contents], which
+   signals on multibyte strings containing raw bytes: its UTF-8 encoding is deliberately
+   strict. Emacs's usual UTF-8 encoding is happy to encode raw bytes into single bytes of
+   the same value, so when the module API refuses, encode with [encode-coding-string]
+   first; the resulting unibyte string's bytes copy out directly. This makes
+   [to_utf8_bytes_exn] the inverse of [of_utf8_bytes] for all byte sequences. *)
+let to_utf8_bytes_exn t =
+  try to_utf8_bytes_exn t with
+  | Elisp_signal _ as original ->
+    (match funcall2 Q.encode_coding_string t Q.utf_8 with
+     | encoded -> to_utf8_bytes_exn encoded
+     | exception (_ : exn) -> raise original)
+;;
+
 let of_utf8_bytes_cached = Memo.general ~hashable:String.hashable of_utf8_bytes
 
 let of_utf8_bytes_replacing_invalid str =
@@ -1104,8 +1117,8 @@ module Private = struct
       f
   ;;
 
-  let run_outside_async ~(here : [%call_pos]) ?allowed_in_background f =
-    (Set_once.get_exn Run_outside_async.set_once ~here).f ~here ?allowed_in_background f
+  let run_outside_async ~(here : [%call_pos]) f =
+    (Set_once.get_exn Run_outside_async.set_once ~here).f ~here f
   ;;
 
   let ecaml_profile_print_length = ecaml_profile_print_length

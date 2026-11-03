@@ -107,10 +107,19 @@ let%expect_test "ordinary UTF-8" =
 ;;
 
 let%expect_test "malformed UTF-8" =
-  show_raise (fun () ->
-    Ecaml_value.Value.For_testing.map_elisp_signal_omit_data (fun () ->
-      show_string "\128\129\130"));
-  [%expect {| (raised wrong-type-argument) |}];
+  (* [copy_string_contents] in emacs modules started failing in emacs-27 when the string
+     can't be converted to a multibyte utf8 string, so this used to raise. Now
+     [Value.to_utf8_bytes_exn] falls back to [encode-coding-string], which encodes the raw
+     bytes back to themselves. ([num_bytes] counts Emacs's two-byte internal
+     representation of each raw byte.) *)
+  show_string "\128\129\130";
+  [%expect
+    {|
+    ((text      "\128\129\130")
+     (length    3)
+     (num_bytes 6)
+     (string    "\128\129\130"))
+    |}];
   return ()
 ;;
 
@@ -123,7 +132,9 @@ let show_string_bytes string =
 ;;
 
 let%expect_test "show steps in the rendering of [text] in the malformed UTF-8 test" =
-  let text = Funcall.Wrap.("format" <: string @-> string @-> return Text.t) "%S" "ÄÅÇ" in
+  let text =
+    Funcall.Wrap.("format" <: string @-> string @-> return Text.t) "%S" "\x80\x81\x82"
+  in
   let text_bytes = text |> to_utf8_bytes in
   show_string_bytes text_bytes;
   [%expect

@@ -18,9 +18,8 @@ let get_buffer_local_exn = Buffer_local.Private.get_in_current_buffer_exn
 let set_buffer_local = Buffer_local.Private.set_in_current_buffer
 let set_buffer_local_temporarily = Buffer_local.Private.set_temporarily_in_current_buffer
 
-let set_temporarily_to_temp_buffer ~(here : [%call_pos]) ?name sync_or_async f =
-  Buffer.with_temp_buffer ?name sync_or_async (fun t ->
-    set_temporarily ~here sync_or_async t ~f)
+let set_temporarily_to_temp_buffer ?name f =
+  Buffer.with_temp_buffer ?name (fun t -> set_temporarily t ~f)
 ;;
 
 let major_mode () =
@@ -136,16 +135,6 @@ let contents ?start ?end_ ?(text_properties = false) () =
     (or_point_max end_)
 ;;
 
-let kill =
-  let kill_buffer = Funcall.Wrap.("kill-buffer" <: nullary @-> return nil) in
-  fun () -> Value.Private.run_outside_async ~allowed_in_background:true kill_buffer
-;;
-
-let save =
-  let save_buffer = Funcall.Wrap.("save-buffer" <: nullary @-> return nil) in
-  fun () -> Value.Private.run_outside_async ~allowed_in_background:true save_buffer
-;;
-
 let erase = Funcall.Wrap.("erase-buffer" <: nullary @-> return nil)
 
 let delete_region =
@@ -161,9 +150,7 @@ let narrow_to_region =
 ;;
 
 let narrow_to_region ~start ~end_ = narrow_to_region start end_
-let save_current_buffer = Save_wrappers.save_current_buffer
 let save_excursion = Save_wrappers.save_excursion
-let save_mark_and_excursion = Save_wrappers.save_mark_and_excursion
 let save_restriction = Save_wrappers.save_restriction
 let set_multibyte = Funcall.Wrap.("set-buffer-multibyte" <: bool @-> return nil)
 
@@ -361,27 +348,71 @@ let indent_region =
 ;;
 
 let indent_region ?start ?end_ () =
-  Echo_area.inhibit_messages Sync (fun () ->
+  Echo_area.inhibit_messages (fun () ->
     indent_region (or_point_min start) (or_point_max end_))
 ;;
 
 let change_major_mode major_mode = Major_mode.change_to major_mode ~in_:(get ())
 let revert ?confirm () = Buffer.revert ?confirm (get ())
 
-let replace_buffer_contents =
+module Blocking = struct
+  let revert =
+    let revert_buffer =
+      Funcall.Wrap.("revert-buffer" <: bool @-> bool @-> bool @-> return bool)
+    in
+    fun ?(confirm = false) () -> ignore (revert_buffer false (not confirm) false : bool)
+  ;;
+
+  let kill = Funcall.Wrap.("kill-buffer" <: nullary @-> return nil)
+end
+
+let kill () = Value.Private.run_outside_async (fun () -> Blocking.kill ())
+
+module Replace_source = struct
+  type t =
+    | Buffer of Buffer.t
+    | Text of Text.t
+    | Buffer_substring of Buffer.t * Position.t * Position.t
+
+  let to_value = function
+    | Buffer b -> Buffer.to_value b
+    | Text t -> Text.to_value t
+    | Buffer_substring (b, beg, end_) ->
+      Value.vector [| Buffer.to_value b; Position.to_value beg; Position.to_value end_ |]
+  ;;
+end
+
+let replace_region_contents =
   Funcall.Wrap.(
-    "replace-buffer-contents" <: Buffer.t @-> nil_or float @-> nil_or int @-> return bool)
+    "replace-region-contents"
+    <: Position.t (* BEG *)
+       @-> Position.t (* END *)
+       @-> value (* SOURCE *)
+       @-> nil_or float (* MAX-SECS *)
+       @-> nil_or int (* MAX-COST *)
+       @-> nil_or bool (* INHERIT *)
+       @-> return bool)
 ;;
 
-let replace_buffer_contents ?max_duration ?max_costs buffer =
-  (* [replace-buffer-contents] returns true if the replacement was performed
+let replace_region_contents
+  ?(start = Point.min ())
+  ?(end_ = Point.max ())
+  ?max_costs
+  ?inherit_adjacent_text_properties
+  source
+  ~max_duration
+  =
+  (* [replace-region-contents] returns true if the replacement was performed
      non-destructively, or false if that timed out and the delete-and-insert algorithm was
      used. *)
   ignore
-    (replace_buffer_contents
-       buffer
-       (Option.map max_duration ~f:Time_ns.Span.to_sec)
+    (replace_region_contents
+       start
+       end_
+       (Replace_source.to_value source)
+       (Some (Time_ns.Span.to_sec max_duration))
        max_costs
+       inherit_adjacent_text_properties
      : bool)
 ;;
 
@@ -394,7 +425,7 @@ let chars_modified_tick =
 
 let append_to string =
   let point_max_before = Point.max () in
-  save_excursion Sync (fun () ->
+  save_excursion (fun () ->
     Point.goto_max ();
     Point.insert string);
   let point_max_after = Point.max () in
@@ -407,16 +438,12 @@ let append_to string =
 ;;
 
 let inhibit_read_only = Var.Wrap.("inhibit-read-only" <: bool)
-
-let inhibit_read_only sync_or_async f =
-  set_value_temporarily sync_or_async inhibit_read_only true ~f
-;;
-
+let inhibit_read_only f = set_value_temporarily Sync inhibit_read_only true ~f
 let position_of_line_and_column = Point.position_of_line_and_column
 
 let line_and_column_of_position position =
-  save_excursion Sync (fun () ->
-    save_restriction Sync (fun () ->
+  save_excursion (fun () ->
+    save_restriction (fun () ->
       widen ();
       Point.goto_char position;
       Point.get_line_and_column ()))
@@ -424,7 +451,7 @@ let line_and_column_of_position position =
 
 let replace_string ?start ?end_ ~from ~to_ () =
   let end_ = or_point_max end_ in
-  save_excursion Sync (fun () ->
+  save_excursion (fun () ->
     Point.goto_char (or_point_min start);
     while Point.search_forward from ~bound:end_ ~update_last_match:true do
       Regexp.Last_match.replace to_
